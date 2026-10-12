@@ -151,5 +151,8 @@
             "type": "vcs",
             "url": "https://github.com/Refactor-Circus/Keen.git"
         }
-    ]
+    ],
+    "conflict": {
+        "brianium/paratest": ">=7.26.1"
+    }
 }
