@@ -7,10 +7,11 @@ namespace RefactorCircus\Showroom\Domains\Channel\Actions;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use RefactorCircus\Showroom\Domains\Channel\Concerns\WritesChannels;
+use RefactorCircus\Showroom\Domains\Channel\Data\UpdateChannelData;
 use RefactorCircus\Showroom\Domains\Channel\Events\ChannelUpdatedActionEvent;
 use RefactorCircus\Showroom\Domains\Channel\Events\ChannelUpdatingActionEvent;
 use RefactorCircus\Showroom\Domains\Channel\Models\ChannelModel;
-use RefactorCircus\Showroom\Domains\Product\Models\ProductModel;
+use RefactorCircus\Showroom\Domains\Search\Enums\SyncScope;
 use RefactorCircus\Showroom\Domains\Search\Services\ProductIndex;
 
 final class UpdateChannelAction
@@ -18,24 +19,9 @@ final class UpdateChannelAction
     use WritesChannels;
 
     /**
-     * Values already written in a locale the channel drops stay stored.
-     *
-     * @return array<string, mixed>
-     */
-    public static function rules(): array
-    {
-        return [
-            // Scopable values are keyed by channel code; it never changes.
-            'code' => ['prohibited'],
-        ] + self::channelRules(required: false);
-    }
-
-    /**
-     * @param  array<string, mixed>  $data
-     *
      * @throws ValidationException
      */
-    public function execute(ChannelModel $channel, array $data): ChannelModel
+    public function execute(ChannelModel $channel, UpdateChannelData $data): ChannelModel
     {
         ChannelUpdatingActionEvent::dispatch($channel, $data);
 
@@ -46,16 +32,15 @@ final class UpdateChannelAction
         return $result;
     }
 
-    /**
-     * @param  array<string, mixed>  $data
-     */
-    private function perform(ChannelModel $channel, array $data): ChannelModel
+    private function perform(ChannelModel $channel, UpdateChannelData $data): ChannelModel
     {
         return DB::transaction(function () use ($channel, $data): ChannelModel {
-            $this->writeChannel($channel, $data);
-
-            // Every product's completeness depends on the channels.
-            app(ProductIndex::class)->queueQuery(ProductModel::query());
+            // Every product's completeness depends on the channels; a label
+            // alone changes none. A queued job lists the products, once
+            // this commits, rather than this request walking the catalogue.
+            if ($this->writeChannel($channel, $data)) {
+                app(ProductIndex::class)->queueWithin(SyncScope::All);
+            }
 
             return $channel->load(['locales', 'categoryTree']);
         });

@@ -8,6 +8,7 @@ use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 use RefactorCircus\Keystone\Contracts\ActionStartingEvent;
 use RefactorCircus\Showroom\Domains\Product\Models\ProductModel;
+use RefactorCircus\Showroom\Domains\Workflow\Data\RevertProductData;
 
 /**
  * A product is about to be reverted to an earlier version.
@@ -17,11 +18,8 @@ final class ProductRevertingActionEvent implements ActionStartingEvent
     use Dispatchable;
     use SerializesModels;
 
-    /**
-     * @param  array<string, mixed>  $data
-     */
     public function __construct(
         public ProductModel $product,
-        public array $data,
+        public RevertProductData $data,
     ) {}
 }

@@ -113,7 +113,7 @@ use RefactorCircus\Showroom\Mcp\Tools\ListShowroomHistoryTool;
     'approved through transition-product-tool, and publish snapshots a version for storefronts; every write is '.
     'versioned and can be reverted. With Impex installed, start-import-tool and start-export-tool run bulk '.
     'imports and exports as Impex runs; with refactor-circus/keen installed, list-showroom-history-tool lists who changed what. Labels are keyed by locale. Product search is page-numbered and returns a total; other '.
-    'listings are cursor paginated: pass next_cursor back as cursor for the next page.',
+    'listings are cursor paginated: pass meta.next_cursor back as cursor for the next page.',
 )]
 final class ShowroomServer extends Server
 {

@@ -16,6 +16,7 @@ use RefactorCircus\Showroom\Domains\Owner\Models\OwnerModel;
 use RefactorCircus\Showroom\Domains\Product\Models\ProductModel;
 use RefactorCircus\Showroom\Domains\ProductModel\Models\ProductModelModel;
 use RefactorCircus\Showroom\Support\Models\Concerns\HasLabels;
+use RefactorCircus\Showroom\Support\Tables;
 
 /**
  * A file on the configured disk — an image, a manual, a logo — that can be
@@ -43,9 +44,10 @@ final class AssetModel extends Model
     use HasLabels;
     use HasUlids;
 
-    public const string LINKS = 'showroom_asset_links';
-
-    protected $table = 'showroom_assets';
+    public function getTable(): string
+    {
+        return Tables::name('assets');
+    }
 
     protected $fillable = [
         'code',
@@ -100,7 +102,7 @@ final class AssetModel extends Model
      */
     private function linked(string $class): MorphToMany
     {
-        return $this->morphedByMany($class, 'linkable', self::LINKS, 'asset_id')->withPivot(['role', 'sort_order']);
+        return $this->morphedByMany($class, 'linkable', Tables::name('asset_links'), 'asset_id')->withPivot(['role', 'sort_order']);
     }
 
     /**

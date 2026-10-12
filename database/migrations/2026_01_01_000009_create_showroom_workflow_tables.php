@@ -5,17 +5,18 @@ declare(strict_types=1);
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use RefactorCircus\Showroom\Support\Tables;
 
 return new class extends Migration
 {
     public function up(): void
     {
         // Null: a required attribute is required on every channel.
-        Schema::table('showroom_family_attributes', function (Blueprint $table): void {
+        Schema::table(Tables::name('family_attributes'), function (Blueprint $table): void {
             $table->json('required_channels')->nullable();
         });
 
-        Schema::table('showroom_products', function (Blueprint $table): void {
+        Schema::table(Tables::name('products'), function (Blueprint $table): void {
             $table->string('status', 32)->default('draft')->index();
             // The version storefronts read; editing never touches it.
             $table->unsignedInteger('published_version')->nullable();
@@ -24,10 +25,10 @@ return new class extends Migration
 
         // Derived from values and family requirements, stored so search can
         // filter on it.
-        Schema::create('showroom_product_completeness', function (Blueprint $table): void {
-            $table->foreignUlid('product_id')->constrained('showroom_products')->cascadeOnDelete();
-            $table->foreignUlid('channel_id')->constrained('showroom_channels')->cascadeOnDelete();
-            $table->foreignUlid('locale_id')->constrained('showroom_locales')->cascadeOnDelete();
+        Schema::create(Tables::name('product_completeness'), function (Blueprint $table): void {
+            $table->foreignUlid('product_id')->constrained(Tables::name('products'))->cascadeOnDelete();
+            $table->foreignUlid('channel_id')->constrained(Tables::name('channels'))->cascadeOnDelete();
+            $table->foreignUlid('locale_id')->constrained(Tables::name('locales'))->cascadeOnDelete();
             $table->unsignedInteger('required');
             $table->unsignedInteger('missing');
             $table->unsignedTinyInteger('ratio');
@@ -38,7 +39,7 @@ return new class extends Migration
             $table->index(['channel_id', 'locale_id', 'ratio']);
         });
 
-        Schema::create('showroom_versions', function (Blueprint $table): void {
+        Schema::create(Tables::name('versions'), function (Blueprint $table): void {
             $table->ulid('id')->primary();
             $table->string('versionable_type', 64);
             $table->ulid('versionable_id');
@@ -58,15 +59,15 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::dropIfExists('showroom_versions');
-        Schema::dropIfExists('showroom_product_completeness');
+        Schema::dropIfExists(Tables::name('versions'));
+        Schema::dropIfExists(Tables::name('product_completeness'));
 
-        Schema::table('showroom_products', function (Blueprint $table): void {
+        Schema::table(Tables::name('products'), function (Blueprint $table): void {
             $table->dropIndex(['status']);
             $table->dropColumn(['status', 'published_version', 'published_at']);
         });
 
-        Schema::table('showroom_family_attributes', function (Blueprint $table): void {
+        Schema::table(Tables::name('family_attributes'), function (Blueprint $table): void {
             $table->dropColumn('required_channels');
         });
     }

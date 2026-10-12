@@ -7,6 +7,7 @@ namespace RefactorCircus\Showroom\Domains\Attribute\Events;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 use RefactorCircus\Keystone\Contracts\ActionStartingEvent;
+use RefactorCircus\Showroom\Domains\Attribute\Data\ListAttributesData;
 
 /**
  * Attributes are about to be listed.
@@ -16,10 +17,7 @@ final class AttributesListingActionEvent implements ActionStartingEvent
     use Dispatchable;
     use SerializesModels;
 
-    /**
-     * @param  array<string, mixed>  $filters
-     */
     public function __construct(
-        public array $filters,
+        public ListAttributesData $filters,
     ) {}
 }

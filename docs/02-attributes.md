@@ -53,4 +53,4 @@ Select and multiselect attributes take options. Their codes are unique within th
 | `ListAttributesAction`, `ShowAttributeAction`, `CreateAttributeAction`, `UpdateAttributeAction`, `DeleteAttributeAction` | Attributes |
 | `ListAttributeOptionsAction`, `CreateAttributeOptionAction`, `UpdateAttributeOptionAction`, `DeleteAttributeOptionAction` | Options |
 
-Each has a static `rules()` — the input contract the HTTP API, MCP tools and dashboard all validate against — and an `execute()` method.
+Each input-taking Action takes a Data object from `RefactorCircus\Showroom\Domains\Attribute\Data` (`CreateAttributeData`, `UpdateAttributeData`, ...), whose static `rules()` is the input contract the HTTP API, MCP tools and dashboard all validate against. Build one with `XData::from([...])`, which validates, or `new XData(...)`.

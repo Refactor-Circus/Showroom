@@ -6,6 +6,7 @@ namespace RefactorCircus\Showroom\Domains\Channel\Http\Requests;
 
 use Illuminate\Http\JsonResponse;
 use RefactorCircus\Showroom\Domains\Channel\Actions\UpdateChannelAction;
+use RefactorCircus\Showroom\Domains\Channel\Data\UpdateChannelData;
 use RefactorCircus\Showroom\Domains\Channel\Resources\ChannelResource;
 
 final class UpdateChannelRequest extends ChannelRequest
@@ -17,12 +18,12 @@ final class UpdateChannelRequest extends ChannelRequest
 
     public function rules(): array
     {
-        return UpdateChannelAction::rules();
+        return UpdateChannelData::rules();
     }
 
     public function persist(): JsonResponse
     {
-        $channel = app(UpdateChannelAction::class)->execute($this->channel(), $this->validated());
+        $channel = app(UpdateChannelAction::class)->execute($this->channel(), UpdateChannelData::fromValidated($this->validated()));
 
         return (new ChannelResource($channel))->response();
     }

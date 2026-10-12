@@ -10,6 +10,7 @@ use Laravel\Mcp\ResponseFactory;
 use Laravel\Mcp\Server\Attributes\Description;
 use RefactorCircus\Keystone\Mcp\Tool;
 use RefactorCircus\Showroom\Domains\Asset\Mcp\Requests\AttachAssetMcpRequest;
+use RefactorCircus\Showroom\Domains\Asset\Resources\AssetResource;
 
 #[Description('Link an asset to a product, product model or owner under a role (image, manual, logo, ...). Variant products also show their models\' assets.')]
 final class AttachAssetTool extends Tool
@@ -28,5 +29,10 @@ final class AttachAssetTool extends Tool
             'role' => $schema->string()->description('What the asset is for on that record, such as image, manual or logo. Default media.'),
             'sort_order' => $schema->integer()->description('Position among the record assets in that role, lowest first.')->min(0),
         ];
+    }
+
+    public function outputSchema(JsonSchema $schema): array
+    {
+        return AssetResource::structuredSchema($schema);
     }
 }

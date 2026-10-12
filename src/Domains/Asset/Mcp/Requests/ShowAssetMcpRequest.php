@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace RefactorCircus\Showroom\Domains\Asset\Mcp\Requests;
 
-use Laravel\Mcp\Response;
 use Laravel\Mcp\ResponseFactory;
 use RefactorCircus\Showroom\Domains\Asset\Actions\ShowAssetAction;
 use RefactorCircus\Showroom\Domains\Asset\Resources\AssetResource;
@@ -18,7 +17,7 @@ final class ShowAssetMcpRequest extends AssetRequest
 
     protected function rules(): array
     {
-        return ShowAssetAction::rules() + [
+        return [
             'asset' => ['required', 'string', 'max:191'],
         ];
     }
@@ -27,6 +26,6 @@ final class ShowAssetMcpRequest extends AssetRequest
     {
         $asset = app(ShowAssetAction::class)->execute($this->asset());
 
-        return Response::structured((new AssetResource($asset))->resolve());
+        return (new AssetResource($asset))->toStructuredResponse();
     }
 }

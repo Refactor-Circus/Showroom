@@ -10,14 +10,6 @@ use RefactorCircus\Showroom\Domains\Owner\Models\OwnerTypeModel;
 
 final class ShowOwnerTypeAction
 {
-    /**
-     * @return array<string, mixed>
-     */
-    public static function rules(): array
-    {
-        return [];
-    }
-
     public function execute(OwnerTypeModel $ownerType): OwnerTypeModel
     {
         OwnerTypeShowingActionEvent::dispatch($ownerType);

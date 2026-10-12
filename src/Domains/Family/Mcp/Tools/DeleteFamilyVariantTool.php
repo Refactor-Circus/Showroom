@@ -25,4 +25,12 @@ final class DeleteFamilyVariantTool extends Tool
             'family_variant' => $schema->string()->description('The family variant code.')->required(),
         ];
     }
+
+    public function outputSchema(JsonSchema $schema): array
+    {
+        return [
+            'deleted' => $schema->boolean()->required(),
+            'code' => $schema->string()->required(),
+        ];
+    }
 }

@@ -12,6 +12,7 @@ use RefactorCircus\Showroom\Domains\Asset\Models\AssetModel;
 use RefactorCircus\Showroom\Domains\Owner\Models\OwnerModel;
 use RefactorCircus\Showroom\Domains\Product\Models\ProductModel;
 use RefactorCircus\Showroom\Domains\ProductModel\Models\ProductModelModel;
+use RefactorCircus\Showroom\Support\Tables;
 
 /**
  * Links between assets and the records they illustrate.
@@ -69,7 +70,7 @@ final class AssetLinks
 
     public function attach(AssetModel $asset, Model $record, string $role, int $sortOrder): void
     {
-        DB::table(AssetModel::LINKS)->updateOrInsert(
+        DB::table(Tables::name('asset_links'))->updateOrInsert(
             [
                 'asset_id' => $asset->id,
                 'linkable_type' => $record->getMorphClass(),
@@ -85,7 +86,7 @@ final class AssetLinks
      */
     public function detach(AssetModel $asset, Model $record, ?string $role): int
     {
-        return DB::table(AssetModel::LINKS)
+        return DB::table(Tables::name('asset_links'))
             ->where('asset_id', $asset->id)
             ->where('linkable_type', $record->getMorphClass())
             ->where('linkable_id', $record->getKey())
@@ -105,7 +106,7 @@ final class AssetLinks
             return;
         }
 
-        DB::table(AssetModel::LINKS)
+        DB::table(Tables::name('asset_links'))
             ->where('linkable_type', (new $class)->getMorphClass())
             ->whereIn('linkable_id', $ids)
             ->delete();

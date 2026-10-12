@@ -10,6 +10,7 @@ use Laravel\Mcp\ResponseFactory;
 use Laravel\Mcp\Server\Attributes\Description;
 use RefactorCircus\Keystone\Mcp\Tool;
 use RefactorCircus\Showroom\Domains\Channel\Mcp\Requests\CreateLocaleMcpRequest;
+use RefactorCircus\Showroom\Domains\Channel\Resources\LocaleResource;
 
 #[Description('Add a locale, so localizable values can be written in it.')]
 final class CreateLocaleTool extends Tool
@@ -25,5 +26,10 @@ final class CreateLocaleTool extends Tool
             'code' => $schema->string()->description('A language, optionally with region or script: en, en_US, zh-Hant. Never changes.')->required(),
             'labels' => $schema->object()->description('Labels keyed by locale. Replaces all labels when given.'),
         ];
+    }
+
+    public function outputSchema(JsonSchema $schema): array
+    {
+        return LocaleResource::structuredSchema($schema);
     }
 }

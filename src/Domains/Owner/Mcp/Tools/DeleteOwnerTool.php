@@ -25,4 +25,12 @@ final class DeleteOwnerTool extends Tool
             'owner' => $schema->string()->description('The owner code.')->required(),
         ];
     }
+
+    public function outputSchema(JsonSchema $schema): array
+    {
+        return [
+            'deleted' => $schema->boolean()->required(),
+            'code' => $schema->string()->required(),
+        ];
+    }
 }

@@ -20,6 +20,7 @@ use RefactorCircus\Showroom\Domains\ProductModel\Events\ProductModelDeletedActio
 use RefactorCircus\Showroom\Domains\ProductModel\Events\ProductModelDeletingActionEvent;
 use RefactorCircus\Showroom\Domains\ProductModel\Models\ProductModelModel;
 use RefactorCircus\Showroom\Domains\Search\Events\ProductsQueuedForSync;
+use RefactorCircus\Showroom\Support\Tables;
 use stdClass;
 
 /**
@@ -63,8 +64,8 @@ final class CaptureProductChanges
             $this->touch($this->doomed[$event->productModel->id] ?? []);
             unset($this->doomed[$event->productModel->id]);
         });
-        $events->listen(AssetAttachedActionEvent::class, fn (AssetAttachedActionEvent $event) => $this->touchLinked($event->data));
-        $events->listen(AssetDetachedActionEvent::class, fn (AssetDetachedActionEvent $event) => $this->touchLinked($event->data));
+        $events->listen(AssetAttachedActionEvent::class, fn (AssetAttachedActionEvent $event) => $this->touchLinked($event->data->type, $event->data->target));
+        $events->listen(AssetDetachedActionEvent::class, fn (AssetDetachedActionEvent $event) => $this->touchLinked($event->data->type, $event->data->target));
         $events->listen(AssetUpdatedActionEvent::class, fn (AssetUpdatedActionEvent $event) => $this->touchUsing($event->asset));
         // Before the links go with it.
         $events->listen(AssetDeletingActionEvent::class, fn (AssetDeletingActionEvent $event) => $this->touchUsing($event->asset));
@@ -87,7 +88,7 @@ final class CaptureProductChanges
         $identifiers = [];
 
         foreach (array_chunk(array_values(array_unique($ids)), 1000) as $chunk) {
-            foreach ($this->db->table('showroom_products')->whereIn('id', $chunk)->pluck('identifier') as $identifier) {
+            foreach ($this->db->table(Tables::name('products'))->whereIn('id', $chunk)->pluck('identifier') as $identifier) {
                 $identifiers[] = (string) $identifier;
             }
         }
@@ -110,15 +111,10 @@ final class CaptureProductChanges
     /**
      * The product, or every product under the model, that an attach or
      * detach targeted.
-     *
-     * @param  array<string, mixed>  $data
      */
-    private function touchLinked(array $data): void
+    private function touchLinked(string $type, string $target): void
     {
-        $type = is_string($data['type'] ?? null) ? $data['type'] : null;
-        $target = is_string($data['target'] ?? null) ? $data['target'] : null;
-
-        if ($type === null || $target === null || ! in_array($type, ['product', 'product_model'], true)) {
+        if (! in_array($type, ['product', 'product_model'], true)) {
             return;
         }
 
@@ -137,7 +133,7 @@ final class CaptureProductChanges
      */
     private function touchUsing(AssetModel $asset): void
     {
-        $links = $this->db->table(AssetModel::LINKS)->where('asset_id', $asset->id)->get(['linkable_type', 'linkable_id']);
+        $links = $this->db->table(Tables::name('asset_links'))->where('asset_id', $asset->id)->get(['linkable_type', 'linkable_id']);
         $productMorph = (new ProductModel)->getMorphClass();
         $modelMorph = (new ProductModelModel)->getMorphClass();
         $ids = [];
@@ -159,9 +155,9 @@ final class CaptureProductChanges
      */
     private function underModel(string $modelId): array
     {
-        $models = [$modelId, ...$this->db->table('showroom_product_models')->where('parent_id', $modelId)->pluck('id')->map(fn (mixed $id): string => (string) $id)->all()];
+        $models = [$modelId, ...$this->db->table(Tables::name('product_models'))->where('parent_id', $modelId)->pluck('id')->map(fn (mixed $id): string => (string) $id)->all()];
 
-        return $this->db->table('showroom_products')->whereIn('parent_id', $models)->pluck('id')->map(fn (mixed $id): string => (string) $id)->all();
+        return $this->db->table(Tables::name('products'))->whereIn('parent_id', $models)->pluck('id')->map(fn (mixed $id): string => (string) $id)->all();
     }
 
     private function stream(): string

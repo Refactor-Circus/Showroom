@@ -7,39 +7,23 @@ namespace RefactorCircus\Showroom\Domains\Owner\Actions;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use RefactorCircus\Showroom\Domains\Owner\Concerns\PlacesOwners;
+use RefactorCircus\Showroom\Domains\Owner\Data\UpdateOwnerData;
 use RefactorCircus\Showroom\Domains\Owner\Events\OwnerUpdatedActionEvent;
 use RefactorCircus\Showroom\Domains\Owner\Events\OwnerUpdatingActionEvent;
 use RefactorCircus\Showroom\Domains\Owner\Models\OwnerModel;
+use RefactorCircus\Showroom\Domains\Search\Enums\SyncScope;
 use RefactorCircus\Showroom\Domains\Search\Services\ProductIndex;
 
 final class UpdateOwnerAction
 {
     use PlacesOwners;
 
-    /**
-     * Sending `parent` moves the owner, with everything beneath it.
-     *
-     * @return array<string, mixed>
-     */
-    public static function rules(): array
-    {
-        return [
-            'code' => ['prohibited'],
-            'type' => ['prohibited'],
-            'parent' => ['sometimes', 'nullable', 'string', 'exists:showroom_owners,code'],
-            'labels' => ['sometimes', 'nullable', 'array'],
-            'labels.*' => ['nullable', 'string', 'max:255'],
-        ];
-    }
-
     public function __construct(private readonly ProductIndex $index) {}
 
     /**
-     * @param  array<string, mixed>  $data
-     *
      * @throws ValidationException
      */
-    public function execute(OwnerModel $owner, array $data): OwnerModel
+    public function execute(OwnerModel $owner, UpdateOwnerData $data): OwnerModel
     {
         OwnerUpdatingActionEvent::dispatch($owner, $data);
 
@@ -50,19 +34,16 @@ final class UpdateOwnerAction
         return $result;
     }
 
-    /**
-     * @param  array<string, mixed>  $data
-     */
-    private function perform(OwnerModel $owner, array $data): OwnerModel
+    private function perform(OwnerModel $owner, UpdateOwnerData $data): OwnerModel
     {
         return DB::transaction(function () use ($owner, $data): OwnerModel {
-            if (array_key_exists('labels', $data)) {
-                $owner->labels = is_array($data['labels']) ? $data['labels'] : [];
+            if ($data->has('labels')) {
+                $owner->labels = is_array($data->labels) ? $data->labels : [];
                 $owner->save();
             }
 
-            if (array_key_exists('parent', $data)) {
-                $parent = is_string($data['parent']) ? OwnerModel::query()->where('code', $data['parent'])->firstOrFail() : null;
+            if ($data->has('parent')) {
+                $parent = is_string($data->parent) ? OwnerModel::query()->where('code', $data->parent)->firstOrFail() : null;
 
                 if ($parent?->id !== $owner->parent_id) {
                     $type = $owner->type()->with('parentTypes')->firstOrFail();
@@ -70,8 +51,9 @@ final class UpdateOwnerAction
                     $this->checkPlacement($owner, $type, $parent);
                     $this->place($owner, $parent);
 
-                    // Every product beneath now sits in a different chain.
-                    $this->index->queue($this->index->productIdsOwnedWithin($owner));
+                    // Every product beneath now sits in a different chain;
+                    // a queued job lists them once this commits.
+                    $this->index->queueWithin(SyncScope::Owner, $owner->id);
                 }
             }
 

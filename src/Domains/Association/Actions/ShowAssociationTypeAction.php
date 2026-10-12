@@ -10,14 +10,6 @@ use RefactorCircus\Showroom\Domains\Association\Models\AssociationTypeModel;
 
 final class ShowAssociationTypeAction
 {
-    /**
-     * @return array<string, mixed>
-     */
-    public static function rules(): array
-    {
-        return [];
-    }
-
     public function execute(AssociationTypeModel $associationType): AssociationTypeModel
     {
         AssociationTypeShowingActionEvent::dispatch($associationType);

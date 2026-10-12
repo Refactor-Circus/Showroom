@@ -7,6 +7,7 @@ namespace RefactorCircus\Showroom\Domains\Family\Http\Requests;
 use Illuminate\Http\JsonResponse;
 use RefactorCircus\Keystone\Http\Requests\Request;
 use RefactorCircus\Showroom\Domains\Family\Actions\ListFamiliesAction;
+use RefactorCircus\Showroom\Domains\Family\Data\ListFamiliesData;
 use RefactorCircus\Showroom\Domains\Family\Models\FamilyModel;
 use RefactorCircus\Showroom\Domains\Family\Resources\FamilyResource;
 
@@ -19,12 +20,12 @@ final class IndexFamiliesRequest extends Request
 
     public function rules(): array
     {
-        return ListFamiliesAction::rules();
+        return ListFamiliesData::rules();
     }
 
     public function persist(): JsonResponse
     {
-        $families = app(ListFamiliesAction::class)->execute($this->validated());
+        $families = app(ListFamiliesAction::class)->execute(ListFamiliesData::fromValidated($this->validated()));
 
         return FamilyResource::collection($families)->response();
     }

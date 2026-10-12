@@ -5,7 +5,8 @@ Publish with `php artisan vendor:publish --tag="showroom-config"`.
 | Key | Default | Meaning |
 |---|---|---|
 | `authorization` | `true` | Require an authenticated user on the API, MCP and Atrium screens, and check every call against `policies`; the screens show only what the user may use |
-| `policies` | bundled policies | Model ⇒ policy class used by the Gate |
+| `policies` | bundled policies | Model ⇒ policy class used by the Gate; every model has one, and associations, versions, completeness scores and searchable products follow their product's |
+| `tables.*` | `showroom_*` | The table each record lives in, by key (`products`, `product_models`, `categories`, ...). Set before migrating; keys left out keep their default |
 | `routes.enabled` | `true` | Register the HTTP API |
 | `routes.prefix` | `showroom` | API path prefix |
 | `routes.middleware` | `['api']` | API middleware. Add authentication. |
@@ -19,8 +20,10 @@ Publish with `php artisan vendor:publish --tag="showroom-config"`.
 | `cortex.tools` | `null` | Tool names to offer Cortex, or `null` for all |
 | `ui.enabled` | `true` | Register the Atrium plugin |
 | `atrium.features` | `[ShowroomSupportFeature::class]` | Features that must all be on for Showroom to appear in Atrium; classes that cannot be loaded (without refactor-circus/pennantplus) are skipped |
+| `atrium.widget_cache_seconds` | `60` | How long the dashboard's completeness widget keeps its figures; `0` reads them fresh on every render |
 | `workflow.require_approval` | `true` | Publish only approved products |
 | `workflow.require_complete` | `false` | Submit only products 100% complete on every channel and locale |
+| `audit.enabled` | `true` | With refactor-circus/keen installed, record Showroom's changes and offer its history; `false` keeps Showroom out of the audit log |
 | `impex.enabled` | `true` | Register the Impex flows when refactor-circus/impex is installed |
 | `impex.chunk` | `500` | Import rows per batch chunk |
 | `impex.allow_failures` | `1.0` | Share of import rows that may fail before the run fails |
@@ -43,6 +46,6 @@ Publish with `php artisan vendor:publish --tag="showroom-config"`.
 | `search.engine` | `null` | `null` (Scout when installed, else database), `database`, `scout`, or a `SearchEngine` class |
 | `search.queue.connection` | `null` | Queue connection for index syncs (null: default) |
 | `search.queue.queue` | `null` | Queue name for index syncs |
-| `search.scout.index` | `showroom_products` | Scout index name |
+| `search.scout.index` | `showroom_products` | Scout index name (the products table's name when unset) |
 | `pagination.per_page` | `25` | Default page size for every listing |
 | `pagination.max_per_page` | `100` | Largest `per_page` a caller may ask for |

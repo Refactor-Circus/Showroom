@@ -19,6 +19,11 @@ use RefactorCircus\Showroom\Domains\Channel\Actions\ListChannelsAction;
 use RefactorCircus\Showroom\Domains\Channel\Actions\ListLocalesAction;
 use RefactorCircus\Showroom\Domains\Channel\Actions\ShowChannelAction;
 use RefactorCircus\Showroom\Domains\Channel\Actions\UpdateChannelAction;
+use RefactorCircus\Showroom\Domains\Channel\Data\CreateChannelData;
+use RefactorCircus\Showroom\Domains\Channel\Data\CreateLocaleData;
+use RefactorCircus\Showroom\Domains\Channel\Data\ListChannelsData;
+use RefactorCircus\Showroom\Domains\Channel\Data\ListLocalesData;
+use RefactorCircus\Showroom\Domains\Channel\Data\UpdateChannelData;
 use RefactorCircus\Showroom\Domains\Channel\Models\ChannelModel;
 use RefactorCircus\Showroom\Domains\Channel\Models\LocaleModel;
 use RefactorCircus\Showroom\Exceptions\ShowroomException;
@@ -38,8 +43,8 @@ final class ChannelUiController
         $view = 'showroom::ui.channels.index';
 
         return view($view, [
-            'channels' => app(ListChannelsAction::class)->execute(['per_page' => 100]),
-            'locales' => app(ListLocalesAction::class)->execute(['per_page' => 100]),
+            'channels' => app(ListChannelsAction::class)->execute(new ListChannelsData(perPage: 100)),
+            'locales' => app(ListLocalesAction::class)->execute(new ListLocalesData(perPage: 100)),
             'allLocales' => LocaleModel::query()->orderBy('code')->pluck('code')->all(),
             'trees' => $this->trees(),
         ]);
@@ -50,7 +55,7 @@ final class ChannelUiController
         $this->authorizeScreen('create', ChannelModel::class);
 
         $channel = app(CreateChannelAction::class)->execute(
-            Labels::fromForm(Validator::validate($this->fromForm($request), CreateChannelAction::rules())),
+            CreateChannelData::fromValidated(Labels::fromForm(Validator::validate($this->fromForm($request), CreateChannelData::rules()))),
         );
 
         return redirect()
@@ -78,7 +83,7 @@ final class ChannelUiController
 
         app(UpdateChannelAction::class)->execute(
             $channel,
-            Labels::fromForm(Validator::validate($this->fromForm($request), UpdateChannelAction::rules()), $channel->labels),
+            UpdateChannelData::fromValidated(Labels::fromForm(Validator::validate($this->fromForm($request), UpdateChannelData::rules()), $channel->labels)),
         );
 
         return redirect()
@@ -101,7 +106,7 @@ final class ChannelUiController
     {
         $this->authorizeScreen('create', LocaleModel::class);
 
-        app(CreateLocaleAction::class)->execute(Labels::fromForm($request->validate(CreateLocaleAction::rules())));
+        app(CreateLocaleAction::class)->execute(CreateLocaleData::fromValidated(Labels::fromForm($request->validate(CreateLocaleData::rules()))));
 
         return redirect()
             ->route('atrium.showroom.channels.index')

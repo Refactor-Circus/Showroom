@@ -10,6 +10,7 @@ use Laravel\Mcp\ResponseFactory;
 use Laravel\Mcp\Server\Attributes\Description;
 use RefactorCircus\Keystone\Mcp\Tool;
 use RefactorCircus\Showroom\Domains\Family\Mcp\Requests\ShowFamilyVariantMcpRequest;
+use RefactorCircus\Showroom\Domains\Family\Resources\FamilyVariantResource;
 
 #[Description('Show a family variant with its levels, axes, the attributes set at each level, and the common attributes set on root models.')]
 final class ShowFamilyVariantTool extends Tool
@@ -24,5 +25,10 @@ final class ShowFamilyVariantTool extends Tool
         return [
             'family_variant' => $schema->string()->description('The family variant code.')->required(),
         ];
+    }
+
+    public function outputSchema(JsonSchema $schema): array
+    {
+        return FamilyVariantResource::structuredSchema($schema);
     }
 }

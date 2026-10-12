@@ -55,6 +55,9 @@ class ShowroomServiceProvider extends PackageServiceProvider
 
         $this->registerPolicies();
 
+        // Missing records on Showroom's routes answer a plain "Not found.", as its tools do.
+        $this->registerNotFoundResponses();
+
         $this->registerAtriumPlugin(ShowroomPlugin::class);
 
         $this->registerMcpServer();

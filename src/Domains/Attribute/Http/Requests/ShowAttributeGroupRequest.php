@@ -15,11 +15,6 @@ final class ShowAttributeGroupRequest extends AttributeGroupRequest
         return $this->allows('view', $this->group());
     }
 
-    public function rules(): array
-    {
-        return ShowAttributeGroupAction::rules();
-    }
-
     public function persist(): JsonResponse
     {
         $group = app(ShowAttributeGroupAction::class)->execute($this->group());

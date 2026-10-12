@@ -14,11 +14,6 @@ final class DeleteProductModelRequest extends ProductModelRequest
         return $this->allows('delete', $this->productModel());
     }
 
-    public function rules(): array
-    {
-        return DeleteProductModelAction::rules();
-    }
-
     public function persist(): JsonResponse
     {
         app(DeleteProductModelAction::class)->execute($this->productModel());

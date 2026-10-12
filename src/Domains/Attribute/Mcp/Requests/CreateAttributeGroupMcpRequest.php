@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace RefactorCircus\Showroom\Domains\Attribute\Mcp\Requests;
 
-use Laravel\Mcp\Response;
 use Laravel\Mcp\ResponseFactory;
 use RefactorCircus\Keystone\Mcp\Requests\Request;
 use RefactorCircus\Showroom\Domains\Attribute\Actions\CreateAttributeGroupAction;
+use RefactorCircus\Showroom\Domains\Attribute\Data\CreateAttributeGroupData;
 use RefactorCircus\Showroom\Domains\Attribute\Models\AttributeGroupModel;
 use RefactorCircus\Showroom\Domains\Attribute\Resources\AttributeGroupResource;
 
@@ -20,13 +20,13 @@ final class CreateAttributeGroupMcpRequest extends Request
 
     protected function rules(): array
     {
-        return CreateAttributeGroupAction::rules();
+        return CreateAttributeGroupData::rules();
     }
 
     protected function handle(array $validated): ResponseFactory
     {
-        $group = app(CreateAttributeGroupAction::class)->execute($validated);
+        $group = app(CreateAttributeGroupAction::class)->execute(CreateAttributeGroupData::fromValidated($validated));
 
-        return Response::structured((new AttributeGroupResource($group))->resolve());
+        return (new AttributeGroupResource($group))->toStructuredResponse();
     }
 }

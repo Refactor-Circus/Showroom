@@ -10,6 +10,7 @@ use Laravel\Mcp\ResponseFactory;
 use Laravel\Mcp\Server\Attributes\Description;
 use RefactorCircus\Keystone\Mcp\Tool;
 use RefactorCircus\Showroom\Domains\Attribute\Mcp\Requests\ShowAttributeGroupMcpRequest;
+use RefactorCircus\Showroom\Domains\Attribute\Resources\AttributeGroupResource;
 
 #[Description('Show an attribute group with the attributes it holds.')]
 final class ShowAttributeGroupTool extends Tool
@@ -24,5 +25,10 @@ final class ShowAttributeGroupTool extends Tool
         return [
             'group' => $schema->string()->description('The attribute group code.')->required(),
         ];
+    }
+
+    public function outputSchema(JsonSchema $schema): array
+    {
+        return AttributeGroupResource::structuredSchema($schema);
     }
 }

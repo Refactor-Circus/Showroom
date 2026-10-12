@@ -9,7 +9,9 @@ use Laravel\Mcp\Response;
 use Laravel\Mcp\ResponseFactory;
 use Laravel\Mcp\Server\Attributes\Description;
 use RefactorCircus\Keystone\Mcp\Tool;
+use RefactorCircus\Showroom\Domains\Category\Data\ListCategoriesData;
 use RefactorCircus\Showroom\Domains\Category\Mcp\Requests\ListCategoriesMcpRequest;
+use RefactorCircus\Showroom\Domains\Category\Resources\CategoryResource;
 
 #[Description('List categories: the trees (roots), the children of a category, or a whole branch. Cursor paginated.')]
 final class ListCategoriesTool extends Tool
@@ -26,8 +28,11 @@ final class ListCategoriesTool extends Tool
             'parent' => $schema->string()->description('Only direct children of this category code.'),
             'under' => $schema->string()->description('Everything beneath this category code, at any depth.'),
             'search' => $schema->string()->description('Match against the code or any label.'),
-            'cursor' => $schema->string()->description('Cursor from a previous page (next_cursor).'),
-            'per_page' => $schema->integer()->description('Results per page.')->min(1),
-        ];
+        ] + ListCategoriesData::pagination()->schema($schema);
+    }
+
+    public function outputSchema(JsonSchema $schema): array
+    {
+        return CategoryResource::collectionSchema($schema, ListCategoriesData::pagination());
     }
 }

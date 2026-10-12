@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace RefactorCircus\Showroom\Domains\Channel\Mcp\Requests;
 
-use Laravel\Mcp\Response;
 use Laravel\Mcp\ResponseFactory;
 use RefactorCircus\Showroom\Domains\Channel\Actions\UpdateLocaleAction;
+use RefactorCircus\Showroom\Domains\Channel\Data\UpdateLocaleData;
 use RefactorCircus\Showroom\Domains\Channel\Resources\LocaleResource;
 
 final class UpdateLocaleMcpRequest extends LocaleRequest
@@ -18,17 +18,15 @@ final class UpdateLocaleMcpRequest extends LocaleRequest
 
     protected function rules(): array
     {
-        return UpdateLocaleAction::rules() + [
+        return [
             'locale' => ['required', 'string', 'max:100'],
-        ];
+        ] + UpdateLocaleData::rules();
     }
 
     protected function handle(array $validated): ResponseFactory
     {
-        unset($validated['locale']);
+        $locale = app(UpdateLocaleAction::class)->execute($this->locale(), UpdateLocaleData::fromValidated($validated));
 
-        $locale = app(UpdateLocaleAction::class)->execute($this->locale(), $validated);
-
-        return Response::structured((new LocaleResource($locale))->resolve());
+        return (new LocaleResource($locale))->toStructuredResponse();
     }
 }

@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace RefactorCircus\Showroom\Domains\Attribute\Mcp\Requests;
 
-use Laravel\Mcp\Response;
 use Laravel\Mcp\ResponseFactory;
 use RefactorCircus\Showroom\Domains\Attribute\Actions\UpdateAttributeAction;
+use RefactorCircus\Showroom\Domains\Attribute\Data\UpdateAttributeData;
 use RefactorCircus\Showroom\Domains\Attribute\Resources\AttributeResource;
 
 final class UpdateAttributeMcpRequest extends AttributeRequest
@@ -18,17 +18,15 @@ final class UpdateAttributeMcpRequest extends AttributeRequest
 
     protected function rules(): array
     {
-        return UpdateAttributeAction::rules() + [
+        return [
             'attribute' => ['required', 'string', 'max:100'],
-        ];
+        ] + UpdateAttributeData::rules();
     }
 
     protected function handle(array $validated): ResponseFactory
     {
-        unset($validated['attribute']);
+        $attribute = app(UpdateAttributeAction::class)->execute($this->catalogAttribute(), UpdateAttributeData::fromValidated($validated));
 
-        $attribute = app(UpdateAttributeAction::class)->execute($this->catalogAttribute(), $validated);
-
-        return Response::structured((new AttributeResource($attribute))->resolve());
+        return (new AttributeResource($attribute))->toStructuredResponse();
     }
 }

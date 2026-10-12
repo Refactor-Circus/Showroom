@@ -9,7 +9,9 @@ use Laravel\Mcp\Response;
 use Laravel\Mcp\ResponseFactory;
 use Laravel\Mcp\Server\Attributes\Description;
 use RefactorCircus\Keystone\Mcp\Tool;
+use RefactorCircus\Showroom\Domains\Attribute\Data\ListAttributeOptionsData;
 use RefactorCircus\Showroom\Domains\Attribute\Mcp\Requests\ListAttributeOptionsMcpRequest;
+use RefactorCircus\Showroom\Domains\Attribute\Resources\AttributeOptionResource;
 
 #[Description('List the options of a select or multiselect attribute, in display order. Cursor paginated.')]
 final class ListAttributeOptionsTool extends Tool
@@ -24,8 +26,11 @@ final class ListAttributeOptionsTool extends Tool
         return [
             'attribute' => $schema->string()->description('The attribute code.')->required(),
             'search' => $schema->string()->description('Match against the code or any label.'),
-            'cursor' => $schema->string()->description('Cursor from a previous page (next_cursor).'),
-            'per_page' => $schema->integer()->description('Results per page.')->min(1),
-        ];
+        ] + ListAttributeOptionsData::pagination()->schema($schema);
+    }
+
+    public function outputSchema(JsonSchema $schema): array
+    {
+        return AttributeOptionResource::collectionSchema($schema, ListAttributeOptionsData::pagination());
     }
 }

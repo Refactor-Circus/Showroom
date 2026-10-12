@@ -6,6 +6,7 @@ namespace RefactorCircus\Showroom\Domains\ProductModel\Http\Requests;
 
 use Illuminate\Http\JsonResponse;
 use RefactorCircus\Showroom\Domains\ProductModel\Actions\ShowProductModelAction;
+use RefactorCircus\Showroom\Domains\ProductModel\Data\ShowProductModelData;
 use RefactorCircus\Showroom\Domains\ProductModel\Resources\ProductModelResource;
 
 final class ShowProductModelRequest extends ProductModelRequest
@@ -17,12 +18,12 @@ final class ShowProductModelRequest extends ProductModelRequest
 
     public function rules(): array
     {
-        return ShowProductModelAction::rules();
+        return ShowProductModelData::rules();
     }
 
     public function persist(): JsonResponse
     {
-        $productModel = app(ShowProductModelAction::class)->execute($this->productModel(), $this->validated());
+        $productModel = app(ShowProductModelAction::class)->execute($this->productModel(), ShowProductModelData::fromValidated($this->validated()));
 
         return (new ProductModelResource($productModel))->response();
     }

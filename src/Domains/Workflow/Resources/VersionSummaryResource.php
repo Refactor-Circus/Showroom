@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace RefactorCircus\Showroom\Domains\Workflow\Resources;
 
+use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Illuminate\Http\Request;
-use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\JsonSchema\Types\Type;
+use RefactorCircus\Keystone\Http\Resources\JsonResource;
 use RefactorCircus\Showroom\Domains\Workflow\Models\VersionModel;
 
 /**
@@ -15,6 +17,24 @@ use RefactorCircus\Showroom\Domains\Workflow\Models\VersionModel;
  */
 final class VersionSummaryResource extends JsonResource
 {
+    /**
+     * @return array<string, Type>
+     */
+    public static function schema(JsonSchema $schema): array
+    {
+        return [
+            'version' => $schema->integer()->required(),
+            'action' => $schema->string()->required(),
+            'comment' => $schema->string()->nullable()->required(),
+            'author' => $schema->object([
+                'type' => $schema->string()->required(),
+                'id' => $schema->union(['string', 'integer'])->required(),
+            ])->nullable()->required(),
+            'changes' => $schema->object()->description('field => [old, new].')->required(),
+            'created_at' => $schema->string()->nullable()->required(),
+        ];
+    }
+
     /**
      * @return array<string, mixed>
      */

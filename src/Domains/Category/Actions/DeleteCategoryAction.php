@@ -9,19 +9,12 @@ use RefactorCircus\Showroom\Domains\Category\Events\CategoryDeletedActionEvent;
 use RefactorCircus\Showroom\Domains\Category\Events\CategoryDeletingActionEvent;
 use RefactorCircus\Showroom\Domains\Category\Models\CategoryModel;
 use RefactorCircus\Showroom\Domains\Channel\Models\ChannelModel;
+use RefactorCircus\Showroom\Domains\Search\Enums\SyncScope;
 use RefactorCircus\Showroom\Domains\Search\Services\ProductIndex;
 use RefactorCircus\Showroom\Exceptions\ModelInUseException;
 
 final class DeleteCategoryAction
 {
-    /**
-     * @return array<string, mixed>
-     */
-    public static function rules(): array
-    {
-        return [];
-    }
-
     public function __construct(private readonly ProductIndex $index) {}
 
     public function execute(CategoryModel $category): CategoryModel
@@ -55,11 +48,15 @@ final class DeleteCategoryAction
         }
 
         return DB::transaction(function () use ($category): CategoryModel {
-            $products = $this->index->productIdsInCategories($category);
+            // Listed before the assignments go, a chunk at a time; the
+            // syncs are sent once this commits.
+            $products = $this->index->productsWithin(SyncScope::Category, $category->id);
+
+            if ($products !== null) {
+                $this->index->queueQuery($products);
+            }
 
             $category->delete();
-
-            $this->index->queue($products);
 
             return $category;
         });

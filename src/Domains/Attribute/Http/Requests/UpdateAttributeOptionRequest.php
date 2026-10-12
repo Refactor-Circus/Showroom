@@ -6,6 +6,7 @@ namespace RefactorCircus\Showroom\Domains\Attribute\Http\Requests;
 
 use Illuminate\Http\JsonResponse;
 use RefactorCircus\Showroom\Domains\Attribute\Actions\UpdateAttributeOptionAction;
+use RefactorCircus\Showroom\Domains\Attribute\Data\UpdateAttributeOptionData;
 use RefactorCircus\Showroom\Domains\Attribute\Resources\AttributeOptionResource;
 
 final class UpdateAttributeOptionRequest extends AttributeOptionRequest
@@ -17,12 +18,12 @@ final class UpdateAttributeOptionRequest extends AttributeOptionRequest
 
     public function rules(): array
     {
-        return UpdateAttributeOptionAction::rules();
+        return UpdateAttributeOptionData::rules();
     }
 
     public function persist(): JsonResponse
     {
-        $option = app(UpdateAttributeOptionAction::class)->execute($this->option(), $this->validated());
+        $option = app(UpdateAttributeOptionAction::class)->execute($this->option(), UpdateAttributeOptionData::fromValidated($this->validated()));
 
         return (new AttributeOptionResource($option))->response();
     }

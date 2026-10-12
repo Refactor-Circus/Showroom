@@ -6,12 +6,14 @@ namespace RefactorCircus\Showroom\Domains\Workflow\Services;
 
 use Closure;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Query\JoinClause;
 use Illuminate\Support\Facades\Auth;
 use RefactorCircus\Showroom\Domains\Association\Services\Associations;
 use RefactorCircus\Showroom\Domains\Attribute\Services\Values;
 use RefactorCircus\Showroom\Domains\Category\Models\CategoryModel;
 use RefactorCircus\Showroom\Domains\Product\Models\ProductModel;
 use RefactorCircus\Showroom\Domains\Workflow\Models\VersionModel;
+use RefactorCircus\Showroom\Support\Tables;
 
 /**
  * Records a product's versions: a snapshot of what it holds after each write,
@@ -51,13 +53,16 @@ final class Versions
      * Record a version if anything changed since the last one. Returns the
      * version recorded, or the latest when nothing changed.
      */
-    public function record(ProductModel $product, string $action, ?string $comment = null): VersionModel
+    /**
+     * @param  array<string, mixed>|null  $snapshot  The product's snapshot(), when the caller has just taken it.
+     */
+    public function record(ProductModel $product, string $action, ?string $comment = null, ?array $snapshot = null): VersionModel
     {
         $action = $this->context['action'] ?? $action;
         $comment ??= $this->context['comment'] ?? null;
 
         $latest = $this->latest($product);
-        $snapshot = $this->snapshot($product);
+        $snapshot ??= $this->snapshot($product);
         $changes = $this->diff($latest->snapshot ?? [], $snapshot);
 
         // A write that changed nothing is not history — unless it is a step
@@ -100,6 +105,42 @@ final class Versions
     }
 
     /**
+     * The published snapshot of each product that has one, keyed by product
+     * id, in one query however many products are asked for.
+     *
+     * @param  iterable<int, ProductModel>  $products
+     * @return array<string, array<string, mixed>>
+     */
+    public function publishedSnapshots(iterable $products): array
+    {
+        $ids = [];
+
+        foreach ($products as $product) {
+            if ($product->published_version !== null) {
+                $ids[] = $product->id;
+            }
+        }
+
+        if ($ids === []) {
+            return [];
+        }
+
+        $versions = Tables::name('versions');
+        $table = Tables::name('products');
+
+        return VersionModel::query()
+            ->join($table, function (JoinClause $join) use ($versions, $table): void {
+                $join->on($table.'.id', '=', $versions.'.versionable_id')
+                    ->on($table.'.published_version', '=', $versions.'.version');
+            })
+            ->where($versions.'.versionable_type', (new ProductModel)->getMorphClass())
+            ->whereIn($table.'.id', $ids)
+            ->get([$versions.'.versionable_id', $versions.'.snapshot'])
+            ->mapWithKeys(fn (VersionModel $version): array => [(string) $version->versionable_id => $version->snapshot])
+            ->all();
+    }
+
+    /**
      * Everything a product holds, in API shape: its own data, and the values
      * it inherits at this moment, so a published snapshot reads complete.
      *
@@ -131,7 +172,10 @@ final class Versions
      * Whether the product holds anything other than what its latest version
      * recorded, status aside.
      */
-    public function hasChanges(ProductModel $product): bool
+    /**
+     * @param  array<string, mixed>|null  $snapshot  The product's snapshot(), when the caller has just taken it.
+     */
+    public function hasChanges(ProductModel $product, ?array $snapshot = null): bool
     {
         $latest = $this->latest($product);
 
@@ -139,7 +183,7 @@ final class Versions
             return true;
         }
 
-        $changes = $this->diff($latest->snapshot, $this->snapshot($product));
+        $changes = $this->diff($latest->snapshot, $snapshot ?? $this->snapshot($product));
         unset($changes['status']);
 
         return $changes !== [];

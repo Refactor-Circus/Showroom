@@ -7,6 +7,7 @@ namespace RefactorCircus\Showroom\Domains\Attribute\Events;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 use RefactorCircus\Keystone\Contracts\ActionStartingEvent;
+use RefactorCircus\Showroom\Domains\Attribute\Data\CreateAttributeOptionData;
 use RefactorCircus\Showroom\Domains\Attribute\Models\AttributeModel;
 
 /**
@@ -17,11 +18,8 @@ final class AttributeOptionCreatingActionEvent implements ActionStartingEvent
     use Dispatchable;
     use SerializesModels;
 
-    /**
-     * @param  array<string, mixed>  $data
-     */
     public function __construct(
         public AttributeModel $attribute,
-        public array $data,
+        public CreateAttributeOptionData $data,
     ) {}
 }

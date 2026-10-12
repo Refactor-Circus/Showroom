@@ -16,11 +16,6 @@ final class ShowProductVersionRequest extends ProductRequest
         return $this->allows('view', $this->product());
     }
 
-    public function rules(): array
-    {
-        return ShowProductVersionAction::rules();
-    }
-
     public function persist(): JsonResponse
     {
         $version = app(ShowProductVersionAction::class)->execute($this->product(), (string) $this->route('version'));

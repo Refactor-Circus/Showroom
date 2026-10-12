@@ -8,6 +8,8 @@ use Illuminate\Support\Facades\Storage;
 use RefactorCircus\Impex\Domains\Channel\Data\OutboundMessage;
 use RefactorCircus\Impex\Impex;
 use RefactorCircus\Showroom\Domains\Asset\Models\AssetModel;
+use RefactorCircus\Showroom\Domains\Transfer\Events\FeedDeliveredActionEvent;
+use RefactorCircus\Showroom\Domains\Transfer\Events\FeedDeliveringActionEvent;
 use RuntimeException;
 
 /**
@@ -27,6 +29,20 @@ final class DeliverFeed
      * @return array{status: int|null}
      */
     public function execute(string $asset, string $url, string $channel, string $runId, ?string $through = null): array
+    {
+        FeedDeliveringActionEvent::dispatch($asset, $url, $channel, $runId, $through);
+
+        $result = $this->perform($asset, $url, $channel, $runId, $through);
+
+        FeedDeliveredActionEvent::dispatch($asset, $runId, $result['status']);
+
+        return $result;
+    }
+
+    /**
+     * @return array{status: int|null}
+     */
+    private function perform(string $asset, string $url, string $channel, string $runId, ?string $through): array
     {
         $file = AssetModel::query()->where('code', $asset)->firstOrFail();
         $stream = Storage::disk($file->disk)->readStream($file->path);

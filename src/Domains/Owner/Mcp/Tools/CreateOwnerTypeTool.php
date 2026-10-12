@@ -10,6 +10,7 @@ use Laravel\Mcp\ResponseFactory;
 use Laravel\Mcp\Server\Attributes\Description;
 use RefactorCircus\Keystone\Mcp\Tool;
 use RefactorCircus\Showroom\Domains\Owner\Mcp\Requests\CreateOwnerTypeMcpRequest;
+use RefactorCircus\Showroom\Domains\Owner\Resources\OwnerTypeResource;
 
 #[Description('Create an owner type and the rules for where its owners sit in an ownership chain.')]
 final class CreateOwnerTypeTool extends Tool
@@ -29,5 +30,10 @@ final class CreateOwnerTypeTool extends Tool
             'owns_products' => $schema->boolean()->description('Whether products and product models may be assigned to owners of this type. Default true.'),
             'sort_order' => $schema->integer()->description('Position in listings, lowest first.')->min(0),
         ];
+    }
+
+    public function outputSchema(JsonSchema $schema): array
+    {
+        return OwnerTypeResource::structuredSchema($schema);
     }
 }

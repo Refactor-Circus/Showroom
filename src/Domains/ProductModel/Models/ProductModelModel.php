@@ -23,6 +23,7 @@ use RefactorCircus\Showroom\Domains\Category\Models\CategoryModel;
 use RefactorCircus\Showroom\Domains\Family\Models\FamilyVariantModel;
 use RefactorCircus\Showroom\Domains\Owner\Models\OwnerModel;
 use RefactorCircus\Showroom\Domains\Product\Models\ProductModel;
+use RefactorCircus\Showroom\Support\Tables;
 
 /**
  * The shared part of a group of variant products: "Classic tee" holds the
@@ -53,7 +54,10 @@ final class ProductModelModel extends Model
     use HasUlids;
     use HasValues;
 
-    protected $table = 'showroom_product_models';
+    public function getTable(): string
+    {
+        return Tables::name('product_models');
+    }
 
     protected $fillable = [
         'code',
@@ -116,7 +120,7 @@ final class ProductModelModel extends Model
      */
     public function categories(): BelongsToMany
     {
-        return $this->belongsToMany(CategoryModel::class, 'showroom_category_product_model', 'product_model_id', 'category_id')->orderBy('code');
+        return $this->belongsToMany(CategoryModel::class, Tables::name('category_product_model'), 'product_model_id', 'category_id')->orderBy('code');
     }
 
     /**

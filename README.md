@@ -36,6 +36,8 @@ php artisan vendor:publish --tag="showroom-lang"
 
 `--tag="showroom"` publishes all of them at once.
 
+Every table can be renamed before migrating: publish the config and set `showroom.tables` (keys such as `products`, `product_models`, `categories`; a published config that lists only some keeps the defaults for the rest). Migrations, models, validation rules and queries all read it.
+
 ## Attributes
 
 Attributes are the typed characteristics products are described with, defined at runtime rather than in migrations. Every record is addressed by its **code**, which never changes once created; an attribute's **type** never changes either.
@@ -60,14 +62,16 @@ Attributes are the typed characteristics products are described with, defined at
 ```php
 use RefactorCircus\Showroom\Domains\Attribute\Actions\CreateAttributeAction;
 use RefactorCircus\Showroom\Domains\Attribute\Actions\CreateAttributeOptionAction;
+use RefactorCircus\Showroom\Domains\Attribute\Data\CreateAttributeData;
+use RefactorCircus\Showroom\Domains\Attribute\Data\CreateAttributeOptionData;
 
-$color = app(CreateAttributeAction::class)->execute([
+$color = app(CreateAttributeAction::class)->execute(CreateAttributeData::from([
     'code' => 'color',
     'type' => 'select',
     'labels' => ['en' => 'Color'],
-]);
+]));
 
-app(CreateAttributeOptionAction::class)->execute($color, ['code' => 'red', 'labels' => ['en' => 'Red']]);
+app(CreateAttributeOptionAction::class)->execute($color, CreateAttributeOptionData::from(['code' => 'red', 'labels' => ['en' => 'Red']]));
 ```
 
 See [docs/02-attributes.md](docs/02-attributes.md).
@@ -78,8 +82,9 @@ A family (attribute set) is a kind of product: which attributes it has, which ar
 
 ```php
 use RefactorCircus\Showroom\Domains\Family\Actions\CreateFamilyAction;
+use RefactorCircus\Showroom\Domains\Family\Data\CreateFamilyData;
 
-app(CreateFamilyAction::class)->execute([
+app(CreateFamilyAction::class)->execute(CreateFamilyData::from([
     'code' => 'shoes',
     'labels' => ['en' => 'Shoes'],
     'attributes' => [
@@ -88,7 +93,7 @@ app(CreateFamilyAction::class)->execute([
         ['attribute' => 'color'],
     ],
     'label_attribute' => 'name',
-]);
+]));
 ```
 
 On update, `attributes` replaces the whole list. See [docs/03-families.md](docs/03-families.md).
@@ -99,8 +104,9 @@ Products are identified by their `identifier` (SKU) and hold values as lists of 
 
 ```php
 use RefactorCircus\Showroom\Domains\Product\Actions\CreateProductAction;
+use RefactorCircus\Showroom\Domains\Product\Data\CreateProductData;
 
-app(CreateProductAction::class)->execute([
+app(CreateProductAction::class)->execute(CreateProductData::from([
     'identifier' => 'TEE-001',
     'family' => 'shirts',
     'values' => [
@@ -108,7 +114,7 @@ app(CreateProductAction::class)->execute([
         'color' => [['locale' => null, 'scope' => null, 'data' => 'red']],
         'weight' => [['locale' => null, 'scope' => null, 'data' => ['amount' => '180', 'unit' => 'gram']]],
     ],
-]);
+]));
 ```
 
 A **family variant** says how a family's products vary — one or two levels of axes such as color, then size. A root **product model** holds the common values, sub-models the level-1 values, and **variant products** the last level, inheriting the rest. See [docs/04-products.md](docs/04-products.md).
@@ -120,12 +126,14 @@ Owners form chains of runtime-defined owner types — vendor → series → prod
 ```php
 use RefactorCircus\Showroom\Domains\Owner\Actions\CreateOwnerAction;
 use RefactorCircus\Showroom\Domains\Owner\Actions\CreateOwnerTypeAction;
+use RefactorCircus\Showroom\Domains\Owner\Data\CreateOwnerData;
+use RefactorCircus\Showroom\Domains\Owner\Data\CreateOwnerTypeData;
 
-app(CreateOwnerTypeAction::class)->execute(['code' => 'vendor']);
-app(CreateOwnerTypeAction::class)->execute(['code' => 'series', 'parent_types' => ['vendor'], 'can_be_root' => false]);
+app(CreateOwnerTypeAction::class)->execute(CreateOwnerTypeData::from(['code' => 'vendor']));
+app(CreateOwnerTypeAction::class)->execute(CreateOwnerTypeData::from(['code' => 'series', 'parent_types' => ['vendor'], 'can_be_root' => false]));
 
-app(CreateOwnerAction::class)->execute(['code' => 'acme', 'type' => 'vendor']);
-app(CreateOwnerAction::class)->execute(['code' => 'classic', 'type' => 'series', 'parent' => 'acme']);
+app(CreateOwnerAction::class)->execute(CreateOwnerData::from(['code' => 'acme', 'type' => 'vendor']));
+app(CreateOwnerAction::class)->execute(CreateOwnerData::from(['code' => 'classic', 'type' => 'series', 'parent' => 'acme']));
 ```
 
 `GET /showroom/products?owner=acme` finds products owned by Acme or anything beneath it. See [docs/06-ownership.md](docs/06-ownership.md).
@@ -136,9 +144,10 @@ Categories form independent trees (a root category is a tree). Products and prod
 
 ```php
 use RefactorCircus\Showroom\Domains\Category\Actions\CreateCategoryAction;
+use RefactorCircus\Showroom\Domains\Category\Data\CreateCategoryData;
 
-app(CreateCategoryAction::class)->execute(['code' => 'master']);
-app(CreateCategoryAction::class)->execute(['code' => 'shirts', 'parent' => 'master']);
+app(CreateCategoryAction::class)->execute(CreateCategoryData::from(['code' => 'master']));
+app(CreateCategoryAction::class)->execute(CreateCategoryData::from(['code' => 'shirts', 'parent' => 'master']));
 ```
 
 `GET /showroom/products?category=master` finds everything filed anywhere in that tree. See [docs/07-taxonomy.md](docs/07-taxonomy.md).
@@ -260,11 +269,11 @@ Routes live under `/showroom` with the `api` middleware by default (`showroom.ro
 | `GET` / `PATCH` / `DELETE` | `/showroom/owners/{code}` | Show / update or move / delete |
 | `GET` / `POST` | `/showroom/products` | Search / create |
 | `GET` / `PATCH` / `DELETE` | `/showroom/products/{identifier}` | Show / update / delete |
-| `GET` | `/showroom/history` | Audit history, newest first (needs [refactor-circus/keen](https://github.com/Refactor-Circus/Keen); `404` without it) |
+| `GET` | `/showroom/history` | Audit history, newest first (needs [refactor-circus/keen](https://github.com/Refactor-Circus/Keen) and `showroom.audit.enabled`; `404` without it) |
 
 Product search is page-numbered; other listings are cursor paginated (`cursor`, `per_page`). A broken catalog rule — deleting a non-empty group, adding options to a text attribute — answers `409` with a message. See [docs/09-api.md](docs/09-api.md).
 
-With `showroom.authorization` on (the default), every call - and every Atrium screen - requires an authenticated user and goes through the policies in `showroom.policies`. The bundled policies let any authenticated user manage the catalog; point a model at your own class to restrict it.
+With `showroom.authorization` on (the default), every call - and every Atrium screen - requires an authenticated user and goes through the policies in `showroom.policies`. The bundled policies let any authenticated user manage the catalog; point a model at your own class to restrict it. Every model has one: associations, versions and completeness scores follow the policy of the product (or product model) they belong to, and the searchable product Scout indexes follows the product policy.
 
 ## MCP
 
@@ -299,8 +308,8 @@ With `showroom.authorization` on, the screens ask the policies exactly as the AP
 With [refactor-circus/pennantplus](https://github.com/Refactor-Circus/PennantPlus) installed, the `ShowroomSupportFeature` Pennant feature switches Showroom in Atrium on and off as a whole - navigation, widgets, settings, search and pages (which answer 404). It is on until its global value is set, and only the global value counts:
 
 ```php
-use RefactorCircus\Showroom\Atrium\Features\ShowroomSupportFeature;
 use Laravel\Pennant\Feature;
+use RefactorCircus\Showroom\Atrium\Features\ShowroomSupportFeature;
 
 Feature::for(null)->deactivate(ShowroomSupportFeature::class);
 ```
@@ -337,7 +346,7 @@ Showroom stands on [refactor-circus/keystone](https://github.com/Refactor-Circus
 ## Events
 
 - **Model events:** every Eloquent hook of every model dispatches its own class, such as `RefactorCircus\Showroom\Domains\Attribute\Events\AttributeCreatedEvent`. Listen to `RefactorCircus\Keystone\Contracts\ModelLifecycleEvent` for all of them.
-- **Action events:** every Action dispatches a starting and a finished event, such as `AttributeCreatingActionEvent` and `AttributeCreatedActionEvent`. Finished events dispatch after the surrounding transaction commits, and never when the Action throws. Listen to `ActionStartingEvent` or `ActionFinishedEvent` for a whole family.
+- **Action events:** every Action dispatches a starting and a finished event, such as `AttributeCreatingActionEvent` and `AttributeCreatedActionEvent`. Every Action writes inside a database transaction; finished events dispatch after it commits, and never when the Action throws or the transaction rolls back. The Impex flow steps (importing a row, exporting pages, joining an export, delivering a feed) fire the same pair. Listen to `ActionStartingEvent` or `ActionFinishedEvent` for a whole family.
 
 ## Roadmap
 

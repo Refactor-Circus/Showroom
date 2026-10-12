@@ -14,11 +14,6 @@ final class DeleteLocaleRequest extends LocaleRequest
         return $this->allows('delete', $this->locale());
     }
 
-    public function rules(): array
-    {
-        return DeleteLocaleAction::rules();
-    }
-
     public function persist(): JsonResponse
     {
         app(DeleteLocaleAction::class)->execute($this->locale());

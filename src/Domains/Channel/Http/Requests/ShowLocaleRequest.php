@@ -15,11 +15,6 @@ final class ShowLocaleRequest extends LocaleRequest
         return $this->allows('view', $this->locale());
     }
 
-    public function rules(): array
-    {
-        return ShowLocaleAction::rules();
-    }
-
     public function persist(): JsonResponse
     {
         $locale = app(ShowLocaleAction::class)->execute($this->locale());

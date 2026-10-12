@@ -15,11 +15,6 @@ final class ShowCategoryRequest extends CategoryRequest
         return $this->allows('view', $this->category());
     }
 
-    public function rules(): array
-    {
-        return ShowCategoryAction::rules();
-    }
-
     public function persist(): JsonResponse
     {
         $category = app(ShowCategoryAction::class)->execute($this->category());

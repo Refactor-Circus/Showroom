@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace RefactorCircus\Showroom\Domains\Association\Mcp\Requests;
 
-use Laravel\Mcp\Response;
 use Laravel\Mcp\ResponseFactory;
 use RefactorCircus\Keystone\Mcp\Requests\Request;
 use RefactorCircus\Showroom\Domains\Association\Actions\CreateAssociationTypeAction;
+use RefactorCircus\Showroom\Domains\Association\Data\CreateAssociationTypeData;
 use RefactorCircus\Showroom\Domains\Association\Models\AssociationTypeModel;
 use RefactorCircus\Showroom\Domains\Association\Resources\AssociationTypeResource;
 
@@ -20,13 +20,13 @@ final class CreateAssociationTypeMcpRequest extends Request
 
     protected function rules(): array
     {
-        return CreateAssociationTypeAction::rules();
+        return CreateAssociationTypeData::rules();
     }
 
     protected function handle(array $validated): ResponseFactory
     {
-        $associationType = app(CreateAssociationTypeAction::class)->execute($validated);
+        $associationType = app(CreateAssociationTypeAction::class)->execute(CreateAssociationTypeData::fromValidated($validated));
 
-        return Response::structured((new AssociationTypeResource($associationType))->resolve());
+        return (new AssociationTypeResource($associationType))->toStructuredResponse();
     }
 }

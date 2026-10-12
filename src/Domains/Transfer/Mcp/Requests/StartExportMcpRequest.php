@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace RefactorCircus\Showroom\Domains\Transfer\Mcp\Requests;
 
-use Laravel\Mcp\Response;
 use Laravel\Mcp\ResponseFactory;
 use RefactorCircus\Impex\Domains\Run\Resources\RunResource;
 use RefactorCircus\Keystone\Mcp\Requests\Request;
 use RefactorCircus\Showroom\Domains\Product\Models\ProductModel;
 use RefactorCircus\Showroom\Domains\Transfer\Actions\StartExportAction;
+use RefactorCircus\Showroom\Domains\Transfer\Data\StartExportData;
 
 final class StartExportMcpRequest extends Request
 {
@@ -20,13 +20,13 @@ final class StartExportMcpRequest extends Request
 
     protected function rules(): array
     {
-        return StartExportAction::rules();
+        return StartExportData::rules();
     }
 
     protected function handle(array $validated): ResponseFactory
     {
-        $run = app(StartExportAction::class)->execute($validated);
+        $run = app(StartExportAction::class)->execute(StartExportData::fromValidated($validated));
 
-        return Response::structured((new RunResource($run))->resolve());
+        return (new RunResource($run))->toStructuredResponse();
     }
 }

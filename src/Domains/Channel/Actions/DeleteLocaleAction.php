@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace RefactorCircus\Showroom\Domains\Channel\Actions;
 
+use Illuminate\Support\Facades\DB;
 use RefactorCircus\Showroom\Domains\Channel\Events\LocaleDeletedActionEvent;
 use RefactorCircus\Showroom\Domains\Channel\Events\LocaleDeletingActionEvent;
 use RefactorCircus\Showroom\Domains\Channel\Models\LocaleModel;
@@ -12,14 +13,6 @@ use RefactorCircus\Showroom\Jobs\PurgeValueSlots;
 
 final class DeleteLocaleAction
 {
-    /**
-     * @return array<string, mixed>
-     */
-    public static function rules(): array
-    {
-        return [];
-    }
-
     public function execute(LocaleModel $locale): LocaleModel
     {
         LocaleDeletingActionEvent::dispatch($locale);
@@ -37,17 +30,19 @@ final class DeleteLocaleAction
      */
     private function perform(LocaleModel $locale): LocaleModel
     {
-        /** @var array<int, string> $channels */
-        $channels = $locale->channels()->pluck('code')->all();
+        return DB::transaction(function () use ($locale): LocaleModel {
+            /** @var array<int, string> $channels */
+            $channels = $locale->channels()->pluck('code')->all();
 
-        if ($channels !== []) {
-            throw ModelInUseException::localeInChannels($locale->code, $channels);
-        }
+            if ($channels !== []) {
+                throw ModelInUseException::localeInChannels($locale->code, $channels);
+            }
 
-        $locale->delete();
+            $locale->delete();
 
-        PurgeValueSlots::dispatch(locale: $locale->code)->afterCommit();
+            PurgeValueSlots::dispatch(locale: $locale->code)->afterCommit();
 
-        return $locale;
+            return $locale;
+        });
     }
 }

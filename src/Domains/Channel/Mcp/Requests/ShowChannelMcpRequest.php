@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace RefactorCircus\Showroom\Domains\Channel\Mcp\Requests;
 
-use Laravel\Mcp\Response;
 use Laravel\Mcp\ResponseFactory;
 use RefactorCircus\Showroom\Domains\Channel\Actions\ShowChannelAction;
 use RefactorCircus\Showroom\Domains\Channel\Resources\ChannelResource;
@@ -18,7 +17,7 @@ final class ShowChannelMcpRequest extends ChannelRequest
 
     protected function rules(): array
     {
-        return ShowChannelAction::rules() + [
+        return [
             'channel' => ['required', 'string', 'max:100'],
         ];
     }
@@ -27,6 +26,6 @@ final class ShowChannelMcpRequest extends ChannelRequest
     {
         $channel = app(ShowChannelAction::class)->execute($this->channel());
 
-        return Response::structured((new ChannelResource($channel))->resolve());
+        return (new ChannelResource($channel))->toStructuredResponse();
     }
 }

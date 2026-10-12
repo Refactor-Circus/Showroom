@@ -10,6 +10,7 @@ use Laravel\Mcp\ResponseFactory;
 use Laravel\Mcp\Server\Attributes\Description;
 use RefactorCircus\Keystone\Mcp\Tool;
 use RefactorCircus\Showroom\Domains\Family\Mcp\Requests\CreateFamilyMcpRequest;
+use RefactorCircus\Showroom\Domains\Family\Resources\FamilyResource;
 
 #[Description('Create a family: a kind of product, the attributes it has, and which of them are required. Attributes must exist first (create-attribute-tool).')]
 final class CreateFamilyTool extends Tool
@@ -28,5 +29,10 @@ final class CreateFamilyTool extends Tool
             'label_attribute' => $schema->string()->description('Code of the text attribute, in this family, whose value is a product\'s display label. Null for none.'),
             'sort_order' => $schema->integer()->description('Position in listings, lowest first.')->min(0),
         ];
+    }
+
+    public function outputSchema(JsonSchema $schema): array
+    {
+        return FamilyResource::structuredSchema($schema);
     }
 }

@@ -41,8 +41,8 @@ final class ScoutEngine implements SearchEngine
         /** @var Collection<int, SearchableProductModel> $models */
         $models = new Collection;
 
-        foreach ($products as $product) {
-            $models->push(SearchableProductModel::fromDocument(ProductDocument::from($product)));
+        foreach (ProductDocument::many($products) as $document) {
+            $models->push(SearchableProductModel::fromDocument($document));
         }
 
         if ($models->isNotEmpty()) {

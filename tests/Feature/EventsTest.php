@@ -7,9 +7,14 @@ use RefactorCircus\Keystone\Contracts\ActionFinishedEvent;
 use RefactorCircus\Keystone\Contracts\ActionStartingEvent;
 use RefactorCircus\Keystone\Contracts\ModelLifecycleEvent;
 use RefactorCircus\Showroom\Domains\Attribute\Actions\CreateAttributeAction;
+use RefactorCircus\Showroom\Domains\Attribute\Actions\CreateAttributeGroupAction;
 use RefactorCircus\Showroom\Domains\Attribute\Actions\DeleteAttributeGroupAction;
+use RefactorCircus\Showroom\Domains\Attribute\Data\CreateAttributeData;
+use RefactorCircus\Showroom\Domains\Attribute\Data\CreateAttributeGroupData;
 use RefactorCircus\Showroom\Domains\Attribute\Events\AttributeCreatedActionEvent;
 use RefactorCircus\Showroom\Domains\Attribute\Events\AttributeCreatingActionEvent;
+use RefactorCircus\Showroom\Domains\Attribute\Events\AttributeGroupCreatedActionEvent;
+use RefactorCircus\Showroom\Domains\Attribute\Events\AttributeGroupCreatedEvent;
 use RefactorCircus\Showroom\Domains\Attribute\Events\AttributeGroupDeletedActionEvent;
 use RefactorCircus\Showroom\Domains\Attribute\Events\AttributeGroupDeletingActionEvent;
 use RefactorCircus\Showroom\Domains\Attribute\Exceptions\AttributeGroupNotEmptyException;
@@ -39,8 +44,7 @@ it('maps every Eloquent hook of every model to its own event', function (): void
 
     $models = array_map(
         fn (string $path): string => 'RefactorCircus\\Showroom\\Domains\\'.basename(dirname($path, 2)).'\\Models\\'.basename($path, '.php'),
-        // The Scout search model only reads the products table; it fires no events of its own.
-        array_filter(glob(dirname(__DIR__, 2).'/src/Domains/*/Models/*.php') ?: [], fn (string $path): bool => basename($path) !== 'SearchableProductModel.php'),
+        glob(dirname(__DIR__, 2).'/src/Domains/*/Models/*.php') ?: [],
     );
 
     foreach ($models as $class) {
@@ -51,7 +55,7 @@ it('maps every Eloquent hook of every model to its own event', function (): void
             ->not->toContain(false);
     }
 
-    expect($models)->toHaveCount(17);
+    expect($models)->toHaveCount(18);
 });
 
 it('fires one starting and one finished event for every Action', function (): void {
@@ -79,10 +83,11 @@ it('fires the starting and finished events around an action', function (): void 
     $starting = recordShowroomEvents(ActionStartingEvent::class);
     $finished = recordShowroomEvents(ActionFinishedEvent::class);
 
-    $attribute = app(CreateAttributeAction::class)->execute(['code' => 'color', 'type' => 'select']);
+    $attribute = app(CreateAttributeAction::class)->execute(CreateAttributeData::from(['code' => 'color', 'type' => 'select']));
 
     expect($starting->getArrayCopy())->toHaveCount(1)
         ->and($starting[0])->toBeInstanceOf(AttributeCreatingActionEvent::class)
+        ->and($starting[0]->data->code)->toBe('color')
         ->and($finished[0])->toBeInstanceOf(AttributeCreatedActionEvent::class)
         ->and($finished[0]->attribute->is($attribute))->toBeTrue();
 });
@@ -97,6 +102,19 @@ it('fires no finished event when an action fails', function (): void {
 
     Event::assertDispatched(AttributeGroupDeletingActionEvent::class);
     Event::assertNotDispatched(AttributeGroupDeletedActionEvent::class);
+});
+
+it('rolls back a write that fails inside its transaction, and fires no finished event', function (): void {
+    $finished = recordShowroomEvents(AttributeGroupCreatedActionEvent::class);
+
+    // The row is written, then the transaction fails.
+    Event::listen(AttributeGroupCreatedEvent::class, function (): void {
+        throw new RuntimeException('Refused.');
+    });
+
+    expect(fn () => app(CreateAttributeGroupAction::class)->execute(new CreateAttributeGroupData(code: 'marketing')))->toThrow(RuntimeException::class, 'Refused.')
+        ->and(AttributeGroupModel::query()->count())->toBe(0)
+        ->and($finished->getArrayCopy())->toBe([]);
 });
 
 it('fires model events as the catalog changes', function (): void {

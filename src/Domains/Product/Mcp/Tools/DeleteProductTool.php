@@ -25,4 +25,12 @@ final class DeleteProductTool extends Tool
             'product' => $schema->string()->description('The product identifier.')->required(),
         ];
     }
+
+    public function outputSchema(JsonSchema $schema): array
+    {
+        return [
+            'deleted' => $schema->boolean()->required(),
+            'identifier' => $schema->string()->required(),
+        ];
+    }
 }

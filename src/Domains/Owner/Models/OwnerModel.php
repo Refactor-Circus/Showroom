@@ -17,6 +17,7 @@ use RefactorCircus\Showroom\Domains\Product\Models\ProductModel;
 use RefactorCircus\Showroom\Domains\ProductModel\Models\ProductModelModel;
 use RefactorCircus\Showroom\Support\Models\Concerns\HasLabels;
 use RefactorCircus\Showroom\Support\Models\Concerns\HasPath;
+use RefactorCircus\Showroom\Support\Tables;
 
 /**
  * One node of an ownership chain: "Acme" the vendor, "Classic" its series.
@@ -46,7 +47,10 @@ final class OwnerModel extends Model
     use HasPath;
     use HasUlids;
 
-    protected $table = 'showroom_owners';
+    public function getTable(): string
+    {
+        return Tables::name('owners');
+    }
 
     protected $fillable = [
         'owner_type_id',

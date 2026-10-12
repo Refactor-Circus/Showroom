@@ -6,6 +6,7 @@ namespace RefactorCircus\Showroom\Jobs;
 
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use RefactorCircus\Showroom\Domains\Product\Models\ProductModel;
@@ -29,23 +30,32 @@ final class PurgeValueSlots implements ShouldQueue
 
     public function handle(ProductIndex $index): void
     {
-        $affected = [];
-
         // Slots can sit under any attribute, so every record is read; this
-        // runs only when a locale or channel is deleted.
-        foreach (ProductModel::query()->whereNotNull('values')->lazyById(200) as $product) {
-            if ($this->purge($product)) {
-                $affected[] = $product->id;
-            }
-        }
+        // runs only when a locale or channel is deleted. Each chunk queues
+        // its own syncs, so memory stays flat however large the catalogue.
+        ProductModel::query()->whereNotNull('values')->chunkById(200, function (Collection $products) use ($index): void {
+            $affected = [];
 
-        foreach (ProductModelModel::query()->whereNotNull('values')->lazyById(200) as $model) {
-            if ($this->purge($model)) {
-                $affected = [...$affected, ...$index->productIdsUnder($model)];
+            foreach ($products as $product) {
+                if ($this->purge($product)) {
+                    $affected[] = $product->id;
+                }
             }
-        }
 
-        $index->queue($affected);
+            $index->queue($affected);
+        });
+
+        ProductModelModel::query()->whereNotNull('values')->chunkById(200, function (Collection $models) use ($index): void {
+            $affected = [];
+
+            foreach ($models as $model) {
+                if ($this->purge($model)) {
+                    $affected[] = $index->productIdsUnder($model);
+                }
+            }
+
+            $index->queue(array_merge(...$affected));
+        });
     }
 
     /**

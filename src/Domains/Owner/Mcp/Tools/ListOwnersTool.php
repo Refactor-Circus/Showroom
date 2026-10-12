@@ -9,7 +9,9 @@ use Laravel\Mcp\Response;
 use Laravel\Mcp\ResponseFactory;
 use Laravel\Mcp\Server\Attributes\Description;
 use RefactorCircus\Keystone\Mcp\Tool;
+use RefactorCircus\Showroom\Domains\Owner\Data\ListOwnersData;
 use RefactorCircus\Showroom\Domains\Owner\Mcp\Requests\ListOwnersMcpRequest;
+use RefactorCircus\Showroom\Domains\Owner\Resources\OwnerResource;
 
 #[Description('List owners by type, parent, or everything under an owner. Cursor paginated.')]
 final class ListOwnersTool extends Tool
@@ -27,8 +29,11 @@ final class ListOwnersTool extends Tool
             'under' => $schema->string()->description('Everything beneath this owner code, at any depth.'),
             'roots' => $schema->boolean()->description('Only root owners.'),
             'search' => $schema->string()->description('Match against the code or any label.'),
-            'cursor' => $schema->string()->description('Cursor from a previous page (next_cursor).'),
-            'per_page' => $schema->integer()->description('Results per page.')->min(1),
-        ];
+        ] + ListOwnersData::pagination()->schema($schema);
+    }
+
+    public function outputSchema(JsonSchema $schema): array
+    {
+        return OwnerResource::collectionSchema($schema, ListOwnersData::pagination());
     }
 }

@@ -15,6 +15,9 @@ use RefactorCircus\Showroom\Domains\Owner\Actions\DeleteOwnerTypeAction;
 use RefactorCircus\Showroom\Domains\Owner\Actions\ListOwnerTypesAction;
 use RefactorCircus\Showroom\Domains\Owner\Actions\ShowOwnerTypeAction;
 use RefactorCircus\Showroom\Domains\Owner\Actions\UpdateOwnerTypeAction;
+use RefactorCircus\Showroom\Domains\Owner\Data\CreateOwnerTypeData;
+use RefactorCircus\Showroom\Domains\Owner\Data\ListOwnerTypesData;
+use RefactorCircus\Showroom\Domains\Owner\Data\UpdateOwnerTypeData;
 use RefactorCircus\Showroom\Domains\Owner\Models\OwnerTypeModel;
 use RefactorCircus\Showroom\Exceptions\ShowroomException;
 
@@ -30,7 +33,7 @@ final class OwnerTypeUiController
         $view = 'showroom::ui.owner-types.index';
 
         return view($view, [
-            'types' => app(ListOwnerTypesAction::class)->execute($request->validate(ListOwnerTypesAction::rules()))->withQueryString(),
+            'types' => app(ListOwnerTypesAction::class)->execute(ListOwnerTypesData::from($request->query()))->withQueryString(),
             'all' => OwnerTypeModel::query()->orderBy('code')->pluck('code')->all(),
         ]);
     }
@@ -40,7 +43,7 @@ final class OwnerTypeUiController
         $this->authorizeScreen('create', OwnerTypeModel::class);
 
         $type = app(CreateOwnerTypeAction::class)->execute(
-            Labels::fromForm(Validator::validate($this->fromForm($request), CreateOwnerTypeAction::rules())),
+            CreateOwnerTypeData::fromValidated(Labels::fromForm(Validator::validate($this->fromForm($request), CreateOwnerTypeData::rules()))),
         );
 
         return redirect()
@@ -67,7 +70,7 @@ final class OwnerTypeUiController
 
         app(UpdateOwnerTypeAction::class)->execute(
             $ownerType,
-            Labels::fromForm(Validator::validate($this->fromForm($request), UpdateOwnerTypeAction::rules()), $ownerType->labels),
+            UpdateOwnerTypeData::fromValidated(Labels::fromForm(Validator::validate($this->fromForm($request), UpdateOwnerTypeData::rules()), $ownerType->labels)),
         );
 
         return redirect()

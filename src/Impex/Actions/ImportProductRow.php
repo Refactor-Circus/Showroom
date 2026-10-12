@@ -7,7 +7,11 @@ namespace RefactorCircus\Showroom\Impex\Actions;
 use Illuminate\Support\Facades\Validator;
 use RefactorCircus\Showroom\Domains\Product\Actions\CreateProductAction;
 use RefactorCircus\Showroom\Domains\Product\Actions\UpdateProductAction;
+use RefactorCircus\Showroom\Domains\Product\Data\CreateProductData;
+use RefactorCircus\Showroom\Domains\Product\Data\UpdateProductData;
 use RefactorCircus\Showroom\Domains\Product\Models\ProductModel;
+use RefactorCircus\Showroom\Domains\Transfer\Events\ProductRowImportedActionEvent;
+use RefactorCircus\Showroom\Domains\Transfer\Events\ProductRowImportingActionEvent;
 use RuntimeException;
 
 /**
@@ -22,6 +26,21 @@ final class ImportProductRow
      * @return array{identifier: string, result: string}
      */
     public function execute(array $item): array
+    {
+        ProductRowImportingActionEvent::dispatch($item);
+
+        $result = $this->perform($item);
+
+        ProductRowImportedActionEvent::dispatch($result['identifier'], $result['result']);
+
+        return $result;
+    }
+
+    /**
+     * @param  array{mode?: string, record?: array<string, mixed>}  $item
+     * @return array{identifier: string, result: string}
+     */
+    private function perform(array $item): array
     {
         $record = $item['record'] ?? [];
         $mode = $item['mode'] ?? 'upsert';
@@ -38,7 +57,7 @@ final class ImportProductRow
                 return ['identifier' => $identifier, 'result' => 'skipped'];
             }
 
-            app(CreateProductAction::class)->execute($this->validate($record, CreateProductAction::rules()));
+            app(CreateProductAction::class)->execute(CreateProductData::fromValidated($this->validate($record, CreateProductData::rules())));
 
             return ['identifier' => $identifier, 'result' => 'created'];
         }
@@ -54,7 +73,7 @@ final class ImportProductRow
             unset($record['family'], $record['owner']);
         }
 
-        app(UpdateProductAction::class)->execute($product, $this->validate($record, UpdateProductAction::rules()));
+        app(UpdateProductAction::class)->execute($product, UpdateProductData::fromValidated($this->validate($record, UpdateProductData::rules())));
 
         return ['identifier' => $identifier, 'result' => 'updated'];
     }

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace RefactorCircus\Showroom\Domains\Family\Mcp\Requests;
 
-use Laravel\Mcp\Response;
 use Laravel\Mcp\ResponseFactory;
 use RefactorCircus\Showroom\Domains\Family\Actions\ShowFamilyVariantAction;
 use RefactorCircus\Showroom\Domains\Family\Resources\FamilyVariantResource;
@@ -18,7 +17,7 @@ final class ShowFamilyVariantMcpRequest extends FamilyVariantRequest
 
     protected function rules(): array
     {
-        return ShowFamilyVariantAction::rules() + [
+        return [
             'family_variant' => ['required', 'string', 'max:191'],
         ];
     }
@@ -27,6 +26,6 @@ final class ShowFamilyVariantMcpRequest extends FamilyVariantRequest
     {
         $familyVariant = app(ShowFamilyVariantAction::class)->execute($this->familyVariant());
 
-        return Response::structured((new FamilyVariantResource($familyVariant))->resolve());
+        return (new FamilyVariantResource($familyVariant))->toStructuredResponse();
     }
 }

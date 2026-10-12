@@ -25,4 +25,12 @@ final class DeleteAttributeGroupTool extends Tool
             'group' => $schema->string()->description('The attribute group code.')->required(),
         ];
     }
+
+    public function outputSchema(JsonSchema $schema): array
+    {
+        return [
+            'deleted' => $schema->boolean()->required(),
+            'code' => $schema->string()->required(),
+        ];
+    }
 }

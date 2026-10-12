@@ -14,11 +14,6 @@ final class DeleteAttributeOptionRequest extends AttributeOptionRequest
         return $this->allows('delete', $this->option());
     }
 
-    public function rules(): array
-    {
-        return DeleteAttributeOptionAction::rules();
-    }
-
     public function persist(): JsonResponse
     {
         app(DeleteAttributeOptionAction::class)->execute($this->option());

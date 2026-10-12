@@ -9,7 +9,9 @@ use Laravel\Mcp\Response;
 use Laravel\Mcp\ResponseFactory;
 use Laravel\Mcp\Server\Attributes\Description;
 use RefactorCircus\Keystone\Mcp\Tool;
+use RefactorCircus\Showroom\Domains\Family\Data\ListFamilyVariantsData;
 use RefactorCircus\Showroom\Domains\Family\Mcp\Requests\ListFamilyVariantsMcpRequest;
+use RefactorCircus\Showroom\Domains\Family\Resources\FamilyVariantResource;
 
 #[Description('List family variants: how the products of a family vary (by color, then size). Cursor paginated.')]
 final class ListFamilyVariantsTool extends Tool
@@ -24,8 +26,11 @@ final class ListFamilyVariantsTool extends Tool
         return [
             'family' => $schema->string()->description('Only this family.'),
             'search' => $schema->string()->description('Match against the code.'),
-            'cursor' => $schema->string()->description('Cursor from a previous page (next_cursor).'),
-            'per_page' => $schema->integer()->description('Results per page.')->min(1),
-        ];
+        ] + ListFamilyVariantsData::pagination()->schema($schema);
+    }
+
+    public function outputSchema(JsonSchema $schema): array
+    {
+        return FamilyVariantResource::collectionSchema($schema, ListFamilyVariantsData::pagination());
     }
 }

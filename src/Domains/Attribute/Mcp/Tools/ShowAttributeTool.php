@@ -10,6 +10,7 @@ use Laravel\Mcp\ResponseFactory;
 use Laravel\Mcp\Server\Attributes\Description;
 use RefactorCircus\Keystone\Mcp\Tool;
 use RefactorCircus\Showroom\Domains\Attribute\Mcp\Requests\ShowAttributeMcpRequest;
+use RefactorCircus\Showroom\Domains\Attribute\Resources\AttributeResource;
 
 #[Description('Show an attribute with its group, settings and, for select and multiselect attributes, its options.')]
 final class ShowAttributeTool extends Tool
@@ -24,5 +25,10 @@ final class ShowAttributeTool extends Tool
         return [
             'attribute' => $schema->string()->description('The attribute code.')->required(),
         ];
+    }
+
+    public function outputSchema(JsonSchema $schema): array
+    {
+        return AttributeResource::structuredSchema($schema);
     }
 }

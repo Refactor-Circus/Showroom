@@ -14,11 +14,6 @@ final class DeleteAttributeGroupRequest extends AttributeGroupRequest
         return $this->allows('delete', $this->group());
     }
 
-    public function rules(): array
-    {
-        return DeleteAttributeGroupAction::rules();
-    }
-
     public function persist(): JsonResponse
     {
         app(DeleteAttributeGroupAction::class)->execute($this->group());

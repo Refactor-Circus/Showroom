@@ -17,7 +17,7 @@ final class DeleteFamilyVariantMcpRequest extends FamilyVariantRequest
 
     protected function rules(): array
     {
-        return DeleteFamilyVariantAction::rules() + [
+        return [
             'family_variant' => ['required', 'string', 'max:191'],
         ];
     }

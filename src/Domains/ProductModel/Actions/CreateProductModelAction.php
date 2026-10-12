@@ -11,6 +11,7 @@ use RefactorCircus\Showroom\Domains\Attribute\Concerns\WritesValues;
 use RefactorCircus\Showroom\Domains\Category\Concerns\AssignsCategories;
 use RefactorCircus\Showroom\Domains\Family\Models\FamilyVariantModel;
 use RefactorCircus\Showroom\Domains\Owner\Concerns\AssignsOwners;
+use RefactorCircus\Showroom\Domains\ProductModel\Data\CreateProductModelData;
 use RefactorCircus\Showroom\Domains\ProductModel\Events\ProductModelCreatedActionEvent;
 use RefactorCircus\Showroom\Domains\ProductModel\Events\ProductModelCreatingActionEvent;
 use RefactorCircus\Showroom\Domains\ProductModel\Models\ProductModelModel;
@@ -22,28 +23,9 @@ final class CreateProductModelAction
     use WritesValues;
 
     /**
-     * A root model names its family variant; a sub-model (level 1 of a
-     * two-level variant) names its parent and takes the parent's variant.
-     *
-     * @return array<string, mixed>
-     */
-    public static function rules(): array
-    {
-        return [
-            'code' => ['required', 'string', 'max:191', 'regex:/^[A-Za-z0-9][A-Za-z0-9_.-]*$/', 'unique:showroom_product_models,code'],
-            'family_variant' => ['required_without:parent', 'nullable', 'string', 'exists:showroom_family_variants,code'],
-            'parent' => ['sometimes', 'nullable', 'string', 'exists:showroom_product_models,code'],
-            'owner' => ['sometimes', 'nullable', 'string', 'exists:showroom_owners,code'],
-            'values' => ['sometimes', 'nullable', 'array'],
-        ] + self::categoryRules() + Associations::rules();
-    }
-
-    /**
-     * @param  array<string, mixed>  $data
-     *
      * @throws ValidationException
      */
-    public function execute(array $data): ProductModelModel
+    public function execute(CreateProductModelData $data): ProductModelModel
     {
         ProductModelCreatingActionEvent::dispatch($data);
 
@@ -54,18 +36,15 @@ final class CreateProductModelAction
         return $result;
     }
 
-    /**
-     * @param  array<string, mixed>  $data
-     */
-    private function perform(array $data): ProductModelModel
+    private function perform(CreateProductModelData $data): ProductModelModel
     {
         return DB::transaction(function () use ($data): ProductModelModel {
-            $parent = is_string($data['parent'] ?? null)
-                ? ProductModelModel::query()->with('familyVariant.family.familyAttributes')->where('code', $data['parent'])->firstOrFail()
+            $parent = $data->parent !== null
+                ? ProductModelModel::query()->with('familyVariant.family.familyAttributes')->where('code', $data->parent)->firstOrFail()
                 : null;
 
             $variant = $parent->familyVariant
-                ?? FamilyVariantModel::query()->with('family.familyAttributes')->where('code', $data['family_variant'])->firstOrFail();
+                ?? FamilyVariantModel::query()->with('family.familyAttributes')->where('code', $data->familyVariant)->firstOrFail();
 
             if ($parent !== null) {
                 if ($parent->parent_id !== null || $variant->levels < 2) {
@@ -74,24 +53,24 @@ final class CreateProductModelAction
                     ]);
                 }
 
-                if (is_string($data['family_variant'] ?? null) && $data['family_variant'] !== $variant->code) {
+                if ($data->familyVariant !== null && $data->familyVariant !== $variant->code) {
                     throw ValidationException::withMessages([
                         'family_variant' => sprintf('A sub-model uses its parent\'s family variant, "%s".', $variant->code),
                     ]);
                 }
             }
 
-            if ($parent !== null && is_string($data['owner'] ?? null)) {
+            if ($parent !== null && $data->owner !== null) {
                 $this->refuseInheritedOwner('sub-model');
             }
 
-            $owner = $parent === null ? $this->ownerFor($data['owner'] ?? null) : null;
+            $owner = $parent === null ? $this->ownerFor($data->owner) : null;
 
             $level = $parent === null ? 0 : 1;
 
             $values = $this->patchValues(
                 [],
-                $data['values'] ?? null,
+                $data->values,
                 $variant->attributesAt($level),
                 sprintf('is not set at level %d of family variant "%s".', $level, $variant->code),
             );
@@ -100,14 +79,14 @@ final class CreateProductModelAction
                 $this->checkAxes($variant, 1, $values, $parent->children()->get()->map(fn (ProductModelModel $sibling): array => $sibling->ownValues()));
             }
 
-            $model = new ProductModelModel(['code' => $data['code'], 'values' => $values]);
+            $model = new ProductModelModel(['code' => $data->code, 'values' => $values]);
             $model->familyVariant()->associate($variant);
             $model->parent()->associate($parent);
             $model->owner()->associate($owner);
             $model->save();
 
-            $this->assignCategories($model, $data);
-            app(Associations::class)->write($model, $data);
+            $this->assignCategories($model, $data->toArray());
+            app(Associations::class)->write($model, $data->toArray());
 
             return $model->load(['familyVariant', 'parent', 'owner', 'categories', ...Associations::eagerLoads()]);
         });

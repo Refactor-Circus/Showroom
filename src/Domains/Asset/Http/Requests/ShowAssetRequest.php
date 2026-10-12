@@ -15,11 +15,6 @@ final class ShowAssetRequest extends AssetRequest
         return $this->allows('view', $this->asset());
     }
 
-    public function rules(): array
-    {
-        return ShowAssetAction::rules();
-    }
-
     public function persist(): JsonResponse
     {
         $asset = app(ShowAssetAction::class)->execute($this->asset());

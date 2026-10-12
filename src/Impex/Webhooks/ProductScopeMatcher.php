@@ -7,6 +7,7 @@ namespace RefactorCircus\Showroom\Impex\Webhooks;
 use Illuminate\Database\ConnectionInterface;
 use RefactorCircus\Impex\Domains\Subscription\Contracts\SubscriptionMatcher;
 use RefactorCircus\Impex\Domains\Subscription\Models\SubscriptionModel;
+use RefactorCircus\Showroom\Support\Tables;
 
 /**
  * Matches products to filtered subscriptions.
@@ -80,8 +81,8 @@ final class ProductScopeMatcher implements SubscriptionMatcher
         }
 
         $paths = [
-            'categories' => $this->paths('showroom_categories', array_keys($codes['categories'])),
-            'owners' => $this->paths('showroom_owners', array_keys($codes['owners'])),
+            'categories' => $this->paths(Tables::name('categories'), array_keys($codes['categories'])),
+            'owners' => $this->paths(Tables::name('owners'), array_keys($codes['owners'])),
         ];
 
         $filters = [];

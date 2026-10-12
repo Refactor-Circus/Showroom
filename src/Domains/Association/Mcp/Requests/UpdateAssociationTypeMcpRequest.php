@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace RefactorCircus\Showroom\Domains\Association\Mcp\Requests;
 
-use Laravel\Mcp\Response;
 use Laravel\Mcp\ResponseFactory;
 use RefactorCircus\Showroom\Domains\Association\Actions\UpdateAssociationTypeAction;
+use RefactorCircus\Showroom\Domains\Association\Data\UpdateAssociationTypeData;
 use RefactorCircus\Showroom\Domains\Association\Resources\AssociationTypeResource;
 
 final class UpdateAssociationTypeMcpRequest extends AssociationTypeRequest
@@ -18,17 +18,15 @@ final class UpdateAssociationTypeMcpRequest extends AssociationTypeRequest
 
     protected function rules(): array
     {
-        return UpdateAssociationTypeAction::rules() + [
+        return [
             'association_type' => ['required', 'string', 'max:100'],
-        ];
+        ] + UpdateAssociationTypeData::rules();
     }
 
     protected function handle(array $validated): ResponseFactory
     {
-        unset($validated['association_type']);
+        $associationType = app(UpdateAssociationTypeAction::class)->execute($this->associationType(), UpdateAssociationTypeData::fromValidated($validated));
 
-        $associationType = app(UpdateAssociationTypeAction::class)->execute($this->associationType(), $validated);
-
-        return Response::structured((new AssociationTypeResource($associationType))->resolve());
+        return (new AssociationTypeResource($associationType))->toStructuredResponse();
     }
 }

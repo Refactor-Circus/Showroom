@@ -9,7 +9,9 @@ use Laravel\Mcp\Response;
 use Laravel\Mcp\ResponseFactory;
 use Laravel\Mcp\Server\Attributes\Description;
 use RefactorCircus\Keystone\Mcp\Tool;
+use RefactorCircus\Showroom\Domains\Family\Data\ListFamiliesData;
 use RefactorCircus\Showroom\Domains\Family\Mcp\Requests\ListFamiliesMcpRequest;
+use RefactorCircus\Showroom\Domains\Family\Resources\FamilyResource;
 
 #[Description('List families (attribute sets), the kinds of product the catalog describes, in display order. Filter by search or by an attribute they include. Cursor paginated.')]
 final class ListFamiliesTool extends Tool
@@ -24,8 +26,11 @@ final class ListFamiliesTool extends Tool
         return [
             'search' => $schema->string()->description('Match against the code or any label.'),
             'attribute' => $schema->string()->description('Only families that include this attribute code.'),
-            'cursor' => $schema->string()->description('Cursor from a previous page (next_cursor).'),
-            'per_page' => $schema->integer()->description('Results per page.')->min(1),
-        ];
+        ] + ListFamiliesData::pagination()->schema($schema);
+    }
+
+    public function outputSchema(JsonSchema $schema): array
+    {
+        return FamilyResource::collectionSchema($schema, ListFamiliesData::pagination());
     }
 }

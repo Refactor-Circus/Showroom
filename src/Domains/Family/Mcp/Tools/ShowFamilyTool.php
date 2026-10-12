@@ -10,6 +10,7 @@ use Laravel\Mcp\ResponseFactory;
 use Laravel\Mcp\Server\Attributes\Description;
 use RefactorCircus\Keystone\Mcp\Tool;
 use RefactorCircus\Showroom\Domains\Family\Mcp\Requests\ShowFamilyMcpRequest;
+use RefactorCircus\Showroom\Domains\Family\Resources\FamilyResource;
 
 #[Description('Show a family with its attributes, which of them are required, and its label attribute.')]
 final class ShowFamilyTool extends Tool
@@ -24,5 +25,10 @@ final class ShowFamilyTool extends Tool
         return [
             'family' => $schema->string()->description('The family code.')->required(),
         ];
+    }
+
+    public function outputSchema(JsonSchema $schema): array
+    {
+        return FamilyResource::structuredSchema($schema);
     }
 }

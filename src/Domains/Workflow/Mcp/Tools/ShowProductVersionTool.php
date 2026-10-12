@@ -10,6 +10,7 @@ use Laravel\Mcp\ResponseFactory;
 use Laravel\Mcp\Server\Attributes\Description;
 use RefactorCircus\Keystone\Mcp\Tool;
 use RefactorCircus\Showroom\Domains\Workflow\Mcp\Requests\ShowProductVersionMcpRequest;
+use RefactorCircus\Showroom\Domains\Workflow\Resources\VersionResource;
 
 #[Description('Show one version of a product with its full snapshot: a version number, latest, or published for the content storefronts read.')]
 final class ShowProductVersionTool extends Tool
@@ -25,5 +26,10 @@ final class ShowProductVersionTool extends Tool
             'product' => $schema->string()->description('The product identifier.')->required(),
             'version' => $schema->string()->description('A version number, latest, or published.')->required(),
         ];
+    }
+
+    public function outputSchema(JsonSchema $schema): array
+    {
+        return VersionResource::structuredSchema($schema);
     }
 }

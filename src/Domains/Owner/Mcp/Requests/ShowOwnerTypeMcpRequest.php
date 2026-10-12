@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace RefactorCircus\Showroom\Domains\Owner\Mcp\Requests;
 
-use Laravel\Mcp\Response;
 use Laravel\Mcp\ResponseFactory;
 use RefactorCircus\Showroom\Domains\Owner\Actions\ShowOwnerTypeAction;
 use RefactorCircus\Showroom\Domains\Owner\Resources\OwnerTypeResource;
@@ -18,7 +17,7 @@ final class ShowOwnerTypeMcpRequest extends OwnerTypeRequest
 
     protected function rules(): array
     {
-        return ShowOwnerTypeAction::rules() + [
+        return [
             'owner_type' => ['required', 'string', 'max:191'],
         ];
     }
@@ -27,6 +26,6 @@ final class ShowOwnerTypeMcpRequest extends OwnerTypeRequest
     {
         $ownerType = app(ShowOwnerTypeAction::class)->execute($this->ownerType());
 
-        return Response::structured((new OwnerTypeResource($ownerType))->resolve());
+        return (new OwnerTypeResource($ownerType))->toStructuredResponse();
     }
 }

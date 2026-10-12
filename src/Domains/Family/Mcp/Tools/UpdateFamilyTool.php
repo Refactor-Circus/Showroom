@@ -10,6 +10,7 @@ use Laravel\Mcp\ResponseFactory;
 use Laravel\Mcp\Server\Attributes\Description;
 use RefactorCircus\Keystone\Mcp\Tool;
 use RefactorCircus\Showroom\Domains\Family\Mcp\Requests\UpdateFamilyMcpRequest;
+use RefactorCircus\Showroom\Domains\Family\Resources\FamilyResource;
 
 #[Description('Update a family\'s labels, attributes, label attribute or sort order. The attribute list replaces the family\'s whole membership. The code cannot change.')]
 final class UpdateFamilyTool extends Tool
@@ -28,5 +29,10 @@ final class UpdateFamilyTool extends Tool
             'label_attribute' => $schema->string()->description('Code of the text attribute, in this family, whose value is a product\'s display label. Null for none.'),
             'sort_order' => $schema->integer()->description('Position in listings, lowest first.')->min(0),
         ];
+    }
+
+    public function outputSchema(JsonSchema $schema): array
+    {
+        return FamilyResource::structuredSchema($schema);
     }
 }

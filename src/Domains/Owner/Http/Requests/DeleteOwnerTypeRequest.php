@@ -14,11 +14,6 @@ final class DeleteOwnerTypeRequest extends OwnerTypeRequest
         return $this->allows('delete', $this->ownerType());
     }
 
-    public function rules(): array
-    {
-        return DeleteOwnerTypeAction::rules();
-    }
-
     public function persist(): JsonResponse
     {
         app(DeleteOwnerTypeAction::class)->execute($this->ownerType());

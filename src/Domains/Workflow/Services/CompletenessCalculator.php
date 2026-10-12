@@ -12,6 +12,7 @@ use RefactorCircus\Showroom\Domains\Attribute\Models\AttributeModel;
 use RefactorCircus\Showroom\Domains\Attribute\Services\Values;
 use RefactorCircus\Showroom\Domains\Channel\Models\ChannelModel;
 use RefactorCircus\Showroom\Domains\Product\Models\ProductModel;
+use RefactorCircus\Showroom\Support\Tables;
 
 /**
  * Scores how much of what a product's family requires it holds, for every
@@ -19,12 +20,17 @@ use RefactorCircus\Showroom\Domains\Product\Models\ProductModel;
  */
 final class CompletenessCalculator
 {
-    private const string TABLE = 'showroom_product_completeness';
-
     /**
      * @var Collection<int, ChannelModel>|null
      */
     private ?Collection $channels = null;
+
+    /**
+     * Each family's required attributes, while refresh() runs.
+     *
+     * @var array<string, Collection<int, AttributeModel>>|null
+     */
+    private ?array $members = null;
 
     /**
      * Rewrite the stored scores of these products. Each needs `family` and
@@ -35,15 +41,33 @@ final class CompletenessCalculator
     public function refresh(iterable $products): void
     {
         $this->channels = null;
+        $this->members = [];
 
-        foreach ($products as $product) {
-            $rows = $this->compute($product);
+        try {
+            $ids = [];
+            $rows = [];
 
-            DB::table(self::TABLE)->where('product_id', $product->id)->delete();
-
-            if ($rows !== []) {
-                DB::table(self::TABLE)->insert($rows);
+            foreach ($products as $product) {
+                $ids[] = $product->id;
+                array_push($rows, ...$this->compute($product));
             }
+
+            if ($ids === []) {
+                return;
+            }
+
+            // One delete for the whole batch and inserts of 200 rows (within
+            // every driver's binding limit), together, so a reader never sees
+            // a product with no scores.
+            DB::transaction(function () use ($ids, $rows): void {
+                DB::table(Tables::name('product_completeness'))->whereIn('product_id', $ids)->delete();
+
+                foreach (array_chunk($rows, 200) as $chunk) {
+                    DB::table(Tables::name('product_completeness'))->insert($chunk);
+                }
+            });
+        } finally {
+            $this->members = null;
         }
     }
 
@@ -58,7 +82,11 @@ final class CompletenessCalculator
             return [];
         }
 
-        $members = $family->familyAttributes()->get()->filter(fn (AttributeModel $attribute): bool => (bool) $this->pivot($attribute, 'is_required'));
+        $members = $this->members[$family->id] ?? $family->familyAttributes()->get()->filter(fn (AttributeModel $attribute): bool => (bool) $this->pivot($attribute, 'is_required'));
+
+        if ($this->members !== null) {
+            $this->members[$family->id] = $members;
+        }
         $values = $product->allValues();
         $rows = [];
 

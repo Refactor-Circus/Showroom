@@ -7,6 +7,7 @@ namespace RefactorCircus\Showroom\Domains\Owner\Http\Requests;
 use Illuminate\Http\JsonResponse;
 use RefactorCircus\Keystone\Http\Requests\Request;
 use RefactorCircus\Showroom\Domains\Owner\Actions\CreateOwnerAction;
+use RefactorCircus\Showroom\Domains\Owner\Data\CreateOwnerData;
 use RefactorCircus\Showroom\Domains\Owner\Models\OwnerModel;
 use RefactorCircus\Showroom\Domains\Owner\Resources\OwnerResource;
 
@@ -19,12 +20,12 @@ final class StoreOwnerRequest extends Request
 
     public function rules(): array
     {
-        return CreateOwnerAction::rules();
+        return CreateOwnerData::rules();
     }
 
     public function persist(): JsonResponse
     {
-        $owner = app(CreateOwnerAction::class)->execute($this->validated());
+        $owner = app(CreateOwnerAction::class)->execute(CreateOwnerData::fromValidated($this->validated()));
 
         return (new OwnerResource($owner))->response()->setStatusCode(201);
     }

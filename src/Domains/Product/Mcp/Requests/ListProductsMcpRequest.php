@@ -7,6 +7,7 @@ namespace RefactorCircus\Showroom\Domains\Product\Mcp\Requests;
 use Laravel\Mcp\ResponseFactory;
 use RefactorCircus\Keystone\Mcp\Requests\Request;
 use RefactorCircus\Showroom\Domains\Product\Actions\ListProductsAction;
+use RefactorCircus\Showroom\Domains\Product\Data\ListProductsData;
 use RefactorCircus\Showroom\Domains\Product\Models\ProductModel;
 use RefactorCircus\Showroom\Domains\Product\Resources\ProductResource;
 
@@ -19,18 +20,13 @@ final class ListProductsMcpRequest extends Request
 
     protected function rules(): array
     {
-        return ListProductsAction::rules();
+        return ListProductsData::rules();
     }
 
     protected function handle(array $validated): ResponseFactory
     {
-        $products = app(ListProductsAction::class)->execute($validated);
+        $products = app(ListProductsAction::class)->execute(ListProductsData::fromValidated($validated));
 
-        return $this->structuredCollection(ProductResource::collection($products)->resolve(), [
-            'total' => $products->total(),
-            'page' => $products->currentPage(),
-            'last_page' => $products->lastPage(),
-            'facets' => (object) $products->facets,
-        ]);
+        return ProductResource::collection($products)->additional(['facets' => (object) $products->facets])->toStructuredResponse();
     }
 }

@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace RefactorCircus\Showroom\Domains\Asset\Resources;
 
+use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
-use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\JsonSchema\Types\Type;
+use RefactorCircus\Keystone\Http\Resources\JsonResource;
 use RefactorCircus\Showroom\Domains\Asset\Models\AssetModel;
 use RefactorCircus\Showroom\Domains\Product\Models\ProductModel;
 
@@ -15,6 +17,31 @@ use RefactorCircus\Showroom\Domains\Product\Models\ProductModel;
  */
 final class AssetResource extends JsonResource
 {
+    /**
+     * @return array<string, Type>
+     */
+    public static function schema(JsonSchema $schema): array
+    {
+        return [
+            'id' => $schema->string()->description('ULID.')->required(),
+            'code' => $schema->string()->required(),
+            'labels' => $schema->object()->description('Labels keyed by locale.')->required(),
+            'filename' => $schema->string()->required(),
+            'mime_type' => $schema->string()->nullable()->required(),
+            'size' => $schema->integer()->description('In bytes.')->required(),
+            'checksum' => $schema->string()->nullable()->required(),
+            'url' => $schema->string()->required(),
+            'links' => $schema->array()->items($schema->object([
+                'type' => $schema->string()->enum(['product', 'product_model', 'owner'])->required(),
+                'target' => $schema->string()->required(),
+                'role' => $schema->string()->nullable()->required(),
+                'sort_order' => $schema->integer()->required(),
+            ]))->description('When the linked records are loaded.'),
+            'created_at' => $schema->string()->nullable()->required(),
+            'updated_at' => $schema->string()->nullable()->required(),
+        ];
+    }
+
     /**
      * @return array<string, mixed>
      */

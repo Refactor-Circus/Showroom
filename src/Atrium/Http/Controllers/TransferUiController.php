@@ -17,6 +17,8 @@ use RefactorCircus\Showroom\Domains\Family\Models\FamilyModel;
 use RefactorCircus\Showroom\Domains\Product\Models\ProductModel;
 use RefactorCircus\Showroom\Domains\Transfer\Actions\StartExportAction;
 use RefactorCircus\Showroom\Domains\Transfer\Actions\StartImportAction;
+use RefactorCircus\Showroom\Domains\Transfer\Data\StartExportData;
+use RefactorCircus\Showroom\Domains\Transfer\Data\StartImportData;
 use RefactorCircus\Showroom\Impex\ImpexIntegration;
 
 /**
@@ -51,7 +53,7 @@ final class TransferUiController
     {
         $this->authorizeScreen('create', ProductModel::class);
 
-        app(StartImportAction::class)->execute($request->validate(StartImportAction::rules()));
+        app(StartImportAction::class)->execute(StartImportData::from($request->all()));
 
         return back()->with('status', __('showroom::showroom.import_started'));
     }
@@ -60,9 +62,10 @@ final class TransferUiController
     {
         $this->authorizeScreen('viewAny', ProductModel::class);
 
-        $data = array_filter($request->validate(StartExportAction::rules()), fn (mixed $value): bool => $value !== null && $value !== '');
+        // Blank form fields filter nothing.
+        $data = array_filter($request->validate(StartExportData::rules()), fn (mixed $value): bool => $value !== null && $value !== '');
 
-        app(StartExportAction::class)->execute($data);
+        app(StartExportAction::class)->execute(StartExportData::fromValidated($data));
 
         return back()->with('status', __('showroom::showroom.export_started'));
     }

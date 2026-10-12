@@ -5,7 +5,9 @@ declare(strict_types=1);
 use Illuminate\Support\Facades\Gate;
 use RefactorCircus\Showroom\Domains\Asset\Models\AssetModel;
 use RefactorCircus\Showroom\Domains\Asset\Policies\AssetPolicy;
+use RefactorCircus\Showroom\Domains\Association\Models\AssociationModel;
 use RefactorCircus\Showroom\Domains\Association\Models\AssociationTypeModel;
+use RefactorCircus\Showroom\Domains\Association\Policies\AssociationPolicy;
 use RefactorCircus\Showroom\Domains\Association\Policies\AssociationTypePolicy;
 use RefactorCircus\Showroom\Domains\Attribute\Mcp\Tools\CreateAttributeTool;
 use RefactorCircus\Showroom\Domains\Attribute\Mcp\Tools\ListAttributesTool;
@@ -34,8 +36,16 @@ use RefactorCircus\Showroom\Domains\Product\Models\ProductModel;
 use RefactorCircus\Showroom\Domains\Product\Policies\ProductPolicy;
 use RefactorCircus\Showroom\Domains\ProductModel\Models\ProductModelModel;
 use RefactorCircus\Showroom\Domains\ProductModel\Policies\ProductModelPolicy;
+use RefactorCircus\Showroom\Domains\Search\Models\SearchableProductModel;
+use RefactorCircus\Showroom\Domains\Search\Policies\SearchableProductPolicy;
+use RefactorCircus\Showroom\Domains\Workflow\Models\CompletenessModel;
+use RefactorCircus\Showroom\Domains\Workflow\Models\VersionModel;
+use RefactorCircus\Showroom\Domains\Workflow\Policies\CompletenessPolicy;
+use RefactorCircus\Showroom\Domains\Workflow\Policies\VersionPolicy;
 use RefactorCircus\Showroom\ShowroomServiceProvider;
+use RefactorCircus\Showroom\Tests\Fixtures\Catalog;
 use RefactorCircus\Showroom\Tests\Fixtures\ReadOnlyAttributePolicy;
+use RefactorCircus\Showroom\Tests\Fixtures\ReadOnlyProductPolicy;
 use Workbench\App\Models\User;
 
 beforeEach(function (): void {
@@ -75,12 +85,16 @@ it('registers the policies from the config', function (): void {
         ->and(Gate::getPolicyFor(AssetModel::class))->toBeInstanceOf(AssetPolicy::class)
         ->and(Gate::getPolicyFor(LocaleModel::class))->toBeInstanceOf(LocalePolicy::class)
         ->and(Gate::getPolicyFor(ChannelModel::class))->toBeInstanceOf(ChannelPolicy::class)
-        ->and(Gate::getPolicyFor(AssociationTypeModel::class))->toBeInstanceOf(AssociationTypePolicy::class);
+        ->and(Gate::getPolicyFor(AssociationTypeModel::class))->toBeInstanceOf(AssociationTypePolicy::class)
+        ->and(Gate::getPolicyFor(AssociationModel::class))->toBeInstanceOf(AssociationPolicy::class)
+        ->and(Gate::getPolicyFor(VersionModel::class))->toBeInstanceOf(VersionPolicy::class)
+        ->and(Gate::getPolicyFor(CompletenessModel::class))->toBeInstanceOf(CompletenessPolicy::class)
+        ->and(Gate::getPolicyFor(SearchableProductModel::class))->toBeInstanceOf(SearchableProductPolicy::class);
 });
 
 it('refuses a guest once authorization is on', function (): void {
-    $this->getJson('/showroom/attributes')->assertForbidden();
-    $this->postJson('/showroom/attributes', ['code' => 'color', 'type' => 'select'])->assertForbidden();
+    $this->getJson('/showroom/attributes')->assertUnauthorized();
+    $this->postJson('/showroom/attributes', ['code' => 'color', 'type' => 'select'])->assertUnauthorized();
     mcpTool(ListAttributesTool::class)->assertHasErrors(['Unauthorized.']);
 });
 
@@ -112,4 +126,37 @@ it('applies a policy swapped in through the config', function (): void {
     $this->patchJson('/showroom/attributes/name', ['labels' => ['en' => 'Name']])->assertForbidden();
     $this->deleteJson('/showroom/attributes/name')->assertForbidden();
     mcpTool(CreateAttributeTool::class, ['code' => 'color', 'type' => 'select'])->assertHasErrors(['Unauthorized.']);
+});
+
+it('lets associations, versions, completeness and searchable products follow the product policy', function (): void {
+    $this->actingAs($this->ann);
+    Catalog::apparel();
+    $this->postJson('/showroom/association-types', ['code' => 'cross_sell'])->assertCreated();
+    $this->postJson('/showroom/products', ['identifier' => 'CAP'])->assertCreated();
+    $this->postJson('/showroom/products', ['identifier' => 'TEE', 'family' => 'shirts', 'associations' => ['cross_sell' => ['products' => ['CAP']]]])->assertCreated();
+    $this->postJson('/showroom/products/TEE/transitions', ['transition' => 'submit'])->assertOk();
+
+    $tee = ProductModel::query()->where('identifier', 'TEE')->sole();
+    $children = [
+        AssociationModel::query()->sole(),
+        VersionModel::query()->where('versionable_id', $tee->id)->firstOrFail(),
+        CompletenessModel::query()->where('product_id', $tee->id)->firstOrFail(),
+        (new SearchableProductModel)->newFromBuilder($tee->getAttributes()),
+    ];
+
+    foreach ($children as $child) {
+        expect($this->ann->can('view', $child))->toBeTrue()
+            ->and($this->ann->can('update', $child))->toBeTrue();
+    }
+
+    useShowroomPolicies([ProductModel::class => ReadOnlyProductPolicy::class]);
+
+    foreach ($children as $child) {
+        expect($this->ann->can('view', $child))->toBeTrue()
+            ->and($this->ann->can('update', $child))->toBeFalse()
+            ->and($this->ann->can('delete', $child))->toBeFalse();
+    }
+
+    expect($this->ann->can('viewAny', SearchableProductModel::class))->toBeTrue()
+        ->and($this->ann->can('create', SearchableProductModel::class))->toBeFalse();
 });

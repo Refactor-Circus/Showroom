@@ -10,6 +10,7 @@ use Laravel\Mcp\ResponseFactory;
 use Laravel\Mcp\Server\Attributes\Description;
 use RefactorCircus\Keystone\Mcp\Tool;
 use RefactorCircus\Showroom\Domains\Attribute\Mcp\Requests\UpdateAttributeOptionMcpRequest;
+use RefactorCircus\Showroom\Domains\Attribute\Resources\AttributeOptionResource;
 
 #[Description('Update an option\'s labels or sort order. The code cannot change.')]
 final class UpdateAttributeOptionTool extends Tool
@@ -27,5 +28,10 @@ final class UpdateAttributeOptionTool extends Tool
             'labels' => $schema->object()->description('Labels keyed by locale, such as {"en": "Color", "fr": "Couleur"}. Replaces all labels when given.'),
             'sort_order' => $schema->integer()->description('Position in listings, lowest first.')->min(0),
         ];
+    }
+
+    public function outputSchema(JsonSchema $schema): array
+    {
+        return AttributeOptionResource::structuredSchema($schema);
     }
 }

@@ -17,7 +17,7 @@ final class DeleteChannelMcpRequest extends ChannelRequest
 
     protected function rules(): array
     {
-        return DeleteChannelAction::rules() + [
+        return [
             'channel' => ['required', 'string', 'max:100'],
         ];
     }

@@ -7,6 +7,7 @@ namespace RefactorCircus\Showroom\Domains\Workflow\Mcp\Requests;
 use Laravel\Mcp\ResponseFactory;
 use RefactorCircus\Showroom\Domains\Product\Mcp\Requests\ProductRequest;
 use RefactorCircus\Showroom\Domains\Workflow\Actions\ListProductVersionsAction;
+use RefactorCircus\Showroom\Domains\Workflow\Data\ListProductVersionsData;
 use RefactorCircus\Showroom\Domains\Workflow\Resources\VersionSummaryResource;
 
 final class ListProductVersionsMcpRequest extends ProductRequest
@@ -18,20 +19,15 @@ final class ListProductVersionsMcpRequest extends ProductRequest
 
     protected function rules(): array
     {
-        return ListProductVersionsAction::rules() + [
+        return [
             'product' => ['required', 'string', 'max:191'],
-        ];
+        ] + ListProductVersionsData::rules();
     }
 
     protected function handle(array $validated): ResponseFactory
     {
-        unset($validated['product']);
+        $versions = app(ListProductVersionsAction::class)->execute($this->product(), ListProductVersionsData::fromValidated($validated));
 
-        $versions = app(ListProductVersionsAction::class)->execute($this->product(), $validated);
-
-        return $this->structuredCollection(
-            VersionSummaryResource::collection($versions)->resolve(),
-            ['next_cursor' => $versions->nextCursor()?->encode()],
-        );
+        return VersionSummaryResource::collection($versions)->toStructuredResponse();
     }
 }

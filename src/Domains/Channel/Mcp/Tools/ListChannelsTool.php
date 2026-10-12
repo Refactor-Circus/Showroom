@@ -9,7 +9,9 @@ use Laravel\Mcp\Response;
 use Laravel\Mcp\ResponseFactory;
 use Laravel\Mcp\Server\Attributes\Description;
 use RefactorCircus\Keystone\Mcp\Tool;
+use RefactorCircus\Showroom\Domains\Channel\Data\ListChannelsData;
 use RefactorCircus\Showroom\Domains\Channel\Mcp\Requests\ListChannelsMcpRequest;
+use RefactorCircus\Showroom\Domains\Channel\Resources\ChannelResource;
 
 #[Description('List channels (storefronts, print, marketplaces) with their locales, currencies and category tree. Cursor paginated.')]
 final class ListChannelsTool extends Tool
@@ -23,8 +25,11 @@ final class ListChannelsTool extends Tool
     {
         return [
             'search' => $schema->string()->description('Match against the code or any label.'),
-            'cursor' => $schema->string()->description('Cursor from a previous page (next_cursor).'),
-            'per_page' => $schema->integer()->description('Results per page.')->min(1),
-        ];
+        ] + ListChannelsData::pagination()->schema($schema);
+    }
+
+    public function outputSchema(JsonSchema $schema): array
+    {
+        return ChannelResource::collectionSchema($schema, ListChannelsData::pagination());
     }
 }

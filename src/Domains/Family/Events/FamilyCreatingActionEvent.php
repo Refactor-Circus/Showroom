@@ -7,6 +7,7 @@ namespace RefactorCircus\Showroom\Domains\Family\Events;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 use RefactorCircus\Keystone\Contracts\ActionStartingEvent;
+use RefactorCircus\Showroom\Domains\Family\Data\CreateFamilyData;
 
 /**
  * A family is about to be created.
@@ -16,10 +17,7 @@ final class FamilyCreatingActionEvent implements ActionStartingEvent
     use Dispatchable;
     use SerializesModels;
 
-    /**
-     * @param  array<string, mixed>  $data
-     */
     public function __construct(
-        public array $data,
+        public CreateFamilyData $data,
     ) {}
 }

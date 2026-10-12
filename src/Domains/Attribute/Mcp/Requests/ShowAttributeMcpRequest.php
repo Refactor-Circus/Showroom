@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace RefactorCircus\Showroom\Domains\Attribute\Mcp\Requests;
 
-use Laravel\Mcp\Response;
 use Laravel\Mcp\ResponseFactory;
 use RefactorCircus\Showroom\Domains\Attribute\Actions\ShowAttributeAction;
 use RefactorCircus\Showroom\Domains\Attribute\Resources\AttributeResource;
@@ -18,7 +17,7 @@ final class ShowAttributeMcpRequest extends AttributeRequest
 
     protected function rules(): array
     {
-        return ShowAttributeAction::rules() + [
+        return [
             'attribute' => ['required', 'string', 'max:100'],
         ];
     }
@@ -27,6 +26,6 @@ final class ShowAttributeMcpRequest extends AttributeRequest
     {
         $attribute = app(ShowAttributeAction::class)->execute($this->catalogAttribute());
 
-        return Response::structured((new AttributeResource($attribute))->resolve());
+        return (new AttributeResource($attribute))->toStructuredResponse();
     }
 }

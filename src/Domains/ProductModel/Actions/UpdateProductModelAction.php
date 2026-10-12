@@ -6,10 +6,12 @@ namespace RefactorCircus\Showroom\Domains\ProductModel\Actions;
 
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
+use RefactorCircus\Keystone\Data\Missing;
 use RefactorCircus\Showroom\Domains\Association\Services\Associations;
 use RefactorCircus\Showroom\Domains\Attribute\Concerns\WritesValues;
 use RefactorCircus\Showroom\Domains\Category\Concerns\AssignsCategories;
 use RefactorCircus\Showroom\Domains\Owner\Concerns\AssignsOwners;
+use RefactorCircus\Showroom\Domains\ProductModel\Data\UpdateProductModelData;
 use RefactorCircus\Showroom\Domains\ProductModel\Events\ProductModelUpdatedActionEvent;
 use RefactorCircus\Showroom\Domains\ProductModel\Events\ProductModelUpdatingActionEvent;
 use RefactorCircus\Showroom\Domains\ProductModel\Models\ProductModelModel;
@@ -21,30 +23,12 @@ final class UpdateProductModelAction
     use AssignsOwners;
     use WritesValues;
 
-    /**
-     * `values` patches only the slots sent; `data: null` clears one.
-     *
-     * @return array<string, mixed>
-     */
-    public static function rules(): array
-    {
-        return [
-            'code' => ['prohibited'],
-            'family_variant' => ['prohibited'],
-            'parent' => ['prohibited'],
-            'owner' => ['sometimes', 'nullable', 'string', 'exists:showroom_owners,code'],
-            'values' => ['sometimes', 'nullable', 'array'],
-        ] + self::categoryRules() + Associations::rules();
-    }
-
     public function __construct(private readonly ProductIndex $index) {}
 
     /**
-     * @param  array<string, mixed>  $data
-     *
      * @throws ValidationException
      */
-    public function execute(ProductModelModel $productModel, array $data): ProductModelModel
+    public function execute(ProductModelModel $productModel, UpdateProductModelData $data): ProductModelModel
     {
         ProductModelUpdatingActionEvent::dispatch($productModel, $data);
 
@@ -55,19 +39,16 @@ final class UpdateProductModelAction
         return $result;
     }
 
-    /**
-     * @param  array<string, mixed>  $data
-     */
-    private function perform(ProductModelModel $productModel, array $data): ProductModelModel
+    private function perform(ProductModelModel $productModel, UpdateProductModelData $data): ProductModelModel
     {
         return DB::transaction(function () use ($productModel, $data): ProductModelModel {
-            if (array_key_exists('values', $data)) {
+            if (! $data->values instanceof Missing) {
                 $variant = $productModel->familyVariant()->with('family.familyAttributes')->firstOrFail();
                 $level = $productModel->level();
 
                 $values = $this->patchValues(
                     $productModel->ownValues(),
-                    $data['values'],
+                    $data->values,
                     $variant->attributesAt($level),
                     sprintf('is not set at level %d of family variant "%s".', $level, $variant->code),
                 );
@@ -89,21 +70,21 @@ final class UpdateProductModelAction
                 $this->index->queue($this->index->productIdsUnder($productModel));
             }
 
-            if (array_key_exists('owner', $data)) {
+            if (! $data->owner instanceof Missing) {
                 if ($productModel->parent_id !== null) {
                     $this->refuseInheritedOwner('sub-model');
                 }
 
-                $productModel->owner()->associate($this->ownerFor($data['owner']));
+                $productModel->owner()->associate($this->ownerFor($data->owner));
                 $productModel->save();
 
                 $this->index->queue($this->index->productIdsUnder($productModel));
             }
 
-            app(Associations::class)->write($productModel, $data);
+            app(Associations::class)->write($productModel, $data->toArray());
 
-            if (array_key_exists('categories', $data)) {
-                $this->assignCategories($productModel, $data);
+            if ($data->has('categories')) {
+                $this->assignCategories($productModel, $data->toArray());
 
                 // Variants inherit the model's categories.
                 $this->index->queue($this->index->productIdsUnder($productModel));

@@ -10,14 +10,6 @@ use RefactorCircus\Showroom\Domains\Family\Models\FamilyModel;
 
 final class ShowFamilyAction
 {
-    /**
-     * @return array<string, mixed>
-     */
-    public static function rules(): array
-    {
-        return [];
-    }
-
     public function execute(FamilyModel $family): FamilyModel
     {
         FamilyShowingActionEvent::dispatch($family);

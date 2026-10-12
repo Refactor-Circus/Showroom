@@ -12,6 +12,7 @@ use Illuminate\Support\Carbon;
 use RefactorCircus\Keystone\Models\Concerns\DispatchesModelEvents;
 use RefactorCircus\Showroom\Database\Factories\AttributeOptionFactory;
 use RefactorCircus\Showroom\Support\Models\Concerns\HasLabels;
+use RefactorCircus\Showroom\Support\Tables;
 
 /**
  * One choice of a select or multiselect attribute. Its code is unique within
@@ -36,7 +37,10 @@ final class AttributeOptionModel extends Model
     use HasLabels;
     use HasUlids;
 
-    protected $table = 'showroom_attribute_options';
+    public function getTable(): string
+    {
+        return Tables::name('attribute_options');
+    }
 
     protected $fillable = [
         'attribute_id',

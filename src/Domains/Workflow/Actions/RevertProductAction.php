@@ -4,29 +4,19 @@ declare(strict_types=1);
 
 namespace RefactorCircus\Showroom\Domains\Workflow\Actions;
 
-use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
 use RefactorCircus\Showroom\Domains\Association\Models\AssociationModel;
 use RefactorCircus\Showroom\Domains\Attribute\Services\Values;
 use RefactorCircus\Showroom\Domains\Product\Actions\UpdateProductAction;
+use RefactorCircus\Showroom\Domains\Product\Data\UpdateProductData;
 use RefactorCircus\Showroom\Domains\Product\Models\ProductModel;
+use RefactorCircus\Showroom\Domains\Workflow\Data\RevertProductData;
 use RefactorCircus\Showroom\Domains\Workflow\Events\ProductRevertedActionEvent;
 use RefactorCircus\Showroom\Domains\Workflow\Events\ProductRevertingActionEvent;
 use RefactorCircus\Showroom\Domains\Workflow\Services\Versions;
 
 final class RevertProductAction
 {
-    /**
-     * @return array<string, mixed>
-     */
-    public static function rules(): array
-    {
-        return [
-            'version' => ['required', 'integer', 'min:1'],
-            'comment' => ['sometimes', 'nullable', 'string', 'max:2000'],
-        ];
-    }
-
     public function __construct(private readonly Versions $versions) {}
 
     /**
@@ -34,11 +24,9 @@ final class RevertProductAction
      * family, owner and enabled flag — as a new `reverted` version. Status
      * and publishing are the workflow's, and stay as they are.
      *
-     * @param  array<string, mixed>  $data
-     *
      * @throws ValidationException
      */
-    public function execute(ProductModel $product, array $data): ProductModel
+    public function execute(ProductModel $product, RevertProductData $data): ProductModel
     {
         ProductRevertingActionEvent::dispatch($product, $data);
 
@@ -49,12 +37,9 @@ final class RevertProductAction
         return $result;
     }
 
-    /**
-     * @param  array<string, mixed>  $data
-     */
-    private function perform(ProductModel $product, array $data): ProductModel
+    private function perform(ProductModel $product, RevertProductData $data): ProductModel
     {
-        $number = (int) $data['version'];
+        $number = $data->version;
         $version = $this->versions->find($product, $number);
 
         if ($version === null) {
@@ -74,11 +59,12 @@ final class RevertProductAction
             $payload['owner'] = $snapshot['owner'] ?? null;
         }
 
-        $comment = is_string($data['comment'] ?? null) ? $data['comment'] : sprintf('Reverted to version %d.', $number);
+        $comment = $data->comment ?? sprintf('Reverted to version %d.', $number);
 
         return $this->versions->as('reverted', $comment, fn (): ProductModel => app(UpdateProductAction::class)->execute(
             $product,
-            Validator::validate($payload, UpdateProductAction::rules()),
+            // The snapshot held what the product could hold then: check it still can.
+            UpdateProductData::from($payload),
         ));
     }
 

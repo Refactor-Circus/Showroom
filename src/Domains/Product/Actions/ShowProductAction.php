@@ -5,30 +5,18 @@ declare(strict_types=1);
 namespace RefactorCircus\Showroom\Domains\Product\Actions;
 
 use RefactorCircus\Showroom\Domains\Association\Services\Associations;
-use RefactorCircus\Showroom\Domains\Attribute\Data\ValueFilter;
+use RefactorCircus\Showroom\Domains\Product\Data\ShowProductData;
 use RefactorCircus\Showroom\Domains\Product\Events\ProductShowingActionEvent;
 use RefactorCircus\Showroom\Domains\Product\Events\ProductShownActionEvent;
 use RefactorCircus\Showroom\Domains\Product\Models\ProductModel;
 
 final class ShowProductAction
 {
-    /**
-     * @return array<string, mixed>
-     */
-    public static function rules(): array
-    {
-        // Return only one channel's and some locales' values.
-        return ValueFilter::rules();
-    }
-
-    /**
-     * @param  array<string, mixed>  $options
-     */
-    public function execute(ProductModel $product, array $options = []): ProductModel
+    public function execute(ProductModel $product, ShowProductData $options = new ShowProductData): ProductModel
     {
         ProductShowingActionEvent::dispatch($product);
 
-        $result = $this->perform($product)->useValueFilter(ValueFilter::fromArray($options));
+        $result = $this->perform($product)->useValueFilter($options->valueFilter());
 
         ProductShownActionEvent::dispatch($result);
 

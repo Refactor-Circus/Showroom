@@ -10,6 +10,7 @@ use Laravel\Mcp\ResponseFactory;
 use Laravel\Mcp\Server\Attributes\Description;
 use RefactorCircus\Keystone\Mcp\Tool;
 use RefactorCircus\Showroom\Domains\Owner\Mcp\Requests\ShowOwnerMcpRequest;
+use RefactorCircus\Showroom\Domains\Owner\Resources\OwnerResource;
 
 #[Description('Show an owner with its chain from the root, its children and how many products it owns.')]
 final class ShowOwnerTool extends Tool
@@ -24,5 +25,10 @@ final class ShowOwnerTool extends Tool
         return [
             'owner' => $schema->string()->description('The owner code.')->required(),
         ];
+    }
+
+    public function outputSchema(JsonSchema $schema): array
+    {
+        return OwnerResource::structuredSchema($schema);
     }
 }

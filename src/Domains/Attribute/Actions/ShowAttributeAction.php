@@ -10,14 +10,6 @@ use RefactorCircus\Showroom\Domains\Attribute\Models\AttributeModel;
 
 final class ShowAttributeAction
 {
-    /**
-     * @return array<string, mixed>
-     */
-    public static function rules(): array
-    {
-        return [];
-    }
-
     public function execute(AttributeModel $attribute): AttributeModel
     {
         AttributeShowingActionEvent::dispatch($attribute);

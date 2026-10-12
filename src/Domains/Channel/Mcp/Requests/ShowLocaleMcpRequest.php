@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace RefactorCircus\Showroom\Domains\Channel\Mcp\Requests;
 
-use Laravel\Mcp\Response;
 use Laravel\Mcp\ResponseFactory;
 use RefactorCircus\Showroom\Domains\Channel\Actions\ShowLocaleAction;
 use RefactorCircus\Showroom\Domains\Channel\Resources\LocaleResource;
@@ -18,7 +17,7 @@ final class ShowLocaleMcpRequest extends LocaleRequest
 
     protected function rules(): array
     {
-        return ShowLocaleAction::rules() + [
+        return [
             'locale' => ['required', 'string', 'max:100'],
         ];
     }
@@ -27,6 +26,6 @@ final class ShowLocaleMcpRequest extends LocaleRequest
     {
         $locale = app(ShowLocaleAction::class)->execute($this->locale());
 
-        return Response::structured((new LocaleResource($locale))->resolve());
+        return (new LocaleResource($locale))->toStructuredResponse();
     }
 }

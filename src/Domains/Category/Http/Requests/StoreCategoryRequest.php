@@ -7,6 +7,7 @@ namespace RefactorCircus\Showroom\Domains\Category\Http\Requests;
 use Illuminate\Http\JsonResponse;
 use RefactorCircus\Keystone\Http\Requests\Request;
 use RefactorCircus\Showroom\Domains\Category\Actions\CreateCategoryAction;
+use RefactorCircus\Showroom\Domains\Category\Data\CreateCategoryData;
 use RefactorCircus\Showroom\Domains\Category\Models\CategoryModel;
 use RefactorCircus\Showroom\Domains\Category\Resources\CategoryResource;
 
@@ -19,12 +20,12 @@ final class StoreCategoryRequest extends Request
 
     public function rules(): array
     {
-        return CreateCategoryAction::rules();
+        return CreateCategoryData::rules();
     }
 
     public function persist(): JsonResponse
     {
-        $category = app(CreateCategoryAction::class)->execute($this->validated());
+        $category = app(CreateCategoryAction::class)->execute(CreateCategoryData::fromValidated($this->validated()));
 
         return (new CategoryResource($category))->response()->setStatusCode(201);
     }

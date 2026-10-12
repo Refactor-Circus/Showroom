@@ -17,7 +17,7 @@ final class DeleteAttributeOptionMcpRequest extends AttributeOptionRequest
 
     protected function rules(): array
     {
-        return DeleteAttributeOptionAction::rules() + [
+        return [
             'attribute' => ['required', 'string', 'max:100'],
             'option' => ['required', 'string', 'max:100'],
         ];

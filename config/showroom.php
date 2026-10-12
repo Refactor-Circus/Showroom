@@ -5,7 +5,9 @@ declare(strict_types=1);
 use RefactorCircus\Showroom\Atrium\Features\ShowroomSupportFeature;
 use RefactorCircus\Showroom\Domains\Asset\Models\AssetModel;
 use RefactorCircus\Showroom\Domains\Asset\Policies\AssetPolicy;
+use RefactorCircus\Showroom\Domains\Association\Models\AssociationModel;
 use RefactorCircus\Showroom\Domains\Association\Models\AssociationTypeModel;
+use RefactorCircus\Showroom\Domains\Association\Policies\AssociationPolicy;
 use RefactorCircus\Showroom\Domains\Association\Policies\AssociationTypePolicy;
 use RefactorCircus\Showroom\Domains\Attribute\Models\AttributeGroupModel;
 use RefactorCircus\Showroom\Domains\Attribute\Models\AttributeModel;
@@ -31,6 +33,12 @@ use RefactorCircus\Showroom\Domains\Product\Models\ProductModel;
 use RefactorCircus\Showroom\Domains\Product\Policies\ProductPolicy;
 use RefactorCircus\Showroom\Domains\ProductModel\Models\ProductModelModel;
 use RefactorCircus\Showroom\Domains\ProductModel\Policies\ProductModelPolicy;
+use RefactorCircus\Showroom\Domains\Search\Models\SearchableProductModel;
+use RefactorCircus\Showroom\Domains\Search\Policies\SearchableProductPolicy;
+use RefactorCircus\Showroom\Domains\Workflow\Models\CompletenessModel;
+use RefactorCircus\Showroom\Domains\Workflow\Models\VersionModel;
+use RefactorCircus\Showroom\Domains\Workflow\Policies\CompletenessPolicy;
+use RefactorCircus\Showroom\Domains\Workflow\Policies\VersionPolicy;
 use RefactorCircus\Showroom\Impex\Webhooks\ProductStream;
 
 return [
@@ -55,9 +63,16 @@ return [
     | Policies
     |--------------------------------------------------------------------------
     |
-    | The policy the Gate uses for each model. The bundled policies let any
-    | authenticated user manage the catalog; point a model at your own class
-    | to restrict who may read or change it.
+    | The policy the Gate uses for each Showroom model. The bundled policies
+    | let any authenticated user manage the catalog; point a model at a class
+    | of your own (extending the bundled one, or not) to restrict who may read
+    | or change it.
+    |
+    | Records that belong to another follow its policy: an association its
+    | source product or product model, a version and a completeness score
+    | their product (`view` for reading, `update` for changing), and the
+    | searchable product Scout indexes the product policy. Every model has an
+    | entry; remove one to leave that model without a policy.
     |
     */
 
@@ -76,6 +91,50 @@ return [
         LocaleModel::class => LocalePolicy::class,
         ChannelModel::class => ChannelPolicy::class,
         AssociationTypeModel::class => AssociationTypePolicy::class,
+        AssociationModel::class => AssociationPolicy::class,
+        VersionModel::class => VersionPolicy::class,
+        CompletenessModel::class => CompletenessPolicy::class,
+        SearchableProductModel::class => SearchableProductPolicy::class,
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Tables
+    |--------------------------------------------------------------------------
+    |
+    | The table each of Showroom's records is stored in. Set these before
+    | running the migrations: the migrations, models, validation rules, the
+    | database search engine and the webhook queries all read them. A
+    | published config that lists only some keeps the defaults for the rest.
+    |
+    */
+
+    'tables' => [
+        'attribute_groups' => 'showroom_attribute_groups',
+        'attributes' => 'showroom_attributes',
+        'attribute_options' => 'showroom_attribute_options',
+        'families' => 'showroom_families',
+        'family_attributes' => 'showroom_family_attributes',
+        'family_variants' => 'showroom_family_variants',
+        'family_variant_attributes' => 'showroom_family_variant_attributes',
+        'product_models' => 'showroom_product_models',
+        'products' => 'showroom_products',
+        'product_unique_values' => 'showroom_product_unique_values',
+        'owner_types' => 'showroom_owner_types',
+        'owner_type_parents' => 'showroom_owner_type_parents',
+        'owners' => 'showroom_owners',
+        'categories' => 'showroom_categories',
+        'category_product' => 'showroom_category_product',
+        'category_product_model' => 'showroom_category_product_model',
+        'assets' => 'showroom_assets',
+        'asset_links' => 'showroom_asset_links',
+        'locales' => 'showroom_locales',
+        'channels' => 'showroom_channels',
+        'channel_locale' => 'showroom_channel_locale',
+        'association_types' => 'showroom_association_types',
+        'associations' => 'showroom_associations',
+        'product_completeness' => 'showroom_product_completeness',
+        'versions' => 'showroom_versions',
     ],
 
     /*
@@ -177,12 +236,17 @@ return [
     |
     | Individual pages and controls are still shown per Showroom policy.
     |
+    | - `widget_cache_seconds`: how long the completeness widget keeps its
+    |   figures, which read every stored score. 0 reads them fresh on every
+    |   render.
+    |
     */
 
     'atrium' => [
         'features' => [
             ShowroomSupportFeature::class,
         ],
+        'widget_cache_seconds' => 60,
     ],
 
     /*
@@ -203,6 +267,26 @@ return [
     'workflow' => [
         'require_approval' => true,
         'require_complete' => false,
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Audit
+    |--------------------------------------------------------------------------
+    |
+    | Showroom keeps no audit log of its own. With refactor-circus/keen
+    | installed, Keen records every change Showroom makes, and Showroom shows
+    | the history on its Atrium pages, its `GET /showroom/history` route and
+    | its history MCP tool. Without Keen none of that exists.
+    |
+    | enabled: Set to false to keep Showroom out of the audit log even while
+    |          Keen is installed: Keen records nothing of Showroom's, and
+    |          Showroom offers no history.
+    |
+    */
+
+    'audit' => [
+        'enabled' => true,
     ],
 
     /*

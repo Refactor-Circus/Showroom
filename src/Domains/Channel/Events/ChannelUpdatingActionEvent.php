@@ -7,6 +7,7 @@ namespace RefactorCircus\Showroom\Domains\Channel\Events;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 use RefactorCircus\Keystone\Contracts\ActionStartingEvent;
+use RefactorCircus\Showroom\Domains\Channel\Data\UpdateChannelData;
 use RefactorCircus\Showroom\Domains\Channel\Models\ChannelModel;
 
 /**
@@ -17,11 +18,8 @@ final class ChannelUpdatingActionEvent implements ActionStartingEvent
     use Dispatchable;
     use SerializesModels;
 
-    /**
-     * @param  array<string, mixed>  $data
-     */
     public function __construct(
         public ChannelModel $channel,
-        public array $data,
+        public UpdateChannelData $data,
     ) {}
 }

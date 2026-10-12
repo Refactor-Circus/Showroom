@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace RefactorCircus\Showroom\Domains\Family\Mcp\Requests;
 
-use Laravel\Mcp\Response;
 use Laravel\Mcp\ResponseFactory;
 use RefactorCircus\Showroom\Domains\Family\Actions\ShowFamilyAction;
 use RefactorCircus\Showroom\Domains\Family\Resources\FamilyResource;
@@ -18,7 +17,7 @@ final class ShowFamilyMcpRequest extends FamilyRequest
 
     protected function rules(): array
     {
-        return ShowFamilyAction::rules() + [
+        return [
             'family' => ['required', 'string', 'max:100'],
         ];
     }
@@ -27,6 +26,6 @@ final class ShowFamilyMcpRequest extends FamilyRequest
     {
         $family = app(ShowFamilyAction::class)->execute($this->family());
 
-        return Response::structured((new FamilyResource($family))->resolve());
+        return (new FamilyResource($family))->toStructuredResponse();
     }
 }

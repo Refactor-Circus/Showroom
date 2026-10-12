@@ -15,11 +15,6 @@ final class ShowFamilyRequest extends FamilyRequest
         return $this->allows('view', $this->family());
     }
 
-    public function rules(): array
-    {
-        return ShowFamilyAction::rules();
-    }
-
     public function persist(): JsonResponse
     {
         $family = app(ShowFamilyAction::class)->execute($this->family());

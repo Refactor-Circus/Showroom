@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace RefactorCircus\Showroom\Domains\Workflow\Mcp\Requests;
 
-use Laravel\Mcp\Response;
 use Laravel\Mcp\ResponseFactory;
 use RefactorCircus\Showroom\Domains\Product\Mcp\Requests\ProductRequest;
 use RefactorCircus\Showroom\Domains\Workflow\Actions\ShowProductVersionAction;
@@ -19,7 +18,7 @@ final class ShowProductVersionMcpRequest extends ProductRequest
 
     protected function rules(): array
     {
-        return ShowProductVersionAction::rules() + [
+        return [
             'product' => ['required', 'string', 'max:191'],
             'version' => ['required', 'string', 'max:20'],
         ];
@@ -29,6 +28,6 @@ final class ShowProductVersionMcpRequest extends ProductRequest
     {
         $version = app(ShowProductVersionAction::class)->execute($this->product(), (string) $validated['version']);
 
-        return Response::structured((new VersionResource($version))->resolve());
+        return (new VersionResource($version))->toStructuredResponse();
     }
 }

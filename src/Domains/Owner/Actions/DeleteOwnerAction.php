@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace RefactorCircus\Showroom\Domains\Owner\Actions;
 
+use Illuminate\Support\Facades\DB;
 use RefactorCircus\Showroom\Domains\Asset\Services\AssetLinks;
 use RefactorCircus\Showroom\Domains\Owner\Events\OwnerDeletedActionEvent;
 use RefactorCircus\Showroom\Domains\Owner\Events\OwnerDeletingActionEvent;
@@ -12,14 +13,6 @@ use RefactorCircus\Showroom\Exceptions\ModelInUseException;
 
 final class DeleteOwnerAction
 {
-    /**
-     * @return array<string, mixed>
-     */
-    public static function rules(): array
-    {
-        return [];
-    }
-
     public function execute(OwnerModel $owner): OwnerModel
     {
         OwnerDeletingActionEvent::dispatch($owner);
@@ -37,17 +30,19 @@ final class DeleteOwnerAction
      */
     private function perform(OwnerModel $owner): OwnerModel
     {
-        $children = $owner->children()->count();
-        $products = $owner->products()->count() + $owner->productModels()->count();
+        return DB::transaction(function () use ($owner): OwnerModel {
+            $children = $owner->children()->count();
+            $products = $owner->products()->count() + $owner->productModels()->count();
 
-        if ($children > 0 || $products > 0) {
-            throw ModelInUseException::ownerHasDependents($owner->code, $children, $products);
-        }
+            if ($children > 0 || $products > 0) {
+                throw ModelInUseException::ownerHasDependents($owner->code, $children, $products);
+            }
 
-        $owner->delete();
+            $owner->delete();
 
-        app(AssetLinks::class)->forget(OwnerModel::class, [$owner->id]);
+            app(AssetLinks::class)->forget(OwnerModel::class, [$owner->id]);
 
-        return $owner;
+            return $owner;
+        });
     }
 }

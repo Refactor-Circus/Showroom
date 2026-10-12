@@ -59,7 +59,11 @@ it('keeps the published version while the working copy changes', function (): vo
         ->assertJsonPath('data.version', $version)
         ->assertJsonPath('data.snapshot.values.name.0.data', 'Tee');
 
-    $this->getJson('/showroom/products/TEE/versions/latest')->assertJsonPath('data.snapshot.values.name.0.data', 'New tee');
+    // The version the edit records shows it back in draft.
+    $this->getJson('/showroom/products/TEE/versions/latest')
+        ->assertJsonPath('data.snapshot.values.name.0.data', 'New tee')
+        ->assertJsonPath('data.snapshot.status', 'draft')
+        ->assertJsonPath('data.changes.status', ['old' => 'approved', 'new' => 'draft']);
 });
 
 it('publishes without approval when told to', function (): void {

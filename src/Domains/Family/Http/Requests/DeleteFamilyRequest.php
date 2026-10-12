@@ -14,11 +14,6 @@ final class DeleteFamilyRequest extends FamilyRequest
         return $this->allows('delete', $this->family());
     }
 
-    public function rules(): array
-    {
-        return DeleteFamilyAction::rules();
-    }
-
     public function persist(): JsonResponse
     {
         app(DeleteFamilyAction::class)->execute($this->family());

@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use RefactorCircus\Impex\Domains\Flow\Services\FlowRegistry;
@@ -9,8 +10,19 @@ use RefactorCircus\Impex\Domains\Message\Models\MessageModel;
 use RefactorCircus\Impex\Domains\Run\Enums\RunStatus;
 use RefactorCircus\Impex\Domains\Run\Models\RunModel;
 use RefactorCircus\Impex\Facades\Impex;
+use RefactorCircus\Keystone\Contracts\ActionFinishedEvent;
+use RefactorCircus\Keystone\Contracts\ActionStartingEvent;
+use RefactorCircus\Keystone\Contracts\UnauditedActionEvent;
 use RefactorCircus\Showroom\Domains\Asset\Models\AssetModel;
 use RefactorCircus\Showroom\Domains\Product\Models\ProductModel;
+use RefactorCircus\Showroom\Domains\Transfer\Events\FeedDeliveredActionEvent;
+use RefactorCircus\Showroom\Domains\Transfer\Events\FeedDeliveringActionEvent;
+use RefactorCircus\Showroom\Domains\Transfer\Events\ProductExportJoinedActionEvent;
+use RefactorCircus\Showroom\Domains\Transfer\Events\ProductExportJoiningActionEvent;
+use RefactorCircus\Showroom\Domains\Transfer\Events\ProductPagesExportedActionEvent;
+use RefactorCircus\Showroom\Domains\Transfer\Events\ProductPagesExportingActionEvent;
+use RefactorCircus\Showroom\Domains\Transfer\Events\ProductRowImportedActionEvent;
+use RefactorCircus\Showroom\Domains\Transfer\Events\ProductRowImportingActionEvent;
 use RefactorCircus\Showroom\Domains\Transfer\Mcp\Tools\StartExportTool;
 use RefactorCircus\Showroom\Domains\Transfer\Mcp\Tools\StartImportTool;
 use RefactorCircus\Showroom\Tests\Fixtures\Catalog;
@@ -162,6 +174,22 @@ it('exports matching products to a JSONL or CSV asset', function (): void {
     expect(Impex::result(finishedRun($back)))->toMatchArray(['succeeded' => 2, 'failed' => 0]);
 });
 
+it('exports the products value filters match, replaying them from the run', function (): void {
+    $this->postJson('/showroom/products', ['identifier' => 'A', 'values' => ['name' => Catalog::value('Alpha')]])->assertCreated();
+    $this->postJson('/showroom/products', ['identifier' => 'B', 'values' => ['name' => Catalog::value('Beta')]])->assertCreated();
+
+    $id = $this->postJson('/showroom/exports', [
+        'filters' => [['attribute' => 'name', 'operator' => 'in', 'value' => ['Alpha']]],
+        'code' => 'alpha',
+    ])->assertStatus(202)->json('data.id');
+
+    expect(Impex::result(finishedRun($id))['count'])->toBe(1);
+
+    $record = json_decode(trim((string) Storage::disk('assets')->get(AssetModel::query()->where('code', 'alpha')->firstOrFail()->path)), true);
+
+    expect($record['identifier'])->toBe('A');
+});
+
 it('exports live versions only when asked', function (): void {
     config()->set('showroom.workflow.require_approval', false);
 
@@ -205,6 +233,39 @@ it('builds and delivers a channel feed', function (): void {
 
     Http::assertSent(fn ($request): bool => $request->url() === 'https://feeds.example.test/in');
     expect(MessageModel::query()->where('channel', 'web-feed')->where('run_id', $run->id)->exists())->toBeTrue();
+});
+
+it('fires a starting and a finished event around every flow step', function (): void {
+    config()->set('showroom.workflow.require_approval', false);
+    config()->set('showroom.impex.feeds', ['web' => ['channel' => 'print', 'format' => 'jsonl', 'url' => 'https://feeds.example.test/in']]);
+    app()->forgetInstance(FlowRegistry::class);
+    Http::fake(['feeds.example.test/*' => Http::response(['ok' => true], 200)]);
+
+    /** @var ArrayObject<int, class-string> $seen */
+    $seen = new ArrayObject;
+    Event::listen([ActionStartingEvent::class, ActionFinishedEvent::class], function (object $event) use ($seen): void {
+        $seen->append($event::class);
+    });
+
+    fileAsset('one', 'one.jsonl', (string) json_encode(['identifier' => 'LIVE']));
+    finishedRun($this->postJson('/showroom/imports', ['asset' => 'one'])->json('data.id'));
+    $this->postJson('/showroom/products/LIVE/transitions', ['transition' => 'publish'])->assertOk();
+    finishedRun(Impex::run('showroom:feed:web')->id);
+
+    expect($seen->getArrayCopy())->toContain(
+        ProductRowImportingActionEvent::class, ProductRowImportedActionEvent::class,
+        ProductPagesExportingActionEvent::class, ProductPagesExportedActionEvent::class,
+        ProductExportJoiningActionEvent::class, ProductExportJoinedActionEvent::class,
+        FeedDeliveringActionEvent::class, FeedDeliveredActionEvent::class,
+    );
+});
+
+it('keeps per-row and per-page steps out of the audit log', function (): void {
+    expect(array_filter(
+        [ProductRowImportingActionEvent::class, ProductRowImportedActionEvent::class, ProductPagesExportingActionEvent::class, ProductPagesExportedActionEvent::class],
+        fn (string $event): bool => ! is_subclass_of($event, UnauditedActionEvent::class),
+    ))->toBeEmpty()
+        ->and(is_subclass_of(ProductExportJoinedActionEvent::class, UnauditedActionEvent::class))->toBeFalse();
 });
 
 it('delivers a feed through a named Impex channel, the channel\'s way', function (): void {

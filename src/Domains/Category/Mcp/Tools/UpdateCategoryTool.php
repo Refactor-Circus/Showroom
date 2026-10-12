@@ -10,6 +10,7 @@ use Laravel\Mcp\ResponseFactory;
 use Laravel\Mcp\Server\Attributes\Description;
 use RefactorCircus\Keystone\Mcp\Tool;
 use RefactorCircus\Showroom\Domains\Category\Mcp\Requests\UpdateCategoryMcpRequest;
+use RefactorCircus\Showroom\Domains\Category\Resources\CategoryResource;
 
 #[Description('Update a category\'s labels or sort order, or move it with its whole branch. The code cannot change.')]
 final class UpdateCategoryTool extends Tool
@@ -27,5 +28,10 @@ final class UpdateCategoryTool extends Tool
             'labels' => $schema->object()->description('Labels keyed by locale. Replaces all labels when given.'),
             'sort_order' => $schema->integer()->description('Position among its siblings, lowest first.')->min(0),
         ];
+    }
+
+    public function outputSchema(JsonSchema $schema): array
+    {
+        return CategoryResource::structuredSchema($schema);
     }
 }

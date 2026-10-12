@@ -4,17 +4,21 @@ declare(strict_types=1);
 
 namespace RefactorCircus\Showroom\Domains\Attribute\Data;
 
+use Illuminate\Validation\Rule;
+use RefactorCircus\Keystone\Data\Data;
 use RefactorCircus\Showroom\Domains\Attribute\Services\Values;
+use RefactorCircus\Showroom\Domains\Channel\Models\ChannelModel;
+use RefactorCircus\Showroom\Domains\Channel\Models\LocaleModel;
 
 /**
  * Narrows the values a read returns to one channel and some locales, as an
  * export to a single storefront needs. Channel- and locale-independent
  * values always stay.
  */
-final readonly class ValueFilter
+final readonly class ValueFilter extends Data
 {
     /**
-     * @param  array<int, string>|null  $locales
+     * @param  list<string>|null  $locales
      */
     public function __construct(
         public ?string $scope = null,
@@ -22,32 +26,18 @@ final readonly class ValueFilter
     ) {}
 
     /**
-     * The request rules that describe a filter.
+     * The rules for `scope` and `locales`, which the reads that narrow values
+     * take among their own.
      *
      * @return array<string, mixed>
      */
     public static function rules(): array
     {
         return [
-            'scope' => ['sometimes', 'nullable', 'string', 'exists:showroom_channels,code'],
+            'scope' => ['sometimes', 'nullable', 'string', Rule::exists(ChannelModel::class, 'code')],
             'locales' => ['sometimes', 'nullable', 'array', 'list'],
-            'locales.*' => ['string', 'exists:showroom_locales,code'],
+            'locales.*' => ['string', Rule::exists(LocaleModel::class, 'code')],
         ];
-    }
-
-    /**
-     * @param  array<string, mixed>  $input
-     */
-    public static function fromArray(array $input): self
-    {
-        $locales = is_array($input['locales'] ?? null)
-            ? array_values(array_filter($input['locales'], 'is_string'))
-            : null;
-
-        return new self(
-            scope: is_string($input['scope'] ?? null) ? $input['scope'] : null,
-            locales: $locales,
-        );
     }
 
     public function isEmpty(): bool

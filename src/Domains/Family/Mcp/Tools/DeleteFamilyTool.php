@@ -25,4 +25,12 @@ final class DeleteFamilyTool extends Tool
             'family' => $schema->string()->description('The family code.')->required(),
         ];
     }
+
+    public function outputSchema(JsonSchema $schema): array
+    {
+        return [
+            'deleted' => $schema->boolean()->required(),
+            'code' => $schema->string()->required(),
+        ];
+    }
 }

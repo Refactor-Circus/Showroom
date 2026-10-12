@@ -7,6 +7,7 @@ namespace RefactorCircus\Showroom\Domains\Category\Events;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 use RefactorCircus\Keystone\Contracts\ActionStartingEvent;
+use RefactorCircus\Showroom\Domains\Category\Data\UpdateCategoryData;
 use RefactorCircus\Showroom\Domains\Category\Models\CategoryModel;
 
 /**
@@ -17,11 +18,8 @@ final class CategoryUpdatingActionEvent implements ActionStartingEvent
     use Dispatchable;
     use SerializesModels;
 
-    /**
-     * @param  array<string, mixed>  $data
-     */
     public function __construct(
         public CategoryModel $category,
-        public array $data,
+        public UpdateCategoryData $data,
     ) {}
 }

@@ -8,6 +8,7 @@ use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 use RefactorCircus\Keystone\Contracts\ActionStartingEvent;
 use RefactorCircus\Showroom\Domains\Product\Models\ProductModel;
+use RefactorCircus\Showroom\Domains\Workflow\Data\ListProductVersionsData;
 
 /**
  * A product's versions are about to be listed.
@@ -17,11 +18,8 @@ final class ProductVersionsListingActionEvent implements ActionStartingEvent
     use Dispatchable;
     use SerializesModels;
 
-    /**
-     * @param  array<string, mixed>  $filters
-     */
     public function __construct(
         public ProductModel $product,
-        public array $filters,
+        public ListProductVersionsData $filters,
     ) {}
 }

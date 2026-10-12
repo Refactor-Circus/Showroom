@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 namespace RefactorCircus\Showroom\Domains\Asset\Actions;
 
-use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
+use RefactorCircus\Showroom\Domains\Asset\Data\DetachAssetData;
 use RefactorCircus\Showroom\Domains\Asset\Events\AssetDetachedActionEvent;
 use RefactorCircus\Showroom\Domains\Asset\Events\AssetDetachingActionEvent;
 use RefactorCircus\Showroom\Domains\Asset\Models\AssetModel;
@@ -13,28 +14,12 @@ use RefactorCircus\Showroom\Domains\Asset\Services\AssetLinks;
 
 final class DetachAssetAction
 {
-    /**
-     * Without `role`, the asset is unlinked from the record in every role.
-     *
-     * @return array<string, mixed>
-     */
-    public static function rules(): array
-    {
-        return [
-            'type' => ['required', 'string', Rule::in(array_keys(AssetLinks::TYPES))],
-            'target' => ['required', 'string', 'max:191'],
-            'role' => ['sometimes', 'nullable', 'string', 'max:100'],
-        ];
-    }
-
     public function __construct(private readonly AssetLinks $links) {}
 
     /**
-     * @param  array<string, mixed>  $data
-     *
      * @throws ValidationException
      */
-    public function execute(AssetModel $asset, array $data): AssetModel
+    public function execute(AssetModel $asset, DetachAssetData $data): AssetModel
     {
         AssetDetachingActionEvent::dispatch($asset, $data);
 
@@ -45,15 +30,14 @@ final class DetachAssetAction
         return $result;
     }
 
-    /**
-     * @param  array<string, mixed>  $data
-     */
-    private function perform(AssetModel $asset, array $data): AssetModel
+    private function perform(AssetModel $asset, DetachAssetData $data): AssetModel
     {
-        $record = $this->links->resolve((string) $data['type'], (string) $data['target']);
+        return DB::transaction(function () use ($asset, $data): AssetModel {
+            $record = $this->links->resolve($data->type, $data->target);
 
-        $this->links->detach($asset, $record, is_string($data['role'] ?? null) ? $data['role'] : null);
+            $this->links->detach($asset, $record, $data->role);
 
-        return $asset->load(['products', 'productModels', 'owners']);
+            return $asset->load(['products', 'productModels', 'owners']);
+        });
     }
 }

@@ -6,6 +6,7 @@ namespace RefactorCircus\Showroom\Domains\Category\Http\Requests;
 
 use Illuminate\Http\JsonResponse;
 use RefactorCircus\Showroom\Domains\Category\Actions\UpdateCategoryAction;
+use RefactorCircus\Showroom\Domains\Category\Data\UpdateCategoryData;
 use RefactorCircus\Showroom\Domains\Category\Resources\CategoryResource;
 
 final class UpdateCategoryRequest extends CategoryRequest
@@ -17,12 +18,12 @@ final class UpdateCategoryRequest extends CategoryRequest
 
     public function rules(): array
     {
-        return UpdateCategoryAction::rules();
+        return UpdateCategoryData::rules();
     }
 
     public function persist(): JsonResponse
     {
-        $category = app(UpdateCategoryAction::class)->execute($this->category(), $this->validated());
+        $category = app(UpdateCategoryAction::class)->execute($this->category(), UpdateCategoryData::fromValidated($this->validated()));
 
         return (new CategoryResource($category))->response();
     }

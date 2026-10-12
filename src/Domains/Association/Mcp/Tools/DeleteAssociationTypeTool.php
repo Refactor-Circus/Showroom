@@ -25,4 +25,12 @@ final class DeleteAssociationTypeTool extends Tool
             'association_type' => $schema->string()->description('The association type code.')->required(),
         ];
     }
+
+    public function outputSchema(JsonSchema $schema): array
+    {
+        return [
+            'deleted' => $schema->boolean()->required(),
+            'code' => $schema->string()->required(),
+        ];
+    }
 }

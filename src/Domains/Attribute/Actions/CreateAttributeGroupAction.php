@@ -4,29 +4,15 @@ declare(strict_types=1);
 
 namespace RefactorCircus\Showroom\Domains\Attribute\Actions;
 
+use Illuminate\Support\Facades\DB;
+use RefactorCircus\Showroom\Domains\Attribute\Data\CreateAttributeGroupData;
 use RefactorCircus\Showroom\Domains\Attribute\Events\AttributeGroupCreatedActionEvent;
 use RefactorCircus\Showroom\Domains\Attribute\Events\AttributeGroupCreatingActionEvent;
 use RefactorCircus\Showroom\Domains\Attribute\Models\AttributeGroupModel;
 
 final class CreateAttributeGroupAction
 {
-    /**
-     * @return array<string, mixed>
-     */
-    public static function rules(): array
-    {
-        return [
-            'code' => ['required', 'string', 'max:100', 'regex:/^[a-z][a-z0-9_]*$/', 'unique:showroom_attribute_groups,code'],
-            'labels' => ['sometimes', 'nullable', 'array'],
-            'labels.*' => ['nullable', 'string', 'max:255'],
-            'sort_order' => ['sometimes', 'integer', 'min:0'],
-        ];
-    }
-
-    /**
-     * @param  array<string, mixed>  $data
-     */
-    public function execute(array $data): AttributeGroupModel
+    public function execute(CreateAttributeGroupData $data): AttributeGroupModel
     {
         AttributeGroupCreatingActionEvent::dispatch($data);
 
@@ -37,15 +23,14 @@ final class CreateAttributeGroupAction
         return $result;
     }
 
-    /**
-     * @param  array<string, mixed>  $data
-     */
-    private function perform(array $data): AttributeGroupModel
+    private function perform(CreateAttributeGroupData $data): AttributeGroupModel
     {
-        return AttributeGroupModel::query()->create([
-            'code' => $data['code'],
-            'labels' => $data['labels'] ?? [],
-            'sort_order' => $data['sort_order'] ?? 0,
-        ]);
+        return DB::transaction(function () use ($data): AttributeGroupModel {
+            return AttributeGroupModel::query()->create([
+                'code' => $data->code,
+                'labels' => $data->labels ?? [],
+                'sort_order' => $data->sortOrder,
+            ]);
+        });
     }
 }

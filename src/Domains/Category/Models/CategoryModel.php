@@ -17,6 +17,7 @@ use RefactorCircus\Showroom\Domains\Product\Models\ProductModel;
 use RefactorCircus\Showroom\Domains\ProductModel\Models\ProductModelModel;
 use RefactorCircus\Showroom\Support\Models\Concerns\HasLabels;
 use RefactorCircus\Showroom\Support\Models\Concerns\HasPath;
+use RefactorCircus\Showroom\Support\Tables;
 
 /**
  * A node of a category tree. A category without a parent is the root of a
@@ -44,7 +45,10 @@ final class CategoryModel extends Model
     use HasPath;
     use HasUlids;
 
-    protected $table = 'showroom_categories';
+    public function getTable(): string
+    {
+        return Tables::name('categories');
+    }
 
     protected $fillable = [
         'parent_id',
@@ -76,7 +80,7 @@ final class CategoryModel extends Model
      */
     public function products(): BelongsToMany
     {
-        return $this->belongsToMany(ProductModel::class, 'showroom_category_product', 'category_id', 'product_id');
+        return $this->belongsToMany(ProductModel::class, Tables::name('category_product'), 'category_id', 'product_id');
     }
 
     /**
@@ -84,7 +88,7 @@ final class CategoryModel extends Model
      */
     public function productModels(): BelongsToMany
     {
-        return $this->belongsToMany(ProductModelModel::class, 'showroom_category_product_model', 'category_id', 'product_model_id');
+        return $this->belongsToMany(ProductModelModel::class, Tables::name('category_product_model'), 'category_id', 'product_model_id');
     }
 
     /**

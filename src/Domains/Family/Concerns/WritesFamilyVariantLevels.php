@@ -7,6 +7,7 @@ namespace RefactorCircus\Showroom\Domains\Family\Concerns;
 use Illuminate\Validation\ValidationException;
 use RefactorCircus\Showroom\Domains\Attribute\Enums\AttributeType;
 use RefactorCircus\Showroom\Domains\Attribute\Models\AttributeModel;
+use RefactorCircus\Showroom\Domains\Family\Data\FamilyLevelData;
 use RefactorCircus\Showroom\Domains\Family\Models\FamilyVariantModel;
 
 /**
@@ -15,24 +16,9 @@ use RefactorCircus\Showroom\Domains\Family\Models\FamilyVariantModel;
 trait WritesFamilyVariantLevels
 {
     /**
-     * @return array<string, mixed>
-     */
-    private static function levelRules(bool $required): array
-    {
-        return [
-            'levels' => [$required ? 'required' : 'sometimes', 'array', 'list', 'min:1', 'max:2'],
-            'levels.*' => ['array'],
-            'levels.*.axes' => ['required', 'array', 'list', 'min:1', 'max:5'],
-            'levels.*.axes.*' => ['string', 'exists:showroom_attributes,code'],
-            'levels.*.attributes' => ['sometimes', 'array', 'list'],
-            'levels.*.attributes.*' => ['string', 'exists:showroom_attributes,code'],
-        ];
-    }
-
-    /**
      * Place attributes on the variant's levels, replacing any placement.
      *
-     * @param  array<int, array{axes: array<int, string>, attributes?: array<int, string>}>  $levels
+     * @param  array<int, FamilyLevelData>  $levels
      *
      * @throws ValidationException
      */
@@ -48,7 +34,7 @@ trait WritesFamilyVariantLevels
         foreach ($levels as $index => $level) {
             $number = $index + 1;
 
-            foreach (['axes' => $level['axes'], 'attributes' => $level['attributes'] ?? []] as $kind => $codes) {
+            foreach (['axes' => $level->axes, 'attributes' => $level->attributes] as $kind => $codes) {
                 foreach ($codes as $position => $code) {
                     $key = sprintf('levels.%d.%s.%d', $index, $kind, $position);
                     $attribute = $members->get($code);

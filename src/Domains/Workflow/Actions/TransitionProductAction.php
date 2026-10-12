@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace RefactorCircus\Showroom\Domains\Workflow\Actions;
 
 use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\Rule;
 use RefactorCircus\Showroom\Domains\Channel\Models\ChannelModel;
 use RefactorCircus\Showroom\Domains\Channel\Models\LocaleModel;
 use RefactorCircus\Showroom\Domains\Product\Models\ProductModel;
 use RefactorCircus\Showroom\Domains\Search\Services\ProductIndex;
+use RefactorCircus\Showroom\Domains\Workflow\Data\TransitionProductData;
 use RefactorCircus\Showroom\Domains\Workflow\Enums\Transition;
 use RefactorCircus\Showroom\Domains\Workflow\Events\ProductTransitionedActionEvent;
 use RefactorCircus\Showroom\Domains\Workflow\Events\ProductTransitioningActionEvent;
@@ -19,20 +19,6 @@ use RefactorCircus\Showroom\Domains\Workflow\Services\Versions;
 
 final class TransitionProductAction
 {
-    /**
-     * `publish` makes the product's current version the one storefronts
-     * read; the working copy stays editable.
-     *
-     * @return array<string, mixed>
-     */
-    public static function rules(): array
-    {
-        return [
-            'transition' => ['required', 'string', Rule::enum(Transition::class)],
-            'comment' => ['sometimes', 'nullable', 'string', 'max:2000'],
-        ];
-    }
-
     public function __construct(
         private readonly Versions $versions,
         private readonly ProductIndex $index,
@@ -40,11 +26,9 @@ final class TransitionProductAction
     ) {}
 
     /**
-     * @param  array<string, mixed>  $data
-     *
      * @throws InvalidTransitionException
      */
-    public function execute(ProductModel $product, array $data): ProductModel
+    public function execute(ProductModel $product, TransitionProductData $data): ProductModel
     {
         ProductTransitioningActionEvent::dispatch($product, $data);
 
@@ -55,13 +39,10 @@ final class TransitionProductAction
         return $result;
     }
 
-    /**
-     * @param  array<string, mixed>  $data
-     */
-    private function perform(ProductModel $product, array $data): ProductModel
+    private function perform(ProductModel $product, TransitionProductData $data): ProductModel
     {
-        $transition = Transition::from((string) $data['transition']);
-        $comment = is_string($data['comment'] ?? null) ? $data['comment'] : null;
+        $transition = $data->transition;
+        $comment = $data->comment;
         $from = $transition->startsFrom(config('showroom.workflow.require_approval', true) !== false);
 
         if (! in_array($product->status, $from, true)) {

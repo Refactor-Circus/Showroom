@@ -4,13 +4,16 @@ declare(strict_types=1);
 
 namespace RefactorCircus\Showroom\Domains\Search\Data;
 
+use Illuminate\Validation\Rule;
+use RefactorCircus\Keystone\Data\Data;
 use RefactorCircus\Showroom\Domains\Channel\Models\ChannelModel;
+use RefactorCircus\Showroom\Domains\Channel\Models\LocaleModel;
 
 /**
  * A completeness condition: at least `min` percent on a channel — in one
  * locale, or in every locale the channel publishes in.
  */
-final readonly class Complete
+final readonly class Complete extends Data
 {
     public function __construct(
         public string $scope,
@@ -19,15 +22,30 @@ final readonly class Complete
     ) {}
 
     /**
-     * @param  array<string, mixed>  $input
+     * The condition's rules; a search takes them under `complete.`, where
+     * `scope` is `required_with:complete`.
+     *
+     * @return array<string, array<int, mixed>>
      */
-    public static function fromArray(array $input): self
+    public static function rules(): array
     {
-        return new self(
-            scope: is_string($input['scope'] ?? null) ? $input['scope'] : '',
-            locale: is_string($input['locale'] ?? null) && $input['locale'] !== '' ? $input['locale'] : null,
-            min: isset($input['min']) ? (int) $input['min'] : 100,
-        );
+        return [
+            'scope' => ['required', 'string', Rule::exists(ChannelModel::class, 'code')],
+            'locale' => ['sometimes', 'nullable', 'string', Rule::exists(LocaleModel::class, 'code')],
+            'min' => ['sometimes', 'integer', 'min:0', 'max:100'],
+        ];
+    }
+
+    /**
+     * An empty locale means every locale.
+     */
+    protected static function prepare(array $validated): array
+    {
+        if (($validated['locale'] ?? null) === '') {
+            $validated['locale'] = null;
+        }
+
+        return $validated;
     }
 
     /**

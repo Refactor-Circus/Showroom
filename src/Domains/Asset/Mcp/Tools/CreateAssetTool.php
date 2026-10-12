@@ -10,6 +10,7 @@ use Laravel\Mcp\ResponseFactory;
 use Laravel\Mcp\Server\Attributes\Description;
 use RefactorCircus\Keystone\Mcp\Tool;
 use RefactorCircus\Showroom\Domains\Asset\Mcp\Requests\CreateAssetMcpRequest;
+use RefactorCircus\Showroom\Domains\Asset\Resources\AssetResource;
 
 #[Description('Add an asset from a URL, or from a file already on the asset disk. Link it with attach-asset-tool.')]
 final class CreateAssetTool extends Tool
@@ -27,5 +28,10 @@ final class CreateAssetTool extends Tool
             'url' => $schema->string()->description('An http(s) URL to fetch the file from. Give this or path.'),
             'path' => $schema->string()->description('The path of a file already on the asset disk, such as one uploaded straight to S3. Give this or url.'),
         ];
+    }
+
+    public function outputSchema(JsonSchema $schema): array
+    {
+        return AssetResource::structuredSchema($schema);
     }
 }

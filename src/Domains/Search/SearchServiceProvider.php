@@ -13,6 +13,7 @@ use RefactorCircus\Showroom\Domains\Search\Contracts\SearchEngine;
 use RefactorCircus\Showroom\Domains\Search\Exceptions\UnsupportedSearchException;
 use RefactorCircus\Showroom\Domains\Search\Services\DatabaseEngine;
 use RefactorCircus\Showroom\Domains\Search\Services\ScoutEngine;
+use RefactorCircus\Showroom\Domains\Search\Support\SyncBuffer;
 
 class SearchServiceProvider extends ServiceProvider
 {
@@ -20,6 +21,9 @@ class SearchServiceProvider extends ServiceProvider
     {
         // Resolved per use, so the configured engine can change at runtime.
         $this->app->bind(SearchEngine::class, fn (Application $app): SearchEngine => $this->searchEngine($app));
+
+        // Per request or job, so a deferral never leaks into the next one.
+        $this->app->scoped(SyncBuffer::class);
     }
 
     public function boot(): void

@@ -13,9 +13,13 @@ use RefactorCircus\Showroom\Domains\Owner\Models\OwnerModel;
 use RefactorCircus\Showroom\Domains\Product\Models\ProductModel;
 use RefactorCircus\Showroom\Domains\ProductModel\Models\ProductModelModel;
 use RefactorCircus\Showroom\Domains\Search\Contracts\SearchEngine;
+use RefactorCircus\Showroom\Domains\Search\Enums\SyncScope;
 use RefactorCircus\Showroom\Domains\Search\Events\ProductsQueuedForSync;
+use RefactorCircus\Showroom\Domains\Search\Support\SyncBuffer;
 use RefactorCircus\Showroom\Domains\Workflow\Services\CompletenessCalculator;
+use RefactorCircus\Showroom\Jobs\QueueProductSyncs;
 use RefactorCircus\Showroom\Jobs\SyncProductIndex;
+use RefactorCircus\Showroom\Support\Tables;
 
 /**
  * Keeps what is derived from products — completeness scores and the search
@@ -28,7 +32,33 @@ final class ProductIndex
         private readonly Config $config,
         private readonly CompletenessCalculator $completeness,
         private readonly Events $events,
+        private readonly SyncBuffer $buffer,
     ) {}
+
+    /**
+     * Run a callback with every sync it queues held back, then queue them
+     * together: a bulk write — many rows, one process — sends one job per
+     * 500 products instead of one per write. Nested calls join the outer one.
+     *
+     * @template TResult
+     *
+     * @param  callable(): TResult  $callback
+     * @return TResult
+     */
+    public function deferring(callable $callback): mixed
+    {
+        if (! $this->buffer->open()) {
+            return $callback();
+        }
+
+        try {
+            return $callback();
+        } finally {
+            // What was written before a failure still needs its sync; a
+            // rolled-back transaction drops the jobs with it.
+            $this->queue($this->buffer->close());
+        }
+    }
 
     /**
      * Queue a sync of these products, after the surrounding transaction
@@ -43,6 +73,12 @@ final class ProductIndex
         }
 
         $ids = array_values(array_unique($ids));
+
+        if ($this->buffer->isOpen()) {
+            $this->buffer->add($ids);
+
+            return;
+        }
 
         $this->events->dispatch(new ProductsQueuedForSync($ids));
 
@@ -67,6 +103,34 @@ final class ProductIndex
 
             $this->queue($ids);
         });
+    }
+
+    /**
+     * Queue a job that lists a scope's products and queues their syncs,
+     * after the surrounding transaction commits.
+     */
+    public function queueWithin(SyncScope $scope, ?string $id = null): void
+    {
+        QueueProductSyncs::dispatch($scope, $id)
+            ->onConnection($this->config->get('showroom.search.queue.connection'))
+            ->onQueue($this->config->get('showroom.search.queue.queue'))
+            ->afterCommit();
+    }
+
+    /**
+     * The products of a scope, as a query to walk in chunks; null when the
+     * family, owner or category it names is gone.
+     *
+     * @return Builder<ProductModel>|null
+     */
+    public function productsWithin(SyncScope $scope, ?string $id = null): ?Builder
+    {
+        return match ($scope) {
+            SyncScope::All => ProductModel::query(),
+            SyncScope::Family => ProductModel::query()->where('family_id', $id),
+            SyncScope::Owner => $this->ownedWithin(OwnerModel::query()->find($id)),
+            SyncScope::Category => $this->inCategories(CategoryModel::query()->find($id)),
+        };
     }
 
     /**
@@ -154,17 +218,8 @@ final class ProductIndex
      */
     public function productIdsOwnedWithin(OwnerModel $owner): array
     {
-        $owners = OwnerModel::query()->subtreeOf($owner)->pluck('id')->all();
-
-        $models = ProductModelModel::query()->whereIn('owner_id', $owners)->pluck('id')->all();
-        $models = [...$models, ...ProductModelModel::query()->whereIn('parent_id', $models)->pluck('id')->all()];
-
         /** @var array<int, string> $ids */
-        $ids = ProductModel::query()
-            ->whereIn('owner_id', $owners)
-            ->orWhereIn('parent_id', $models)
-            ->pluck('id')
-            ->all();
+        $ids = $this->ownedWithin($owner)?->pluck('id')->all() ?? [];
 
         return $ids;
     }
@@ -177,22 +232,57 @@ final class ProductIndex
      */
     public function productIdsInCategories(CategoryModel $category): array
     {
-        $categories = CategoryModel::query()->subtreeOf($category)->pluck('id')->all();
-
-        $models = ProductModelModel::query()
-            ->whereHas('categories', fn (Builder $query): Builder => $query->whereKey($categories))
-            ->pluck('id')
-            ->all();
-        $models = [...$models, ...ProductModelModel::query()->whereIn('parent_id', $models)->pluck('id')->all()];
-
         /** @var array<int, string> $ids */
-        $ids = ProductModel::query()
-            ->whereHas('categories', fn (Builder $query): Builder => $query->whereKey($categories))
-            ->orWhereIn('parent_id', $models)
-            ->pluck('id')
-            ->all();
+        $ids = $this->inCategories($category)?->pluck('id')->all() ?? [];
 
         return $ids;
+    }
+
+    /**
+     * Products owned by this owner or anything beneath it, directly or
+     * through a product model, without loading the ids first.
+     *
+     * @return Builder<ProductModel>|null
+     */
+    private function ownedWithin(?OwnerModel $owner): ?Builder
+    {
+        if ($owner === null) {
+            return null;
+        }
+
+        $owners = fn (): Builder => OwnerModel::query()->subtreeOf($owner)->select('id');
+        $roots = ProductModelModel::query()->whereIn('owner_id', $owners())->select('id');
+        $models = ProductModelModel::query()
+            ->where(fn (Builder $query): Builder => $query->whereIn('owner_id', $owners())->orWhereIn('parent_id', $roots))
+            ->select('id');
+
+        return ProductModel::query()->where(fn (Builder $query): Builder => $query
+            ->whereIn('owner_id', $owners())
+            ->orWhereIn('parent_id', $models));
+    }
+
+    /**
+     * Products in this category or any category beneath it, directly or
+     * through a product model, without loading the ids first.
+     *
+     * @return Builder<ProductModel>|null
+     */
+    private function inCategories(?CategoryModel $category): ?Builder
+    {
+        if ($category === null) {
+            return null;
+        }
+
+        $categories = fn (): Builder => CategoryModel::query()->subtreeOf($category)->select('id');
+        $filed = fn (Builder $query): Builder => $query->whereIn(Tables::name('categories').'.id', $categories());
+        $roots = ProductModelModel::query()->whereHas('categories', $filed)->select('id');
+        $models = ProductModelModel::query()
+            ->where(fn (Builder $query): Builder => $query->whereHas('categories', $filed)->orWhereIn('parent_id', $roots))
+            ->select('id');
+
+        return ProductModel::query()->where(fn (Builder $query): Builder => $query
+            ->whereHas('categories', $filed)
+            ->orWhereIn('parent_id', $models));
     }
 
     /**

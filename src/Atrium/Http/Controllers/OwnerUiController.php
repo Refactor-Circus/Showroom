@@ -14,6 +14,9 @@ use RefactorCircus\Showroom\Domains\Owner\Actions\DeleteOwnerAction;
 use RefactorCircus\Showroom\Domains\Owner\Actions\ListOwnersAction;
 use RefactorCircus\Showroom\Domains\Owner\Actions\ShowOwnerAction;
 use RefactorCircus\Showroom\Domains\Owner\Actions\UpdateOwnerAction;
+use RefactorCircus\Showroom\Domains\Owner\Data\CreateOwnerData;
+use RefactorCircus\Showroom\Domains\Owner\Data\ListOwnersData;
+use RefactorCircus\Showroom\Domains\Owner\Data\UpdateOwnerData;
 use RefactorCircus\Showroom\Domains\Owner\Models\OwnerModel;
 use RefactorCircus\Showroom\Domains\Owner\Models\OwnerTypeModel;
 use RefactorCircus\Showroom\Exceptions\ShowroomException;
@@ -26,14 +29,14 @@ final class OwnerUiController
     {
         $this->authorizeScreen('viewAny', OwnerModel::class);
 
-        $filters = $request->validate(ListOwnersAction::rules());
+        $filters = ListOwnersData::from($request->query());
 
         /** @var view-string $view */
         $view = 'showroom::ui.owners.index';
 
         return view($view, [
             'owners' => app(ListOwnersAction::class)->execute($filters)->withQueryString(),
-            'filters' => $filters,
+            'filters' => $filters->toArray(),
             'types' => OwnerTypeModel::query()->orderBy('sort_order')->orderBy('code')->pluck('code', 'code')->all(),
         ]);
     }
@@ -42,7 +45,7 @@ final class OwnerUiController
     {
         $this->authorizeScreen('create', OwnerModel::class);
 
-        $owner = app(CreateOwnerAction::class)->execute(Labels::fromForm($request->validate(CreateOwnerAction::rules())));
+        $owner = app(CreateOwnerAction::class)->execute(CreateOwnerData::fromValidated(Labels::fromForm($request->validate(CreateOwnerData::rules()))));
 
         return redirect()
             ->route('atrium.showroom.owners.show', $owner)
@@ -66,7 +69,7 @@ final class OwnerUiController
     {
         $this->authorizeScreen('update', $owner);
 
-        $data = Labels::fromForm($request->validate(UpdateOwnerAction::rules()), $owner->labels);
+        $data = UpdateOwnerData::fromValidated(Labels::fromForm($request->validate(UpdateOwnerData::rules()), $owner->labels));
 
         app(UpdateOwnerAction::class)->execute($owner, $data);
 

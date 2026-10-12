@@ -6,6 +6,7 @@ namespace RefactorCircus\Showroom\Domains\Asset\Http\Requests;
 
 use Illuminate\Http\JsonResponse;
 use RefactorCircus\Showroom\Domains\Asset\Actions\UpdateAssetAction;
+use RefactorCircus\Showroom\Domains\Asset\Data\UpdateAssetData;
 use RefactorCircus\Showroom\Domains\Asset\Resources\AssetResource;
 
 final class UpdateAssetRequest extends AssetRequest
@@ -17,12 +18,12 @@ final class UpdateAssetRequest extends AssetRequest
 
     public function rules(): array
     {
-        return UpdateAssetAction::rules();
+        return UpdateAssetData::rules();
     }
 
     public function persist(): JsonResponse
     {
-        $asset = app(UpdateAssetAction::class)->execute($this->asset(), $this->validated());
+        $asset = app(UpdateAssetAction::class)->execute($this->asset(), UpdateAssetData::fromValidated($this->validated()));
 
         return (new AssetResource($asset))->response();
     }

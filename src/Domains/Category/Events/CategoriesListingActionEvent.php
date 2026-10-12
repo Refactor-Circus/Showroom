@@ -7,6 +7,7 @@ namespace RefactorCircus\Showroom\Domains\Category\Events;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 use RefactorCircus\Keystone\Contracts\ActionStartingEvent;
+use RefactorCircus\Showroom\Domains\Category\Data\ListCategoriesData;
 
 /**
  * Categories are about to be listed.
@@ -16,10 +17,7 @@ final class CategoriesListingActionEvent implements ActionStartingEvent
     use Dispatchable;
     use SerializesModels;
 
-    /**
-     * @param  array<string, mixed>  $filters
-     */
     public function __construct(
-        public array $filters,
+        public ListCategoriesData $filters,
     ) {}
 }

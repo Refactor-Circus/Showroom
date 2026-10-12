@@ -10,6 +10,7 @@ use Laravel\Mcp\ResponseFactory;
 use Laravel\Mcp\Server\Attributes\Description;
 use RefactorCircus\Keystone\Mcp\Tool;
 use RefactorCircus\Showroom\Domains\Asset\Mcp\Requests\ShowAssetMcpRequest;
+use RefactorCircus\Showroom\Domains\Asset\Resources\AssetResource;
 
 #[Description('Show an asset with its URL and every record it is linked to.')]
 final class ShowAssetTool extends Tool
@@ -24,5 +25,10 @@ final class ShowAssetTool extends Tool
         return [
             'asset' => $schema->string()->description('The asset code.')->required(),
         ];
+    }
+
+    public function outputSchema(JsonSchema $schema): array
+    {
+        return AssetResource::structuredSchema($schema);
     }
 }

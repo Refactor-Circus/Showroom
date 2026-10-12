@@ -3,8 +3,14 @@
 declare(strict_types=1);
 
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
+use RefactorCircus\Showroom\Domains\Asset\Actions\CreateAssetAction;
+use RefactorCircus\Showroom\Domains\Asset\Actions\DeleteAssetAction;
+use RefactorCircus\Showroom\Domains\Asset\Actions\UpdateAssetAction;
+use RefactorCircus\Showroom\Domains\Asset\Data\CreateAssetData;
+use RefactorCircus\Showroom\Domains\Asset\Data\UpdateAssetData;
 use RefactorCircus\Showroom\Domains\Asset\Models\AssetModel;
 use RefactorCircus\Showroom\Tests\Fixtures\Catalog;
 
@@ -196,4 +202,46 @@ it('serves temporary URLs for private disks when configured', function (): void 
     config()->set('showroom.media.temporary_urls', 5);
 
     expect($this->getJson('/showroom/assets/hero')->json('data.url'))->toContain('expiration=');
+});
+
+/**
+ * Run the work inside a transaction that then rolls back.
+ */
+function rollBackAfter(Closure $work): void
+{
+    try {
+        DB::transaction(function () use ($work): void {
+            $work();
+
+            throw new RuntimeException('Rolled back.');
+        });
+    } catch (RuntimeException) {
+        //
+    }
+}
+
+it('leaves no file behind when a new asset is rolled back', function (): void {
+    rollBackAfter(fn () => app(CreateAssetAction::class)->execute(new CreateAssetData(code: 'hero', file: UploadedFile::fake()->image('hero.jpg'))));
+
+    expect(AssetModel::query()->count())->toBe(0)
+        ->and(Storage::disk('assets')->allFiles())->toBe([]);
+});
+
+it('keeps the old file until a replacement commits', function (): void {
+    $asset = app(CreateAssetAction::class)->execute(new CreateAssetData(code: 'hero', file: UploadedFile::fake()->image('old.jpg')));
+    $old = $asset->path;
+
+    rollBackAfter(fn () => app(UpdateAssetAction::class)->execute($asset, new UpdateAssetData(file: UploadedFile::fake()->image('new.png'))));
+
+    expect(AssetModel::query()->sole()->path)->toBe($old)
+        ->and(Storage::disk('assets')->allFiles())->toBe([$old]);
+});
+
+it('keeps the file when a delete is rolled back', function (): void {
+    $asset = app(CreateAssetAction::class)->execute(new CreateAssetData(code: 'hero', file: UploadedFile::fake()->image('hero.jpg')));
+
+    rollBackAfter(fn () => app(DeleteAssetAction::class)->execute($asset));
+
+    expect(AssetModel::query()->count())->toBe(1);
+    Storage::disk('assets')->assertExists($asset->path);
 });

@@ -7,6 +7,8 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use RefactorCircus\Impex\Domains\Subscription\Actions\CreateSubscriberAction;
 use RefactorCircus\Impex\Domains\Subscription\Actions\CreateSubscriptionAction;
+use RefactorCircus\Impex\Domains\Subscription\Data\CreateSubscriberData;
+use RefactorCircus\Impex\Domains\Subscription\Data\CreateSubscriptionData;
 use RefactorCircus\Impex\Domains\Subscription\Models\SubscriptionModel;
 use RefactorCircus\Impex\Domains\Subscription\Services\Exporter;
 use RefactorCircus\Showroom\Impex\ImpexIntegration;
@@ -37,8 +39,8 @@ beforeEach(function (): void {
 function vendorSubscription(array $data = []): SubscriptionModel
 {
     return app(CreateSubscriptionAction::class)->execute(
-        app(CreateSubscriberAction::class)->execute(['name' => 'Vendor']),
-        ['stream' => 'showroom.products', 'endpoint' => ['url' => 'https://vendor.test/'.($data['path'] ?? 'hooks')], ...array_diff_key($data, ['path' => true])],
+        app(CreateSubscriberAction::class)->execute(new CreateSubscriberData(name: 'Vendor')),
+        CreateSubscriptionData::from(['stream' => 'showroom.products', 'endpoint' => ['url' => 'https://vendor.test/'.($data['path'] ?? 'hooks')], ...array_diff_key($data, ['path' => true])]),
     )['subscription'];
 }
 

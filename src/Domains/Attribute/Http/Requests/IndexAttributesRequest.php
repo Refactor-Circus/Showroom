@@ -7,6 +7,7 @@ namespace RefactorCircus\Showroom\Domains\Attribute\Http\Requests;
 use Illuminate\Http\JsonResponse;
 use RefactorCircus\Keystone\Http\Requests\Request;
 use RefactorCircus\Showroom\Domains\Attribute\Actions\ListAttributesAction;
+use RefactorCircus\Showroom\Domains\Attribute\Data\ListAttributesData;
 use RefactorCircus\Showroom\Domains\Attribute\Models\AttributeModel;
 use RefactorCircus\Showroom\Domains\Attribute\Resources\AttributeResource;
 
@@ -19,12 +20,12 @@ final class IndexAttributesRequest extends Request
 
     public function rules(): array
     {
-        return ListAttributesAction::rules();
+        return ListAttributesData::rules();
     }
 
     public function persist(): JsonResponse
     {
-        $attributes = app(ListAttributesAction::class)->execute($this->validated());
+        $attributes = app(ListAttributesAction::class)->execute(ListAttributesData::fromValidated($this->validated()));
 
         return AttributeResource::collection($attributes)->response();
     }

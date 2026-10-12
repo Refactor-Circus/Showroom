@@ -17,7 +17,7 @@ final class DeleteAttributeGroupMcpRequest extends AttributeGroupRequest
 
     protected function rules(): array
     {
-        return DeleteAttributeGroupAction::rules() + [
+        return [
             'group' => ['required', 'string', 'max:100'],
         ];
     }

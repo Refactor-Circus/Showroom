@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace RefactorCircus\Showroom\Domains\Family\Resources;
 
+use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Illuminate\Http\Request;
-use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\JsonSchema\Types\Type;
+use RefactorCircus\Keystone\Http\Resources\JsonResource;
 use RefactorCircus\Showroom\Domains\Attribute\Models\AttributeModel;
 use RefactorCircus\Showroom\Domains\Family\Models\FamilyVariantModel;
 
@@ -14,6 +16,28 @@ use RefactorCircus\Showroom\Domains\Family\Models\FamilyVariantModel;
  */
 final class FamilyVariantResource extends JsonResource
 {
+    /**
+     * @return array<string, Type>
+     */
+    public static function schema(JsonSchema $schema): array
+    {
+        return [
+            'id' => $schema->string()->description('ULID.')->required(),
+            'code' => $schema->string()->required(),
+            'family' => $schema->string()->description('When loaded.'),
+            'labels' => $schema->object()->description('Labels keyed by locale.')->required(),
+            'levels' => $schema->array()->items($schema->object([
+                'level' => $schema->integer()->required(),
+                'axes' => $schema->array()->items($schema->string())->required(),
+                'attributes' => $schema->array()->items($schema->string())->required(),
+            ]))->description('When loaded.'),
+            'common_attributes' => $schema->array()->items($schema->string())->description('When the family and its attributes are loaded.'),
+            'product_models_count' => $schema->integer()->description('When counted.'),
+            'created_at' => $schema->string()->nullable()->required(),
+            'updated_at' => $schema->string()->nullable()->required(),
+        ];
+    }
+
     /**
      * @return array<string, mixed>
      */

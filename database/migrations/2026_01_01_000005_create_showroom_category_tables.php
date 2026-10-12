@@ -5,15 +5,16 @@ declare(strict_types=1);
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use RefactorCircus\Showroom\Support\Tables;
 
 return new class extends Migration
 {
     public function up(): void
     {
         // A root category is a tree; each tree is independent of the others.
-        Schema::create('showroom_categories', function (Blueprint $table): void {
+        Schema::create(Tables::name('categories'), function (Blueprint $table): void {
             $table->ulid('id')->primary();
-            $table->foreignUlid('parent_id')->nullable()->constrained('showroom_categories')->restrictOnDelete();
+            $table->foreignUlid('parent_id')->nullable()->constrained(Tables::name('categories'))->restrictOnDelete();
             $table->string('code', 100)->unique();
             $table->json('labels')->nullable();
             $table->unsignedInteger('sort_order')->default(0);
@@ -25,17 +26,17 @@ return new class extends Migration
             $table->index(['parent_id', 'sort_order']);
         });
 
-        Schema::create('showroom_category_product', function (Blueprint $table): void {
-            $table->foreignUlid('category_id')->constrained('showroom_categories')->cascadeOnDelete();
-            $table->foreignUlid('product_id')->constrained('showroom_products')->cascadeOnDelete();
+        Schema::create(Tables::name('category_product'), function (Blueprint $table): void {
+            $table->foreignUlid('category_id')->constrained(Tables::name('categories'))->cascadeOnDelete();
+            $table->foreignUlid('product_id')->constrained(Tables::name('products'))->cascadeOnDelete();
 
             $table->primary(['category_id', 'product_id']);
             $table->index('product_id');
         });
 
-        Schema::create('showroom_category_product_model', function (Blueprint $table): void {
-            $table->foreignUlid('category_id')->constrained('showroom_categories')->cascadeOnDelete();
-            $table->foreignUlid('product_model_id')->constrained('showroom_product_models')->cascadeOnDelete();
+        Schema::create(Tables::name('category_product_model'), function (Blueprint $table): void {
+            $table->foreignUlid('category_id')->constrained(Tables::name('categories'))->cascadeOnDelete();
+            $table->foreignUlid('product_model_id')->constrained(Tables::name('product_models'))->cascadeOnDelete();
 
             $table->primary(['category_id', 'product_model_id']);
             $table->index('product_model_id');
@@ -46,9 +47,9 @@ return new class extends Migration
     {
         // Categories reference each other, which a restricted drop would trip over.
         Schema::withoutForeignKeyConstraints(function (): void {
-            Schema::dropIfExists('showroom_category_product_model');
-            Schema::dropIfExists('showroom_category_product');
-            Schema::dropIfExists('showroom_categories');
+            Schema::dropIfExists(Tables::name('category_product_model'));
+            Schema::dropIfExists(Tables::name('category_product'));
+            Schema::dropIfExists(Tables::name('categories'));
         });
     }
 };

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace RefactorCircus\Showroom\Domains\Owner\Actions;
 
+use Illuminate\Support\Facades\DB;
 use RefactorCircus\Showroom\Domains\Owner\Events\OwnerTypeDeletedActionEvent;
 use RefactorCircus\Showroom\Domains\Owner\Events\OwnerTypeDeletingActionEvent;
 use RefactorCircus\Showroom\Domains\Owner\Models\OwnerTypeModel;
@@ -11,14 +12,6 @@ use RefactorCircus\Showroom\Exceptions\ModelInUseException;
 
 final class DeleteOwnerTypeAction
 {
-    /**
-     * @return array<string, mixed>
-     */
-    public static function rules(): array
-    {
-        return [];
-    }
-
     public function execute(OwnerTypeModel $ownerType): OwnerTypeModel
     {
         OwnerTypeDeletingActionEvent::dispatch($ownerType);
@@ -35,14 +28,16 @@ final class DeleteOwnerTypeAction
      */
     private function perform(OwnerTypeModel $ownerType): OwnerTypeModel
     {
-        $owners = $ownerType->owners()->count();
+        return DB::transaction(function () use ($ownerType): OwnerTypeModel {
+            $owners = $ownerType->owners()->count();
 
-        if ($owners > 0) {
-            throw ModelInUseException::ownerTypeHasOwners($ownerType->code, $owners);
-        }
+            if ($owners > 0) {
+                throw ModelInUseException::ownerTypeHasOwners($ownerType->code, $owners);
+            }
 
-        $ownerType->delete();
+            $ownerType->delete();
 
-        return $ownerType;
+            return $ownerType;
+        });
     }
 }

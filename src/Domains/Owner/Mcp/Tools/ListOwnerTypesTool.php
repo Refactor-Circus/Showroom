@@ -9,7 +9,9 @@ use Laravel\Mcp\Response;
 use Laravel\Mcp\ResponseFactory;
 use Laravel\Mcp\Server\Attributes\Description;
 use RefactorCircus\Keystone\Mcp\Tool;
+use RefactorCircus\Showroom\Domains\Owner\Data\ListOwnerTypesData;
 use RefactorCircus\Showroom\Domains\Owner\Mcp\Requests\ListOwnerTypesMcpRequest;
+use RefactorCircus\Showroom\Domains\Owner\Resources\OwnerTypeResource;
 
 #[Description('List owner types (manufacturer, vendor, brand, series, ...) and their chain rules. Cursor paginated.')]
 final class ListOwnerTypesTool extends Tool
@@ -23,8 +25,11 @@ final class ListOwnerTypesTool extends Tool
     {
         return [
             'search' => $schema->string()->description('Match against the code or any label.'),
-            'cursor' => $schema->string()->description('Cursor from a previous page (next_cursor).'),
-            'per_page' => $schema->integer()->description('Results per page.')->min(1),
-        ];
+        ] + ListOwnerTypesData::pagination()->schema($schema);
+    }
+
+    public function outputSchema(JsonSchema $schema): array
+    {
+        return OwnerTypeResource::collectionSchema($schema, ListOwnerTypesData::pagination());
     }
 }

@@ -6,6 +6,7 @@ namespace RefactorCircus\Showroom\Domains\Attribute\Mcp\Requests;
 
 use Laravel\Mcp\ResponseFactory;
 use RefactorCircus\Showroom\Domains\Attribute\Actions\ListAttributeOptionsAction;
+use RefactorCircus\Showroom\Domains\Attribute\Data\ListAttributeOptionsData;
 use RefactorCircus\Showroom\Domains\Attribute\Models\AttributeOptionModel;
 use RefactorCircus\Showroom\Domains\Attribute\Resources\AttributeOptionResource;
 
@@ -18,20 +19,15 @@ final class ListAttributeOptionsMcpRequest extends AttributeRequest
 
     protected function rules(): array
     {
-        return ListAttributeOptionsAction::rules() + [
+        return [
             'attribute' => ['required', 'string', 'max:100'],
-        ];
+        ] + ListAttributeOptionsData::rules();
     }
 
     protected function handle(array $validated): ResponseFactory
     {
-        unset($validated['attribute']);
+        $options = app(ListAttributeOptionsAction::class)->execute($this->catalogAttribute(), ListAttributeOptionsData::fromValidated($validated));
 
-        $options = app(ListAttributeOptionsAction::class)->execute($this->catalogAttribute(), $validated);
-
-        return $this->structuredCollection(
-            AttributeOptionResource::collection($options)->resolve(),
-            ['next_cursor' => $options->nextCursor()?->encode()],
-        );
+        return AttributeOptionResource::collection($options)->toStructuredResponse();
     }
 }

@@ -8,7 +8,6 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Validator;
 use RefactorCircus\Atrium\Http\Controllers\Concerns\AuthorizesScreens;
 use RefactorCircus\Showroom\Atrium\Support\CategoryCodes;
 use RefactorCircus\Showroom\Atrium\Support\EditingSlot;
@@ -20,10 +19,16 @@ use RefactorCircus\Showroom\Domains\Product\Actions\DeleteProductAction;
 use RefactorCircus\Showroom\Domains\Product\Actions\ListProductsAction;
 use RefactorCircus\Showroom\Domains\Product\Actions\ShowProductAction;
 use RefactorCircus\Showroom\Domains\Product\Actions\UpdateProductAction;
+use RefactorCircus\Showroom\Domains\Product\Data\CreateProductData;
+use RefactorCircus\Showroom\Domains\Product\Data\ListProductsData;
+use RefactorCircus\Showroom\Domains\Product\Data\UpdateProductData;
 use RefactorCircus\Showroom\Domains\Product\Models\ProductModel;
 use RefactorCircus\Showroom\Domains\Workflow\Actions\ListProductVersionsAction;
 use RefactorCircus\Showroom\Domains\Workflow\Actions\RevertProductAction;
 use RefactorCircus\Showroom\Domains\Workflow\Actions\TransitionProductAction;
+use RefactorCircus\Showroom\Domains\Workflow\Data\ListProductVersionsData;
+use RefactorCircus\Showroom\Domains\Workflow\Data\RevertProductData;
+use RefactorCircus\Showroom\Domains\Workflow\Data\TransitionProductData;
 use RefactorCircus\Showroom\Domains\Workflow\Enums\Transition;
 use RefactorCircus\Showroom\Exceptions\ShowroomException;
 
@@ -35,13 +40,14 @@ final class ProductUiController
     {
         $this->authorizeScreen('viewAny', ProductModel::class);
 
-        $filters = $request->validate(ListProductsAction::rules());
+        // The page shows back what was searched for.
+        $filters = $request->validate(ListProductsData::rules());
 
         /** @var view-string $view */
         $view = 'showroom::ui.products.index';
 
         try {
-            $products = app(ListProductsAction::class)->execute($filters)->withQueryString();
+            $products = app(ListProductsAction::class)->execute(ListProductsData::fromValidated($filters))->withQueryString();
             $error = null;
         } catch (ShowroomException $e) {
             // A search engine that is down or refuses the query still leaves
@@ -72,7 +78,7 @@ final class ProductUiController
     {
         $this->authorizeScreen('create', ProductModel::class);
 
-        $product = app(CreateProductAction::class)->execute($request->validate(CreateProductAction::rules()));
+        $product = app(CreateProductAction::class)->execute(CreateProductData::from($request->all()));
 
         return redirect()
             ->route('atrium.showroom.products.show', $product)
@@ -97,7 +103,7 @@ final class ProductUiController
                 ? AttributeModel::query()->whereNotIn('code', array_keys($product->ownValues()))->orderBy('code')->pluck('code', 'code')->all()
                 : [],
             'families' => $this->families(),
-            'history' => app(ListProductVersionsAction::class)->execute($product, ['per_page' => 10]),
+            'history' => app(ListProductVersionsAction::class)->execute($product, new ListProductVersionsData(perPage: 10)),
             'transitions' => array_values(array_filter(
                 Transition::cases(),
                 fn (Transition $transition): bool => in_array(
@@ -114,7 +120,7 @@ final class ProductUiController
         $this->authorizeScreen('update', $product);
 
         try {
-            app(TransitionProductAction::class)->execute($product, $request->validate(TransitionProductAction::rules()));
+            app(TransitionProductAction::class)->execute($product, TransitionProductData::from($request->all()));
         } catch (ShowroomException $e) {
             return back()->withErrors(['transition' => $e->getMessage()]);
         }
@@ -126,7 +132,7 @@ final class ProductUiController
     {
         $this->authorizeScreen('update', $product);
 
-        app(RevertProductAction::class)->execute($product, $request->validate(RevertProductAction::rules()));
+        app(RevertProductAction::class)->execute($product, RevertProductData::from($request->all()));
 
         return back()->with('status', __('showroom::showroom.reverted'));
     }
@@ -158,7 +164,7 @@ final class ProductUiController
         }
 
         // The form builds the payload, so it is held to the Action's rules too.
-        app(UpdateProductAction::class)->execute($product, Validator::validate($data, UpdateProductAction::rules()));
+        app(UpdateProductAction::class)->execute($product, UpdateProductData::from($data));
 
         return redirect()
             ->route('atrium.showroom.products.show', ['product' => $product, ...$slot->query()])

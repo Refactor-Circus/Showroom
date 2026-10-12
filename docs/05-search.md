@@ -4,10 +4,12 @@ Products are listed and searched through a search engine you choose with `showro
 
 | Engine | Needs | Filters | Scale |
 |---|---|---|---|
-| `database` | nothing | all operators on every type but price | thousands of products |
+| `database` | nothing | all operators on every type but price | thousands to tens of thousands of products |
 | `scout` | `laravel/scout` + a Scout engine | `=`, `!=`, ranges, `in`, `not_in` — as far as the Scout engine supports them | engine-dependent |
 
-Left unset (`null`, the default), the engine is `scout` when laravel/scout is installed and `database` otherwise. You can also bind your own class implementing `RefactorCircus\Showroom\Domains\Search\Contracts\SearchEngine`, and name it in the config. Showroom no longer ships an Elasticsearch engine: use a Scout driver for Elasticsearch, or your own engine.
+The database engine reads the products table directly. Filters, sorting and paging use indexes, but a `search` term is matched as `LIKE '%term%'` against the identifier and every level's JSON `values`, which no index can serve: each search reads every matching row. Above some tens of thousands of products, or when free-text search is common, use Scout (or your own engine) instead. Exports on the database engine walk the catalogue by key and never count it, so they stay cheap at any size.
+
+Left unset (`null`, the default), the engine is `scout` when laravel/scout is installed and `database` otherwise. You can also bind your own class implementing `RefactorCircus\Showroom\Domains\Search\Contracts\SearchEngine`, and name it in the config. Its `search()` takes a `Search\Data\ProductQuery`, built from the validated `ListProductsData` by `ListProductsData::query()`: each of its `filters` is a `Search\Data\Filter` (`attribute`, `operator`, `value`, `locale`, `scope`; `values()` lists the value for `in`/`not_in`) and `complete` a `Search\Data\Complete`. Showroom no longer ships an Elasticsearch engine: use a Scout driver for Elasticsearch, or your own engine.
 
 ## Querying
 
@@ -41,7 +43,21 @@ Because `changed_at` is stamped when the sync job runs, a change is never missed
 
 ## Keeping the index in step
 
-Engines with an index (`scout`, or your own) are fed by a queued job, `SyncProductIndex`, dispatched after each write commits. It carries product ids only. Changing a product model re-indexes its variants. Before the jobs are dispatched, `ProductIndex::queue()` fires `RefactorCircus\Showroom\Domains\Search\Events\ProductsQueuedForSync` with the product ids, inside the write's transaction, so a listener can follow every product whose presentation may have changed — its own edits, a transition, or a change it inherits from a model, family, category, owner or channel. Product webhooks are built on it. Choose the queue with:
+Engines with an index (`scout`, or your own) are fed by a queued job, `SyncProductIndex`, dispatched after each write commits. It carries product ids only. Changing a product model re-indexes its variants. Before the jobs are dispatched, `ProductIndex::queue()` fires `RefactorCircus\Showroom\Domains\Search\Events\ProductsQueuedForSync` with the product ids, inside the write's transaction, so a listener can follow every product whose presentation may have changed — its own edits, a transition, or a change it inherits from a model, family, category, owner or channel. Product webhooks are built on it.
+
+A change that reaches many products — a channel's code, locales, currencies or category tree (its labels alone change no product), a family's attributes, an owner or category moving in its tree — does not list them inside its own request: it queues one `QueueProductSyncs` job after it commits, which walks the products in chunks of 500 and queues their syncs. Deleting a category lists its products a chunk at a time before the assignments go.
+
+Code that writes many products in one process can hold their syncs back and send them together, one job per 500 products instead of one per write:
+
+```php
+app(ProductIndex::class)->deferring(function (): void {
+    foreach ($rows as $row) {
+        app(UpdateProductAction::class)->execute(...);
+    }
+});
+```
+
+Choose the queue with:
 
 ```php
 'search' => [

@@ -10,6 +10,7 @@ use Laravel\Mcp\ResponseFactory;
 use Laravel\Mcp\Server\Attributes\Description;
 use RefactorCircus\Keystone\Mcp\Tool;
 use RefactorCircus\Showroom\Domains\Association\Mcp\Requests\CreateAssociationTypeMcpRequest;
+use RefactorCircus\Showroom\Domains\Association\Resources\AssociationTypeResource;
 
 #[Description('Create an association type. Products and product models are then associated through create/update-product(-model)-tool.')]
 final class CreateAssociationTypeTool extends Tool
@@ -27,5 +28,10 @@ final class CreateAssociationTypeTool extends Tool
             'is_two_way' => $schema->boolean()->description('Whether each association also exists the other way round, kept in sync automatically: compatible parts, replacements. Fixed once created.'),
             'is_quantified' => $schema->boolean()->description('Whether each associated item carries a quantity: bundles and kits. Fixed once created; not with is_two_way.'),
         ];
+    }
+
+    public function outputSchema(JsonSchema $schema): array
+    {
+        return AssociationTypeResource::structuredSchema($schema);
     }
 }

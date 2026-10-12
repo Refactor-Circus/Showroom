@@ -7,6 +7,7 @@ namespace RefactorCircus\Showroom\Domains\Workflow\Http\Requests;
 use Illuminate\Http\JsonResponse;
 use RefactorCircus\Showroom\Domains\Product\Http\Requests\ProductRequest;
 use RefactorCircus\Showroom\Domains\Workflow\Actions\ListProductVersionsAction;
+use RefactorCircus\Showroom\Domains\Workflow\Data\ListProductVersionsData;
 use RefactorCircus\Showroom\Domains\Workflow\Resources\VersionSummaryResource;
 
 final class IndexProductVersionsRequest extends ProductRequest
@@ -18,12 +19,12 @@ final class IndexProductVersionsRequest extends ProductRequest
 
     public function rules(): array
     {
-        return ListProductVersionsAction::rules();
+        return ListProductVersionsData::rules();
     }
 
     public function persist(): JsonResponse
     {
-        $versions = app(ListProductVersionsAction::class)->execute($this->product(), $this->validated());
+        $versions = app(ListProductVersionsAction::class)->execute($this->product(), ListProductVersionsData::fromValidated($this->validated()));
 
         return VersionSummaryResource::collection($versions)->response();
     }

@@ -6,6 +6,8 @@ namespace RefactorCircus\Showroom\Domains\Search\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Laravel\Scout\Searchable;
+use RefactorCircus\Keystone\Models\Concerns\DispatchesModelEvents;
+use RefactorCircus\Showroom\Support\Tables;
 
 /**
  * The shape a Scout engine indexes a product in.
@@ -13,16 +15,21 @@ use Laravel\Scout\Searchable;
  * Not the Product model: Scout's trait would tie every Showroom install to
  * Scout. This stand-in reads the same table and carries the prepared
  * document, and is only loaded when the `scout` search engine is chosen.
+ * Like every model it fires a `SearchableProduct{Hook}Event` per hook.
  *
  * @property string $id
  */
 final class SearchableProductModel extends Model
 {
+    use DispatchesModelEvents;
     use Searchable;
 
     public $incrementing = false;
 
-    protected $table = 'showroom_products';
+    public function getTable(): string
+    {
+        return Tables::name('products');
+    }
 
     protected $keyType = 'string';
 
@@ -45,7 +52,7 @@ final class SearchableProductModel extends Model
 
     public function searchableAs(): string
     {
-        return (string) config('showroom.search.scout.index', 'showroom_products');
+        return (string) config('showroom.search.scout.index', $this->getTable());
     }
 
     /**

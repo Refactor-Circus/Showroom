@@ -17,7 +17,7 @@ final class DeleteOwnerTypeMcpRequest extends OwnerTypeRequest
 
     protected function rules(): array
     {
-        return DeleteOwnerTypeAction::rules() + [
+        return [
             'owner_type' => ['required', 'string', 'max:191'],
         ];
     }

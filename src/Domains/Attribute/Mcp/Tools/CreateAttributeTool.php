@@ -10,6 +10,7 @@ use Laravel\Mcp\ResponseFactory;
 use Laravel\Mcp\Server\Attributes\Description;
 use RefactorCircus\Keystone\Mcp\Tool;
 use RefactorCircus\Showroom\Domains\Attribute\Mcp\Requests\CreateAttributeMcpRequest;
+use RefactorCircus\Showroom\Domains\Attribute\Resources\AttributeResource;
 
 #[Description('Create an attribute. Its code and type are permanent. Select and multiselect attributes take options, added with create-attribute-option-tool.')]
 final class CreateAttributeTool extends Tool
@@ -32,5 +33,10 @@ final class CreateAttributeTool extends Tool
             'settings' => $schema->object()->description('Type-specific validation. text: max_length, regex. textarea: max_length, rich_text. number/decimal: min, max (decimal also decimals). date: min, max. price: currencies (ISO codes), decimals. metric: metric_family and default_unit, both required. Replaces all settings when given.'),
             'sort_order' => $schema->integer()->description('Position in listings, lowest first.')->min(0),
         ];
+    }
+
+    public function outputSchema(JsonSchema $schema): array
+    {
+        return AttributeResource::structuredSchema($schema);
     }
 }

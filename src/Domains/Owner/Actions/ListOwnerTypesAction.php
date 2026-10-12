@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace RefactorCircus\Showroom\Domains\Owner\Actions;
 
 use Illuminate\Contracts\Pagination\CursorPaginator;
+use RefactorCircus\Showroom\Domains\Owner\Data\ListOwnerTypesData;
 use RefactorCircus\Showroom\Domains\Owner\Events\OwnerTypesListedActionEvent;
 use RefactorCircus\Showroom\Domains\Owner\Events\OwnerTypesListingActionEvent;
 use RefactorCircus\Showroom\Domains\Owner\Models\OwnerTypeModel;
@@ -12,22 +13,9 @@ use RefactorCircus\Showroom\Domains\Owner\Models\OwnerTypeModel;
 final class ListOwnerTypesAction
 {
     /**
-     * @return array<string, mixed>
-     */
-    public static function rules(): array
-    {
-        return [
-            'search' => ['sometimes', 'nullable', 'string', 'max:100'],
-            'cursor' => ['sometimes', 'nullable', 'string'],
-            'per_page' => ['sometimes', 'integer', 'min:1', 'max:'.config('showroom.pagination.max_per_page', 100)],
-        ];
-    }
-
-    /**
-     * @param  array<string, mixed>  $filters
      * @return CursorPaginator<int, OwnerTypeModel>
      */
-    public function execute(array $filters = []): CursorPaginator
+    public function execute(ListOwnerTypesData $filters = new ListOwnerTypesData): CursorPaginator
     {
         OwnerTypesListingActionEvent::dispatch($filters);
 
@@ -39,10 +27,9 @@ final class ListOwnerTypesAction
     }
 
     /**
-     * @param  array<string, mixed>  $filters
      * @return CursorPaginator<int, OwnerTypeModel>
      */
-    private function perform(array $filters): CursorPaginator
+    private function perform(ListOwnerTypesData $filters): CursorPaginator
     {
         $query = OwnerTypeModel::query()
             ->with('parentTypes')
@@ -50,13 +37,13 @@ final class ListOwnerTypesAction
             ->orderBy('sort_order')
             ->orderBy('code');
 
-        if (is_string($filters['search'] ?? null) && $filters['search'] !== '') {
-            $query->search($filters['search']);
+        if ($filters->search !== null && $filters->search !== '') {
+            $query->search($filters->search);
         }
 
         return $query->cursorPaginate(
-            perPage: isset($filters['per_page']) ? (int) $filters['per_page'] : (int) config('showroom.pagination.per_page', 25),
-            cursor: is_string($filters['cursor'] ?? null) ? $filters['cursor'] : null,
+            perPage: $filters->perPage ?? ListOwnerTypesData::pagination()->default,
+            cursor: $filters->cursor,
         );
     }
 }

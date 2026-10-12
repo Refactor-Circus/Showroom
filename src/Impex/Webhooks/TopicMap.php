@@ -6,6 +6,7 @@ namespace RefactorCircus\Showroom\Impex\Webhooks;
 
 use Illuminate\Contracts\Config\Repository as Config;
 use Illuminate\Database\ConnectionInterface;
+use RefactorCircus\Showroom\Support\Tables;
 use stdClass;
 
 /**
@@ -164,8 +165,8 @@ final class TopicMap
 
         $attributes = [];
 
-        $rows = $this->db->table('showroom_attributes as a')
-            ->leftJoin('showroom_attribute_groups as g', 'g.id', '=', 'a.attribute_group_id')
+        $rows = $this->db->table(Tables::name('attributes').' as a')
+            ->leftJoin(Tables::name('attribute_groups').' as g', 'g.id', '=', 'a.attribute_group_id')
             ->get(['a.code', 'a.type', 'g.code as group_code']);
 
         foreach ($rows as $row) {

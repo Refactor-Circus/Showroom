@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace RefactorCircus\Showroom\Domains\Family\Mcp\Requests;
 
-use Laravel\Mcp\Response;
 use Laravel\Mcp\ResponseFactory;
 use RefactorCircus\Showroom\Domains\Family\Actions\UpdateFamilyAction;
+use RefactorCircus\Showroom\Domains\Family\Data\UpdateFamilyData;
 use RefactorCircus\Showroom\Domains\Family\Resources\FamilyResource;
 
 final class UpdateFamilyMcpRequest extends FamilyRequest
@@ -18,17 +18,15 @@ final class UpdateFamilyMcpRequest extends FamilyRequest
 
     protected function rules(): array
     {
-        return UpdateFamilyAction::rules() + [
+        return [
             'family' => ['required', 'string', 'max:100'],
-        ];
+        ] + UpdateFamilyData::rules();
     }
 
     protected function handle(array $validated): ResponseFactory
     {
-        unset($validated['family']);
+        $family = app(UpdateFamilyAction::class)->execute($this->family(), UpdateFamilyData::fromValidated($validated));
 
-        $family = app(UpdateFamilyAction::class)->execute($this->family(), $validated);
-
-        return Response::structured((new FamilyResource($family))->resolve());
+        return (new FamilyResource($family))->toStructuredResponse();
     }
 }

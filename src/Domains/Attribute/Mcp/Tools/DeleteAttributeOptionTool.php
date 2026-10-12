@@ -26,4 +26,12 @@ final class DeleteAttributeOptionTool extends Tool
             'option' => $schema->string()->description('The option code.')->required(),
         ];
     }
+
+    public function outputSchema(JsonSchema $schema): array
+    {
+        return [
+            'deleted' => $schema->boolean()->required(),
+            'code' => $schema->string()->required(),
+        ];
+    }
 }

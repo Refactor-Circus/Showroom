@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace RefactorCircus\Showroom\Domains\Attribute\Actions;
 
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\DB;
 use RefactorCircus\Showroom\Domains\Attribute\Events\AttributeDeletedActionEvent;
 use RefactorCircus\Showroom\Domains\Attribute\Events\AttributeDeletingActionEvent;
 use RefactorCircus\Showroom\Domains\Attribute\Exceptions\AttributeLabelsFamiliesException;
@@ -16,14 +17,6 @@ use RefactorCircus\Showroom\Jobs\PurgeAttributeValues;
 
 final class DeleteAttributeAction
 {
-    /**
-     * @return array<string, mixed>
-     */
-    public static function rules(): array
-    {
-        return [];
-    }
-
     public function execute(AttributeModel $attribute): AttributeModel
     {
         AttributeDeletingActionEvent::dispatch($attribute);
@@ -42,29 +35,31 @@ final class DeleteAttributeAction
      */
     private function perform(AttributeModel $attribute): AttributeModel
     {
-        /** @var array<int, string> $families */
-        $families = FamilyModel::query()->where('label_attribute_id', $attribute->id)->orderBy('code')->pluck('code')->all();
+        return DB::transaction(function () use ($attribute): AttributeModel {
+            /** @var array<int, string> $families */
+            $families = FamilyModel::query()->where('label_attribute_id', $attribute->id)->orderBy('code')->pluck('code')->all();
 
-        if ($families !== []) {
-            throw AttributeLabelsFamiliesException::for($attribute, $families);
-        }
+            if ($families !== []) {
+                throw AttributeLabelsFamiliesException::for($attribute, $families);
+            }
 
-        /** @var array<int, string> $variants */
-        $variants = FamilyVariantModel::query()
-            ->whereHas('variantAttributes', fn (Builder $attributes): Builder => $attributes->whereKey($attribute->id))
-            ->orderBy('code')
-            ->pluck('code')
-            ->all();
+            /** @var array<int, string> $variants */
+            $variants = FamilyVariantModel::query()
+                ->whereHas('variantAttributes', fn (Builder $attributes): Builder => $attributes->whereKey($attribute->id))
+                ->orderBy('code')
+                ->pluck('code')
+                ->all();
 
-        if ($variants !== []) {
-            throw ModelInUseException::attributeInFamilyVariants($attribute->code, $variants);
-        }
+            if ($variants !== []) {
+                throw ModelInUseException::attributeInFamilyVariants($attribute->code, $variants);
+            }
 
-        $attribute->delete();
+            $attribute->delete();
 
-        // Stored values outlive the attribute until the purge reaches them.
-        PurgeAttributeValues::dispatch($attribute->code)->afterCommit();
+            // Stored values outlive the attribute until the purge reaches them.
+            PurgeAttributeValues::dispatch($attribute->code)->afterCommit();
 
-        return $attribute;
+            return $attribute;
+        });
     }
 }

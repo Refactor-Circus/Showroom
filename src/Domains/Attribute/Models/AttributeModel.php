@@ -14,6 +14,7 @@ use RefactorCircus\Keystone\Models\Concerns\DispatchesModelEvents;
 use RefactorCircus\Showroom\Database\Factories\AttributeFactory;
 use RefactorCircus\Showroom\Domains\Attribute\Enums\AttributeType;
 use RefactorCircus\Showroom\Support\Models\Concerns\HasLabels;
+use RefactorCircus\Showroom\Support\Tables;
 
 /**
  * A typed product characteristic, defined at runtime: "color", "weight",
@@ -44,7 +45,10 @@ final class AttributeModel extends Model
     use HasLabels;
     use HasUlids;
 
-    protected $table = 'showroom_attributes';
+    public function getTable(): string
+    {
+        return Tables::name('attributes');
+    }
 
     protected $fillable = [
         'code',

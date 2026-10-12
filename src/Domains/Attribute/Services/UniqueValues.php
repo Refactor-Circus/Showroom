@@ -9,15 +9,14 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use RefactorCircus\Showroom\Domains\Attribute\Models\AttributeModel;
 use RefactorCircus\Showroom\Domains\Product\Models\ProductModel;
+use RefactorCircus\Showroom\Support\Tables;
 
 /**
  * Enforces `is_unique` attributes: each value is mirrored as a hash in
- * `showroom_product_unique_values`, whose unique index the database checks.
+ * the `product_unique_values` table, whose unique index the database checks.
  */
 final class UniqueValues
 {
-    private const string TABLE = 'showroom_product_unique_values';
-
     /**
      * Record the product's unique values, refusing any another product holds.
      *
@@ -31,7 +30,7 @@ final class UniqueValues
             // Unique attributes are neither localizable nor scopable.
             $data = Values::get($product->ownValues(), $attribute->code);
 
-            $rows = DB::table(self::TABLE)->where('attribute_id', $attribute->id)->where('product_id', $product->id);
+            $rows = DB::table(Tables::name('product_unique_values'))->where('attribute_id', $attribute->id)->where('product_id', $product->id);
 
             if ($data === null) {
                 $rows->delete();
@@ -41,19 +40,19 @@ final class UniqueValues
 
             $hash = hash('sha256', json_encode($data, JSON_THROW_ON_ERROR));
 
-            $holder = DB::table(self::TABLE.' as unique_values')
-                ->join('showroom_products', 'showroom_products.id', '=', 'unique_values.product_id')
+            $holder = DB::table(Tables::name('product_unique_values').' as unique_values')
+                ->join(Tables::name('products'), Tables::name('products').'.id', '=', 'unique_values.product_id')
                 ->where('unique_values.attribute_id', $attribute->id)
                 ->where('unique_values.value_hash', $hash)
                 ->where('unique_values.product_id', '!=', $product->id)
-                ->value('showroom_products.identifier');
+                ->value(Tables::name('products').'.identifier');
 
             if ($holder !== null) {
                 throw $this->taken($attribute, $data, (string) $holder);
             }
 
             try {
-                DB::table(self::TABLE)->updateOrInsert(
+                DB::table(Tables::name('product_unique_values'))->updateOrInsert(
                     ['attribute_id' => $attribute->id, 'product_id' => $product->id],
                     ['value_hash' => $hash],
                 );

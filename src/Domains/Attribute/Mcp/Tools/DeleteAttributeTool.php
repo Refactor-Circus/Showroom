@@ -25,4 +25,12 @@ final class DeleteAttributeTool extends Tool
             'attribute' => $schema->string()->description('The attribute code.')->required(),
         ];
     }
+
+    public function outputSchema(JsonSchema $schema): array
+    {
+        return [
+            'deleted' => $schema->boolean()->required(),
+            'code' => $schema->string()->required(),
+        ];
+    }
 }

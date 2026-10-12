@@ -17,6 +17,10 @@ use RefactorCircus\Showroom\Domains\Attribute\Actions\DeleteAttributeOptionActio
 use RefactorCircus\Showroom\Domains\Attribute\Actions\ListAttributesAction;
 use RefactorCircus\Showroom\Domains\Attribute\Actions\ShowAttributeAction;
 use RefactorCircus\Showroom\Domains\Attribute\Actions\UpdateAttributeAction;
+use RefactorCircus\Showroom\Domains\Attribute\Data\CreateAttributeData;
+use RefactorCircus\Showroom\Domains\Attribute\Data\CreateAttributeOptionData;
+use RefactorCircus\Showroom\Domains\Attribute\Data\ListAttributesData;
+use RefactorCircus\Showroom\Domains\Attribute\Data\UpdateAttributeData;
 use RefactorCircus\Showroom\Domains\Attribute\Enums\AttributeType;
 use RefactorCircus\Showroom\Domains\Attribute\Models\AttributeGroupModel;
 use RefactorCircus\Showroom\Domains\Attribute\Models\AttributeModel;
@@ -31,15 +35,15 @@ final class AttributeUiController
     {
         $this->authorizeScreen('viewAny', AttributeModel::class);
 
-        // Filters are validated by the Action's own rules, so the page and the
-        // JSON API accept exactly the same query.
-        $filters = $request->validate(ListAttributesAction::rules());
+        // Filters are validated by the same rules as the JSON API, so both
+        // accept exactly the same query.
+        $filters = $request->validate(ListAttributesData::rules());
 
         /** @var view-string $view */
         $view = 'showroom::ui.attributes.index';
 
         return view($view, [
-            'catalogAttributes' => app(ListAttributesAction::class)->execute($filters)->withQueryString(),
+            'catalogAttributes' => app(ListAttributesAction::class)->execute(ListAttributesData::fromValidated($filters))->withQueryString(),
             'filters' => $filters,
             'types' => AttributeType::cases(),
             'groups' => $this->groups(),
@@ -63,9 +67,9 @@ final class AttributeUiController
     {
         $this->authorizeScreen('create', AttributeModel::class);
 
-        $data = $this->fromForm($request->validate(['settings' => ['sometimes', 'nullable', 'string']] + CreateAttributeAction::rules()));
+        $data = $this->fromForm($request->validate(['settings' => ['sometimes', 'nullable', 'string']] + CreateAttributeData::rules()));
 
-        $attribute = app(CreateAttributeAction::class)->execute(Labels::fromForm($data));
+        $attribute = app(CreateAttributeAction::class)->execute(CreateAttributeData::fromValidated(Labels::fromForm($data)));
 
         return redirect()
             ->route('atrium.showroom.attributes.show', $attribute)
@@ -89,9 +93,9 @@ final class AttributeUiController
     {
         $this->authorizeScreen('update', $attribute);
 
-        $data = $this->fromForm($request->validate(['settings' => ['sometimes', 'nullable', 'string']] + UpdateAttributeAction::rules()));
+        $data = $this->fromForm($request->validate(['settings' => ['sometimes', 'nullable', 'string']] + UpdateAttributeData::rules()));
 
-        app(UpdateAttributeAction::class)->execute($attribute, Labels::fromForm($data, $attribute->labels));
+        app(UpdateAttributeAction::class)->execute($attribute, UpdateAttributeData::fromValidated(Labels::fromForm($data, $attribute->labels)));
 
         return redirect()
             ->route('atrium.showroom.attributes.show', $attribute)
@@ -118,7 +122,7 @@ final class AttributeUiController
         $this->authorizeScreen('update', $attribute);
         $this->authorizeScreen('create', AttributeOptionModel::class);
 
-        $data = Labels::fromForm($request->validate(CreateAttributeOptionAction::rules()));
+        $data = CreateAttributeOptionData::fromValidated(Labels::fromForm($request->validate(CreateAttributeOptionData::rules())));
 
         try {
             app(CreateAttributeOptionAction::class)->execute($attribute, $data);

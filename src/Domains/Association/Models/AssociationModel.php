@@ -12,6 +12,7 @@ use Illuminate\Support\Carbon;
 use RefactorCircus\Keystone\Models\Concerns\DispatchesModelEvents;
 use RefactorCircus\Showroom\Domains\Product\Models\ProductModel;
 use RefactorCircus\Showroom\Domains\ProductModel\Models\ProductModelModel;
+use RefactorCircus\Showroom\Support\Tables;
 
 /**
  * One product or product model related to another, under a type — with a
@@ -28,6 +29,7 @@ use RefactorCircus\Showroom\Domains\ProductModel\Models\ProductModelModel;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property-read AssociationTypeModel $type
+ * @property-read ProductModel|ProductModelModel|null $source
  * @property-read ProductModel|ProductModelModel|null $target
  */
 final class AssociationModel extends Model
@@ -35,7 +37,10 @@ final class AssociationModel extends Model
     use DispatchesModelEvents;
     use HasUlids;
 
-    protected $table = 'showroom_associations';
+    public function getTable(): string
+    {
+        return Tables::name('associations');
+    }
 
     protected $fillable = [
         'association_type_id',

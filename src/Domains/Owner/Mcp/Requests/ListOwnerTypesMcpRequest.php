@@ -7,6 +7,7 @@ namespace RefactorCircus\Showroom\Domains\Owner\Mcp\Requests;
 use Laravel\Mcp\ResponseFactory;
 use RefactorCircus\Keystone\Mcp\Requests\Request;
 use RefactorCircus\Showroom\Domains\Owner\Actions\ListOwnerTypesAction;
+use RefactorCircus\Showroom\Domains\Owner\Data\ListOwnerTypesData;
 use RefactorCircus\Showroom\Domains\Owner\Models\OwnerTypeModel;
 use RefactorCircus\Showroom\Domains\Owner\Resources\OwnerTypeResource;
 
@@ -19,16 +20,13 @@ final class ListOwnerTypesMcpRequest extends Request
 
     protected function rules(): array
     {
-        return ListOwnerTypesAction::rules();
+        return ListOwnerTypesData::rules();
     }
 
     protected function handle(array $validated): ResponseFactory
     {
-        $ownerTypes = app(ListOwnerTypesAction::class)->execute($validated);
+        $ownerTypes = app(ListOwnerTypesAction::class)->execute(ListOwnerTypesData::fromValidated($validated));
 
-        return $this->structuredCollection(
-            OwnerTypeResource::collection($ownerTypes)->resolve(),
-            ['next_cursor' => $ownerTypes->nextCursor()?->encode()],
-        );
+        return OwnerTypeResource::collection($ownerTypes)->toStructuredResponse();
     }
 }

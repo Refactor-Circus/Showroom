@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace RefactorCircus\Showroom\Domains\Category\Mcp\Requests;
 
-use Laravel\Mcp\Response;
 use Laravel\Mcp\ResponseFactory;
 use RefactorCircus\Keystone\Mcp\Requests\Request;
 use RefactorCircus\Showroom\Domains\Category\Actions\CreateCategoryAction;
+use RefactorCircus\Showroom\Domains\Category\Data\CreateCategoryData;
 use RefactorCircus\Showroom\Domains\Category\Models\CategoryModel;
 use RefactorCircus\Showroom\Domains\Category\Resources\CategoryResource;
 
@@ -20,13 +20,13 @@ final class CreateCategoryMcpRequest extends Request
 
     protected function rules(): array
     {
-        return CreateCategoryAction::rules();
+        return CreateCategoryData::rules();
     }
 
     protected function handle(array $validated): ResponseFactory
     {
-        $category = app(CreateCategoryAction::class)->execute($validated);
+        $category = app(CreateCategoryAction::class)->execute(CreateCategoryData::fromValidated($validated));
 
-        return Response::structured((new CategoryResource($category))->resolve());
+        return (new CategoryResource($category))->toStructuredResponse();
     }
 }

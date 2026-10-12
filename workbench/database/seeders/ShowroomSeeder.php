@@ -8,25 +8,44 @@ use Illuminate\Support\Facades\Auth;
 use RefactorCircus\Impex\Domains\Run\Services\Engine;
 use RefactorCircus\Showroom\Domains\Asset\Actions\AttachAssetAction;
 use RefactorCircus\Showroom\Domains\Asset\Actions\CreateAssetAction;
+use RefactorCircus\Showroom\Domains\Asset\Data\AttachAssetData;
+use RefactorCircus\Showroom\Domains\Asset\Data\CreateAssetData;
 use RefactorCircus\Showroom\Domains\Association\Actions\CreateAssociationTypeAction;
+use RefactorCircus\Showroom\Domains\Association\Data\CreateAssociationTypeData;
 use RefactorCircus\Showroom\Domains\Attribute\Actions\CreateAttributeAction;
 use RefactorCircus\Showroom\Domains\Attribute\Actions\CreateAttributeGroupAction;
 use RefactorCircus\Showroom\Domains\Attribute\Actions\CreateAttributeOptionAction;
+use RefactorCircus\Showroom\Domains\Attribute\Data\CreateAttributeData;
+use RefactorCircus\Showroom\Domains\Attribute\Data\CreateAttributeGroupData;
+use RefactorCircus\Showroom\Domains\Attribute\Data\CreateAttributeOptionData;
 use RefactorCircus\Showroom\Domains\Attribute\Models\AttributeModel;
 use RefactorCircus\Showroom\Domains\Category\Actions\CreateCategoryAction;
+use RefactorCircus\Showroom\Domains\Category\Data\CreateCategoryData;
 use RefactorCircus\Showroom\Domains\Channel\Actions\CreateChannelAction;
 use RefactorCircus\Showroom\Domains\Channel\Actions\CreateLocaleAction;
+use RefactorCircus\Showroom\Domains\Channel\Data\CreateChannelData;
+use RefactorCircus\Showroom\Domains\Channel\Data\CreateLocaleData;
 use RefactorCircus\Showroom\Domains\Family\Actions\CreateFamilyAction;
 use RefactorCircus\Showroom\Domains\Family\Actions\CreateFamilyVariantAction;
+use RefactorCircus\Showroom\Domains\Family\Data\CreateFamilyData;
+use RefactorCircus\Showroom\Domains\Family\Data\CreateFamilyVariantData;
 use RefactorCircus\Showroom\Domains\Owner\Actions\CreateOwnerAction;
 use RefactorCircus\Showroom\Domains\Owner\Actions\CreateOwnerTypeAction;
+use RefactorCircus\Showroom\Domains\Owner\Data\CreateOwnerData;
+use RefactorCircus\Showroom\Domains\Owner\Data\CreateOwnerTypeData;
 use RefactorCircus\Showroom\Domains\Product\Actions\CreateProductAction;
 use RefactorCircus\Showroom\Domains\Product\Actions\UpdateProductAction;
+use RefactorCircus\Showroom\Domains\Product\Data\CreateProductData;
+use RefactorCircus\Showroom\Domains\Product\Data\UpdateProductData;
 use RefactorCircus\Showroom\Domains\Product\Models\ProductModel;
 use RefactorCircus\Showroom\Domains\ProductModel\Actions\CreateProductModelAction;
+use RefactorCircus\Showroom\Domains\ProductModel\Data\CreateProductModelData;
 use RefactorCircus\Showroom\Domains\Transfer\Actions\StartExportAction;
 use RefactorCircus\Showroom\Domains\Transfer\Actions\StartImportAction;
+use RefactorCircus\Showroom\Domains\Transfer\Data\StartExportData;
+use RefactorCircus\Showroom\Domains\Transfer\Data\StartImportData;
 use RefactorCircus\Showroom\Domains\Workflow\Actions\TransitionProductAction;
+use RefactorCircus\Showroom\Domains\Workflow\Data\TransitionProductData;
 use Workbench\App\Models\User;
 
 /**
@@ -65,11 +84,11 @@ class ShowroomSeeder extends Seeder
     private function channels(): void
     {
         foreach (['en' => 'English', 'fr' => 'Français', 'de' => 'Deutsch'] as $code => $label) {
-            app(CreateLocaleAction::class)->execute(['code' => $code, 'labels' => ['en' => $label]]);
+            app(CreateLocaleAction::class)->execute(new CreateLocaleData(code: $code, labels: ['en' => $label]));
         }
 
         $category = fn (string $code, ?string $parent, string $en, string $fr) => app(CreateCategoryAction::class)
-            ->execute(['code' => $code, 'parent' => $parent, 'labels' => ['en' => $en, 'fr' => $fr]]);
+            ->execute(CreateCategoryData::from(['code' => $code, 'parent' => $parent, 'labels' => ['en' => $en, 'fr' => $fr]]));
 
         $category('master', null, 'Master catalog', 'Catalogue principal');
         $category('apparel', 'master', 'Apparel', 'Vêtements');
@@ -82,30 +101,30 @@ class ShowroomSeeder extends Seeder
         $category('bags', 'accessories', 'Bags', 'Sacs');
         $category('clearance', null, 'Clearance', 'Déstockage');
 
-        app(CreateChannelAction::class)->execute([
-            'code' => 'ecommerce',
-            'labels' => ['en' => 'Online store'],
-            'locales' => ['en', 'fr'],
-            'currencies' => ['USD', 'EUR'],
-            'category_tree' => 'master',
-        ]);
+        app(CreateChannelAction::class)->execute(new CreateChannelData(
+            code: 'ecommerce',
+            labels: ['en' => 'Online store'],
+            locales: ['en', 'fr'],
+            currencies: ['USD', 'EUR'],
+            categoryTree: 'master',
+        ));
 
-        app(CreateChannelAction::class)->execute([
-            'code' => 'print',
-            'labels' => ['en' => 'Print catalog'],
-            'locales' => ['en'],
-            'currencies' => ['USD'],
-            'category_tree' => 'master',
-        ]);
+        app(CreateChannelAction::class)->execute(new CreateChannelData(
+            code: 'print',
+            labels: ['en' => 'Print catalog'],
+            locales: ['en'],
+            currencies: ['USD'],
+            categoryTree: 'master',
+        ));
     }
 
     private function attributes(): void
     {
-        app(CreateAttributeGroupAction::class)->execute(['code' => 'marketing', 'labels' => ['en' => 'Marketing', 'fr' => 'Marketing']]);
-        app(CreateAttributeGroupAction::class)->execute(['code' => 'technical', 'labels' => ['en' => 'Technical', 'fr' => 'Technique']]);
-        app(CreateAttributeGroupAction::class)->execute(['code' => 'commerce', 'labels' => ['en' => 'Commerce', 'fr' => 'Commerce']]);
+        app(CreateAttributeGroupAction::class)->execute(CreateAttributeGroupData::from(['code' => 'marketing', 'labels' => ['en' => 'Marketing', 'fr' => 'Marketing']]));
+        app(CreateAttributeGroupAction::class)->execute(CreateAttributeGroupData::from(['code' => 'technical', 'labels' => ['en' => 'Technical', 'fr' => 'Technique']]));
+        app(CreateAttributeGroupAction::class)->execute(CreateAttributeGroupData::from(['code' => 'commerce', 'labels' => ['en' => 'Commerce', 'fr' => 'Commerce']]));
 
-        $attribute = fn (array $data): AttributeModel => app(CreateAttributeAction::class)->execute($data);
+        $attribute = fn (array $data): AttributeModel => app(CreateAttributeAction::class)->execute(CreateAttributeData::from($data));
 
         $attribute(['code' => 'name', 'type' => 'text', 'group' => 'marketing', 'labels' => ['en' => 'Name', 'fr' => 'Nom']]);
         $attribute(['code' => 'description', 'type' => 'textarea', 'group' => 'marketing', 'is_localizable' => true, 'labels' => ['en' => 'Description', 'fr' => 'Description']]);
@@ -140,19 +159,19 @@ class ShowroomSeeder extends Seeder
             ]);
 
             foreach ($choices as $option => [$optionEn, $optionFr]) {
-                app(CreateAttributeOptionAction::class)->execute($select, ['code' => $option, 'labels' => ['en' => $optionEn, 'fr' => $optionFr]]);
+                app(CreateAttributeOptionAction::class)->execute($select, CreateAttributeOptionData::from(['code' => $option, 'labels' => ['en' => $optionEn, 'fr' => $optionFr]]));
             }
         }
     }
 
     private function owners(): void
     {
-        app(CreateOwnerTypeAction::class)->execute(['code' => 'manufacturer', 'labels' => ['en' => 'Manufacturer'], 'parent_types' => [], 'can_be_root' => true, 'owns_products' => false]);
-        app(CreateOwnerTypeAction::class)->execute(['code' => 'brand', 'labels' => ['en' => 'Brand'], 'parent_types' => ['manufacturer'], 'can_be_root' => false, 'owns_products' => true]);
-        app(CreateOwnerTypeAction::class)->execute(['code' => 'series', 'labels' => ['en' => 'Series'], 'parent_types' => ['brand'], 'can_be_root' => false, 'owns_products' => true]);
+        app(CreateOwnerTypeAction::class)->execute(new CreateOwnerTypeData(code: 'manufacturer', labels: ['en' => 'Manufacturer'], parentTypes: [], canBeRoot: true, ownsProducts: false));
+        app(CreateOwnerTypeAction::class)->execute(new CreateOwnerTypeData(code: 'brand', labels: ['en' => 'Brand'], parentTypes: ['manufacturer'], canBeRoot: false, ownsProducts: true));
+        app(CreateOwnerTypeAction::class)->execute(new CreateOwnerTypeData(code: 'series', labels: ['en' => 'Series'], parentTypes: ['brand'], canBeRoot: false, ownsProducts: true));
 
         $owner = fn (string $code, string $type, ?string $parent, string $label) => app(CreateOwnerAction::class)
-            ->execute(['code' => $code, 'type' => $type, 'parent' => $parent, 'labels' => ['en' => $label]]);
+            ->execute(new CreateOwnerData(code: $code, type: $type, parent: $parent, labels: ['en' => $label]));
 
         $owner('acme', 'manufacturer', null, 'Acme Textiles');
         $owner('acme_basics', 'brand', 'acme', 'Acme Basics');
@@ -170,7 +189,7 @@ class ShowroomSeeder extends Seeder
             'required_channels' => in_array($code, $onlineOnly, true) ? ['ecommerce'] : null,
         ], $codes);
 
-        app(CreateFamilyAction::class)->execute([
+        app(CreateFamilyAction::class)->execute(CreateFamilyData::from([
             'code' => 'clothing',
             'labels' => ['en' => 'Clothing', 'fr' => 'Vêtements'],
             'label_attribute' => 'name',
@@ -179,9 +198,9 @@ class ShowroomSeeder extends Seeder
                 required: ['name', 'description', 'price', 'marketing_copy'],
                 onlineOnly: ['marketing_copy'],
             ),
-        ]);
+        ]));
 
-        app(CreateFamilyAction::class)->execute([
+        app(CreateFamilyAction::class)->execute(CreateFamilyData::from([
             'code' => 'accessories',
             'labels' => ['en' => 'Accessories', 'fr' => 'Accessoires'],
             'label_attribute' => 'name',
@@ -189,9 +208,9 @@ class ShowroomSeeder extends Seeder
                 ['name', 'description', 'ean', 'weight', 'material', 'price', 'pack_size', 'color', 'tags'],
                 required: ['name', 'description', 'price'],
             ),
-        ]);
+        ]));
 
-        app(CreateFamilyVariantAction::class)->execute([
+        app(CreateFamilyVariantAction::class)->execute(CreateFamilyVariantData::from([
             'code' => 'clothing_by_color_size',
             'family' => 'clothing',
             'labels' => ['en' => 'By color, then size'],
@@ -199,15 +218,15 @@ class ShowroomSeeder extends Seeder
                 ['axes' => ['color'], 'attributes' => ['price']],
                 ['axes' => ['size'], 'attributes' => ['ean', 'weight']],
             ],
-        ]);
+        ]));
     }
 
     private function associationTypes(): void
     {
-        app(CreateAssociationTypeAction::class)->execute(['code' => 'cross_sell', 'labels' => ['en' => 'Cross-sell']]);
-        app(CreateAssociationTypeAction::class)->execute(['code' => 'upsell', 'labels' => ['en' => 'Upsell']]);
-        app(CreateAssociationTypeAction::class)->execute(['code' => 'goes_with', 'labels' => ['en' => 'Goes with'], 'is_two_way' => true]);
-        app(CreateAssociationTypeAction::class)->execute(['code' => 'bundle', 'labels' => ['en' => 'Bundle contents'], 'is_quantified' => true]);
+        app(CreateAssociationTypeAction::class)->execute(CreateAssociationTypeData::from(['code' => 'cross_sell', 'labels' => ['en' => 'Cross-sell']]));
+        app(CreateAssociationTypeAction::class)->execute(CreateAssociationTypeData::from(['code' => 'upsell', 'labels' => ['en' => 'Upsell']]));
+        app(CreateAssociationTypeAction::class)->execute(CreateAssociationTypeData::from(['code' => 'goes_with', 'labels' => ['en' => 'Goes with'], 'is_two_way' => true]));
+        app(CreateAssociationTypeAction::class)->execute(CreateAssociationTypeData::from(['code' => 'bundle', 'labels' => ['en' => 'Bundle contents'], 'is_quantified' => true]));
     }
 
     private function products(): void
@@ -221,7 +240,7 @@ class ShowroomSeeder extends Seeder
             ['tee_classic', 'Classic Tee', 'Our everyday cotton tee.', 'Le t-shirt en coton de tous les jours.', 'acme_basics_classic', ['red' => ['19.00', '18.00'], 'blue' => ['19.00', '18.00'], 'black' => ['21.00', '20.00']]],
             ['hoodie_trail', 'Trail Hoodie', 'A warm fleece hoodie for cold mornings.', 'Un sweat polaire chaud pour les matins froids.', 'acme_outdoor', ['heather' => ['59.00', '55.00'], 'black' => ['59.00', '55.00']]],
         ] as $index => [$code, $name, $en, $fr, $owner, $colors]) {
-            app(CreateProductModelAction::class)->execute([
+            app(CreateProductModelAction::class)->execute(CreateProductModelData::from([
                 'code' => $code,
                 'family_variant' => 'clothing_by_color_size',
                 'owner' => $owner,
@@ -239,17 +258,17 @@ class ShowroomSeeder extends Seeder
                     'released' => $value($code === 'tee_classic' ? '2025-03-01' : '2026-09-01'),
                     'tags' => $value($code === 'tee_classic' ? ['bestseller', 'summer'] : ['new']),
                 ],
-            ]);
+            ]));
 
             foreach ($colors as $color => [$usd, $eur]) {
-                app(CreateProductModelAction::class)->execute([
+                app(CreateProductModelAction::class)->execute(CreateProductModelData::from([
                     'code' => $code.'_'.$color,
                     'parent' => $code,
                     'values' => ['color' => $value($color), 'price' => $price($usd, $eur)],
-                ]);
+                ]));
 
                 foreach (['s', 'm', 'l', 'xl'] as $sizeIndex => $size) {
-                    app(CreateProductAction::class)->execute([
+                    app(CreateProductAction::class)->execute(CreateProductData::from([
                         'identifier' => strtoupper(str_replace('_', '-', $code).'-'.$color.'-'.$size),
                         'parent' => $code.'_'.$color,
                         'values' => [
@@ -257,19 +276,19 @@ class ShowroomSeeder extends Seeder
                             'ean' => $value(sprintf('400%d%03d%02d%04d', $index, crc32($color) % 1000, $sizeIndex, crc32($code) % 10000)),
                             'weight' => $value(['amount' => ($code === 'tee_classic' ? 160 : 520) + $sizeIndex * 20, 'unit' => 'gram']),
                         ],
-                    ]);
+                    ]));
                 }
             }
         }
 
         // Simple products.
-        $simple = fn (string $identifier, string $family, string $owner, array $categories, array $values, array $extra = []) => app(CreateProductAction::class)->execute([
+        $simple = fn (string $identifier, string $family, string $owner, array $categories, array $values, array $extra = []) => app(CreateProductAction::class)->execute(CreateProductData::from([
             'identifier' => $identifier,
             'family' => $family,
             'owner' => $owner,
             'categories' => $categories,
             'values' => $values,
-        ] + $extra);
+        ] + $extra));
 
         $simple('CAP-BASEBALL', 'accessories', 'acme_basics', ['hats'], [
             'name' => $value('Baseball Cap'),
@@ -311,12 +330,12 @@ class ShowroomSeeder extends Seeder
         // An incomplete draft with no family requirements met.
         $simple('SCARF-DRAFT', 'accessories', 'northwind_knits', [], ['name' => $value('Scarf (draft)')]);
 
-        app(UpdateProductAction::class)->execute(ProductModel::query()->where('identifier', 'CAP-BASEBALL')->firstOrFail(), [
+        app(UpdateProductAction::class)->execute(ProductModel::query()->where('identifier', 'CAP-BASEBALL')->firstOrFail(), UpdateProductData::from([
             'associations' => [
                 'cross_sell' => ['product_models' => ['tee_classic']],
                 'upsell' => ['products' => ['BEANIE-KNIT']],
             ],
-        ]);
+        ]));
     }
 
     private function moreProducts(): void
@@ -328,13 +347,13 @@ class ShowroomSeeder extends Seeder
         ]));
         $price = fn (string $usd, string $eur): array => $value([['amount' => $usd, 'currency' => 'USD'], ['amount' => $eur, 'currency' => 'EUR']]);
 
-        $simple = fn (string $identifier, string $owner, array $categories, array $values, array $extra = []) => app(CreateProductAction::class)->execute([
+        $simple = fn (string $identifier, string $owner, array $categories, array $values, array $extra = []) => app(CreateProductAction::class)->execute(CreateProductData::from([
             'identifier' => $identifier,
             'family' => 'accessories',
             'owner' => $owner,
             'categories' => $categories,
             'values' => $values,
-        ] + $extra);
+        ] + $extra));
 
         $simple('TOTE-CANVAS', 'acme_basics', ['bags'], [
             'name' => $value('Canvas Tote'),
@@ -407,13 +426,13 @@ class ShowroomSeeder extends Seeder
             imagefill($image, 0, 0, (int) imagecolorallocate($image, $red, $green, $blue));
             imagepng($image, $file->getPathname());
 
-            $asset = app(CreateAssetAction::class)->execute([
+            $asset = app(CreateAssetAction::class)->execute(CreateAssetData::from([
                 'code' => strtolower(str_replace('_', '-', $target)).'-'.($role === 'logo' ? 'logo' : 'main'),
                 'labels' => ['en' => ucwords(str_replace(['_', '-'], ' ', strtolower($target)))],
                 'file' => $file,
-            ]);
+            ]));
 
-            app(AttachAssetAction::class)->execute($asset, ['type' => $type, 'target' => $target, 'role' => $role]);
+            app(AttachAssetAction::class)->execute($asset, AttachAssetData::from(['type' => $type, 'target' => $target, 'role' => $role]));
         }
     }
 
@@ -428,7 +447,7 @@ class ShowroomSeeder extends Seeder
 
                 $product = ProductModel::query()->where('identifier', $identifier)->firstOrFail();
 
-                app(TransitionProductAction::class)->execute($product, ['transition' => $name, 'comment' => $comment]);
+                app(TransitionProductAction::class)->execute($product, TransitionProductData::from(['transition' => $name, 'comment' => $comment]));
             }
 
             $this->actAs('maria@example.com');
@@ -463,7 +482,7 @@ class ShowroomSeeder extends Seeder
     {
         $product = ProductModel::query()->where('identifier', 'CAP-BASEBALL')->firstOrFail();
 
-        app(UpdateProductAction::class)->execute($product, [
+        app(UpdateProductAction::class)->execute($product, UpdateProductData::from([
             'values' => [
                 'description' => [
                     ['locale' => 'en', 'scope' => null, 'data' => 'Six-panel cotton twill cap with an adjustable brass buckle.'],
@@ -471,13 +490,13 @@ class ShowroomSeeder extends Seeder
                 ],
                 'tags' => [['locale' => null, 'scope' => null, 'data' => ['bestseller']]],
             ],
-        ]);
+        ]));
 
         $product = ProductModel::query()->where('identifier', 'SOCKS-CREW')->firstOrFail();
 
-        app(UpdateProductAction::class)->execute($product, [
+        app(UpdateProductAction::class)->execute($product, UpdateProductData::from([
             'values' => ['pack_size' => [['locale' => null, 'scope' => null, 'data' => 3]]],
-        ]);
+        ]));
     }
 
     /**
@@ -487,37 +506,37 @@ class ShowroomSeeder extends Seeder
      */
     private function transfers(): void
     {
-        app(StartExportAction::class)->execute(['family' => 'clothing', 'format' => 'csv', 'code' => 'export-clothing']);
-        app(StartExportAction::class)->execute(['scope' => 'ecommerce', 'locales' => ['en', 'fr'], 'published' => true, 'code' => 'export-ecommerce-live']);
+        app(StartExportAction::class)->execute(StartExportData::from(['family' => 'clothing', 'format' => 'csv', 'code' => 'export-clothing']));
+        app(StartExportAction::class)->execute(StartExportData::from(['scope' => 'ecommerce', 'locales' => ['en', 'fr'], 'published' => true, 'code' => 'export-ecommerce-live']));
 
-        app(StartImportAction::class)->execute(['mode' => 'upsert', 'file' => $this->csv('spring-socks.csv', [
+        app(StartImportAction::class)->execute(StartImportData::from(['mode' => 'upsert', 'file' => $this->csv('spring-socks.csv', [
             ['identifier', 'family', 'owner', 'categories', 'name', 'description-en', 'price-USD', 'price-EUR', 'pack_size', 'color', 'tags'],
             ['SOCKS-ANKLE', 'accessories', 'northwind_knits', 'socks', 'Ankle Socks', 'Low-cut cotton socks.', '7.00', '6.50', '3', 'black', 'summer,new'],
             ['SOCKS-STRIPE', 'accessories', 'northwind_knits', 'socks', 'Striped Socks', 'Bold striped crew socks.', '10.00', '9.50', '1', 'blue', 'new'],
             ['SOCKS-CREW', '', '', '', '', '', '9.50', '9.00', '', '', ''],
-        ])]);
+        ])]));
 
         // A supplier file with a bad row fails outright when no failures are tolerated.
         $tolerance = config('showroom.impex.allow_failures');
         config(['showroom.impex.allow_failures' => 0.0]);
 
-        app(StartImportAction::class)->execute(['mode' => 'create', 'file' => $this->csv('supplier-feed.csv', [
+        app(StartImportAction::class)->execute(StartImportData::from(['mode' => 'create', 'file' => $this->csv('supplier-feed.csv', [
             ['identifier', 'family', 'name', 'price-USD'],
             ['SCARF-WOOL', 'accessories', 'Wool Scarf', '29.00'],
             ['SCARF-SILK', 'scarves', 'Silk Scarf', '49.00'],
-        ])]);
+        ])]));
 
         config(['showroom.impex.allow_failures' => $tolerance]);
 
         $connection = config('impex.queue.connection');
         config(['queue.connections.workbench-held' => ['driver' => 'null'], 'impex.queue.connection' => 'workbench-held']);
 
-        app(StartExportAction::class)->execute(['family' => 'accessories', 'format' => 'jsonl', 'code' => 'export-accessories']);
+        app(StartExportAction::class)->execute(StartExportData::from(['family' => 'accessories', 'format' => 'jsonl', 'code' => 'export-accessories']));
 
-        $running = app(StartImportAction::class)->execute(['mode' => 'upsert', 'file' => $this->csv('price-update.csv', [
+        $running = app(StartImportAction::class)->execute(StartImportData::from(['mode' => 'upsert', 'file' => $this->csv('price-update.csv', [
             ['identifier', 'price-USD', 'price-EUR'],
             ['BEANIE-KNIT', '24.00', '22.00'],
-        ])]);
+        ])]));
 
         // Drive it once: it starts, and its first step is queued (and dropped).
         app(Engine::class)->drive((string) $running->getKey());

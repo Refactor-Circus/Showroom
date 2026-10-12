@@ -14,11 +14,6 @@ final class DeleteCategoryRequest extends CategoryRequest
         return $this->allows('delete', $this->category());
     }
 
-    public function rules(): array
-    {
-        return DeleteCategoryAction::rules();
-    }
-
     public function persist(): JsonResponse
     {
         app(DeleteCategoryAction::class)->execute($this->category());

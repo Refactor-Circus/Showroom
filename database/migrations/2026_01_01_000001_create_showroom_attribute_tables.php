@@ -5,12 +5,13 @@ declare(strict_types=1);
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use RefactorCircus\Showroom\Support\Tables;
 
 return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('showroom_attribute_groups', function (Blueprint $table): void {
+        Schema::create(Tables::name('attribute_groups'), function (Blueprint $table): void {
             $table->ulid('id')->primary();
             $table->string('code', 100)->unique();
             // Locale => label, so translations need no schema change later.
@@ -19,13 +20,13 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        Schema::create('showroom_attributes', function (Blueprint $table): void {
+        Schema::create(Tables::name('attributes'), function (Blueprint $table): void {
             $table->ulid('id')->primary();
             $table->string('code', 100)->unique();
             $table->string('type', 32)->index();
             // Restrict, not null: a group is emptied deliberately before it goes.
             $table->foreignUlid('attribute_group_id')->nullable()
-                ->constrained('showroom_attribute_groups')->restrictOnDelete();
+                ->constrained(Tables::name('attribute_groups'))->restrictOnDelete();
             $table->json('labels')->nullable();
             $table->boolean('is_unique')->default(false);
             // Stored now, enforced once channels and locales land.
@@ -39,9 +40,9 @@ return new class extends Migration
             $table->index(['attribute_group_id', 'sort_order']);
         });
 
-        Schema::create('showroom_attribute_options', function (Blueprint $table): void {
+        Schema::create(Tables::name('attribute_options'), function (Blueprint $table): void {
             $table->ulid('id')->primary();
-            $table->foreignUlid('attribute_id')->constrained('showroom_attributes')->cascadeOnDelete();
+            $table->foreignUlid('attribute_id')->constrained(Tables::name('attributes'))->cascadeOnDelete();
             $table->string('code', 100);
             $table->json('labels')->nullable();
             $table->unsignedInteger('sort_order')->default(0);
@@ -54,8 +55,8 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::dropIfExists('showroom_attribute_options');
-        Schema::dropIfExists('showroom_attributes');
-        Schema::dropIfExists('showroom_attribute_groups');
+        Schema::dropIfExists(Tables::name('attribute_options'));
+        Schema::dropIfExists(Tables::name('attributes'));
+        Schema::dropIfExists(Tables::name('attribute_groups'));
     }
 };

@@ -10,6 +10,7 @@ use Laravel\Mcp\ResponseFactory;
 use Laravel\Mcp\Server\Attributes\Description;
 use RefactorCircus\Keystone\Mcp\Tool;
 use RefactorCircus\Showroom\Domains\Category\Mcp\Requests\CreateCategoryMcpRequest;
+use RefactorCircus\Showroom\Domains\Category\Resources\CategoryResource;
 
 #[Description('Create a category under a parent, or a new category tree when no parent is given.')]
 final class CreateCategoryTool extends Tool
@@ -27,5 +28,10 @@ final class CreateCategoryTool extends Tool
             'labels' => $schema->object()->description('Labels keyed by locale. Replaces all labels when given.'),
             'sort_order' => $schema->integer()->description('Position among its siblings, lowest first.')->min(0),
         ];
+    }
+
+    public function outputSchema(JsonSchema $schema): array
+    {
+        return CategoryResource::structuredSchema($schema);
     }
 }

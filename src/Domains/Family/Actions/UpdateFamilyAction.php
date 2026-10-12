@@ -6,38 +6,25 @@ namespace RefactorCircus\Showroom\Domains\Family\Actions;
 
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
+use RefactorCircus\Keystone\Data\Missing;
 use RefactorCircus\Showroom\Domains\Family\Concerns\WritesFamilyAttributes;
+use RefactorCircus\Showroom\Domains\Family\Data\UpdateFamilyData;
 use RefactorCircus\Showroom\Domains\Family\Events\FamilyUpdatedActionEvent;
 use RefactorCircus\Showroom\Domains\Family\Events\FamilyUpdatingActionEvent;
 use RefactorCircus\Showroom\Domains\Family\Models\FamilyModel;
-use RefactorCircus\Showroom\Domains\Product\Models\ProductModel;
+use RefactorCircus\Showroom\Domains\Search\Enums\SyncScope;
 use RefactorCircus\Showroom\Domains\Search\Services\ProductIndex;
 
 final class UpdateFamilyAction
 {
     use WritesFamilyAttributes;
 
-    /**
-     * `attributes`, when given, replaces the family's whole membership.
-     *
-     * @return array<string, mixed>
-     */
-    public static function rules(): array
-    {
-        return [
-            // A code is an identifier other systems hold on to; it never changes.
-            'code' => ['prohibited'],
-        ] + self::familyRules();
-    }
-
     public function __construct(private readonly ProductIndex $index) {}
 
     /**
-     * @param  array<string, mixed>  $data
-     *
      * @throws ValidationException
      */
-    public function execute(FamilyModel $family, array $data): FamilyModel
+    public function execute(FamilyModel $family, UpdateFamilyData $data): FamilyModel
     {
         FamilyUpdatingActionEvent::dispatch($family, $data);
 
@@ -48,40 +35,35 @@ final class UpdateFamilyAction
         return $result;
     }
 
-    /**
-     * @param  array<string, mixed>  $data
-     */
-    private function perform(FamilyModel $family, array $data): FamilyModel
+    private function perform(FamilyModel $family, UpdateFamilyData $data): FamilyModel
     {
         return DB::transaction(function () use ($family, $data): FamilyModel {
-            if (array_key_exists('labels', $data)) {
-                $family->labels = is_array($data['labels']) ? $data['labels'] : [];
+            if ($data->has('labels')) {
+                $family->labels = is_array($data->labels) ? $data->labels : [];
             }
 
-            if (array_key_exists('sort_order', $data)) {
-                $family->sort_order = (int) $data['sort_order'];
+            if (! $data->sortOrder instanceof Missing) {
+                $family->sort_order = $data->sortOrder;
             }
 
-            if (array_key_exists('attributes', $data)) {
-                $members = is_array($data['attributes']) ? $data['attributes'] : [];
-
-                $this->keepVariantAttributes($family, $members);
-                $this->replaceAttributes($family, $members);
+            if (! $data->attributes instanceof Missing) {
+                $this->keepVariantAttributes($family, $data->attributes);
+                $this->replaceAttributes($family, $data->attributes);
             }
 
             // The label must still belong to the family after its membership
             // changed, so it is checked again whenever either moves.
-            if (array_key_exists('label_attribute', $data)) {
-                $this->assignLabelAttribute($family, is_string($data['label_attribute']) ? $data['label_attribute'] : null);
-            } elseif (array_key_exists('attributes', $data) && $family->label_attribute_id !== null) {
+            if (! $data->labelAttribute instanceof Missing) {
+                $this->assignLabelAttribute($family, $data->labelAttribute);
+            } elseif ($data->has('attributes') && $family->label_attribute_id !== null) {
                 $this->assignLabelAttribute($family, $family->labelAttribute?->code);
             }
 
             $family->save();
 
             // Requirements feed every product's completeness.
-            if (array_key_exists('attributes', $data)) {
-                $this->index->queueQuery(ProductModel::query()->where('family_id', $family->id));
+            if ($data->has('attributes')) {
+                $this->index->queueWithin(SyncScope::Family, $family->id);
             }
 
             return $family->load(['labelAttribute', 'familyAttributes']);

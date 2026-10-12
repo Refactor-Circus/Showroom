@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 namespace RefactorCircus\Showroom\Domains\Asset\Actions;
 
-use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
+use RefactorCircus\Showroom\Domains\Asset\Data\AttachAssetData;
 use RefactorCircus\Showroom\Domains\Asset\Events\AssetAttachedActionEvent;
 use RefactorCircus\Showroom\Domains\Asset\Events\AssetAttachingActionEvent;
 use RefactorCircus\Showroom\Domains\Asset\Models\AssetModel;
@@ -13,30 +14,12 @@ use RefactorCircus\Showroom\Domains\Asset\Services\AssetLinks;
 
 final class AttachAssetAction
 {
-    /**
-     * Link the asset to a product (by identifier), a product model or an
-     * owner (by code), under a role. Attaching again updates the order.
-     *
-     * @return array<string, mixed>
-     */
-    public static function rules(): array
-    {
-        return [
-            'type' => ['required', 'string', Rule::in(array_keys(AssetLinks::TYPES))],
-            'target' => ['required', 'string', 'max:191'],
-            'role' => ['sometimes', 'string', 'max:100', 'regex:/^[a-z][a-z0-9_]*$/'],
-            'sort_order' => ['sometimes', 'integer', 'min:0'],
-        ];
-    }
-
     public function __construct(private readonly AssetLinks $links) {}
 
     /**
-     * @param  array<string, mixed>  $data
-     *
      * @throws ValidationException
      */
-    public function execute(AssetModel $asset, array $data): AssetModel
+    public function execute(AssetModel $asset, AttachAssetData $data): AssetModel
     {
         AssetAttachingActionEvent::dispatch($asset, $data);
 
@@ -47,20 +30,14 @@ final class AttachAssetAction
         return $result;
     }
 
-    /**
-     * @param  array<string, mixed>  $data
-     */
-    private function perform(AssetModel $asset, array $data): AssetModel
+    private function perform(AssetModel $asset, AttachAssetData $data): AssetModel
     {
-        $record = $this->links->resolve((string) $data['type'], (string) $data['target']);
+        return DB::transaction(function () use ($asset, $data): AssetModel {
+            $record = $this->links->resolve($data->type, $data->target);
 
-        $this->links->attach(
-            $asset,
-            $record,
-            is_string($data['role'] ?? null) ? $data['role'] : 'media',
-            isset($data['sort_order']) ? (int) $data['sort_order'] : 0,
-        );
+            $this->links->attach($asset, $record, $data->role, $data->sortOrder);
 
-        return $asset->load(['products', 'productModels', 'owners']);
+            return $asset->load(['products', 'productModels', 'owners']);
+        });
     }
 }

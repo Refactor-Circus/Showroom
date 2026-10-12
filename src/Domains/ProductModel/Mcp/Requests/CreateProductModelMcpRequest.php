@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace RefactorCircus\Showroom\Domains\ProductModel\Mcp\Requests;
 
-use Laravel\Mcp\Response;
 use Laravel\Mcp\ResponseFactory;
 use RefactorCircus\Keystone\Mcp\Requests\Request;
 use RefactorCircus\Showroom\Domains\ProductModel\Actions\CreateProductModelAction;
+use RefactorCircus\Showroom\Domains\ProductModel\Data\CreateProductModelData;
 use RefactorCircus\Showroom\Domains\ProductModel\Models\ProductModelModel;
 use RefactorCircus\Showroom\Domains\ProductModel\Resources\ProductModelResource;
 
@@ -20,13 +20,13 @@ final class CreateProductModelMcpRequest extends Request
 
     protected function rules(): array
     {
-        return CreateProductModelAction::rules();
+        return CreateProductModelData::rules();
     }
 
     protected function handle(array $validated): ResponseFactory
     {
-        $productModel = app(CreateProductModelAction::class)->execute($validated);
+        $productModel = app(CreateProductModelAction::class)->execute(CreateProductModelData::fromValidated($validated));
 
-        return Response::structured((new ProductModelResource($productModel))->resolve());
+        return (new ProductModelResource($productModel))->toStructuredResponse();
     }
 }

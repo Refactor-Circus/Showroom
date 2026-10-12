@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace RefactorCircus\Showroom\Domains\Attribute\Actions;
 
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
+use RefactorCircus\Keystone\Data\Missing;
+use RefactorCircus\Showroom\Domains\Attribute\Data\UpdateAttributeData;
 use RefactorCircus\Showroom\Domains\Attribute\Events\AttributeUpdatedActionEvent;
 use RefactorCircus\Showroom\Domains\Attribute\Events\AttributeUpdatingActionEvent;
 use RefactorCircus\Showroom\Domains\Attribute\Models\AttributeGroupModel;
@@ -13,32 +16,9 @@ use RefactorCircus\Showroom\Domains\Attribute\Models\AttributeModel;
 final class UpdateAttributeAction
 {
     /**
-     * @return array<string, mixed>
-     */
-    public static function rules(): array
-    {
-        return [
-            // Every stored value depends on the code and type, so neither
-            // changes once the attribute exists.
-            'code' => ['prohibited'],
-            'type' => ['prohibited'],
-            'group' => ['sometimes', 'nullable', 'string', 'exists:showroom_attribute_groups,code'],
-            'labels' => ['sometimes', 'nullable', 'array'],
-            'labels.*' => ['nullable', 'string', 'max:255'],
-            'is_unique' => ['sometimes', 'boolean'],
-            'is_localizable' => ['sometimes', 'boolean'],
-            'is_scopable' => ['sometimes', 'boolean'],
-            'settings' => ['sometimes', 'nullable', 'array'],
-            'sort_order' => ['sometimes', 'integer', 'min:0'],
-        ];
-    }
-
-    /**
-     * @param  array<string, mixed>  $data
-     *
      * @throws ValidationException
      */
-    public function execute(AttributeModel $attribute, array $data): AttributeModel
+    public function execute(AttributeModel $attribute, UpdateAttributeData $data): AttributeModel
     {
         AttributeUpdatingActionEvent::dispatch($attribute, $data);
 
@@ -49,60 +29,58 @@ final class UpdateAttributeAction
         return $result;
     }
 
-    /**
-     * @param  array<string, mixed>  $data
-     */
-    private function perform(AttributeModel $attribute, array $data): AttributeModel
+    private function perform(AttributeModel $attribute, UpdateAttributeData $data): AttributeModel
     {
-        if (array_key_exists('is_unique', $data)) {
-            $unique = (bool) $data['is_unique'];
+        return DB::transaction(function () use ($attribute, $data): AttributeModel {
+            if (! $data->isUnique instanceof Missing) {
+                $unique = $data->isUnique;
 
-            if ($unique && ! $attribute->type->canBeUnique()) {
+                if ($unique && ! $attribute->type->canBeUnique()) {
+                    throw ValidationException::withMessages([
+                        'is_unique' => sprintf('A %s attribute cannot be unique.', $attribute->type->value),
+                    ]);
+                }
+
+                $attribute->is_unique = $unique;
+            }
+
+            if (! $data->group instanceof Missing) {
+                $attribute->attribute_group_id = $data->group !== null
+                    ? AttributeGroupModel::query()->where('code', $data->group)->value('id')
+                    : null;
+            }
+
+            if (! $data->labels instanceof Missing) {
+                $attribute->labels = $data->labels ?? [];
+            }
+
+            if (! $data->isLocalizable instanceof Missing) {
+                $attribute->is_localizable = $data->isLocalizable;
+            }
+
+            if (! $data->isScopable instanceof Missing) {
+                $attribute->is_scopable = $data->isScopable;
+            }
+
+            // Settings are replaced whole, so a caller never has to know which
+            // keys were set before to get a predictable result.
+            if (! $data->settings instanceof Missing) {
+                $attribute->settings = $attribute->type->validateSettings($data->settings ?? []);
+            }
+
+            if (! $data->sortOrder instanceof Missing) {
+                $attribute->sort_order = $data->sortOrder;
+            }
+
+            if ($attribute->is_unique && ($attribute->is_localizable || $attribute->is_scopable)) {
                 throw ValidationException::withMessages([
-                    'is_unique' => sprintf('A %s attribute cannot be unique.', $attribute->type->value),
+                    'is_unique' => 'A unique attribute cannot be localizable or scopable: it holds one value per product.',
                 ]);
             }
 
-            $attribute->is_unique = $unique;
-        }
+            $attribute->save();
 
-        if (array_key_exists('group', $data)) {
-            $attribute->attribute_group_id = is_string($data['group'])
-                ? AttributeGroupModel::query()->where('code', $data['group'])->value('id')
-                : null;
-        }
-
-        if (array_key_exists('labels', $data)) {
-            $attribute->labels = is_array($data['labels']) ? $data['labels'] : [];
-        }
-
-        foreach (['is_localizable', 'is_scopable'] as $flag) {
-            if (array_key_exists($flag, $data)) {
-                $attribute->{$flag} = (bool) $data[$flag];
-            }
-        }
-
-        // Settings are replaced whole, so a caller never has to know which
-        // keys were set before to get a predictable result.
-        if (array_key_exists('settings', $data)) {
-            /** @var array<string, mixed> $settings */
-            $settings = is_array($data['settings']) ? $data['settings'] : [];
-
-            $attribute->settings = $attribute->type->validateSettings($settings);
-        }
-
-        if (array_key_exists('sort_order', $data)) {
-            $attribute->sort_order = (int) $data['sort_order'];
-        }
-
-        if ($attribute->is_unique && ($attribute->is_localizable || $attribute->is_scopable)) {
-            throw ValidationException::withMessages([
-                'is_unique' => 'A unique attribute cannot be localizable or scopable: it holds one value per product.',
-            ]);
-        }
-
-        $attribute->save();
-
-        return $attribute->load('group');
+            return $attribute->load('group');
+        });
     }
 }

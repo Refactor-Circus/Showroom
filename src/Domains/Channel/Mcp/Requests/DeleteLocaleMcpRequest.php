@@ -17,7 +17,7 @@ final class DeleteLocaleMcpRequest extends LocaleRequest
 
     protected function rules(): array
     {
-        return DeleteLocaleAction::rules() + [
+        return [
             'locale' => ['required', 'string', 'max:100'],
         ];
     }

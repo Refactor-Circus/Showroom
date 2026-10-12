@@ -8,6 +8,7 @@ use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Laravel\Mcp\Response;
 use Laravel\Mcp\ResponseFactory;
 use Laravel\Mcp\Server\Attributes\Description;
+use RefactorCircus\Impex\Domains\Run\Resources\RunResource;
 use RefactorCircus\Keystone\Mcp\Tool;
 use RefactorCircus\Showroom\Domains\Transfer\Mcp\Requests\StartImportMcpRequest;
 
@@ -27,5 +28,10 @@ final class StartImportTool extends Tool
             'format' => $schema->string()->description('csv or jsonl; guessed from the file name when omitted.'),
             'mode' => $schema->string()->description('upsert (default), create (skip existing) or update (skip missing).'),
         ];
+    }
+
+    public function outputSchema(JsonSchema $schema): array
+    {
+        return RunResource::structuredSchema($schema);
     }
 }

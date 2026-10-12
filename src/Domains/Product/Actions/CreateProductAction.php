@@ -12,6 +12,7 @@ use RefactorCircus\Showroom\Domains\Category\Concerns\AssignsCategories;
 use RefactorCircus\Showroom\Domains\Family\Models\FamilyModel;
 use RefactorCircus\Showroom\Domains\Owner\Concerns\AssignsOwners;
 use RefactorCircus\Showroom\Domains\Product\Concerns\WritesProducts;
+use RefactorCircus\Showroom\Domains\Product\Data\CreateProductData;
 use RefactorCircus\Showroom\Domains\Product\Events\ProductCreatedActionEvent;
 use RefactorCircus\Showroom\Domains\Product\Events\ProductCreatingActionEvent;
 use RefactorCircus\Showroom\Domains\Product\Models\ProductModel;
@@ -25,35 +26,15 @@ final class CreateProductAction
     use AssignsOwners;
     use WritesProducts;
 
-    /**
-     * `values` in standard shape: `{"name": [{"locale": null, "scope": null, "data": "Tee"}]}`.
-     * A variant product names its `parent` product model and takes its family.
-     *
-     * @return array<string, mixed>
-     */
-    public static function rules(): array
-    {
-        return [
-            'identifier' => ['required', 'string', 'max:191', 'regex:/^[A-Za-z0-9][A-Za-z0-9_.-]*$/', 'unique:showroom_products,identifier'],
-            'family' => ['sometimes', 'nullable', 'string', 'exists:showroom_families,code'],
-            'parent' => ['sometimes', 'nullable', 'string', 'exists:showroom_product_models,code'],
-            'owner' => ['sometimes', 'nullable', 'string', 'exists:showroom_owners,code'],
-            'enabled' => ['sometimes', 'boolean'],
-            'values' => ['sometimes', 'nullable', 'array'],
-        ] + self::categoryRules() + Associations::rules();
-    }
-
     public function __construct(
         private readonly UniqueValues $unique,
         private readonly ProductIndex $index,
     ) {}
 
     /**
-     * @param  array<string, mixed>  $data
-     *
      * @throws ValidationException
      */
-    public function execute(array $data): ProductModel
+    public function execute(CreateProductData $data): ProductModel
     {
         ProductCreatingActionEvent::dispatch($data);
 
@@ -64,18 +45,15 @@ final class CreateProductAction
         return $result;
     }
 
-    /**
-     * @param  array<string, mixed>  $data
-     */
-    private function perform(array $data): ProductModel
+    private function perform(CreateProductData $data): ProductModel
     {
         return DB::transaction(function () use ($data): ProductModel {
-            $parent = is_string($data['parent'] ?? null)
-                ? ProductModelModel::query()->with('familyVariant.family.familyAttributes')->where('code', $data['parent'])->firstOrFail()
+            $parent = $data->parent !== null
+                ? ProductModelModel::query()->with('familyVariant.family.familyAttributes')->where('code', $data->parent)->firstOrFail()
                 : null;
 
-            $family = is_string($data['family'] ?? null)
-                ? FamilyModel::query()->where('code', $data['family'])->firstOrFail()
+            $family = $data->family !== null
+                ? FamilyModel::query()->where('code', $data->family)->firstOrFail()
                 : null;
 
             if ($parent !== null) {
@@ -95,24 +73,24 @@ final class CreateProductAction
 
                 $family = $variantFamily;
 
-                if (is_string($data['owner'] ?? null)) {
+                if ($data->owner !== null) {
                     $this->refuseInheritedOwner('variant product');
                 }
             }
 
-            $owner = $parent === null ? $this->ownerFor($data['owner'] ?? null) : null;
+            $owner = $parent === null ? $this->ownerFor($data->owner) : null;
 
             [$settable, $why] = $this->settable($family, $parent);
 
-            $values = $this->patchValues([], $data['values'] ?? null, $settable, $why);
+            $values = $this->patchValues([], $data->values, $settable, $why);
 
             if ($parent !== null) {
                 $this->checkVariantAxes($parent, $values);
             }
 
             $product = new ProductModel([
-                'identifier' => $data['identifier'],
-                'enabled' => (bool) ($data['enabled'] ?? true),
+                'identifier' => $data->identifier,
+                'enabled' => $data->enabled,
                 'values' => $values,
             ]);
             $product->family()->associate($family);
@@ -120,8 +98,8 @@ final class CreateProductAction
             $product->owner()->associate($owner);
             $product->save();
 
-            $this->assignCategories($product, $data);
-            app(Associations::class)->write($product, $data);
+            $this->assignCategories($product, $data->toArray());
+            app(Associations::class)->write($product, $data->toArray());
             $this->unique->sync($product);
             app(Versions::class)->record($product, 'created');
             $this->index->queue([$product->id]);

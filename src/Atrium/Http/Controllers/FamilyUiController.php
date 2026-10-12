@@ -17,6 +17,9 @@ use RefactorCircus\Showroom\Domains\Family\Actions\DeleteFamilyAction;
 use RefactorCircus\Showroom\Domains\Family\Actions\ListFamiliesAction;
 use RefactorCircus\Showroom\Domains\Family\Actions\ShowFamilyAction;
 use RefactorCircus\Showroom\Domains\Family\Actions\UpdateFamilyAction;
+use RefactorCircus\Showroom\Domains\Family\Data\CreateFamilyData;
+use RefactorCircus\Showroom\Domains\Family\Data\ListFamiliesData;
+use RefactorCircus\Showroom\Domains\Family\Data\UpdateFamilyData;
 use RefactorCircus\Showroom\Domains\Family\Models\FamilyModel;
 
 final class FamilyUiController
@@ -27,16 +30,16 @@ final class FamilyUiController
     {
         $this->authorizeScreen('viewAny', FamilyModel::class);
 
-        // Filters are validated by the Action's own rules, so the page and the
+        // Filters are validated by the Data's own rules, so the page and the
         // JSON API accept exactly the same query.
-        $filters = $request->validate(ListFamiliesAction::rules());
+        $filters = ListFamiliesData::from($request->query());
 
         /** @var view-string $view */
         $view = 'showroom::ui.families.index';
 
         return view($view, [
             'families' => app(ListFamiliesAction::class)->execute($filters)->withQueryString(),
-            'filters' => $filters,
+            'filters' => $filters->toArray(),
         ]);
     }
 
@@ -44,7 +47,7 @@ final class FamilyUiController
     {
         $this->authorizeScreen('create', FamilyModel::class);
 
-        $data = Labels::fromForm($request->validate(CreateFamilyAction::rules()));
+        $data = CreateFamilyData::fromValidated(Labels::fromForm($request->validate(CreateFamilyData::rules())));
 
         $family = app(CreateFamilyAction::class)->execute($data);
 
@@ -111,7 +114,7 @@ final class FamilyUiController
             $input['label_attribute'] = null;
         }
 
-        $data = Labels::fromForm(Validator::validate($input, UpdateFamilyAction::rules()), $family->labels);
+        $data = UpdateFamilyData::fromValidated(Labels::fromForm(Validator::validate($input, UpdateFamilyData::rules()), $family->labels));
 
         app(UpdateFamilyAction::class)->execute($family, $data);
 

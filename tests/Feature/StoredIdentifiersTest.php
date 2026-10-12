@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Relations\Relation;
 use RefactorCircus\Showroom\Domains\Owner\Models\OwnerModel;
 use RefactorCircus\Showroom\Domains\Product\Models\ProductModel;
 use RefactorCircus\Showroom\Domains\ProductModel\Models\ProductModelModel;
+use RefactorCircus\Showroom\Domains\Search\Enums\SyncScope;
 use RefactorCircus\Showroom\Impex\ImpexIntegration;
 
 /*
@@ -23,7 +24,7 @@ it('keeps the morph aliases products, product models and owners are stored under
 ]);
 
 it('keeps the class names Impex stores for Showroom flows, sources and actions', function (): void {
-    // impex_runs.flow_class and impex_batches.source / action hold these.
+    // Impex stores these on its runs (flow_class) and batches (source, action).
     expect(app(ImpexIntegration::class)->flows())->toMatchArray([
         ImpexIntegration::IMPORT => 'RefactorCircus\\Showroom\\Impex\\Flows\\ImportProductsFlow',
         ImpexIntegration::UPSERT => 'RefactorCircus\\Showroom\\Impex\\Flows\\UpsertProductsFlow',
@@ -48,5 +49,10 @@ it('keeps the class names of queued jobs', function (string $job): void {
 })->with([
     'RefactorCircus\\Showroom\\Jobs\\PurgeAttributeValues',
     'RefactorCircus\\Showroom\\Jobs\\PurgeValueSlots',
+    'RefactorCircus\\Showroom\\Jobs\\QueueProductSyncs',
     'RefactorCircus\\Showroom\\Jobs\\SyncProductIndex',
 ]);
+
+it('keeps the stored values of sync scopes', function (): void {
+    expect(array_column(SyncScope::cases(), 'value'))->toBe(['all', 'family', 'owner', 'category']);
+});

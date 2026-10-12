@@ -12,6 +12,7 @@ use Illuminate\Support\Carbon;
 use RefactorCircus\Keystone\Models\Concerns\DispatchesModelEvents;
 use RefactorCircus\Showroom\Database\Factories\LocaleFactory;
 use RefactorCircus\Showroom\Support\Models\Concerns\HasLabels;
+use RefactorCircus\Showroom\Support\Tables;
 
 /**
  * A language the catalog holds content in: `en`, `fr_CA`. Localizable values
@@ -33,7 +34,10 @@ final class LocaleModel extends Model
     use HasLabels;
     use HasUlids;
 
-    protected $table = 'showroom_locales';
+    public function getTable(): string
+    {
+        return Tables::name('locales');
+    }
 
     protected $fillable = [
         'code',
@@ -45,7 +49,7 @@ final class LocaleModel extends Model
      */
     public function channels(): BelongsToMany
     {
-        return $this->belongsToMany(ChannelModel::class, 'showroom_channel_locale', 'locale_id', 'channel_id')->orderBy('code');
+        return $this->belongsToMany(ChannelModel::class, Tables::name('channel_locale'), 'locale_id', 'channel_id')->orderBy('code');
     }
 
     /**

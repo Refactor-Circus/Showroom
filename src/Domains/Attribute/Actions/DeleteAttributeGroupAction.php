@@ -12,14 +12,6 @@ use RefactorCircus\Showroom\Domains\Attribute\Models\AttributeGroupModel;
 
 final class DeleteAttributeGroupAction
 {
-    /**
-     * @return array<string, mixed>
-     */
-    public static function rules(): array
-    {
-        return [];
-    }
-
     public function execute(AttributeGroupModel $group): AttributeGroupModel
     {
         AttributeGroupDeletingActionEvent::dispatch($group);

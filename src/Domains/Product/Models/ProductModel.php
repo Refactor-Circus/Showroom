@@ -27,6 +27,7 @@ use RefactorCircus\Showroom\Domains\Product\Enums\ProductStatus;
 use RefactorCircus\Showroom\Domains\ProductModel\Models\ProductModelModel;
 use RefactorCircus\Showroom\Domains\Workflow\Models\CompletenessModel;
 use RefactorCircus\Showroom\Domains\Workflow\Models\VersionModel;
+use RefactorCircus\Showroom\Support\Tables;
 
 /**
  * A sellable item, identified by its identifier (SKU). A simple product has
@@ -61,7 +62,10 @@ final class ProductModel extends Model
     use HasUlids;
     use HasValues;
 
-    protected $table = 'showroom_products';
+    public function getTable(): string
+    {
+        return Tables::name('products');
+    }
 
     /**
      * The column defaults, so a new product reads them before it is refreshed.
@@ -121,7 +125,7 @@ final class ProductModel extends Model
      */
     public function categories(): BelongsToMany
     {
-        return $this->belongsToMany(CategoryModel::class, 'showroom_category_product', 'product_id', 'category_id')->orderBy('code');
+        return $this->belongsToMany(CategoryModel::class, Tables::name('category_product'), 'product_id', 'category_id')->orderBy('code');
     }
 
     /**

@@ -31,7 +31,8 @@ php artisan vendor:publish --tag="showroom-config"   # when changing config
 ### 2. Secure the surfaces
 
 - `showroom.routes.middleware` defaults to `['api']`: add authentication (for example `auth:sanctum`).
-- `showroom.authorization` is `true` by default: API and MCP calls need an authenticated user and pass the policies in `showroom.policies`. The bundled policies allow any authenticated user; map a model to an app policy to restrict it.
+- `showroom.authorization` is `true` by default: API and MCP calls need an authenticated user and pass the policies in `showroom.policies`. The bundled policies allow any authenticated user; map a model to an app policy to restrict it. Every model has one; associations, versions and completeness scores follow the product (or product model) they belong to.
+- Table names come from `showroom.tables` (`RefactorCircus\Showroom\Support\Tables::name('products')`); rename them before migrating, and never write `showroom_*` table names in app queries.
 - MCP transports ship disabled (`showroom.mcp.web.enabled`, `showroom.mcp.local.enabled`); add auth middleware before enabling the web transport.
 - The Atrium screens ask the same policies the same way (`RefactorCircus\Showroom\Atrium\ScreenAccess`): navigation items, pages and every button, form and card appear only when the action is allowed, and are refused (403) otherwise. In published or custom views use `@showroomCan('update', $product) ... @endshowroomCan`. With authorization on, a guest sees no Showroom screens.
 - With refactor-circus/pennantplus, `Feature::for(null)->deactivate(RefactorCircus\Showroom\Atrium\Features\ShowroomSupportFeature::class)` hides Showroom in Atrium (pages 404); only its global value counts. `showroom.atrium.features` names the features checked; classes that are not installed are skipped.
@@ -41,7 +42,7 @@ php artisan vendor:publish --tag="showroom-config"   # when changing config
 
 ### 3. Manage the catalog through Actions
 
-Call Actions from each domain's `Actions` namespace (`RefactorCircus\Showroom\Domains\{Domain}\Actions`, such as `RefactorCircus\Showroom\Domains\Attribute\Actions\CreateAttributeAction`) with `app(...)->execute(...)`. Each has a static `rules()` that is its input contract; validate user input against it.
+Call Actions from each domain's `Actions` namespace (`RefactorCircus\Showroom\Domains\{Domain}\Actions`, such as `RefactorCircus\Showroom\Domains\Attribute\Actions\CreateAttributeAction`) with `app(...)->execute(...)`. Actions that take input take a `final readonly` Data object from the domain's `Data` namespace (`CreateAttributeAction` takes `RefactorCircus\Showroom\Domains\Attribute\Data\CreateAttributeData`), never an array. `XData::from([...])` validates against the Data's static `rules()` (its input contract) and throws a `ValidationException`; `new XData(...)` is for values your code vouches for; update Data leave out what they do not change (`Missing`). Product, product model and attribute values, associations and labels stay arrays keyed by code inside the Data. Lists of structured items are lists of item Data: a family's `attributes` holds `FamilyAttributeData`, a family variant's `levels` `FamilyLevelData`, and product search and export `filters` hold `RefactorCircus\Showroom\Domains\Search\Data\Filter` (with `complete` a `Search\Data\Complete`); `from([...])` builds them from the same array input, and `new` takes the item Data. List Data page by `cursor` (product search by `page`) up to `showroom.pagination.max_per_page`.
 
 - Groups: `List/Show/Create/Update/DeleteAttributeGroupAction`
 - Attributes: `List/Show/Create/Update/DeleteAttributeAction`
@@ -61,16 +62,17 @@ Call Actions from each domain's `Actions` namespace (`RefactorCircus\Showroom\Do
 
 - HTTP: `/showroom/attribute-groups`, `/showroom/attributes`, `/showroom/attributes/{code}/options`, `/showroom/families`, `/showroom/family-variants`, `/showroom/product-models`, `/showroom/products`, `/showroom/owner-types`, `/showroom/owners`, `/showroom/categories`, `/showroom/assets`, `/showroom/locales`, `/showroom/channels`, `/showroom/association-types`, `POST /showroom/imports`, `POST /showroom/exports` — records addressed by code, cursor pagination (`cursor`, `per_page`).
 - MCP: tools such as `create-attribute-tool` behind `search_tools` / `execute_tools`; catalog in `RefactorCircus\Showroom\Mcp\ShowroomServer::TOOLS`.
-- History (needs `refactor-circus/keen`): `GET /showroom/history` (route `showroom.history.index`) and `list-showroom-history-tool`; both answer "not installed" without it.
+- History (needs `refactor-circus/keen`, and `showroom.audit.enabled` on): `GET /showroom/history` (route `showroom.history.index`) and `list-showroom-history-tool`. Without it the route answers 404 and the tool is not offered.
+- MCP tools answer with the API resources under `data` and declare output schemas; lists carry their page under `meta` (`meta.next_cursor`, or `meta.total`/`meta.last_page` for `list-products-tool`).
 
 ### 5. Choose a search engine
 
 - `showroom.search.engine`: `null` (default: `scout` when `laravel/scout` is installed, `database` otherwise), `database`, `scout`, or a class implementing `RefactorCircus\Showroom\Domains\Search\Contracts\SearchEngine`.
-- Run a queue worker: index syncs (`SyncProductIndex`) and value purges are queued. Rebuild with `php artisan showroom:search:reindex`.
+- Run a queue worker: index syncs (`SyncProductIndex`, and `QueueProductSyncs` for changes that reach many products) and value purges are queued. Rebuild with `php artisan showroom:search:reindex`. Wrap bulk product writes in `app(ProductIndex::class)->deferring(fn () => ...)` to send their syncs together. The database engine suits up to tens of thousands of products; free-text `search` scans JSON values, so use Scout beyond that.
 
 ### 6. React to changes
 
-Listen to action events (`RefactorCircus\Showroom\Domains\Attribute\Events\AttributeCreatedActionEvent`, or the `RefactorCircus\Keystone\Contracts\ActionFinishedEvent` family) or model events (`RefactorCircus\Keystone\Contracts\ModelLifecycleEvent`).
+Listen to action events (`RefactorCircus\Showroom\Domains\Attribute\Events\AttributeCreatedActionEvent`, or the `RefactorCircus\Keystone\Contracts\ActionFinishedEvent` family) or model events (`RefactorCircus\Keystone\Contracts\ModelLifecycleEvent`). Every Action writes inside a database transaction, and its finished event fires only once that commits. The Impex flow steps fire the same pairs (`RefactorCircus\Showroom\Domains\Transfer\Events\ProductRowImportedActionEvent`, `ProductPagesExportedActionEvent`, `ProductExportJoinedActionEvent`, `FeedDeliveredActionEvent` and their starting events).
 
 To follow every product whose presentation may have changed (own edits, transitions, and changes inherited from models, families, categories, owners or channels), listen to `RefactorCircus\Showroom\Domains\Search\Events\ProductsQueuedForSync` (`$event->ids`, product ids). It fires inside the write's transaction, before the index sync is queued; product webhooks are built on it.
 
@@ -94,7 +96,7 @@ To follow every product whose presentation may have changed (own edits, transiti
 - Product webhooks (`showroom.impex.webhooks.enabled`, off by default, needs `refactor-circus/impex`): published products are the Impex stream `showroom.products`; vendors subscribe on Impex's subscriber API (`POST /impex/subscriber/subscriptions` with `stream`, `topics` from `content`/`pricing`/`assets`/`resources`/`catalog`, `filter` of `categories`/`owners`/`families`/`models` codes or `subjects` SKUs, `format` `thin`/`slice`/`full`, `options.channel`/`options.locales`, and `endpoint.url` or none for the feed). Never send product data to vendors any other way. Topics are append-only.
 - Polling helpers: `updated_since` on the product list and `list-products-tool` (filters on `changed_at`, which every change a product shows moves, inherited ones included); ETag/`If-None-Match` → `304` on product show. Vendor subscriptions are managed with Impex's MCP tools (`list-streams-tool`, `create-subscription-tool`, …).
 - Labels are a locale map: `['en' => 'Color']`; `$model->label()` resolves the current locale.
-- Config keys: `authorization`, `policies`, `routes.*`, `mcp.*`, `cortex.*`, `ui.enabled`, `atrium.features`, `workflow.*`, `impex.*`, `media.*`, `search.*`, `pagination.*`.
+- Config keys: `authorization`, `policies`, `tables.*`, `routes.*`, `mcp.*`, `cortex.*`, `ui.enabled`, `atrium.features`, `atrium.widget_cache_seconds`, `workflow.*`, `impex.*`, `media.*`, `search.*`, `pagination.*`.
 
 ## Examples
 
@@ -102,38 +104,40 @@ To follow every product whose presentation may have changed (own edits, transiti
 use RefactorCircus\Showroom\Domains\Attribute\Actions\CreateAttributeAction;
 use RefactorCircus\Showroom\Domains\Attribute\Actions\CreateAttributeGroupAction;
 use RefactorCircus\Showroom\Domains\Attribute\Actions\CreateAttributeOptionAction;
+use RefactorCircus\Showroom\Domains\Attribute\Data\CreateAttributeData;
+use RefactorCircus\Showroom\Domains\Attribute\Data\CreateAttributeGroupData;
+use RefactorCircus\Showroom\Domains\Attribute\Data\CreateAttributeOptionData;
 
-app(CreateAttributeGroupAction::class)->execute(['code' => 'marketing', 'labels' => ['en' => 'Marketing']]);
+app(CreateAttributeGroupAction::class)->execute(CreateAttributeGroupData::from(['code' => 'marketing', 'labels' => ['en' => 'Marketing']]));
 
-$color = app(CreateAttributeAction::class)->execute([
+$color = app(CreateAttributeAction::class)->execute(CreateAttributeData::from([
     'code' => 'color',
     'type' => 'select',
     'group' => 'marketing',
     'labels' => ['en' => 'Color'],
-]);
+]));
 
-app(CreateAttributeOptionAction::class)->execute($color, ['code' => 'red', 'labels' => ['en' => 'Red']]);
+app(CreateAttributeOptionAction::class)->execute($color, CreateAttributeOptionData::from(['code' => 'red', 'labels' => ['en' => 'Red']]));
 
-app(\RefactorCircus\Showroom\Domains\Family\Actions\CreateFamilyAction::class)->execute([
+app(\RefactorCircus\Showroom\Domains\Family\Actions\CreateFamilyAction::class)->execute(\RefactorCircus\Showroom\Domains\Family\Data\CreateFamilyData::from([
     'code' => 'shirts',
     'attributes' => [['attribute' => 'color', 'is_required' => true]],
-]);
+]));
 
-app(\RefactorCircus\Showroom\Domains\Product\Actions\CreateProductAction::class)->execute([
+app(\RefactorCircus\Showroom\Domains\Product\Actions\CreateProductAction::class)->execute(\RefactorCircus\Showroom\Domains\Product\Data\CreateProductData::from([
     'identifier' => 'SHIRT-RED',
     'family' => 'shirts',
     'values' => ['color' => [['locale' => null, 'scope' => null, 'data' => 'red']]],
-]);
+]));
 
-$page = app(\RefactorCircus\Showroom\Domains\Product\Actions\ListProductsAction::class)->execute([
+$page = app(\RefactorCircus\Showroom\Domains\Product\Actions\ListProductsAction::class)->execute(\RefactorCircus\Showroom\Domains\Product\Data\ListProductsData::from([
     'filters' => [['attribute' => 'color', 'operator' => '=', 'value' => 'red']],
-]);
+]));
 ```
 
 ```php
-// Validate a request with the Action's own rules, then execute it.
-$data = $request->validate(CreateAttributeAction::rules());
-app(CreateAttributeAction::class)->execute($data);
+// Validate a request with the Data's own rules, then execute the Action.
+app(CreateAttributeAction::class)->execute(CreateAttributeData::from($request->all()));
 ```
 
 ## Anti-patterns

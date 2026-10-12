@@ -15,11 +15,6 @@ final class ShowOwnerRequest extends OwnerRequest
         return $this->allows('view', $this->owner());
     }
 
-    public function rules(): array
-    {
-        return ShowOwnerAction::rules();
-    }
-
     public function persist(): JsonResponse
     {
         $owner = app(ShowOwnerAction::class)->execute($this->owner());

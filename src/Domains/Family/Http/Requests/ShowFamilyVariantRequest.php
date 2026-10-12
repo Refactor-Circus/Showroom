@@ -15,11 +15,6 @@ final class ShowFamilyVariantRequest extends FamilyVariantRequest
         return $this->allows('view', $this->familyVariant());
     }
 
-    public function rules(): array
-    {
-        return ShowFamilyVariantAction::rules();
-    }
-
     public function persist(): JsonResponse
     {
         $familyVariant = app(ShowFamilyVariantAction::class)->execute($this->familyVariant());

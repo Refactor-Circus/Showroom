@@ -21,6 +21,8 @@ The same operations over MCP as over HTTP. Both surfaces call one Action, so the
 
 With `showroom.authorization` on, each tool acts as the authenticated user and checks the same policy ability as its HTTP endpoint; a denied call answers `Unauthorized.`.
 
+Every tool declares an output schema. Tools answer with the same resource as the HTTP API, under `data`; deletes answer `{"deleted": true, "code": ...}`. Lists carry their page under `meta`: `meta.next_cursor` (pass it back as `cursor`), or `meta.current_page`, `meta.last_page` and `meta.total` for `list-products-tool`, which also returns `facets`. `list-showroom-history-tool` is offered only while Showroom audits (refactor-circus/keen installed and `showroom.audit.enabled` on).
+
 ## Tools
 
 The server lists two entry points, `search_tools` and `execute_tools`, and keeps the Showroom tools behind them, so a client loads only the schemas it searches for:

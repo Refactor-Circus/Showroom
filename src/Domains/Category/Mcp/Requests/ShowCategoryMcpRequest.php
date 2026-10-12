@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace RefactorCircus\Showroom\Domains\Category\Mcp\Requests;
 
-use Laravel\Mcp\Response;
 use Laravel\Mcp\ResponseFactory;
 use RefactorCircus\Showroom\Domains\Category\Actions\ShowCategoryAction;
 use RefactorCircus\Showroom\Domains\Category\Resources\CategoryResource;
@@ -18,7 +17,7 @@ final class ShowCategoryMcpRequest extends CategoryRequest
 
     protected function rules(): array
     {
-        return ShowCategoryAction::rules() + [
+        return [
             'category' => ['required', 'string', 'max:100'],
         ];
     }
@@ -27,6 +26,6 @@ final class ShowCategoryMcpRequest extends CategoryRequest
     {
         $category = app(ShowCategoryAction::class)->execute($this->category());
 
-        return Response::structured((new CategoryResource($category))->resolve());
+        return (new CategoryResource($category))->toStructuredResponse();
     }
 }

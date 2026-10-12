@@ -14,11 +14,6 @@ final class DeleteAssetRequest extends AssetRequest
         return $this->allows('delete', $this->asset());
     }
 
-    public function rules(): array
-    {
-        return DeleteAssetAction::rules();
-    }
-
     public function persist(): JsonResponse
     {
         app(DeleteAssetAction::class)->execute($this->asset());

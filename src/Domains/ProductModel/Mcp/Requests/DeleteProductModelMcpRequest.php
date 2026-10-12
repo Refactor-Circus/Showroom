@@ -17,7 +17,7 @@ final class DeleteProductModelMcpRequest extends ProductModelRequest
 
     protected function rules(): array
     {
-        return DeleteProductModelAction::rules() + [
+        return [
             'product_model' => ['required', 'string', 'max:191'],
         ];
     }

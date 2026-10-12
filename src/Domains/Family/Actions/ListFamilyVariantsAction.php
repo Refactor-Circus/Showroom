@@ -6,6 +6,7 @@ namespace RefactorCircus\Showroom\Domains\Family\Actions;
 
 use Illuminate\Contracts\Pagination\CursorPaginator;
 use Illuminate\Database\Eloquent\Builder;
+use RefactorCircus\Showroom\Domains\Family\Data\ListFamilyVariantsData;
 use RefactorCircus\Showroom\Domains\Family\Events\FamilyVariantsListedActionEvent;
 use RefactorCircus\Showroom\Domains\Family\Events\FamilyVariantsListingActionEvent;
 use RefactorCircus\Showroom\Domains\Family\Models\FamilyVariantModel;
@@ -13,23 +14,9 @@ use RefactorCircus\Showroom\Domains\Family\Models\FamilyVariantModel;
 final class ListFamilyVariantsAction
 {
     /**
-     * @return array<string, mixed>
-     */
-    public static function rules(): array
-    {
-        return [
-            'family' => ['sometimes', 'nullable', 'string', 'max:100'],
-            'search' => ['sometimes', 'nullable', 'string', 'max:100'],
-            'cursor' => ['sometimes', 'nullable', 'string'],
-            'per_page' => ['sometimes', 'integer', 'min:1', 'max:'.config('showroom.pagination.max_per_page', 100)],
-        ];
-    }
-
-    /**
-     * @param  array<string, mixed>  $filters
      * @return CursorPaginator<int, FamilyVariantModel>
      */
-    public function execute(array $filters = []): CursorPaginator
+    public function execute(ListFamilyVariantsData $filters = new ListFamilyVariantsData): CursorPaginator
     {
         FamilyVariantsListingActionEvent::dispatch($filters);
 
@@ -41,28 +28,27 @@ final class ListFamilyVariantsAction
     }
 
     /**
-     * @param  array<string, mixed>  $filters
      * @return CursorPaginator<int, FamilyVariantModel>
      */
-    private function perform(array $filters): CursorPaginator
+    private function perform(ListFamilyVariantsData $filters): CursorPaginator
     {
         $query = FamilyVariantModel::query()
             ->with(['family.familyAttributes', 'variantAttributes'])
             ->orderBy('code');
 
-        if (is_string($filters['family'] ?? null) && $filters['family'] !== '') {
-            $family = $filters['family'];
+        if ($filters->family !== null && $filters->family !== '') {
+            $family = $filters->family;
 
             $query->whereHas('family', fn (Builder $families): Builder => $families->where('code', $family));
         }
 
-        if (is_string($filters['search'] ?? null) && $filters['search'] !== '') {
-            $query->search($filters['search']);
+        if ($filters->search !== null && $filters->search !== '') {
+            $query->search($filters->search);
         }
 
         return $query->cursorPaginate(
-            perPage: isset($filters['per_page']) ? (int) $filters['per_page'] : (int) config('showroom.pagination.per_page', 25),
-            cursor: is_string($filters['cursor'] ?? null) ? $filters['cursor'] : null,
+            perPage: $filters->perPage ?? ListFamilyVariantsData::pagination()->default,
+            cursor: $filters->cursor,
         );
     }
 }

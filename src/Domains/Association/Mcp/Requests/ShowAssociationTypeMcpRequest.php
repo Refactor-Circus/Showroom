@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace RefactorCircus\Showroom\Domains\Association\Mcp\Requests;
 
-use Laravel\Mcp\Response;
 use Laravel\Mcp\ResponseFactory;
 use RefactorCircus\Showroom\Domains\Association\Actions\ShowAssociationTypeAction;
 use RefactorCircus\Showroom\Domains\Association\Resources\AssociationTypeResource;
@@ -18,7 +17,7 @@ final class ShowAssociationTypeMcpRequest extends AssociationTypeRequest
 
     protected function rules(): array
     {
-        return ShowAssociationTypeAction::rules() + [
+        return [
             'association_type' => ['required', 'string', 'max:100'],
         ];
     }
@@ -27,6 +26,6 @@ final class ShowAssociationTypeMcpRequest extends AssociationTypeRequest
     {
         $associationType = app(ShowAssociationTypeAction::class)->execute($this->associationType());
 
-        return Response::structured((new AssociationTypeResource($associationType))->resolve());
+        return (new AssociationTypeResource($associationType))->toStructuredResponse();
     }
 }

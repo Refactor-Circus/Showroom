@@ -8,12 +8,18 @@ use Illuminate\Contracts\Config\Repository as Config;
 use Illuminate\Contracts\Container\Container;
 use Illuminate\Database\ConnectionInterface;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Validation\Rule;
 use RefactorCircus\Impex\Domains\Subscription\Contracts\Formatter;
 use RefactorCircus\Impex\Domains\Subscription\Contracts\SubscriptionMatcher;
 use RefactorCircus\Impex\Domains\Subscription\Enums\Selection;
 use RefactorCircus\Impex\Domains\Subscription\Models\SubscriptionModel;
 use RefactorCircus\Impex\Domains\Subscription\Support\AbstractStream;
+use RefactorCircus\Impex\Support\Tables as ImpexTables;
+use RefactorCircus\Showroom\Domains\Category\Models\CategoryModel;
+use RefactorCircus\Showroom\Domains\Family\Models\FamilyModel;
+use RefactorCircus\Showroom\Domains\Owner\Models\OwnerModel;
 use RefactorCircus\Showroom\Domains\Product\Models\ProductModel;
+use RefactorCircus\Showroom\Domains\ProductModel\Models\ProductModelModel;
 
 /**
  * Showroom's published products, as a stream vendors subscribe to.
@@ -65,13 +71,13 @@ class ProductStream extends AbstractStream
     {
         return [
             'filter.categories' => ['sometimes', 'array', 'max:500'],
-            'filter.categories.*' => ['string', 'exists:showroom_categories,code'],
+            'filter.categories.*' => ['string', Rule::exists(CategoryModel::class, 'code')],
             'filter.owners' => ['sometimes', 'array', 'max:500'],
-            'filter.owners.*' => ['string', 'exists:showroom_owners,code'],
+            'filter.owners.*' => ['string', Rule::exists(OwnerModel::class, 'code')],
             'filter.families' => ['sometimes', 'array', 'max:500'],
-            'filter.families.*' => ['string', 'exists:showroom_families,code'],
+            'filter.families.*' => ['string', Rule::exists(FamilyModel::class, 'code')],
             'filter.models' => ['sometimes', 'array', 'max:500'],
-            'filter.models.*' => ['string', 'exists:showroom_product_models,code'],
+            'filter.models.*' => ['string', Rule::exists(ProductModelModel::class, 'code')],
         ];
     }
 
@@ -133,7 +139,7 @@ class ProductStream extends AbstractStream
             Selection::All => $snapshots,
             Selection::Filter => array_intersect_key($snapshots, array_flip($this->scopes->match($snapshots, [$subscription])[$subscription->id] ?? [])),
             Selection::List => array_intersect_key($snapshots, array_flip(
-                $this->db->table('impex_subscription_subjects')
+                $this->db->table(ImpexTables::name('subscription_subjects'))
                     ->where('subscription_id', $subscription->id)
                     ->whereIn('subject_key', array_keys($snapshots))
                     ->pluck('subject_key')

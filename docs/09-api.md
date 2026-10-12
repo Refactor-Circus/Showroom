@@ -127,8 +127,9 @@ Vendors who need every change, inherited ones included, subscribe to product web
 
 | Status | When |
 |---|---|
-| `403` | Unauthenticated or denied by a policy, with authorization on |
-| `404` | Unknown code |
+| `401` | Unauthenticated, with authorization on |
+| `403` | Denied by a policy, with authorization on |
+| `404` | Unknown code: `{"message": "Not found."}` |
 | `409` | A catalog rule: deleting something still in use (a group with attributes, a family with products, a family variant with models, an attribute that labels a family or shapes a variant), options on a type that takes none. The body is `{"message": "..."}`. |
 | `422` | Validation — including changing a code, type or identifier, invalid values, taken unique values, missing or duplicate axes — and search filters the engine cannot run |
 

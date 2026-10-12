@@ -6,47 +6,37 @@ namespace RefactorCircus\Showroom\Domains\Channel\Concerns;
 
 use Illuminate\Validation\ValidationException;
 use RefactorCircus\Showroom\Domains\Category\Models\CategoryModel;
+use RefactorCircus\Showroom\Domains\Channel\Data\CreateChannelData;
+use RefactorCircus\Showroom\Domains\Channel\Data\UpdateChannelData;
 use RefactorCircus\Showroom\Domains\Channel\Models\ChannelModel;
 use RefactorCircus\Showroom\Domains\Channel\Models\LocaleModel;
 
 /**
- * Locales, currencies and category tree, shared by creating and updating a channel.
+ * Labels, locales, currencies and category tree, shared by creating and updating a channel.
  */
 trait WritesChannels
 {
     /**
-     * @return array<string, mixed>
-     */
-    private static function channelRules(bool $required): array
-    {
-        return [
-            'labels' => ['sometimes', 'nullable', 'array'],
-            'labels.*' => ['nullable', 'string', 'max:255'],
-            'locales' => [$required ? 'required' : 'sometimes', 'array', 'list', 'min:1'],
-            'locales.*' => ['string', 'distinct', 'exists:showroom_locales,code'],
-            'currencies' => ['sometimes', 'nullable', 'array', 'list'],
-            'currencies.*' => ['string', 'distinct', 'regex:/^[A-Z]{3}$/'],
-            'category_tree' => ['sometimes', 'nullable', 'string', 'exists:showroom_categories,code'],
-        ];
-    }
-
-    /**
-     * @param  array<string, mixed>  $data
+     * Only the fields given change; a new channel takes every field.
+     * Returns whether anything products depend on changed: the code, locales,
+     * currencies or category tree, not the labels.
      *
      * @throws ValidationException
      */
-    private function writeChannel(ChannelModel $channel, array $data): void
+    private function writeChannel(ChannelModel $channel, CreateChannelData|UpdateChannelData $data): bool
     {
-        if (array_key_exists('labels', $data)) {
-            $channel->labels = is_array($data['labels']) ? $data['labels'] : [];
+        $new = ! $channel->exists;
+
+        if ($data->has('labels')) {
+            $channel->labels = is_array($data->labels) ? $data->labels : [];
         }
 
-        if (array_key_exists('currencies', $data)) {
-            $channel->currencies = is_array($data['currencies']) ? array_values($data['currencies']) : [];
+        if ($data->has('currencies')) {
+            $channel->currencies = is_array($data->currencies) ? array_values($data->currencies) : [];
         }
 
-        if (array_key_exists('category_tree', $data)) {
-            $tree = is_string($data['category_tree']) ? CategoryModel::query()->where('code', $data['category_tree'])->firstOrFail() : null;
+        if ($data->has('category_tree')) {
+            $tree = is_string($data->categoryTree) ? CategoryModel::query()->where('code', $data->categoryTree)->firstOrFail() : null;
 
             if ($tree !== null && $tree->parent_id !== null) {
                 throw ValidationException::withMessages([
@@ -59,8 +49,14 @@ trait WritesChannels
 
         $channel->save();
 
-        if (array_key_exists('locales', $data) && is_array($data['locales'])) {
-            $channel->locales()->sync(LocaleModel::query()->whereIn('code', $data['locales'])->pluck('id')->all());
+        $changed = $new || $channel->wasChanged(['code', 'currencies', 'category_tree_id']);
+
+        if (is_array($data->locales)) {
+            $synced = $channel->locales()->sync(LocaleModel::query()->whereIn('code', $data->locales)->pluck('id')->all());
+
+            $changed = $changed || $synced['attached'] !== [] || $synced['detached'] !== [];
         }
+
+        return $changed;
     }
 }

@@ -19,6 +19,7 @@ use RefactorCircus\Showroom\Domains\Search\Data\ProductQuery;
 use RefactorCircus\Showroom\Domains\Search\Data\SearchResults;
 use RefactorCircus\Showroom\Domains\Search\Exceptions\UnsupportedSearchException;
 use RefactorCircus\Showroom\Domains\Search\Support\SqlFragment;
+use RefactorCircus\Showroom\Support\Tables;
 
 /**
  * Searches the products table directly, with no index to keep.
@@ -31,8 +32,13 @@ final class DatabaseEngine implements SearchEngine
 {
     /**
      * The `values` column of each level a value may live on.
+     *
+     * @return array<int, string>
      */
-    private const array LEVELS = ['showroom_products.values', 'showroom_level1.values', 'showroom_level2.values'];
+    private function levels(): array
+    {
+        return [Tables::name('products').'.values', 'showroom_level1.values', 'showroom_level2.values'];
+    }
 
     public function maintainsIndex(): bool
     {
@@ -56,17 +62,73 @@ final class DatabaseEngine implements SearchEngine
 
     public function search(ProductQuery $query): SearchResults
     {
+        $builder = $this->matching($query);
+
+        $total = (clone $builder)->count(Tables::name('products').'.id');
+
+        /** @var array<int, string> $ids */
+        $ids = $builder
+            ->orderBy(Tables::name('products').'.'.$query->sort, $query->direction)
+            ->orderBy(Tables::name('products').'.id')
+            ->offset($query->offset())
+            ->limit($query->perPage)
+            ->pluck(Tables::name('products').'.id')
+            ->all();
+
+        return new SearchResults($ids, $total);
+    }
+
+    /**
+     * Matching products by identifier then id, from just past the given key,
+     * without counting them: how an export walks a large catalogue, where
+     * every offset page would rescan and recount what came before.
+     *
+     * @param  array{0: string, 1: string}|null  $after  The identifier and id of the last product already read.
+     * @param  int  $offset  Rows to skip first; only to resume from a page number, when no key is known.
+     * @return list<array{0: string, 1: string}> Each product's identifier and id, in order.
+     */
+    public function keyset(ProductQuery $query, ?array $after, int $limit, int $offset = 0): array
+    {
+        $table = Tables::name('products');
+        $direction = $query->direction === 'desc' ? 'desc' : 'asc';
+        $builder = $this->matching($query);
+
+        if ($after !== null) {
+            [$identifier, $id] = $after;
+
+            $builder->where(fn (Builder $past): Builder => $past
+                ->where($table.'.identifier', $direction === 'desc' ? '<' : '>', $identifier)
+                ->orWhere(fn (Builder $tie): Builder => $tie->where($table.'.identifier', $identifier)->where($table.'.id', '>', $id)));
+        }
+
+        return array_values($builder->toBase()
+            ->orderBy($table.'.identifier', $direction)
+            ->orderBy($table.'.id')
+            ->offset($offset)
+            ->limit($limit)
+            ->get([$table.'.identifier', $table.'.id'])
+            ->map(fn (object $row): array => [(string) data_get($row, 'identifier'), (string) data_get($row, 'id')])
+            ->all());
+    }
+
+    /**
+     * Every product the query's conditions match, unordered.
+     *
+     * @return Builder<ProductModel>
+     */
+    private function matching(ProductQuery $query): Builder
+    {
         $builder = ProductModel::query()
-            ->leftJoin('showroom_product_models as showroom_level1', 'showroom_level1.id', '=', 'showroom_products.parent_id')
-            ->leftJoin('showroom_product_models as showroom_level2', 'showroom_level2.id', '=', 'showroom_level1.parent_id');
+            ->leftJoin(Tables::name('product_models').' as showroom_level1', 'showroom_level1.id', '=', Tables::name('products').'.parent_id')
+            ->leftJoin(Tables::name('product_models').' as showroom_level2', 'showroom_level2.id', '=', 'showroom_level1.parent_id');
 
         if ($query->search !== null) {
             $term = '%'.$query->search.'%';
 
             $builder->where(function (Builder $builder) use ($term): void {
-                $builder->where('showroom_products.identifier', 'like', $term);
+                $builder->where(Tables::name('products').'.identifier', 'like', $term);
 
-                foreach (self::LEVELS as $column) {
+                foreach ($this->levels() as $column) {
                     $builder->orWhere(new SqlFragment($this->asText($column)), 'like', $term);
                 }
             });
@@ -79,7 +141,7 @@ final class DatabaseEngine implements SearchEngine
         }
 
         if ($query->enabled !== null) {
-            $builder->where('showroom_products.enabled', $query->enabled);
+            $builder->where(Tables::name('products').'.enabled', $query->enabled);
         }
 
         if ($query->parent !== null) {
@@ -93,7 +155,7 @@ final class DatabaseEngine implements SearchEngine
             $owners = $owner === null ? [] : OwnerModel::query()->subtreeOf($owner)->pluck('id')->all();
 
             $builder->where(fn (Builder $builder): Builder => $builder
-                ->whereIn('showroom_products.owner_id', $owners)
+                ->whereIn(Tables::name('products').'.owner_id', $owners)
                 ->orWhereIn('showroom_level1.owner_id', $owners)
                 ->orWhereIn('showroom_level2.owner_id', $owners));
         }
@@ -103,43 +165,43 @@ final class DatabaseEngine implements SearchEngine
             $categories = $category === null ? [] : CategoryModel::query()->subtreeOf($category)->pluck('id')->all();
 
             $builder->where(function (Builder $builder) use ($categories): void {
-                $builder->whereExists(fn (QueryBuilder $sub) => $sub->from('showroom_category_product')
-                    ->whereColumn('showroom_category_product.product_id', 'showroom_products.id')
-                    ->whereIn('showroom_category_product.category_id', $categories));
+                $builder->whereExists(fn (QueryBuilder $sub) => $sub->from(Tables::name('category_product'))
+                    ->whereColumn(Tables::name('category_product').'.product_id', Tables::name('products').'.id')
+                    ->whereIn(Tables::name('category_product').'.category_id', $categories));
 
                 foreach (['showroom_level1', 'showroom_level2'] as $level) {
-                    $builder->orWhereExists(fn (QueryBuilder $sub) => $sub->from('showroom_category_product_model')
-                        ->whereColumn('showroom_category_product_model.product_model_id', $level.'.id')
-                        ->whereIn('showroom_category_product_model.category_id', $categories));
+                    $builder->orWhereExists(fn (QueryBuilder $sub) => $sub->from(Tables::name('category_product_model'))
+                        ->whereColumn(Tables::name('category_product_model').'.product_model_id', $level.'.id')
+                        ->whereIn(Tables::name('category_product_model').'.category_id', $categories));
                 }
             });
         }
 
         if ($query->status !== null) {
-            $builder->where('showroom_products.status', $query->status);
+            $builder->where(Tables::name('products').'.status', $query->status);
         }
 
         if ($query->published !== null) {
             $query->published
-                ? $builder->whereNotNull('showroom_products.published_version')
-                : $builder->whereNull('showroom_products.published_version');
+                ? $builder->whereNotNull(Tables::name('products').'.published_version')
+                : $builder->whereNull(Tables::name('products').'.published_version');
         }
 
         if ($query->updatedSince !== null) {
-            $builder->where('showroom_products.changed_at', '>=', $query->updatedSince);
+            $builder->where(Tables::name('products').'.changed_at', '>=', $query->updatedSince);
         }
 
         if ($query->complete !== null) {
             $complete = $query->complete;
 
             foreach ($complete->locales() ?: ['-'] as $locale) {
-                $builder->whereExists(fn (QueryBuilder $sub) => $sub->from('showroom_product_completeness')
-                    ->join('showroom_channels', 'showroom_channels.id', '=', 'showroom_product_completeness.channel_id')
-                    ->join('showroom_locales', 'showroom_locales.id', '=', 'showroom_product_completeness.locale_id')
-                    ->whereColumn('showroom_product_completeness.product_id', 'showroom_products.id')
-                    ->where('showroom_channels.code', $complete->scope)
-                    ->where('showroom_locales.code', $locale)
-                    ->where('showroom_product_completeness.ratio', '>=', $complete->min));
+                $builder->whereExists(fn (QueryBuilder $sub) => $sub->from(Tables::name('product_completeness'))
+                    ->join(Tables::name('channels'), Tables::name('channels').'.id', '=', Tables::name('product_completeness').'.channel_id')
+                    ->join(Tables::name('locales'), Tables::name('locales').'.id', '=', Tables::name('product_completeness').'.locale_id')
+                    ->whereColumn(Tables::name('product_completeness').'.product_id', Tables::name('products').'.id')
+                    ->where(Tables::name('channels').'.code', $complete->scope)
+                    ->where(Tables::name('locales').'.code', $locale)
+                    ->where(Tables::name('product_completeness').'.ratio', '>=', $complete->min));
             }
         }
 
@@ -149,18 +211,7 @@ final class DatabaseEngine implements SearchEngine
             $this->applyFilter($builder, $filter, $types[$filter->attribute] ?? AttributeType::Text);
         }
 
-        $total = (clone $builder)->count('showroom_products.id');
-
-        /** @var array<int, string> $ids */
-        $ids = $builder
-            ->orderBy('showroom_products.'.$query->sort, $query->direction)
-            ->orderBy('showroom_products.id')
-            ->offset($query->offset())
-            ->limit($query->perPage)
-            ->pluck('showroom_products.id')
-            ->all();
-
-        return new SearchResults($ids, $total);
+        return $builder;
     }
 
     /**
@@ -198,7 +249,7 @@ final class DatabaseEngine implements SearchEngine
         // and each level's clause is false, never null, when the value is
         // absent — which keeps the negated forms honest.
         $anyLevel = function (QueryBuilder $query) use ($match): void {
-            foreach (self::LEVELS as $column) {
+            foreach ($this->levels() as $column) {
                 $query->orWhere(fn (QueryBuilder $level) => $match($level->whereNotNull($column), $column));
             }
         };

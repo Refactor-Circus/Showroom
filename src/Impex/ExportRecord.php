@@ -18,7 +18,8 @@ use RefactorCircus\Showroom\Domains\Workflow\Services\Versions;
 final class ExportRecord
 {
     /**
-     * The working copy.
+     * The working copy. Load `ExportProductPages::eagerLoads()` first, or
+     * each product costs queries of its own.
      *
      * @return array<string, mixed>
      */
@@ -50,9 +51,19 @@ final class ExportRecord
             return null;
         }
 
-        $snapshot = app(Versions::class)->find($product, $product->published_version)?->snapshot;
+        return self::fromSnapshot($product, app(Versions::class)->find($product, $product->published_version)?->snapshot, $filter);
+    }
 
-        if ($snapshot === null) {
+    /**
+     * The published version from a snapshot already loaded — an export loads
+     * a page's with `Versions::publishedSnapshots()` — or null without one.
+     *
+     * @param  array<string, mixed>|null  $snapshot
+     * @return array<string, mixed>|null
+     */
+    public static function fromSnapshot(ProductModel $product, ?array $snapshot, ValueFilter $filter): ?array
+    {
+        if ($product->published_version === null || $snapshot === null) {
             return null;
         }
 

@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace RefactorCircus\Showroom\Domains\Category\Mcp\Requests;
 
-use Laravel\Mcp\Response;
 use Laravel\Mcp\ResponseFactory;
 use RefactorCircus\Showroom\Domains\Category\Actions\UpdateCategoryAction;
+use RefactorCircus\Showroom\Domains\Category\Data\UpdateCategoryData;
 use RefactorCircus\Showroom\Domains\Category\Resources\CategoryResource;
 
 final class UpdateCategoryMcpRequest extends CategoryRequest
@@ -18,17 +18,15 @@ final class UpdateCategoryMcpRequest extends CategoryRequest
 
     protected function rules(): array
     {
-        return UpdateCategoryAction::rules() + [
+        return [
             'category' => ['required', 'string', 'max:100'],
-        ];
+        ] + UpdateCategoryData::rules();
     }
 
     protected function handle(array $validated): ResponseFactory
     {
-        unset($validated['category']);
+        $category = app(UpdateCategoryAction::class)->execute($this->category(), UpdateCategoryData::fromValidated($validated));
 
-        $category = app(UpdateCategoryAction::class)->execute($this->category(), $validated);
-
-        return Response::structured((new CategoryResource($category))->resolve());
+        return (new CategoryResource($category))->toStructuredResponse();
     }
 }

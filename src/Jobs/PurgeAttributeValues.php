@@ -30,25 +30,31 @@ final class PurgeAttributeValues implements ShouldQueue
 
     public function handle(ProductIndex $index): void
     {
-        $affected = [];
+        // Each chunk queues its own syncs, so memory stays flat however many
+        // records held the value.
+        ProductModel::query()->whereNotNull('values->'.$this->attribute)->chunkById(200, function (Collection $products) use ($index): void {
+            $affected = [];
 
-        ProductModel::query()->whereNotNull('values->'.$this->attribute)->chunkById(200, function (Collection $products) use (&$affected): void {
             foreach ($products as $product) {
                 if ($this->purge($product)) {
                     $affected[] = $product->id;
                 }
             }
+
+            $index->queue($affected);
         });
 
-        ProductModelModel::query()->whereNotNull('values->'.$this->attribute)->chunkById(200, function (Collection $models) use (&$affected, $index): void {
+        ProductModelModel::query()->whereNotNull('values->'.$this->attribute)->chunkById(200, function (Collection $models) use ($index): void {
+            $affected = [];
+
             foreach ($models as $model) {
                 if ($this->purge($model)) {
-                    $affected = [...$affected, ...$index->productIdsUnder($model)];
+                    $affected[] = $index->productIdsUnder($model);
                 }
             }
-        });
 
-        $index->queue($affected);
+            $index->queue(array_merge(...$affected));
+        });
     }
 
     /**

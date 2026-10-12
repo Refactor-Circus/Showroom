@@ -7,6 +7,7 @@ namespace RefactorCircus\Showroom\Domains\Product\Events;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 use RefactorCircus\Keystone\Contracts\ActionStartingEvent;
+use RefactorCircus\Showroom\Domains\Product\Data\UpdateProductData;
 use RefactorCircus\Showroom\Domains\Product\Models\ProductModel;
 
 /**
@@ -17,11 +18,8 @@ final class ProductUpdatingActionEvent implements ActionStartingEvent
     use Dispatchable;
     use SerializesModels;
 
-    /**
-     * @param  array<string, mixed>  $data
-     */
     public function __construct(
         public ProductModel $product,
-        public array $data,
+        public UpdateProductData $data,
     ) {}
 }

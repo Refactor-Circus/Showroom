@@ -17,7 +17,7 @@ final class DeleteAssetMcpRequest extends AssetRequest
 
     protected function rules(): array
     {
-        return DeleteAssetAction::rules() + [
+        return [
             'asset' => ['required', 'string', 'max:191'],
         ];
     }

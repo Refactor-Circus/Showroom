@@ -9,7 +9,9 @@ use Laravel\Mcp\Response;
 use Laravel\Mcp\ResponseFactory;
 use Laravel\Mcp\Server\Attributes\Description;
 use RefactorCircus\Keystone\Mcp\Tool;
+use RefactorCircus\Showroom\Domains\Association\Data\ListAssociationTypesData;
 use RefactorCircus\Showroom\Domains\Association\Mcp\Requests\ListAssociationTypesMcpRequest;
+use RefactorCircus\Showroom\Domains\Association\Resources\AssociationTypeResource;
 
 #[Description('List association types (cross_sell, accessories, compatible parts, bundle, ...) and whether each is two-way or quantified. Cursor paginated.')]
 final class ListAssociationTypesTool extends Tool
@@ -23,8 +25,11 @@ final class ListAssociationTypesTool extends Tool
     {
         return [
             'search' => $schema->string()->description('Match against the code or any label.'),
-            'cursor' => $schema->string()->description('Cursor from a previous page (next_cursor).'),
-            'per_page' => $schema->integer()->description('Results per page.')->min(1),
-        ];
+        ] + ListAssociationTypesData::pagination()->schema($schema);
+    }
+
+    public function outputSchema(JsonSchema $schema): array
+    {
+        return AssociationTypeResource::collectionSchema($schema, ListAssociationTypesData::pagination());
     }
 }

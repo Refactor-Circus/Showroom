@@ -10,6 +10,7 @@ use Laravel\Mcp\ResponseFactory;
 use Laravel\Mcp\Server\Attributes\Description;
 use RefactorCircus\Keystone\Mcp\Tool;
 use RefactorCircus\Showroom\Domains\Owner\Mcp\Requests\ShowOwnerTypeMcpRequest;
+use RefactorCircus\Showroom\Domains\Owner\Resources\OwnerTypeResource;
 
 #[Description('Show an owner type with the parent types it allows.')]
 final class ShowOwnerTypeTool extends Tool
@@ -24,5 +25,10 @@ final class ShowOwnerTypeTool extends Tool
         return [
             'owner_type' => $schema->string()->description('The owner type code.')->required(),
         ];
+    }
+
+    public function outputSchema(JsonSchema $schema): array
+    {
+        return OwnerTypeResource::structuredSchema($schema);
     }
 }

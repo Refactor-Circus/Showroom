@@ -10,6 +10,7 @@ use Laravel\Mcp\ResponseFactory;
 use Laravel\Mcp\Server\Attributes\Description;
 use RefactorCircus\Keystone\Mcp\Tool;
 use RefactorCircus\Showroom\Domains\Association\Mcp\Requests\ShowAssociationTypeMcpRequest;
+use RefactorCircus\Showroom\Domains\Association\Resources\AssociationTypeResource;
 
 #[Description('Show an association type and how many associations use it.')]
 final class ShowAssociationTypeTool extends Tool
@@ -24,5 +25,10 @@ final class ShowAssociationTypeTool extends Tool
         return [
             'association_type' => $schema->string()->description('The association type code.')->required(),
         ];
+    }
+
+    public function outputSchema(JsonSchema $schema): array
+    {
+        return AssociationTypeResource::structuredSchema($schema);
     }
 }

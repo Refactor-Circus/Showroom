@@ -8,6 +8,7 @@ use Illuminate\Http\JsonResponse;
 use RefactorCircus\Showroom\Domains\Product\Http\Requests\ProductRequest;
 use RefactorCircus\Showroom\Domains\Product\Resources\ProductResource;
 use RefactorCircus\Showroom\Domains\Workflow\Actions\TransitionProductAction;
+use RefactorCircus\Showroom\Domains\Workflow\Data\TransitionProductData;
 
 final class TransitionProductRequest extends ProductRequest
 {
@@ -18,12 +19,12 @@ final class TransitionProductRequest extends ProductRequest
 
     public function rules(): array
     {
-        return TransitionProductAction::rules();
+        return TransitionProductData::rules();
     }
 
     public function persist(): JsonResponse
     {
-        $product = app(TransitionProductAction::class)->execute($this->product(), $this->validated());
+        $product = app(TransitionProductAction::class)->execute($this->product(), TransitionProductData::fromValidated($this->validated()));
 
         return (new ProductResource($product))->response();
     }

@@ -7,6 +7,7 @@ namespace RefactorCircus\Showroom\Domains\Asset\Events;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 use RefactorCircus\Keystone\Contracts\ActionFinishedEvent;
+use RefactorCircus\Showroom\Domains\Asset\Data\AttachAssetData;
 use RefactorCircus\Showroom\Domains\Asset\Models\AssetModel;
 
 /**
@@ -17,11 +18,8 @@ final class AssetAttachedActionEvent implements ActionFinishedEvent
     use Dispatchable;
     use SerializesModels;
 
-    /**
-     * @param  array<string, mixed>  $data
-     */
     public function __construct(
         public AssetModel $asset,
-        public array $data,
+        public AttachAssetData $data,
     ) {}
 }

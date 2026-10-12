@@ -6,6 +6,7 @@ namespace RefactorCircus\Showroom\Domains\Association\Http\Requests;
 
 use Illuminate\Http\JsonResponse;
 use RefactorCircus\Showroom\Domains\Association\Actions\UpdateAssociationTypeAction;
+use RefactorCircus\Showroom\Domains\Association\Data\UpdateAssociationTypeData;
 use RefactorCircus\Showroom\Domains\Association\Resources\AssociationTypeResource;
 
 final class UpdateAssociationTypeRequest extends AssociationTypeRequest
@@ -17,12 +18,12 @@ final class UpdateAssociationTypeRequest extends AssociationTypeRequest
 
     public function rules(): array
     {
-        return UpdateAssociationTypeAction::rules();
+        return UpdateAssociationTypeData::rules();
     }
 
     public function persist(): JsonResponse
     {
-        $associationType = app(UpdateAssociationTypeAction::class)->execute($this->associationType(), $this->validated());
+        $associationType = app(UpdateAssociationTypeAction::class)->execute($this->associationType(), UpdateAssociationTypeData::fromValidated($this->validated()));
 
         return (new AssociationTypeResource($associationType))->response();
     }

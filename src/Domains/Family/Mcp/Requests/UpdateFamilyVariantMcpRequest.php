@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace RefactorCircus\Showroom\Domains\Family\Mcp\Requests;
 
-use Laravel\Mcp\Response;
 use Laravel\Mcp\ResponseFactory;
 use RefactorCircus\Showroom\Domains\Family\Actions\UpdateFamilyVariantAction;
+use RefactorCircus\Showroom\Domains\Family\Data\UpdateFamilyVariantData;
 use RefactorCircus\Showroom\Domains\Family\Resources\FamilyVariantResource;
 
 final class UpdateFamilyVariantMcpRequest extends FamilyVariantRequest
@@ -18,17 +18,15 @@ final class UpdateFamilyVariantMcpRequest extends FamilyVariantRequest
 
     protected function rules(): array
     {
-        return UpdateFamilyVariantAction::rules() + [
+        return [
             'family_variant' => ['required', 'string', 'max:191'],
-        ];
+        ] + UpdateFamilyVariantData::rules();
     }
 
     protected function handle(array $validated): ResponseFactory
     {
-        unset($validated['family_variant']);
+        $familyVariant = app(UpdateFamilyVariantAction::class)->execute($this->familyVariant(), UpdateFamilyVariantData::fromValidated($validated));
 
-        $familyVariant = app(UpdateFamilyVariantAction::class)->execute($this->familyVariant(), $validated);
-
-        return Response::structured((new FamilyVariantResource($familyVariant))->resolve());
+        return (new FamilyVariantResource($familyVariant))->toStructuredResponse();
     }
 }

@@ -12,6 +12,7 @@ use Illuminate\Support\Carbon;
 use RefactorCircus\Keystone\Models\Concerns\DispatchesModelEvents;
 use RefactorCircus\Showroom\Database\Factories\AssociationTypeFactory;
 use RefactorCircus\Showroom\Support\Models\Concerns\HasLabels;
+use RefactorCircus\Showroom\Support\Tables;
 
 /**
  * A kind of relation between products: cross-sell, up-sell, accessories,
@@ -35,7 +36,10 @@ final class AssociationTypeModel extends Model
     use HasLabels;
     use HasUlids;
 
-    protected $table = 'showroom_association_types';
+    public function getTable(): string
+    {
+        return Tables::name('association_types');
+    }
 
     protected $fillable = [
         'code',

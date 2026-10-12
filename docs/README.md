@@ -24,15 +24,17 @@
 ```php
 use RefactorCircus\Showroom\Domains\Attribute\Actions\CreateAttributeAction;
 use RefactorCircus\Showroom\Domains\Attribute\Actions\CreateAttributeGroupAction;
+use RefactorCircus\Showroom\Domains\Attribute\Data\CreateAttributeData;
+use RefactorCircus\Showroom\Domains\Attribute\Data\CreateAttributeGroupData;
 
-app(CreateAttributeGroupAction::class)->execute(['code' => 'technical', 'labels' => ['en' => 'Technical']]);
+app(CreateAttributeGroupAction::class)->execute(CreateAttributeGroupData::from(['code' => 'technical', 'labels' => ['en' => 'Technical']]));
 
-app(CreateAttributeAction::class)->execute([
+app(CreateAttributeAction::class)->execute(CreateAttributeData::from([
     'code' => 'weight',
     'type' => 'metric',
     'group' => 'technical',
     'settings' => ['metric_family' => 'weight', 'default_unit' => 'kilogram'],
-]);
+]));
 ```
 
 The same call over HTTP is `POST /showroom/attributes`, and over MCP `create-attribute-tool`.

@@ -6,10 +6,14 @@ namespace RefactorCircus\Showroom\Impex\Actions;
 
 use Generator;
 use Illuminate\Contracts\Filesystem\Filesystem;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use RefactorCircus\Showroom\Domains\Asset\Actions\CreateAssetAction;
+use RefactorCircus\Showroom\Domains\Asset\Data\CreateAssetData;
 use RefactorCircus\Showroom\Domains\Asset\Models\AssetModel;
 use RefactorCircus\Showroom\Domains\Asset\Services\AssetStorage;
+use RefactorCircus\Showroom\Domains\Transfer\Events\ProductExportJoinedActionEvent;
+use RefactorCircus\Showroom\Domains\Transfer\Events\ProductExportJoiningActionEvent;
 use RefactorCircus\Showroom\Impex\ProductRows;
 use RuntimeException;
 
@@ -23,6 +27,20 @@ final class JoinProductExport
      * @return array{asset: string, count: int, format: string}
      */
     public function execute(string $runId, int $parts, int $count, string $format, string $code): array
+    {
+        ProductExportJoiningActionEvent::dispatch($runId, $parts, $format, $code);
+
+        $result = $this->perform($runId, $parts, $count, $format, $code);
+
+        ProductExportJoinedActionEvent::dispatch($runId, $result['asset'], $result['count'], $result['format']);
+
+        return $result;
+    }
+
+    /**
+     * @return array{asset: string, count: int, format: string}
+     */
+    private function perform(string $runId, int $parts, int $count, string $format, string $code): array
     {
         // A redelivered step finds its own asset already made.
         if (AssetModel::query()->where('code', $code)->exists()) {
@@ -50,11 +68,13 @@ final class JoinProductExport
         $disk->writeStream($path, $out);
         fclose($out);
 
-        foreach ($partPaths as $part) {
-            $disk->delete($part);
-        }
+        // The parts go once the asset is recorded, so a failed step can
+        // be run again from them.
+        DB::transaction(function () use ($code, $path, $disk, $partPaths): void {
+            app(CreateAssetAction::class)->execute(new CreateAssetData(code: $code, path: $path));
 
-        app(CreateAssetAction::class)->execute(['code' => $code, 'path' => $path]);
+            DB::afterCommit(fn (): bool => $disk->delete($partPaths));
+        });
 
         return ['asset' => $code, 'count' => $count, 'format' => $format];
     }

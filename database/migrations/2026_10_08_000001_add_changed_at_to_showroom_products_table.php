@@ -6,6 +6,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use RefactorCircus\Showroom\Support\Tables;
 
 /**
  * When anything a product shows last changed: its own columns, and what it
@@ -17,16 +18,16 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('showroom_products', function (Blueprint $table): void {
+        Schema::table(Tables::name('products'), function (Blueprint $table): void {
             $table->timestamp('changed_at')->nullable()->index();
         });
 
-        DB::table('showroom_products')->update(['changed_at' => DB::raw('updated_at')]);
+        DB::table(Tables::name('products'))->update(['changed_at' => DB::raw('updated_at')]);
     }
 
     public function down(): void
     {
-        Schema::table('showroom_products', function (Blueprint $table): void {
+        Schema::table(Tables::name('products'), function (Blueprint $table): void {
             $table->dropIndex(['changed_at']);
             $table->dropColumn('changed_at');
         });

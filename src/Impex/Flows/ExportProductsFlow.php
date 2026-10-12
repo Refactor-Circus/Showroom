@@ -16,7 +16,7 @@ use RefactorCircus\Showroom\Impex\Actions\JoinProductExport;
 final class ExportProductsFlow extends Flow
 {
     /**
-     * @param  array<string, mixed>  $query  ListProductsAction filters, plus `scope` and `locales`.
+     * @param  array<string, mixed>  $query  ListProductsData input, plus `scope` and `locales`.
      * @return array{asset: string, count: int, format: string}
      */
     public function handle(array $query = [], string $format = 'jsonl', ?string $code = null, bool $published = false): array

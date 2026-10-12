@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace RefactorCircus\Showroom\Domains\Family\Actions;
 
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\DB;
 use RefactorCircus\Showroom\Domains\Family\Events\FamilyDeletedActionEvent;
 use RefactorCircus\Showroom\Domains\Family\Events\FamilyDeletingActionEvent;
 use RefactorCircus\Showroom\Domains\Family\Models\FamilyModel;
@@ -13,14 +14,6 @@ use RefactorCircus\Showroom\Exceptions\ModelInUseException;
 
 final class DeleteFamilyAction
 {
-    /**
-     * @return array<string, mixed>
-     */
-    public static function rules(): array
-    {
-        return [];
-    }
-
     public function execute(FamilyModel $family): FamilyModel
     {
         FamilyDeletingActionEvent::dispatch($family);
@@ -38,17 +31,19 @@ final class DeleteFamilyAction
      */
     private function perform(FamilyModel $family): FamilyModel
     {
-        $products = $family->products()->count();
-        $models = ProductModelModel::query()
-            ->whereHas('familyVariant', fn (Builder $variants): Builder => $variants->where('family_id', $family->id))
-            ->count();
+        return DB::transaction(function () use ($family): FamilyModel {
+            $products = $family->products()->count();
+            $models = ProductModelModel::query()
+                ->whereHas('familyVariant', fn (Builder $variants): Builder => $variants->where('family_id', $family->id))
+                ->count();
 
-        if ($products > 0 || $models > 0) {
-            throw ModelInUseException::familyHasProducts($family->code, $products, $models);
-        }
+            if ($products > 0 || $models > 0) {
+                throw ModelInUseException::familyHasProducts($family->code, $products, $models);
+            }
 
-        $family->delete();
+            $family->delete();
 
-        return $family;
+            return $family;
+        });
     }
 }

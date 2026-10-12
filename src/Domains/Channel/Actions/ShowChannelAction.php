@@ -10,14 +10,6 @@ use RefactorCircus\Showroom\Domains\Channel\Models\ChannelModel;
 
 final class ShowChannelAction
 {
-    /**
-     * @return array<string, mixed>
-     */
-    public static function rules(): array
-    {
-        return [];
-    }
-
     public function execute(ChannelModel $channel): ChannelModel
     {
         ChannelShowingActionEvent::dispatch($channel);

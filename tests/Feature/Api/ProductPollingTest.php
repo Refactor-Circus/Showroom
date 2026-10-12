@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Illuminate\Support\Facades\DB;
 use RefactorCircus\Showroom\Domains\Product\Mcp\Tools\ListProductsTool;
+use RefactorCircus\Showroom\Support\Tables;
 use RefactorCircus\Showroom\Tests\Fixtures\Catalog;
 
 beforeEach(function (): void {
@@ -32,7 +33,7 @@ it('lists only products changed since a moment', function (): void {
     $this->postJson('/showroom/products', ['identifier' => 'OLD'])->assertCreated();
     $this->postJson('/showroom/products', ['identifier' => 'NEW'])->assertCreated();
 
-    DB::table('showroom_products')->where('identifier', 'OLD')->update(['changed_at' => now()->subDay()]);
+    DB::table(Tables::name('products'))->where('identifier', 'OLD')->update(['changed_at' => now()->subDay()]);
 
     $this->getJson('/showroom/products?updated_since='.urlencode(now()->subHour()->toIso8601String()))
         ->assertOk()
@@ -44,7 +45,7 @@ it('filters by updated_since over MCP too', function (): void {
     $this->postJson('/showroom/products', ['identifier' => 'OLD'])->assertCreated();
     $this->postJson('/showroom/products', ['identifier' => 'NEW'])->assertCreated();
 
-    DB::table('showroom_products')->where('identifier', 'OLD')->update(['changed_at' => now()->subDay()]);
+    DB::table(Tables::name('products'))->where('identifier', 'OLD')->update(['changed_at' => now()->subDay()]);
 
     mcpTool(ListProductsTool::class, ['updated_since' => now()->subHour()->toIso8601String()])
         ->assertOk()
@@ -57,7 +58,7 @@ it('counts a change a product inherits from its model as a change', function ():
     $this->postJson('/showroom/product-models', ['code' => 'polo', 'family_variant' => 'shirts_by_size'])->assertCreated();
     $this->postJson('/showroom/products', ['identifier' => 'POLO-M', 'parent' => 'polo', 'values' => ['size' => Catalog::value('m')]])->assertCreated();
 
-    DB::table('showroom_products')->where('identifier', 'POLO-M')->update(['changed_at' => now()->subDay(), 'updated_at' => now()->subDay()]);
+    DB::table(Tables::name('products'))->where('identifier', 'POLO-M')->update(['changed_at' => now()->subDay(), 'updated_at' => now()->subDay()]);
     $since = urlencode(now()->subHour()->toIso8601String());
 
     $this->getJson('/showroom/products?updated_since='.$since)->assertJsonCount(0, 'data');
@@ -69,5 +70,5 @@ it('counts a change a product inherits from its model as a change', function ():
         ->assertJsonCount(1, 'data')
         ->assertJsonPath('data.0.identifier', 'POLO-M');
 
-    expect(DB::table('showroom_products')->where('identifier', 'POLO-M')->value('updated_at'))->toBeLessThan(now()->subHour()->toDateTimeString());
+    expect(DB::table(Tables::name('products'))->where('identifier', 'POLO-M')->value('updated_at'))->toBeLessThan(now()->subHour()->toDateTimeString());
 });

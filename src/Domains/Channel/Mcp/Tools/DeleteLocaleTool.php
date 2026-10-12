@@ -25,4 +25,12 @@ final class DeleteLocaleTool extends Tool
             'locale' => $schema->string()->description('The locale code.')->required(),
         ];
     }
+
+    public function outputSchema(JsonSchema $schema): array
+    {
+        return [
+            'deleted' => $schema->boolean()->required(),
+            'code' => $schema->string()->required(),
+        ];
+    }
 }

@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace RefactorCircus\Showroom\Atrium;
 
+use Closure;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Route;
 use RefactorCircus\Atrium\Domains\Navigation\Data\NavGroup;
 use RefactorCircus\Atrium\Domains\Navigation\Data\NavItem;
@@ -44,6 +46,7 @@ use RefactorCircus\Showroom\Domains\Product\Models\ProductModel;
 use RefactorCircus\Showroom\Domains\ProductModel\Models\ProductModelModel;
 use RefactorCircus\Showroom\Domains\Workflow\Models\CompletenessModel;
 use RefactorCircus\Showroom\Domains\Workflow\Models\VersionModel;
+use RefactorCircus\Showroom\Support\Tables;
 
 /**
  * Registers Showroom inside the Atrium dashboard.
@@ -224,14 +227,7 @@ class ShowroomPlugin extends Plugin
                 ->defaultSize(6, 1)
                 ->view('showroom::ui.widgets.product-status')
                 ->authorize(fn (Request $request): bool => ScreenAccess::allows('viewAny', ProductModel::class, $request))
-                ->resolve(fn (): array => [
-                    'counts' => collect(ProductStatus::cases())
-                        ->mapWithKeys(fn (ProductStatus $status): array => [
-                            $status->value => ProductModel::query()->where('status', $status)->count(),
-                        ])
-                        ->all(),
-                    'published' => ProductModel::query()->whereNotNull('published_version')->count(),
-                ]),
+                ->resolve(fn (): array => $this->statusCounts()),
 
             WidgetDefinition::make('showroom.completeness')
                 ->label(__('showroom::showroom.widget_completeness'))
@@ -240,23 +236,8 @@ class ShowroomPlugin extends Plugin
                 ->view('showroom::ui.widgets.completeness')
                 ->authorize(fn (Request $request): bool => ScreenAccess::allows('viewAny', ProductModel::class, $request))
                 ->resolve(fn (): array => [
-                    'rows' => CompletenessModel::query()
-                        ->join('showroom_channels', 'showroom_channels.id', '=', 'showroom_product_completeness.channel_id')
-                        ->join('showroom_locales', 'showroom_locales.id', '=', 'showroom_product_completeness.locale_id')
-                        ->groupBy('showroom_channels.code', 'showroom_locales.code')
-                        ->orderBy('showroom_channels.code')
-                        ->orderBy('showroom_locales.code')
-                        ->selectRaw('showroom_channels.code as scope, showroom_locales.code as locale, count(*) as products, sum(case when ratio = 100 then 1 else 0 end) as complete, avg(ratio) as average')
-                        ->toBase()
-                        ->get()
-                        ->map(fn (object $row): array => [
-                            'scope' => (string) data_get($row, 'scope'),
-                            'locale' => (string) data_get($row, 'locale'),
-                            'products' => (int) data_get($row, 'products'),
-                            'complete' => (int) data_get($row, 'complete'),
-                            'average' => (int) round((float) data_get($row, 'average')),
-                        ])
-                        ->all(),
+                    // A scan of every score: kept briefly, as dashboards reload often.
+                    'rows' => $this->remember('completeness', fn (): array => $this->completenessRows()),
                 ]),
 
             WidgetDefinition::make('showroom.review-queue')
@@ -425,5 +406,71 @@ class ShowroomPlugin extends Plugin
         $user = auth()->user();
 
         return Authorizer::for(app(PackageRegistry::class)->get('showroom'))->can($user, 'viewAny', $model);
+    }
+
+    /**
+     * Products per status, and how many are live, in one query.
+     *
+     * @return array{counts: array<string, int>, published: int}
+     */
+    private function statusCounts(): array
+    {
+        $rows = ProductModel::query()
+            ->toBase()
+            ->select('status')
+            ->selectRaw('count(*) as products, sum(case when published_version is null then 0 else 1 end) as live')
+            ->groupBy('status')
+            ->get()
+            ->keyBy(fn (object $row): string => (string) data_get($row, 'status'));
+
+        return [
+            'counts' => collect(ProductStatus::cases())
+                ->mapWithKeys(fn (ProductStatus $status): array => [$status->value => (int) data_get($rows->get($status->value), 'products', 0)])
+                ->all(),
+            'published' => (int) $rows->sum(fn (object $row): int => (int) data_get($row, 'live', 0)),
+        ];
+    }
+
+    /**
+     * Completeness per channel and locale.
+     *
+     * @return array<int, array{scope: string, locale: string, products: int, complete: int, average: int}>
+     */
+    private function completenessRows(): array
+    {
+        return CompletenessModel::query()
+            ->join(Tables::name('channels'), Tables::name('channels').'.id', '=', Tables::name('product_completeness').'.channel_id')
+            ->join(Tables::name('locales'), Tables::name('locales').'.id', '=', Tables::name('product_completeness').'.locale_id')
+            ->groupBy(Tables::name('channels').'.code', Tables::name('locales').'.code')
+            ->orderBy(Tables::name('channels').'.code')
+            ->orderBy(Tables::name('locales').'.code')
+            ->select([Tables::name('channels').'.code as scope', Tables::name('locales').'.code as locale'])
+            ->selectRaw('count(*) as products, sum(case when ratio = 100 then 1 else 0 end) as complete, avg(ratio) as average')
+            ->toBase()
+            ->get()
+            ->map(fn (object $row): array => [
+                'scope' => (string) data_get($row, 'scope'),
+                'locale' => (string) data_get($row, 'locale'),
+                'products' => (int) data_get($row, 'products'),
+                'complete' => (int) data_get($row, 'complete'),
+                'average' => (int) round((float) data_get($row, 'average')),
+            ])
+            ->all();
+    }
+
+    /**
+     * A widget's figures, cached for `showroom.atrium.widget_cache_seconds`
+     * (0 reads them fresh every time).
+     *
+     * @template TValue
+     *
+     * @param  Closure(): TValue  $resolve
+     * @return TValue
+     */
+    private function remember(string $key, Closure $resolve): mixed
+    {
+        $seconds = (int) config('showroom.atrium.widget_cache_seconds', 60);
+
+        return $seconds > 0 ? Cache::remember('showroom:widgets:'.$key, $seconds, $resolve) : $resolve();
     }
 }

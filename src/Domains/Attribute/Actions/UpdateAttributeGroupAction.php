@@ -4,30 +4,16 @@ declare(strict_types=1);
 
 namespace RefactorCircus\Showroom\Domains\Attribute\Actions;
 
+use Illuminate\Support\Facades\DB;
+use RefactorCircus\Keystone\Data\Missing;
+use RefactorCircus\Showroom\Domains\Attribute\Data\UpdateAttributeGroupData;
 use RefactorCircus\Showroom\Domains\Attribute\Events\AttributeGroupUpdatedActionEvent;
 use RefactorCircus\Showroom\Domains\Attribute\Events\AttributeGroupUpdatingActionEvent;
 use RefactorCircus\Showroom\Domains\Attribute\Models\AttributeGroupModel;
 
 final class UpdateAttributeGroupAction
 {
-    /**
-     * @return array<string, mixed>
-     */
-    public static function rules(): array
-    {
-        return [
-            // A code is an identifier other systems hold on to; it never changes.
-            'code' => ['prohibited'],
-            'labels' => ['sometimes', 'nullable', 'array'],
-            'labels.*' => ['nullable', 'string', 'max:255'],
-            'sort_order' => ['sometimes', 'integer', 'min:0'],
-        ];
-    }
-
-    /**
-     * @param  array<string, mixed>  $data
-     */
-    public function execute(AttributeGroupModel $group, array $data): AttributeGroupModel
+    public function execute(AttributeGroupModel $group, UpdateAttributeGroupData $data): AttributeGroupModel
     {
         AttributeGroupUpdatingActionEvent::dispatch($group, $data);
 
@@ -38,21 +24,20 @@ final class UpdateAttributeGroupAction
         return $result;
     }
 
-    /**
-     * @param  array<string, mixed>  $data
-     */
-    private function perform(AttributeGroupModel $group, array $data): AttributeGroupModel
+    private function perform(AttributeGroupModel $group, UpdateAttributeGroupData $data): AttributeGroupModel
     {
-        if (array_key_exists('labels', $data)) {
-            $group->labels = is_array($data['labels']) ? $data['labels'] : [];
-        }
+        return DB::transaction(function () use ($group, $data): AttributeGroupModel {
+            if (! $data->labels instanceof Missing) {
+                $group->labels = $data->labels ?? [];
+            }
 
-        if (array_key_exists('sort_order', $data)) {
-            $group->sort_order = (int) $data['sort_order'];
-        }
+            if (! $data->sortOrder instanceof Missing) {
+                $group->sort_order = $data->sortOrder;
+            }
 
-        $group->save();
+            $group->save();
 
-        return $group;
+            return $group;
+        });
     }
 }

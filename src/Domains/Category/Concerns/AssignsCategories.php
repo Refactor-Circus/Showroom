@@ -14,18 +14,6 @@ use RefactorCircus\Showroom\Domains\ProductModel\Models\ProductModelModel;
 trait AssignsCategories
 {
     /**
-     * @return array<string, mixed>
-     */
-    private static function categoryRules(): array
-    {
-        return [
-            // The whole list of category codes, from any trees; replaced on update.
-            'categories' => ['sometimes', 'nullable', 'array', 'list'],
-            'categories.*' => ['string', 'distinct', 'exists:showroom_categories,code'],
-        ];
-    }
-
-    /**
      * @param  array<string, mixed>  $data
      */
     private function assignCategories(ProductModel|ProductModelModel $record, array $data): void

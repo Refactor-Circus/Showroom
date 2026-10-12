@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace RefactorCircus\Showroom\Domains\Asset\Mcp\Requests;
 
-use Laravel\Mcp\Response;
 use Laravel\Mcp\ResponseFactory;
 use RefactorCircus\Showroom\Domains\Asset\Actions\DetachAssetAction;
+use RefactorCircus\Showroom\Domains\Asset\Data\DetachAssetData;
 use RefactorCircus\Showroom\Domains\Asset\Resources\AssetResource;
 
 final class DetachAssetMcpRequest extends AssetRequest
@@ -18,17 +18,15 @@ final class DetachAssetMcpRequest extends AssetRequest
 
     protected function rules(): array
     {
-        return DetachAssetAction::rules() + [
+        return [
             'asset' => ['required', 'string', 'max:191'],
-        ];
+        ] + DetachAssetData::rules();
     }
 
     protected function handle(array $validated): ResponseFactory
     {
-        unset($validated['asset']);
+        $asset = app(DetachAssetAction::class)->execute($this->asset(), DetachAssetData::fromValidated($validated));
 
-        $asset = app(DetachAssetAction::class)->execute($this->asset(), $validated);
-
-        return Response::structured((new AssetResource($asset))->resolve());
+        return (new AssetResource($asset))->toStructuredResponse();
     }
 }

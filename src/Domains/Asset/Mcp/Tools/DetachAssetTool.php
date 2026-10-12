@@ -10,6 +10,7 @@ use Laravel\Mcp\ResponseFactory;
 use Laravel\Mcp\Server\Attributes\Description;
 use RefactorCircus\Keystone\Mcp\Tool;
 use RefactorCircus\Showroom\Domains\Asset\Mcp\Requests\DetachAssetMcpRequest;
+use RefactorCircus\Showroom\Domains\Asset\Resources\AssetResource;
 
 #[Description('Unlink an asset from a product, product model or owner, in one role or all.')]
 final class DetachAssetTool extends Tool
@@ -27,5 +28,10 @@ final class DetachAssetTool extends Tool
             'target' => $schema->string()->description('The product identifier, or the product model or owner code.')->required(),
             'role' => $schema->string()->description('Only unlink this role; without it, every role is unlinked.'),
         ];
+    }
+
+    public function outputSchema(JsonSchema $schema): array
+    {
+        return AssetResource::structuredSchema($schema);
     }
 }

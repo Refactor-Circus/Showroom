@@ -10,14 +10,6 @@ use RefactorCircus\Showroom\Domains\Channel\Models\LocaleModel;
 
 final class ShowLocaleAction
 {
-    /**
-     * @return array<string, mixed>
-     */
-    public static function rules(): array
-    {
-        return [];
-    }
-
     public function execute(LocaleModel $locale): LocaleModel
     {
         LocaleShowingActionEvent::dispatch($locale);

@@ -18,6 +18,7 @@ use RefactorCircus\Showroom\Database\Factories\FamilyVariantFactory;
 use RefactorCircus\Showroom\Domains\Attribute\Models\AttributeModel;
 use RefactorCircus\Showroom\Domains\ProductModel\Models\ProductModelModel;
 use RefactorCircus\Showroom\Support\Models\Concerns\HasLabels;
+use RefactorCircus\Showroom\Support\Tables;
 
 /**
  * How a family's products vary: "shirts by color, then by size". Each level
@@ -43,7 +44,10 @@ final class FamilyVariantModel extends Model
     use HasLabels;
     use HasUlids;
 
-    protected $table = 'showroom_family_variants';
+    public function getTable(): string
+    {
+        return Tables::name('family_variants');
+    }
 
     protected $fillable = [
         'family_id',
@@ -67,10 +71,10 @@ final class FamilyVariantModel extends Model
      */
     public function variantAttributes(): BelongsToMany
     {
-        return $this->belongsToMany(AttributeModel::class, 'showroom_family_variant_attributes', 'family_variant_id', 'attribute_id')
+        return $this->belongsToMany(AttributeModel::class, Tables::name('family_variant_attributes'), 'family_variant_id', 'attribute_id')
             ->withPivot(['level', 'is_axis'])
             ->orderByPivot('level')
-            ->orderBy('showroom_attributes.code');
+            ->orderBy(Tables::name('attributes').'.code');
     }
 
     /**

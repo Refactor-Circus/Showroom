@@ -14,11 +14,6 @@ final class DeleteAttributeRequest extends AttributeRequest
         return $this->allows('delete', $this->catalogAttribute());
     }
 
-    public function rules(): array
-    {
-        return DeleteAttributeAction::rules();
-    }
-
     public function persist(): JsonResponse
     {
         app(DeleteAttributeAction::class)->execute($this->catalogAttribute());

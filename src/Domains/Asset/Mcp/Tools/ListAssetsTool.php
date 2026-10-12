@@ -9,7 +9,9 @@ use Laravel\Mcp\Response;
 use Laravel\Mcp\ResponseFactory;
 use Laravel\Mcp\Server\Attributes\Description;
 use RefactorCircus\Keystone\Mcp\Tool;
+use RefactorCircus\Showroom\Domains\Asset\Data\ListAssetsData;
 use RefactorCircus\Showroom\Domains\Asset\Mcp\Requests\ListAssetsMcpRequest;
+use RefactorCircus\Showroom\Domains\Asset\Resources\AssetResource;
 
 #[Description('List assets (images, documents, ...), newest first, by type or by the record they are linked to. Cursor paginated.')]
 final class ListAssetsTool extends Tool
@@ -28,8 +30,11 @@ final class ListAssetsTool extends Tool
             'product_model' => $schema->string()->description('Only assets linked to this product model code.'),
             'owner' => $schema->string()->description('Only assets linked to this owner code.'),
             'role' => $schema->string()->description('With product, product_model or owner: only links in this role.'),
-            'cursor' => $schema->string()->description('Cursor from a previous page (next_cursor).'),
-            'per_page' => $schema->integer()->description('Results per page.')->min(1),
-        ];
+        ] + ListAssetsData::pagination()->schema($schema);
+    }
+
+    public function outputSchema(JsonSchema $schema): array
+    {
+        return AssetResource::collectionSchema($schema, ListAssetsData::pagination());
     }
 }

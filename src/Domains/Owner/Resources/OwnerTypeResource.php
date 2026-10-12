@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace RefactorCircus\Showroom\Domains\Owner\Resources;
 
+use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Illuminate\Http\Request;
-use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\JsonSchema\Types\Type;
+use RefactorCircus\Keystone\Http\Resources\JsonResource;
 use RefactorCircus\Showroom\Domains\Owner\Models\OwnerTypeModel;
 
 /**
@@ -13,6 +15,25 @@ use RefactorCircus\Showroom\Domains\Owner\Models\OwnerTypeModel;
  */
 final class OwnerTypeResource extends JsonResource
 {
+    /**
+     * @return array<string, Type>
+     */
+    public static function schema(JsonSchema $schema): array
+    {
+        return [
+            'id' => $schema->string()->description('ULID.')->required(),
+            'code' => $schema->string()->required(),
+            'labels' => $schema->object()->description('Labels keyed by locale.')->required(),
+            'parent_types' => $schema->array()->items($schema->string())->nullable()->description('Owner type codes allowed as parent; null for any. When loaded.'),
+            'can_be_root' => $schema->boolean()->required(),
+            'owns_products' => $schema->boolean()->required(),
+            'sort_order' => $schema->integer()->required(),
+            'owners_count' => $schema->integer()->description('When counted.'),
+            'created_at' => $schema->string()->nullable()->required(),
+            'updated_at' => $schema->string()->nullable()->required(),
+        ];
+    }
+
     /**
      * @return array<string, mixed>
      */

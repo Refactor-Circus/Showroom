@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace RefactorCircus\Showroom\Domains\Transfer\Mcp\Requests;
 
-use Laravel\Mcp\Response;
 use Laravel\Mcp\ResponseFactory;
 use RefactorCircus\Impex\Domains\Run\Resources\RunResource;
 use RefactorCircus\Keystone\Mcp\Requests\Request;
 use RefactorCircus\Showroom\Domains\Product\Models\ProductModel;
 use RefactorCircus\Showroom\Domains\Transfer\Actions\StartImportAction;
+use RefactorCircus\Showroom\Domains\Transfer\Data\StartImportData;
 
 final class StartImportMcpRequest extends Request
 {
@@ -20,13 +20,13 @@ final class StartImportMcpRequest extends Request
 
     protected function rules(): array
     {
-        return StartImportAction::rules();
+        return StartImportData::rules();
     }
 
     protected function handle(array $validated): ResponseFactory
     {
-        $run = app(StartImportAction::class)->execute($validated);
+        $run = app(StartImportAction::class)->execute(StartImportData::fromValidated($validated));
 
-        return Response::structured((new RunResource($run))->resolve());
+        return (new RunResource($run))->toStructuredResponse();
     }
 }

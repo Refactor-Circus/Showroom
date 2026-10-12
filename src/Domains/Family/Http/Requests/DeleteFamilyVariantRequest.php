@@ -14,11 +14,6 @@ final class DeleteFamilyVariantRequest extends FamilyVariantRequest
         return $this->allows('delete', $this->familyVariant());
     }
 
-    public function rules(): array
-    {
-        return DeleteFamilyVariantAction::rules();
-    }
-
     public function persist(): JsonResponse
     {
         app(DeleteFamilyVariantAction::class)->execute($this->familyVariant());

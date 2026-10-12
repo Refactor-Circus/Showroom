@@ -10,6 +10,7 @@ use Laravel\Mcp\ResponseFactory;
 use Laravel\Mcp\Server\Attributes\Description;
 use RefactorCircus\Keystone\Mcp\Tool;
 use RefactorCircus\Showroom\Domains\Product\Mcp\Requests\UpdateProductMcpRequest;
+use RefactorCircus\Showroom\Domains\Product\Resources\ProductResource;
 
 #[Description('Update a product\'s family (simple products only), enabled flag or values. Only the value slots sent change.')]
 final class UpdateProductTool extends Tool
@@ -31,5 +32,10 @@ final class UpdateProductTool extends Tool
             'quantified_associations' => $schema->object()->description('Bundle or kit components by quantified type code: {"bundle": {"products": [{"identifier": "SKU-3", "quantity": 2}], "product_models": []}}. Each type sent replaces that type\'s components.'),
             'values' => $schema->object()->description('Attribute values keyed by attribute code, each a list of slots: {"name": [{"locale": null, "scope": null, "data": "Classic tee"}]}. locale is required for localizable attributes and scope for scopable ones, else null. data by type: text/textarea string, number integer, decimal number or string, boolean, date "Y-m-d", select option code, multiselect list of option codes, price [{"amount": "9.99", "currency": "USD"}], metric {"amount": "1.5", "unit": "kilogram"}. On update only the slots sent change; data null clears a slot.'),
         ];
+    }
+
+    public function outputSchema(JsonSchema $schema): array
+    {
+        return ProductResource::structuredSchema($schema);
     }
 }

@@ -9,7 +9,9 @@ use Laravel\Mcp\Response;
 use Laravel\Mcp\ResponseFactory;
 use Laravel\Mcp\Server\Attributes\Description;
 use RefactorCircus\Keystone\Mcp\Tool;
+use RefactorCircus\Showroom\Domains\ProductModel\Data\ListProductModelsData;
 use RefactorCircus\Showroom\Domains\ProductModel\Mcp\Requests\ListProductModelsMcpRequest;
+use RefactorCircus\Showroom\Domains\ProductModel\Resources\ProductModelResource;
 
 #[Description('List product models (the shared parts of variant products), by family variant or parent. Cursor paginated.')]
 final class ListProductModelsTool extends Tool
@@ -26,8 +28,11 @@ final class ListProductModelsTool extends Tool
             'parent' => $schema->string()->description('Only models under this parent model code.'),
             'roots' => $schema->boolean()->description('Only root models.'),
             'search' => $schema->string()->description('Match against the code.'),
-            'cursor' => $schema->string()->description('Cursor from a previous page (next_cursor).'),
-            'per_page' => $schema->integer()->description('Results per page.')->min(1),
-        ];
+        ] + ListProductModelsData::pagination()->schema($schema);
+    }
+
+    public function outputSchema(JsonSchema $schema): array
+    {
+        return ProductModelResource::collectionSchema($schema, ListProductModelsData::pagination());
     }
 }

@@ -7,6 +7,7 @@ namespace RefactorCircus\Showroom\Domains\Family\Events;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 use RefactorCircus\Keystone\Contracts\ActionStartingEvent;
+use RefactorCircus\Showroom\Domains\Family\Data\UpdateFamilyVariantData;
 use RefactorCircus\Showroom\Domains\Family\Models\FamilyVariantModel;
 
 /**
@@ -17,11 +18,8 @@ final class FamilyVariantUpdatingActionEvent implements ActionStartingEvent
     use Dispatchable;
     use SerializesModels;
 
-    /**
-     * @param  array<string, mixed>  $data
-     */
     public function __construct(
         public FamilyVariantModel $familyVariant,
-        public array $data,
+        public UpdateFamilyVariantData $data,
     ) {}
 }

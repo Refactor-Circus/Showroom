@@ -15,11 +15,6 @@ final class ShowOwnerTypeRequest extends OwnerTypeRequest
         return $this->allows('view', $this->ownerType());
     }
 
-    public function rules(): array
-    {
-        return ShowOwnerTypeAction::rules();
-    }
-
     public function persist(): JsonResponse
     {
         $ownerType = app(ShowOwnerTypeAction::class)->execute($this->ownerType());

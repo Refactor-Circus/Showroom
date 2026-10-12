@@ -7,6 +7,7 @@ namespace RefactorCircus\Showroom\Domains\Channel\Mcp\Requests;
 use Laravel\Mcp\ResponseFactory;
 use RefactorCircus\Keystone\Mcp\Requests\Request;
 use RefactorCircus\Showroom\Domains\Channel\Actions\ListChannelsAction;
+use RefactorCircus\Showroom\Domains\Channel\Data\ListChannelsData;
 use RefactorCircus\Showroom\Domains\Channel\Models\ChannelModel;
 use RefactorCircus\Showroom\Domains\Channel\Resources\ChannelResource;
 
@@ -19,16 +20,13 @@ final class ListChannelsMcpRequest extends Request
 
     protected function rules(): array
     {
-        return ListChannelsAction::rules();
+        return ListChannelsData::rules();
     }
 
     protected function handle(array $validated): ResponseFactory
     {
-        $channels = app(ListChannelsAction::class)->execute($validated);
+        $channels = app(ListChannelsAction::class)->execute(ListChannelsData::fromValidated($validated));
 
-        return $this->structuredCollection(
-            ChannelResource::collection($channels)->resolve(),
-            ['next_cursor' => $channels->nextCursor()?->encode()],
-        );
+        return ChannelResource::collection($channels)->toStructuredResponse();
     }
 }

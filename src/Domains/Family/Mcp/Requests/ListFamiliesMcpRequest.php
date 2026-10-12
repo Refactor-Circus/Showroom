@@ -7,6 +7,7 @@ namespace RefactorCircus\Showroom\Domains\Family\Mcp\Requests;
 use Laravel\Mcp\ResponseFactory;
 use RefactorCircus\Keystone\Mcp\Requests\Request;
 use RefactorCircus\Showroom\Domains\Family\Actions\ListFamiliesAction;
+use RefactorCircus\Showroom\Domains\Family\Data\ListFamiliesData;
 use RefactorCircus\Showroom\Domains\Family\Models\FamilyModel;
 use RefactorCircus\Showroom\Domains\Family\Resources\FamilyResource;
 
@@ -19,16 +20,13 @@ final class ListFamiliesMcpRequest extends Request
 
     protected function rules(): array
     {
-        return ListFamiliesAction::rules();
+        return ListFamiliesData::rules();
     }
 
     protected function handle(array $validated): ResponseFactory
     {
-        $families = app(ListFamiliesAction::class)->execute($validated);
+        $families = app(ListFamiliesAction::class)->execute(ListFamiliesData::fromValidated($validated));
 
-        return $this->structuredCollection(
-            FamilyResource::collection($families)->resolve(),
-            ['next_cursor' => $families->nextCursor()?->encode()],
-        );
+        return FamilyResource::collection($families)->toStructuredResponse();
     }
 }

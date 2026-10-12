@@ -18,10 +18,18 @@ class AssociationServiceProvider extends ServiceProvider
     {
         // How the audit log (refactor-circus/keen) names them: a type by the current
         // locale's label, else its code; a link by its type and both ends.
-        $this->app->make(AuditHooks::class)
-            ->label(AssociationTypeModel::class, fn (AssociationTypeModel $type): string => $type->label())
-            ->label(AssociationModel::class, fn (AssociationModel $association): string => $association->type->label().': '
-                .self::end($association->source, $association->source_id).' → '.self::end($association->target, $association->target_id));
+        // Registered only while Showroom audits (see Package::audits()), which
+        // is known once every provider has booted.
+        $this->app->booted(function (): void {
+            if (! $this->package()->audits()) {
+                return;
+            }
+
+            $this->app->make(AuditHooks::class)
+                ->label(AssociationTypeModel::class, fn (AssociationTypeModel $type): string => $type->label())
+                ->label(AssociationModel::class, fn (AssociationModel $association): string => $association->type->label().': '
+                    .self::end($association->source, $association->source_id).' → '.self::end($association->target, $association->target_id));
+        });
 
         $this->loadApiRoutesFrom(__DIR__.'/routes.php');
     }

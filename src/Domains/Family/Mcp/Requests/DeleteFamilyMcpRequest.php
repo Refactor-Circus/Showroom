@@ -17,7 +17,7 @@ final class DeleteFamilyMcpRequest extends FamilyRequest
 
     protected function rules(): array
     {
-        return DeleteFamilyAction::rules() + [
+        return [
             'family' => ['required', 'string', 'max:100'],
         ];
     }

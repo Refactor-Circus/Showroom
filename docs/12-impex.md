@@ -93,7 +93,7 @@ POST /showroom/exports
 - `published`: export the live versions instead of the working copies; unpublished products are left out.
 - `code`: the asset code of the file (default `export-{run id}`).
 
-The export pages through the search (`showroom.impex.export_page_size`) as a resumable step, so a large catalog outlives a Lambda time limit. The result names the asset holding the file, saved under `showroom.impex.export_path` on the media disk:
+The export pages through the search (`showroom.impex.export_page_size`) as a resumable step, so a large catalog outlives a Lambda time limit. On the database engine it walks the products by identifier and id from the last one written, without counting them, and keeps that key in its resume cursor; a run that yielded before keys were kept resumes from its page number. Each page loads its products' owners, categories, associations and published versions in a fixed number of queries. The result names the asset holding the file, saved under `showroom.impex.export_path` on the media disk:
 
 ```json
 {"asset": "export-01jq…", "count": 5400, "format": "csv"}
@@ -228,10 +228,12 @@ cost nothing until something changes.
 ```php
 use RefactorCircus\Showroom\Domains\Transfer\Actions\StartExportAction;
 use RefactorCircus\Showroom\Domains\Transfer\Actions\StartImportAction;
+use RefactorCircus\Showroom\Domains\Transfer\Data\StartExportData;
+use RefactorCircus\Showroom\Domains\Transfer\Data\StartImportData;
 
-$run = app(StartImportAction::class)->execute(['asset' => 'supplier-2026-09', 'mode' => 'update']);
+$run = app(StartImportAction::class)->execute(StartImportData::from(['asset' => 'supplier-2026-09', 'mode' => 'update']));
 
-$run = app(StartExportAction::class)->execute(['family' => 'shirts', 'format' => 'csv']);
+$run = app(StartExportAction::class)->execute(StartExportData::from(['family' => 'shirts', 'format' => 'csv']));
 ```
 
 Both return the Impex `Run`. MCP agents use `start-import-tool` and `start-export-tool`, then Impex's tools to follow the run.

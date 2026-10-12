@@ -5,12 +5,13 @@ declare(strict_types=1);
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use RefactorCircus\Showroom\Support\Tables;
 
 return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('showroom_assets', function (Blueprint $table): void {
+        Schema::create(Tables::name('assets'), function (Blueprint $table): void {
             $table->ulid('id')->primary();
             $table->string('code', 191)->unique();
             $table->json('labels')->nullable();
@@ -27,8 +28,8 @@ return new class extends Migration
 
         // Polymorphic, so one asset serves products, product models and any
         // level of an ownership chain, each under a role.
-        Schema::create('showroom_asset_links', function (Blueprint $table): void {
-            $table->foreignUlid('asset_id')->constrained('showroom_assets')->cascadeOnDelete();
+        Schema::create(Tables::name('asset_links'), function (Blueprint $table): void {
+            $table->foreignUlid('asset_id')->constrained(Tables::name('assets'))->cascadeOnDelete();
             $table->string('linkable_type', 64);
             $table->ulid('linkable_id');
             $table->string('role', 100)->default('media');
@@ -41,7 +42,7 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::dropIfExists('showroom_asset_links');
-        Schema::dropIfExists('showroom_assets');
+        Schema::dropIfExists(Tables::name('asset_links'));
+        Schema::dropIfExists(Tables::name('assets'));
     }
 };

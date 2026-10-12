@@ -10,14 +10,6 @@ use RefactorCircus\Showroom\Domains\Category\Models\CategoryModel;
 
 final class ShowCategoryAction
 {
-    /**
-     * @return array<string, mixed>
-     */
-    public static function rules(): array
-    {
-        return [];
-    }
-
     public function execute(CategoryModel $category): CategoryModel
     {
         CategoryShowingActionEvent::dispatch($category);

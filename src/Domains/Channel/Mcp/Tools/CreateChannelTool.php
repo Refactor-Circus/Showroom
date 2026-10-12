@@ -10,6 +10,7 @@ use Laravel\Mcp\ResponseFactory;
 use Laravel\Mcp\Server\Attributes\Description;
 use RefactorCircus\Keystone\Mcp\Tool;
 use RefactorCircus\Showroom\Domains\Channel\Mcp\Requests\CreateChannelMcpRequest;
+use RefactorCircus\Showroom\Domains\Channel\Resources\ChannelResource;
 
 #[Description('Create a channel: where products are published, in which locales and currencies, from which category tree.')]
 final class CreateChannelTool extends Tool
@@ -28,5 +29,10 @@ final class CreateChannelTool extends Tool
             'currencies' => $schema->array()->description('ISO 4217 codes the channel sells in, such as ["USD", "EUR"]. Scoped prices must use them.'),
             'category_tree' => $schema->string()->description('Code of the root category whose tree the channel sells, or null.'),
         ];
+    }
+
+    public function outputSchema(JsonSchema $schema): array
+    {
+        return ChannelResource::structuredSchema($schema);
     }
 }

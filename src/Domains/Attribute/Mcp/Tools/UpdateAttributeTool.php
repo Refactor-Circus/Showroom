@@ -10,6 +10,7 @@ use Laravel\Mcp\ResponseFactory;
 use Laravel\Mcp\Server\Attributes\Description;
 use RefactorCircus\Keystone\Mcp\Tool;
 use RefactorCircus\Showroom\Domains\Attribute\Mcp\Requests\UpdateAttributeMcpRequest;
+use RefactorCircus\Showroom\Domains\Attribute\Resources\AttributeResource;
 
 #[Description('Update an attribute\'s group, labels, flags, settings or sort order. The code and type cannot change.')]
 final class UpdateAttributeTool extends Tool
@@ -31,5 +32,10 @@ final class UpdateAttributeTool extends Tool
             'settings' => $schema->object()->description('Type-specific validation. text: max_length, regex. textarea: max_length, rich_text. number/decimal: min, max (decimal also decimals). date: min, max. price: currencies (ISO codes), decimals. metric: metric_family and default_unit, both required. Replaces all settings when given.'),
             'sort_order' => $schema->integer()->description('Position in listings, lowest first.')->min(0),
         ];
+    }
+
+    public function outputSchema(JsonSchema $schema): array
+    {
+        return AttributeResource::structuredSchema($schema);
     }
 }

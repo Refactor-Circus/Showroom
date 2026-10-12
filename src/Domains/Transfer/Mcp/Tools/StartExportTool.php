@@ -8,6 +8,7 @@ use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Laravel\Mcp\Response;
 use Laravel\Mcp\ResponseFactory;
 use Laravel\Mcp\Server\Attributes\Description;
+use RefactorCircus\Impex\Domains\Run\Resources\RunResource;
 use RefactorCircus\Keystone\Mcp\Tool;
 use RefactorCircus\Showroom\Domains\Transfer\Mcp\Requests\StartExportMcpRequest;
 
@@ -35,5 +36,10 @@ final class StartExportTool extends Tool
             'scope' => $schema->string()->description('Write only this channel\'s values.'),
             'locales' => $schema->array()->description('Write only these locales\' values.'),
         ];
+    }
+
+    public function outputSchema(JsonSchema $schema): array
+    {
+        return RunResource::structuredSchema($schema);
     }
 }

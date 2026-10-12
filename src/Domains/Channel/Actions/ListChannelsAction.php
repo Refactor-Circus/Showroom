@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace RefactorCircus\Showroom\Domains\Channel\Actions;
 
 use Illuminate\Contracts\Pagination\CursorPaginator;
+use RefactorCircus\Showroom\Domains\Channel\Data\ListChannelsData;
 use RefactorCircus\Showroom\Domains\Channel\Events\ChannelsListedActionEvent;
 use RefactorCircus\Showroom\Domains\Channel\Events\ChannelsListingActionEvent;
 use RefactorCircus\Showroom\Domains\Channel\Models\ChannelModel;
@@ -12,22 +13,9 @@ use RefactorCircus\Showroom\Domains\Channel\Models\ChannelModel;
 final class ListChannelsAction
 {
     /**
-     * @return array<string, mixed>
-     */
-    public static function rules(): array
-    {
-        return [
-            'search' => ['sometimes', 'nullable', 'string', 'max:100'],
-            'cursor' => ['sometimes', 'nullable', 'string'],
-            'per_page' => ['sometimes', 'integer', 'min:1', 'max:'.config('showroom.pagination.max_per_page', 100)],
-        ];
-    }
-
-    /**
-     * @param  array<string, mixed>  $filters
      * @return CursorPaginator<int, ChannelModel>
      */
-    public function execute(array $filters = []): CursorPaginator
+    public function execute(ListChannelsData $filters = new ListChannelsData): CursorPaginator
     {
         ChannelsListingActionEvent::dispatch($filters);
 
@@ -39,20 +27,19 @@ final class ListChannelsAction
     }
 
     /**
-     * @param  array<string, mixed>  $filters
      * @return CursorPaginator<int, ChannelModel>
      */
-    private function perform(array $filters): CursorPaginator
+    private function perform(ListChannelsData $filters): CursorPaginator
     {
         $query = ChannelModel::query()->with(['locales', 'categoryTree'])->orderBy('code');
 
-        if (is_string($filters['search'] ?? null) && $filters['search'] !== '') {
-            $query->search($filters['search']);
+        if ($filters->search !== null && $filters->search !== '') {
+            $query->search($filters->search);
         }
 
         return $query->cursorPaginate(
-            perPage: isset($filters['per_page']) ? (int) $filters['per_page'] : (int) config('showroom.pagination.per_page', 25),
-            cursor: is_string($filters['cursor'] ?? null) ? $filters['cursor'] : null,
+            perPage: $filters->perPage ?? ListChannelsData::pagination()->default,
+            cursor: $filters->cursor,
         );
     }
 }

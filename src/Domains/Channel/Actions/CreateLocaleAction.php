@@ -4,29 +4,15 @@ declare(strict_types=1);
 
 namespace RefactorCircus\Showroom\Domains\Channel\Actions;
 
+use Illuminate\Support\Facades\DB;
+use RefactorCircus\Showroom\Domains\Channel\Data\CreateLocaleData;
 use RefactorCircus\Showroom\Domains\Channel\Events\LocaleCreatedActionEvent;
 use RefactorCircus\Showroom\Domains\Channel\Events\LocaleCreatingActionEvent;
 use RefactorCircus\Showroom\Domains\Channel\Models\LocaleModel;
 
 final class CreateLocaleAction
 {
-    /**
-     * @return array<string, mixed>
-     */
-    public static function rules(): array
-    {
-        return [
-            // A language, optionally with a region or script: en, en_US, zh-Hant.
-            'code' => ['required', 'string', 'max:20', 'regex:/^[a-z]{2,3}([_-][A-Za-z0-9]{2,8})*$/', 'unique:showroom_locales,code'],
-            'labels' => ['sometimes', 'nullable', 'array'],
-            'labels.*' => ['nullable', 'string', 'max:255'],
-        ];
-    }
-
-    /**
-     * @param  array<string, mixed>  $data
-     */
-    public function execute(array $data): LocaleModel
+    public function execute(CreateLocaleData $data): LocaleModel
     {
         LocaleCreatingActionEvent::dispatch($data);
 
@@ -37,14 +23,13 @@ final class CreateLocaleAction
         return $result;
     }
 
-    /**
-     * @param  array<string, mixed>  $data
-     */
-    private function perform(array $data): LocaleModel
+    private function perform(CreateLocaleData $data): LocaleModel
     {
-        return LocaleModel::query()->create([
-            'code' => $data['code'],
-            'labels' => $data['labels'] ?? [],
-        ]);
+        return DB::transaction(function () use ($data): LocaleModel {
+            return LocaleModel::query()->create([
+                'code' => $data->code,
+                'labels' => $data->labels ?? [],
+            ]);
+        });
     }
 }

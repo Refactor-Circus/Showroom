@@ -6,6 +6,7 @@ namespace RefactorCircus\Showroom\Domains\Attribute\Http\Requests;
 
 use Illuminate\Http\JsonResponse;
 use RefactorCircus\Showroom\Domains\Attribute\Actions\ListAttributeOptionsAction;
+use RefactorCircus\Showroom\Domains\Attribute\Data\ListAttributeOptionsData;
 use RefactorCircus\Showroom\Domains\Attribute\Models\AttributeOptionModel;
 use RefactorCircus\Showroom\Domains\Attribute\Resources\AttributeOptionResource;
 
@@ -18,12 +19,12 @@ final class IndexAttributeOptionsRequest extends AttributeRequest
 
     public function rules(): array
     {
-        return ListAttributeOptionsAction::rules();
+        return ListAttributeOptionsData::rules();
     }
 
     public function persist(): JsonResponse
     {
-        $options = app(ListAttributeOptionsAction::class)->execute($this->catalogAttribute(), $this->validated());
+        $options = app(ListAttributeOptionsAction::class)->execute($this->catalogAttribute(), ListAttributeOptionsData::fromValidated($this->validated()));
 
         return AttributeOptionResource::collection($options)->response();
     }

@@ -17,6 +17,7 @@ use RefactorCircus\Showroom\Database\Factories\FamilyFactory;
 use RefactorCircus\Showroom\Domains\Attribute\Models\AttributeModel;
 use RefactorCircus\Showroom\Domains\Product\Models\ProductModel;
 use RefactorCircus\Showroom\Support\Models\Concerns\HasLabels;
+use RefactorCircus\Showroom\Support\Tables;
 
 /**
  * An attribute set: which attributes a kind of product has, and which of
@@ -41,7 +42,10 @@ final class FamilyModel extends Model
     use HasLabels;
     use HasUlids;
 
-    protected $table = 'showroom_families';
+    public function getTable(): string
+    {
+        return Tables::name('families');
+    }
 
     protected $fillable = [
         'code',
@@ -60,10 +64,10 @@ final class FamilyModel extends Model
      */
     public function familyAttributes(): BelongsToMany
     {
-        return $this->belongsToMany(AttributeModel::class, 'showroom_family_attributes', 'family_id', 'attribute_id')
+        return $this->belongsToMany(AttributeModel::class, Tables::name('family_attributes'), 'family_id', 'attribute_id')
             ->withPivot(['is_required', 'sort_order', 'required_channels'])
             ->orderByPivot('sort_order')
-            ->orderBy('showroom_attributes.code');
+            ->orderBy(Tables::name('attributes').'.code');
     }
 
     /**

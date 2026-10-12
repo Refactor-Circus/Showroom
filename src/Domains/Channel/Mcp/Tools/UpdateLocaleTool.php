@@ -10,6 +10,7 @@ use Laravel\Mcp\ResponseFactory;
 use Laravel\Mcp\Server\Attributes\Description;
 use RefactorCircus\Keystone\Mcp\Tool;
 use RefactorCircus\Showroom\Domains\Channel\Mcp\Requests\UpdateLocaleMcpRequest;
+use RefactorCircus\Showroom\Domains\Channel\Resources\LocaleResource;
 
 #[Description('Update a locale\'s labels. The code cannot change.')]
 final class UpdateLocaleTool extends Tool
@@ -25,5 +26,10 @@ final class UpdateLocaleTool extends Tool
             'locale' => $schema->string()->description('The locale code.')->required(),
             'labels' => $schema->object()->description('Labels keyed by locale. Replaces all labels when given.'),
         ];
+    }
+
+    public function outputSchema(JsonSchema $schema): array
+    {
+        return LocaleResource::structuredSchema($schema);
     }
 }

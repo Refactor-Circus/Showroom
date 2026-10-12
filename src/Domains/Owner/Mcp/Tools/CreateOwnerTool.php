@@ -10,6 +10,7 @@ use Laravel\Mcp\ResponseFactory;
 use Laravel\Mcp\Server\Attributes\Description;
 use RefactorCircus\Keystone\Mcp\Tool;
 use RefactorCircus\Showroom\Domains\Owner\Mcp\Requests\CreateOwnerMcpRequest;
+use RefactorCircus\Showroom\Domains\Owner\Resources\OwnerResource;
 
 #[Description('Create an owner, such as a vendor or a series under a vendor. Its type\'s rules decide which parents are allowed.')]
 final class CreateOwnerTool extends Tool
@@ -27,5 +28,10 @@ final class CreateOwnerTool extends Tool
             'parent' => $schema->string()->description('Code of the parent owner, or null for a root owner. On update, moves the owner with everything beneath it.'),
             'labels' => $schema->object()->description('Labels keyed by locale. Replaces all labels when given.'),
         ];
+    }
+
+    public function outputSchema(JsonSchema $schema): array
+    {
+        return OwnerResource::structuredSchema($schema);
     }
 }

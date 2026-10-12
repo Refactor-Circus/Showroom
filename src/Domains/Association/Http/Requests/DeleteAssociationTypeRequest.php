@@ -14,11 +14,6 @@ final class DeleteAssociationTypeRequest extends AssociationTypeRequest
         return $this->allows('delete', $this->associationType());
     }
 
-    public function rules(): array
-    {
-        return DeleteAssociationTypeAction::rules();
-    }
-
     public function persist(): JsonResponse
     {
         app(DeleteAssociationTypeAction::class)->execute($this->associationType());

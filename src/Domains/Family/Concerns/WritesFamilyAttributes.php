@@ -7,6 +7,7 @@ namespace RefactorCircus\Showroom\Domains\Family\Concerns;
 use Illuminate\Validation\ValidationException;
 use RefactorCircus\Showroom\Domains\Attribute\Enums\AttributeType;
 use RefactorCircus\Showroom\Domains\Attribute\Models\AttributeModel;
+use RefactorCircus\Showroom\Domains\Family\Data\FamilyAttributeData;
 use RefactorCircus\Showroom\Domains\Family\Models\FamilyModel;
 
 /**
@@ -15,57 +16,29 @@ use RefactorCircus\Showroom\Domains\Family\Models\FamilyModel;
 trait WritesFamilyAttributes
 {
     /**
-     * @return array<string, mixed>
-     */
-    private static function familyRules(): array
-    {
-        return [
-            'labels' => ['sometimes', 'nullable', 'array'],
-            'labels.*' => ['nullable', 'string', 'max:255'],
-            'label_attribute' => ['sometimes', 'nullable', 'string', 'exists:showroom_attributes,code'],
-            'attributes' => ['sometimes', 'array'],
-            'attributes.*' => ['array'],
-            'attributes.*.attribute' => ['required', 'string', 'distinct', 'exists:showroom_attributes,code'],
-            'attributes.*.is_required' => ['sometimes', 'boolean'],
-            'attributes.*.sort_order' => ['sometimes', 'integer', 'min:0'],
-            // Narrow a requirement to some channels; without it, a required
-            // attribute is required on every channel.
-            'attributes.*.required_channels' => ['sometimes', 'nullable', 'array', 'list'],
-            'attributes.*.required_channels.*' => ['string', 'distinct', 'exists:showroom_channels,code'],
-            'sort_order' => ['sometimes', 'integer', 'min:0'],
-        ];
-    }
-
-    /**
      * Replace the family's attributes with the given list, in its order
-     * unless each entry sets its own `sort_order`.
+     * unless a member sets its own sort order.
      *
-     * @param  array<int, mixed>  $members
+     * @param  array<int, FamilyAttributeData>  $members
      */
     private function replaceAttributes(FamilyModel $family, array $members): void
     {
-        $codes = [];
-
-        foreach ($members as $member) {
-            if (is_array($member) && is_string($member['attribute'] ?? null)) {
-                $codes[] = $member['attribute'];
-            }
-        }
-
-        $ids = AttributeModel::query()->whereIn('code', $codes)->pluck('id', 'code');
+        $ids = AttributeModel::query()
+            ->whereIn('code', array_map(fn (FamilyAttributeData $member): string => $member->attribute, $members))
+            ->pluck('id', 'code');
 
         $sync = [];
 
         foreach (array_values($members) as $position => $member) {
-            if (! is_array($member) || ! is_string($member['attribute'] ?? null) || ! $ids->has($member['attribute'])) {
+            if (! $ids->has($member->attribute)) {
                 continue;
             }
 
-            $sync[(string) $ids->get($member['attribute'])] = [
-                'is_required' => (bool) ($member['is_required'] ?? false),
-                'sort_order' => isset($member['sort_order']) ? (int) $member['sort_order'] : $position,
-                'required_channels' => is_array($member['required_channels'] ?? null)
-                    ? json_encode(array_values($member['required_channels']), JSON_THROW_ON_ERROR)
+            $sync[(string) $ids->get($member->attribute)] = [
+                'is_required' => $member->isRequired,
+                'sort_order' => $member->sortOrder ?? $position,
+                'required_channels' => $member->requiredChannels !== null
+                    ? json_encode($member->requiredChannels, JSON_THROW_ON_ERROR)
                     : null,
             ];
         }
@@ -76,19 +49,13 @@ trait WritesFamilyAttributes
     /**
      * Refuse to drop an attribute a family variant places on a level.
      *
-     * @param  array<int, mixed>  $members
+     * @param  array<int, FamilyAttributeData>  $members
      *
      * @throws ValidationException
      */
     private function keepVariantAttributes(FamilyModel $family, array $members): void
     {
-        $kept = [];
-
-        foreach ($members as $member) {
-            if (is_array($member) && is_string($member['attribute'] ?? null)) {
-                $kept[] = $member['attribute'];
-            }
-        }
+        $kept = array_map(fn (FamilyAttributeData $member): string => $member->attribute, $members);
 
         foreach ($family->variants()->with('variantAttributes')->get() as $variant) {
             foreach ($variant->variantAttributes as $attribute) {

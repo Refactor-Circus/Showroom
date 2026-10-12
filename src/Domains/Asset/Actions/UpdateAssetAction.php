@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace RefactorCircus\Showroom\Domains\Asset\Actions;
 
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use RefactorCircus\Showroom\Domains\Asset\Concerns\StoresAssetFiles;
+use RefactorCircus\Showroom\Domains\Asset\Data\UpdateAssetData;
 use RefactorCircus\Showroom\Domains\Asset\Events\AssetUpdatedActionEvent;
 use RefactorCircus\Showroom\Domains\Asset\Events\AssetUpdatingActionEvent;
 use RefactorCircus\Showroom\Domains\Asset\Models\AssetModel;
@@ -15,29 +17,12 @@ final class UpdateAssetAction
 {
     use StoresAssetFiles;
 
-    /**
-     * Sending `file`, `path` or `url` replaces the file; the code and every
-     * link stay as they are.
-     *
-     * @return array<string, mixed>
-     */
-    public static function rules(): array
-    {
-        return [
-            'code' => ['prohibited'],
-            'labels' => ['sometimes', 'nullable', 'array'],
-            'labels.*' => ['nullable', 'string', 'max:255'],
-        ] + self::sourceRules(required: false);
-    }
-
     public function __construct(private readonly AssetStorage $storage) {}
 
     /**
-     * @param  array<string, mixed>  $data
-     *
      * @throws ValidationException
      */
-    public function execute(AssetModel $asset, array $data): AssetModel
+    public function execute(AssetModel $asset, UpdateAssetData $data): AssetModel
     {
         AssetUpdatingActionEvent::dispatch($asset, $data);
 
@@ -48,31 +33,39 @@ final class UpdateAssetAction
         return $result;
     }
 
-    /**
-     * @param  array<string, mixed>  $data
-     */
-    private function perform(AssetModel $asset, array $data): AssetModel
+    private function perform(AssetModel $asset, UpdateAssetData $data): AssetModel
     {
-        if (array_key_exists('labels', $data)) {
-            $asset->labels = is_array($data['labels']) ? $data['labels'] : [];
-        }
+        // The new file is written before the transaction, so a slow upload or
+        // download holds no locks.
+        $stored = $this->storeSource($this->storage, $data->file, $data->path, $data->url);
 
-        $stored = $this->storeSource($this->storage, $data);
+        return DB::transaction(function () use ($asset, $data, $stored): AssetModel {
+            if ($data->has('labels')) {
+                $asset->labels = is_array($data->labels) ? $data->labels : [];
+            }
 
-        if ($stored !== null) {
+            if ($stored === null) {
+                $asset->save();
+
+                return $asset;
+            }
+
+            // A rollback - here or by a surrounding transaction - removes the
+            // file just written (an adopted file is the caller's) and keeps
+            // the old one, which the record still points at.
+            if ($data->path === null) {
+                DB::afterRollBack(fn () => $this->storage->discard($stored));
+            }
+
             $previous = $asset->replicate();
             $asset->fill($stored->toAttributes());
             $asset->save();
 
             if ($previous->path !== $asset->path || $previous->disk !== $asset->disk) {
-                $this->storage->delete($previous);
+                DB::afterCommit(fn () => $this->storage->delete($previous));
             }
 
             return $asset;
-        }
-
-        $asset->save();
-
-        return $asset;
+        });
     }
 }

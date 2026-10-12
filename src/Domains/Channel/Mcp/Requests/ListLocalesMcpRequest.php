@@ -7,6 +7,7 @@ namespace RefactorCircus\Showroom\Domains\Channel\Mcp\Requests;
 use Laravel\Mcp\ResponseFactory;
 use RefactorCircus\Keystone\Mcp\Requests\Request;
 use RefactorCircus\Showroom\Domains\Channel\Actions\ListLocalesAction;
+use RefactorCircus\Showroom\Domains\Channel\Data\ListLocalesData;
 use RefactorCircus\Showroom\Domains\Channel\Models\LocaleModel;
 use RefactorCircus\Showroom\Domains\Channel\Resources\LocaleResource;
 
@@ -19,16 +20,13 @@ final class ListLocalesMcpRequest extends Request
 
     protected function rules(): array
     {
-        return ListLocalesAction::rules();
+        return ListLocalesData::rules();
     }
 
     protected function handle(array $validated): ResponseFactory
     {
-        $locales = app(ListLocalesAction::class)->execute($validated);
+        $locales = app(ListLocalesAction::class)->execute(ListLocalesData::fromValidated($validated));
 
-        return $this->structuredCollection(
-            LocaleResource::collection($locales)->resolve(),
-            ['next_cursor' => $locales->nextCursor()?->encode()],
-        );
+        return LocaleResource::collection($locales)->toStructuredResponse();
     }
 }

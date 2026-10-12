@@ -17,7 +17,7 @@ final class DeleteAssociationTypeMcpRequest extends AssociationTypeRequest
 
     protected function rules(): array
     {
-        return DeleteAssociationTypeAction::rules() + [
+        return [
             'association_type' => ['required', 'string', 'max:100'],
         ];
     }

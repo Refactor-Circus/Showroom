@@ -7,6 +7,7 @@ namespace RefactorCircus\Showroom\Domains\Owner\Actions;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use RefactorCircus\Showroom\Domains\Owner\Concerns\PlacesOwners;
+use RefactorCircus\Showroom\Domains\Owner\Data\CreateOwnerData;
 use RefactorCircus\Showroom\Domains\Owner\Events\OwnerCreatedActionEvent;
 use RefactorCircus\Showroom\Domains\Owner\Events\OwnerCreatingActionEvent;
 use RefactorCircus\Showroom\Domains\Owner\Models\OwnerModel;
@@ -17,25 +18,9 @@ final class CreateOwnerAction
     use PlacesOwners;
 
     /**
-     * @return array<string, mixed>
-     */
-    public static function rules(): array
-    {
-        return [
-            'code' => ['required', 'string', 'max:191', 'regex:/^[A-Za-z0-9][A-Za-z0-9_.-]*$/', 'unique:showroom_owners,code'],
-            'type' => ['required', 'string', 'exists:showroom_owner_types,code'],
-            'parent' => ['sometimes', 'nullable', 'string', 'exists:showroom_owners,code'],
-            'labels' => ['sometimes', 'nullable', 'array'],
-            'labels.*' => ['nullable', 'string', 'max:255'],
-        ];
-    }
-
-    /**
-     * @param  array<string, mixed>  $data
-     *
      * @throws ValidationException
      */
-    public function execute(array $data): OwnerModel
+    public function execute(CreateOwnerData $data): OwnerModel
     {
         OwnerCreatingActionEvent::dispatch($data);
 
@@ -46,18 +31,15 @@ final class CreateOwnerAction
         return $result;
     }
 
-    /**
-     * @param  array<string, mixed>  $data
-     */
-    private function perform(array $data): OwnerModel
+    private function perform(CreateOwnerData $data): OwnerModel
     {
         return DB::transaction(function () use ($data): OwnerModel {
-            $type = OwnerTypeModel::query()->with('parentTypes')->where('code', $data['type'])->firstOrFail();
-            $parent = is_string($data['parent'] ?? null) ? OwnerModel::query()->where('code', $data['parent'])->firstOrFail() : null;
+            $type = OwnerTypeModel::query()->with('parentTypes')->where('code', $data->type)->firstOrFail();
+            $parent = $data->parent !== null ? OwnerModel::query()->where('code', $data->parent)->firstOrFail() : null;
 
             $owner = new OwnerModel([
-                'code' => $data['code'],
-                'labels' => $data['labels'] ?? [],
+                'code' => $data->code,
+                'labels' => $data->labels ?? [],
                 'path' => '',
             ]);
             $owner->type()->associate($type);

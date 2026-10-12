@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace RefactorCircus\Showroom\Domains\Association\Actions;
 
+use Illuminate\Support\Facades\DB;
 use RefactorCircus\Showroom\Domains\Association\Events\AssociationTypeDeletedActionEvent;
 use RefactorCircus\Showroom\Domains\Association\Events\AssociationTypeDeletingActionEvent;
 use RefactorCircus\Showroom\Domains\Association\Models\AssociationTypeModel;
@@ -11,14 +12,6 @@ use RefactorCircus\Showroom\Exceptions\ModelInUseException;
 
 final class DeleteAssociationTypeAction
 {
-    /**
-     * @return array<string, mixed>
-     */
-    public static function rules(): array
-    {
-        return [];
-    }
-
     public function execute(AssociationTypeModel $associationType): AssociationTypeModel
     {
         AssociationTypeDeletingActionEvent::dispatch($associationType);
@@ -32,14 +25,16 @@ final class DeleteAssociationTypeAction
 
     private function perform(AssociationTypeModel $associationType): AssociationTypeModel
     {
-        $count = $associationType->associations()->count();
+        return DB::transaction(function () use ($associationType): AssociationTypeModel {
+            $count = $associationType->associations()->count();
 
-        if ($count > 0) {
-            throw ModelInUseException::associationTypeInUse($associationType->code, $count);
-        }
+            if ($count > 0) {
+                throw ModelInUseException::associationTypeInUse($associationType->code, $count);
+            }
 
-        $associationType->delete();
+            $associationType->delete();
 
-        return $associationType;
+            return $associationType;
+        });
     }
 }

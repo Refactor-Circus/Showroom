@@ -10,6 +10,7 @@ use Laravel\Mcp\ResponseFactory;
 use Laravel\Mcp\Server\Attributes\Description;
 use RefactorCircus\Keystone\Mcp\Tool;
 use RefactorCircus\Showroom\Domains\Association\Mcp\Requests\UpdateAssociationTypeMcpRequest;
+use RefactorCircus\Showroom\Domains\Association\Resources\AssociationTypeResource;
 
 #[Description('Update an association type\'s labels. The code and flags cannot change.')]
 final class UpdateAssociationTypeTool extends Tool
@@ -25,5 +26,10 @@ final class UpdateAssociationTypeTool extends Tool
             'association_type' => $schema->string()->description('The association type code.')->required(),
             'labels' => $schema->object()->description('Labels keyed by locale. Replaces all labels when given.'),
         ];
+    }
+
+    public function outputSchema(JsonSchema $schema): array
+    {
+        return AssociationTypeResource::structuredSchema($schema);
     }
 }

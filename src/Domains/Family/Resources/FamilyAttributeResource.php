@@ -4,8 +4,11 @@ declare(strict_types=1);
 
 namespace RefactorCircus\Showroom\Domains\Family\Resources;
 
+use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Illuminate\Http\Request;
-use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\JsonSchema\Types\Type;
+use RefactorCircus\Keystone\Http\Resources\JsonResource;
+use RefactorCircus\Showroom\Domains\Attribute\Enums\AttributeType;
 use RefactorCircus\Showroom\Domains\Attribute\Models\AttributeModel;
 
 /**
@@ -15,6 +18,21 @@ use RefactorCircus\Showroom\Domains\Attribute\Models\AttributeModel;
  */
 final class FamilyAttributeResource extends JsonResource
 {
+    /**
+     * @return array<string, Type>
+     */
+    public static function schema(JsonSchema $schema): array
+    {
+        return [
+            'attribute' => $schema->string()->required(),
+            'type' => $schema->string()->enum(array_column(AttributeType::cases(), 'value'))->required(),
+            'group' => $schema->string()->nullable()->description('When loaded.'),
+            'is_required' => $schema->boolean()->required(),
+            'required_channels' => $schema->array()->items($schema->string())->nullable()->description('Null: required on every channel.')->required(),
+            'sort_order' => $schema->integer()->required(),
+        ];
+    }
+
     /**
      * @return array<string, mixed>
      */

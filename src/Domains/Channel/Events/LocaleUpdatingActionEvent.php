@@ -7,6 +7,7 @@ namespace RefactorCircus\Showroom\Domains\Channel\Events;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 use RefactorCircus\Keystone\Contracts\ActionStartingEvent;
+use RefactorCircus\Showroom\Domains\Channel\Data\UpdateLocaleData;
 use RefactorCircus\Showroom\Domains\Channel\Models\LocaleModel;
 
 /**
@@ -17,11 +18,8 @@ final class LocaleUpdatingActionEvent implements ActionStartingEvent
     use Dispatchable;
     use SerializesModels;
 
-    /**
-     * @param  array<string, mixed>  $data
-     */
     public function __construct(
         public LocaleModel $locale,
-        public array $data,
+        public UpdateLocaleData $data,
     ) {}
 }

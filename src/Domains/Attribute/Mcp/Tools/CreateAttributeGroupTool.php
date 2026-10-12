@@ -10,6 +10,7 @@ use Laravel\Mcp\ResponseFactory;
 use Laravel\Mcp\Server\Attributes\Description;
 use RefactorCircus\Keystone\Mcp\Tool;
 use RefactorCircus\Showroom\Domains\Attribute\Mcp\Requests\CreateAttributeGroupMcpRequest;
+use RefactorCircus\Showroom\Domains\Attribute\Resources\AttributeGroupResource;
 
 #[Description('Create an attribute group, a named section such as "marketing" or "technical" that attributes are organised into.')]
 final class CreateAttributeGroupTool extends Tool
@@ -26,5 +27,10 @@ final class CreateAttributeGroupTool extends Tool
             'labels' => $schema->object()->description('Labels keyed by locale, such as {"en": "Color", "fr": "Couleur"}. Replaces all labels when given.'),
             'sort_order' => $schema->integer()->description('Position in listings, lowest first.')->min(0),
         ];
+    }
+
+    public function outputSchema(JsonSchema $schema): array
+    {
+        return AttributeGroupResource::structuredSchema($schema);
     }
 }

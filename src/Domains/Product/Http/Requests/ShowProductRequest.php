@@ -6,6 +6,7 @@ namespace RefactorCircus\Showroom\Domains\Product\Http\Requests;
 
 use Illuminate\Http\JsonResponse;
 use RefactorCircus\Showroom\Domains\Product\Actions\ShowProductAction;
+use RefactorCircus\Showroom\Domains\Product\Data\ShowProductData;
 use RefactorCircus\Showroom\Domains\Product\Resources\ProductResource;
 
 final class ShowProductRequest extends ProductRequest
@@ -17,7 +18,7 @@ final class ShowProductRequest extends ProductRequest
 
     public function rules(): array
     {
-        return ShowProductAction::rules();
+        return ShowProductData::rules();
     }
 
     /**
@@ -26,7 +27,7 @@ final class ShowProductRequest extends ProductRequest
      */
     public function persist(): JsonResponse
     {
-        $product = app(ShowProductAction::class)->execute($this->product(), $this->validated());
+        $product = app(ShowProductAction::class)->execute($this->product(), ShowProductData::fromValidated($this->validated()));
 
         $response = (new ProductResource($product))->response();
         $response->setEtag(hash('xxh3', (string) $response->getContent()));

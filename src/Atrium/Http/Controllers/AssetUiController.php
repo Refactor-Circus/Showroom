@@ -17,6 +17,11 @@ use RefactorCircus\Showroom\Domains\Asset\Actions\DetachAssetAction;
 use RefactorCircus\Showroom\Domains\Asset\Actions\ListAssetsAction;
 use RefactorCircus\Showroom\Domains\Asset\Actions\ShowAssetAction;
 use RefactorCircus\Showroom\Domains\Asset\Actions\UpdateAssetAction;
+use RefactorCircus\Showroom\Domains\Asset\Data\AttachAssetData;
+use RefactorCircus\Showroom\Domains\Asset\Data\CreateAssetData;
+use RefactorCircus\Showroom\Domains\Asset\Data\DetachAssetData;
+use RefactorCircus\Showroom\Domains\Asset\Data\ListAssetsData;
+use RefactorCircus\Showroom\Domains\Asset\Data\UpdateAssetData;
 use RefactorCircus\Showroom\Domains\Asset\Models\AssetModel;
 use RefactorCircus\Showroom\Domains\Asset\Services\AssetLinks;
 
@@ -28,14 +33,14 @@ final class AssetUiController
     {
         $this->authorizeScreen('viewAny', AssetModel::class);
 
-        $filters = $request->validate(ListAssetsAction::rules());
+        $filters = ListAssetsData::from($request->query());
 
         /** @var view-string $view */
         $view = 'showroom::ui.assets.index';
 
         return view($view, [
             'assets' => app(ListAssetsAction::class)->execute($filters)->withQueryString(),
-            'filters' => $filters,
+            'filters' => $filters->toArray(),
         ]);
     }
 
@@ -43,7 +48,7 @@ final class AssetUiController
     {
         $this->authorizeScreen('create', AssetModel::class);
 
-        $asset = app(CreateAssetAction::class)->execute(Labels::fromForm($request->validate(CreateAssetAction::rules())));
+        $asset = app(CreateAssetAction::class)->execute(CreateAssetData::fromValidated(Labels::fromForm($request->validate(CreateAssetData::rules()))));
 
         return redirect()
             ->route('atrium.showroom.assets.show', $asset)
@@ -58,8 +63,8 @@ final class AssetUiController
     {
         $this->authorizeScreen('create', AssetModel::class);
 
-        $link = $request->validate(AttachAssetAction::rules());
-        $source = $request->validate(CreateAssetAction::rules());
+        $link = AttachAssetData::from($request->all());
+        $source = CreateAssetData::from($request->all());
 
         DB::transaction(function () use ($source, $link): void {
             $asset = app(CreateAssetAction::class)->execute($source);
@@ -91,7 +96,7 @@ final class AssetUiController
     {
         $this->authorizeScreen('update', $asset);
 
-        app(UpdateAssetAction::class)->execute($asset, Labels::fromForm($request->validate(UpdateAssetAction::rules()), $asset->labels));
+        app(UpdateAssetAction::class)->execute($asset, UpdateAssetData::fromValidated(Labels::fromForm($request->validate(UpdateAssetData::rules()), $asset->labels)));
 
         return redirect()
             ->route('atrium.showroom.assets.show', $asset)
@@ -113,7 +118,7 @@ final class AssetUiController
     {
         $this->authorizeScreen('update', $asset);
 
-        app(AttachAssetAction::class)->execute($asset, $request->validate(AttachAssetAction::rules()));
+        app(AttachAssetAction::class)->execute($asset, AttachAssetData::from($request->all()));
 
         return back()->with('status', __('showroom::showroom.asset_attached'));
     }
@@ -122,7 +127,7 @@ final class AssetUiController
     {
         $this->authorizeScreen('update', $asset);
 
-        app(DetachAssetAction::class)->execute($asset, $request->validate(DetachAssetAction::rules()));
+        app(DetachAssetAction::class)->execute($asset, DetachAssetData::from($request->all()));
 
         return back()->with('status', __('showroom::showroom.asset_detached'));
     }

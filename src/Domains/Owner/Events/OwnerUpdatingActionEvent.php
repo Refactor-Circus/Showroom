@@ -7,6 +7,7 @@ namespace RefactorCircus\Showroom\Domains\Owner\Events;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 use RefactorCircus\Keystone\Contracts\ActionStartingEvent;
+use RefactorCircus\Showroom\Domains\Owner\Data\UpdateOwnerData;
 use RefactorCircus\Showroom\Domains\Owner\Models\OwnerModel;
 
 /**
@@ -17,11 +18,8 @@ final class OwnerUpdatingActionEvent implements ActionStartingEvent
     use Dispatchable;
     use SerializesModels;
 
-    /**
-     * @param  array<string, mixed>  $data
-     */
     public function __construct(
         public OwnerModel $owner,
-        public array $data,
+        public UpdateOwnerData $data,
     ) {}
 }

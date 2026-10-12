@@ -4,29 +4,15 @@ declare(strict_types=1);
 
 namespace RefactorCircus\Showroom\Domains\Channel\Actions;
 
+use Illuminate\Support\Facades\DB;
+use RefactorCircus\Showroom\Domains\Channel\Data\UpdateLocaleData;
 use RefactorCircus\Showroom\Domains\Channel\Events\LocaleUpdatedActionEvent;
 use RefactorCircus\Showroom\Domains\Channel\Events\LocaleUpdatingActionEvent;
 use RefactorCircus\Showroom\Domains\Channel\Models\LocaleModel;
 
 final class UpdateLocaleAction
 {
-    /**
-     * @return array<string, mixed>
-     */
-    public static function rules(): array
-    {
-        return [
-            // Stored values are keyed by locale code; it never changes.
-            'code' => ['prohibited'],
-            'labels' => ['sometimes', 'nullable', 'array'],
-            'labels.*' => ['nullable', 'string', 'max:255'],
-        ];
-    }
-
-    /**
-     * @param  array<string, mixed>  $data
-     */
-    public function execute(LocaleModel $locale, array $data): LocaleModel
+    public function execute(LocaleModel $locale, UpdateLocaleData $data): LocaleModel
     {
         LocaleUpdatingActionEvent::dispatch($locale, $data);
 
@@ -37,16 +23,15 @@ final class UpdateLocaleAction
         return $result;
     }
 
-    /**
-     * @param  array<string, mixed>  $data
-     */
-    private function perform(LocaleModel $locale, array $data): LocaleModel
+    private function perform(LocaleModel $locale, UpdateLocaleData $data): LocaleModel
     {
-        if (array_key_exists('labels', $data)) {
-            $locale->labels = is_array($data['labels']) ? $data['labels'] : [];
-            $locale->save();
-        }
+        return DB::transaction(function () use ($locale, $data): LocaleModel {
+            if ($data->has('labels')) {
+                $locale->labels = is_array($data->labels) ? $data->labels : [];
+                $locale->save();
+            }
 
-        return $locale;
+            return $locale;
+        });
     }
 }

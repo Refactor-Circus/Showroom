@@ -12,6 +12,7 @@ use Illuminate\Support\Carbon;
 use RefactorCircus\Keystone\Models\Concerns\DispatchesModelEvents;
 use RefactorCircus\Showroom\Database\Factories\AttributeGroupFactory;
 use RefactorCircus\Showroom\Support\Models\Concerns\HasLabels;
+use RefactorCircus\Showroom\Support\Tables;
 
 /**
  * A named section attributes are organised into, such as "Marketing" or
@@ -34,7 +35,10 @@ final class AttributeGroupModel extends Model
     use HasLabels;
     use HasUlids;
 
-    protected $table = 'showroom_attribute_groups';
+    public function getTable(): string
+    {
+        return Tables::name('attribute_groups');
+    }
 
     protected $fillable = [
         'code',

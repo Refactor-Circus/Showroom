@@ -25,4 +25,12 @@ final class DeleteCategoryTool extends Tool
             'category' => $schema->string()->description('The category code.')->required(),
         ];
     }
+
+    public function outputSchema(JsonSchema $schema): array
+    {
+        return [
+            'deleted' => $schema->boolean()->required(),
+            'code' => $schema->string()->required(),
+        ];
+    }
 }

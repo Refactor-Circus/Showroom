@@ -10,6 +10,7 @@ use Laravel\Mcp\ResponseFactory;
 use Laravel\Mcp\Server\Attributes\Description;
 use RefactorCircus\Keystone\Mcp\Tool;
 use RefactorCircus\Showroom\Domains\Owner\Mcp\Requests\UpdateOwnerTypeMcpRequest;
+use RefactorCircus\Showroom\Domains\Owner\Resources\OwnerTypeResource;
 
 #[Description('Update an owner type\'s labels or chain rules. Rules apply to later writes. The code cannot change.')]
 final class UpdateOwnerTypeTool extends Tool
@@ -29,5 +30,10 @@ final class UpdateOwnerTypeTool extends Tool
             'owns_products' => $schema->boolean()->description('Whether products and product models may be assigned to owners of this type. Default true.'),
             'sort_order' => $schema->integer()->description('Position in listings, lowest first.')->min(0),
         ];
+    }
+
+    public function outputSchema(JsonSchema $schema): array
+    {
+        return OwnerTypeResource::structuredSchema($schema);
     }
 }

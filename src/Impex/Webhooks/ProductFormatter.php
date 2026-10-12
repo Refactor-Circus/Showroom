@@ -116,10 +116,14 @@ final class ProductFormatter implements Formatter
      */
     private function values(array $values, SubscriptionModel $subscription): array
     {
-        $filter = ValueFilter::fromArray([
-            'scope' => $subscription->option('channel'),
-            'locales' => $subscription->option('locales'),
-        ]);
+        // Subscription options are stored as the subscriber set them.
+        $channel = $subscription->option('channel');
+        $locales = $subscription->option('locales');
+
+        $filter = new ValueFilter(
+            scope: is_string($channel) ? $channel : null,
+            locales: is_array($locales) ? array_values(array_filter($locales, is_string(...))) : null,
+        );
 
         return Values::toStandard($filter->apply($values));
     }

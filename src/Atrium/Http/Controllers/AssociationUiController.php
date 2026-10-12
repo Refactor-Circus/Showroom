@@ -7,17 +7,20 @@ namespace RefactorCircus\Showroom\Atrium\Http\Controllers;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 use RefactorCircus\Atrium\Http\Controllers\Concerns\AuthorizesScreens;
 use RefactorCircus\Showroom\Atrium\Support\Labels;
 use RefactorCircus\Showroom\Domains\Association\Actions\CreateAssociationTypeAction;
 use RefactorCircus\Showroom\Domains\Association\Actions\DeleteAssociationTypeAction;
 use RefactorCircus\Showroom\Domains\Association\Actions\ListAssociationTypesAction;
+use RefactorCircus\Showroom\Domains\Association\Data\CreateAssociationTypeData;
+use RefactorCircus\Showroom\Domains\Association\Data\ListAssociationTypesData;
 use RefactorCircus\Showroom\Domains\Association\Models\AssociationTypeModel;
 use RefactorCircus\Showroom\Domains\Product\Actions\UpdateProductAction;
+use RefactorCircus\Showroom\Domains\Product\Data\UpdateProductData;
 use RefactorCircus\Showroom\Domains\Product\Models\ProductModel;
 use RefactorCircus\Showroom\Domains\ProductModel\Actions\UpdateProductModelAction;
+use RefactorCircus\Showroom\Domains\ProductModel\Data\UpdateProductModelData;
 use RefactorCircus\Showroom\Domains\ProductModel\Models\ProductModelModel;
 use RefactorCircus\Showroom\Exceptions\ShowroomException;
 
@@ -38,7 +41,7 @@ final class AssociationUiController
         $view = 'showroom::ui.association-types.index';
 
         return view($view, [
-            'types' => app(ListAssociationTypesAction::class)->execute($request->validate(ListAssociationTypesAction::rules()))->withQueryString(),
+            'types' => app(ListAssociationTypesAction::class)->execute(ListAssociationTypesData::from($request->query()))->withQueryString(),
         ]);
     }
 
@@ -46,7 +49,7 @@ final class AssociationUiController
     {
         $this->authorizeScreen('create', AssociationTypeModel::class);
 
-        app(CreateAssociationTypeAction::class)->execute(Labels::fromForm($request->validate(CreateAssociationTypeAction::rules())));
+        app(CreateAssociationTypeAction::class)->execute(CreateAssociationTypeData::fromValidated(Labels::fromForm($request->validate(CreateAssociationTypeData::rules()))));
 
         return redirect()
             ->route('atrium.showroom.association-types.index')
@@ -76,7 +79,7 @@ final class AssociationUiController
         $input = $request->validate([
             'source_kind' => ['required', Rule::in(['product', 'product_model'])],
             'source' => ['required', 'string'],
-            'type' => ['required', 'string', 'exists:showroom_association_types,code'],
+            'type' => ['required', 'string', Rule::exists(AssociationTypeModel::class, 'code')],
             'target_kind' => ['required', Rule::in(['products', 'product_models'])],
             'target' => ['required', 'string'],
             'quantity' => ['sometimes', 'nullable', 'integer', 'min:1'],
@@ -107,7 +110,7 @@ final class AssociationUiController
         $input = $request->validate([
             'source_kind' => ['required', Rule::in(['product', 'product_model'])],
             'source' => ['required', 'string'],
-            'type' => ['required', 'string', 'exists:showroom_association_types,code'],
+            'type' => ['required', 'string', Rule::exists(AssociationTypeModel::class, 'code')],
             'target_kind' => ['required', Rule::in(['products', 'product_models'])],
             'target' => ['required', 'string'],
         ]);
@@ -199,7 +202,7 @@ final class AssociationUiController
 
         // Built by the page, so held to the Action's rules too.
         $record instanceof ProductModel
-            ? app(UpdateProductAction::class)->execute($record, Validator::validate($payload, UpdateProductAction::rules()))
-            : app(UpdateProductModelAction::class)->execute($record, Validator::validate($payload, UpdateProductModelAction::rules()));
+            ? app(UpdateProductAction::class)->execute($record, UpdateProductData::from($payload))
+            : app(UpdateProductModelAction::class)->execute($record, UpdateProductModelData::from($payload));
     }
 }

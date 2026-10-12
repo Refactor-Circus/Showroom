@@ -13,6 +13,7 @@ use RefactorCircus\Showroom\Atrium\Support\Labels;
 use RefactorCircus\Showroom\Domains\Family\Actions\CreateFamilyVariantAction;
 use RefactorCircus\Showroom\Domains\Family\Actions\DeleteFamilyVariantAction;
 use RefactorCircus\Showroom\Domains\Family\Actions\ShowFamilyVariantAction;
+use RefactorCircus\Showroom\Domains\Family\Data\CreateFamilyVariantData;
 use RefactorCircus\Showroom\Domains\Family\Models\FamilyVariantModel;
 use RefactorCircus\Showroom\Exceptions\ShowroomException;
 
@@ -41,7 +42,7 @@ final class FamilyVariantUiController
         ));
 
         $variant = app(CreateFamilyVariantAction::class)->execute(
-            Labels::fromForm(Validator::validate($input, CreateFamilyVariantAction::rules())),
+            CreateFamilyVariantData::fromValidated(Labels::fromForm(Validator::validate($input, CreateFamilyVariantData::rules()))),
         );
 
         return redirect()

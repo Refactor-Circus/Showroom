@@ -6,11 +6,17 @@ namespace RefactorCircus\Showroom\Tests\Fixtures;
 
 use RefactorCircus\Showroom\Domains\Attribute\Actions\CreateAttributeAction;
 use RefactorCircus\Showroom\Domains\Attribute\Actions\CreateAttributeOptionAction;
+use RefactorCircus\Showroom\Domains\Attribute\Data\CreateAttributeData;
+use RefactorCircus\Showroom\Domains\Attribute\Data\CreateAttributeOptionData;
 use RefactorCircus\Showroom\Domains\Attribute\Models\AttributeModel;
 use RefactorCircus\Showroom\Domains\Channel\Actions\CreateChannelAction;
 use RefactorCircus\Showroom\Domains\Channel\Actions\CreateLocaleAction;
+use RefactorCircus\Showroom\Domains\Channel\Data\CreateChannelData;
+use RefactorCircus\Showroom\Domains\Channel\Data\CreateLocaleData;
 use RefactorCircus\Showroom\Domains\Family\Actions\CreateFamilyAction;
 use RefactorCircus\Showroom\Domains\Family\Actions\CreateFamilyVariantAction;
+use RefactorCircus\Showroom\Domains\Family\Data\CreateFamilyData;
+use RefactorCircus\Showroom\Domains\Family\Data\CreateFamilyVariantData;
 
 /**
  * A small apparel catalog: shirts that vary by color, then by size, sold
@@ -21,14 +27,14 @@ final class Catalog
     public static function apparel(): void
     {
         foreach (['en', 'fr', 'de'] as $locale) {
-            app(CreateLocaleAction::class)->execute(['code' => $locale]);
+            app(CreateLocaleAction::class)->execute(new CreateLocaleData(code: $locale));
         }
 
-        app(CreateChannelAction::class)->execute(['code' => 'ecommerce', 'locales' => ['en', 'fr'], 'currencies' => ['USD', 'EUR']]);
-        app(CreateChannelAction::class)->execute(['code' => 'print', 'locales' => ['en'], 'currencies' => ['USD']]);
+        app(CreateChannelAction::class)->execute(new CreateChannelData(code: 'ecommerce', locales: ['en', 'fr'], currencies: ['USD', 'EUR']));
+        app(CreateChannelAction::class)->execute(new CreateChannelData(code: 'print', locales: ['en'], currencies: ['USD']));
 
-        $attribute = fn (array $data): AttributeModel => app(CreateAttributeAction::class)->execute($data);
-        $option = fn (AttributeModel $attribute, string $code) => app(CreateAttributeOptionAction::class)->execute($attribute, ['code' => $code]);
+        $attribute = fn (array $data): AttributeModel => app(CreateAttributeAction::class)->execute(CreateAttributeData::from($data));
+        $option = fn (AttributeModel $attribute, string $code) => app(CreateAttributeOptionAction::class)->execute($attribute, new CreateAttributeOptionData(code: $code));
 
         $attribute(['code' => 'name', 'type' => 'text']);
         $attribute(['code' => 'description', 'type' => 'textarea', 'is_localizable' => true]);
@@ -56,30 +62,30 @@ final class Catalog
             $option($tags, $code);
         }
 
-        app(CreateFamilyAction::class)->execute([
+        app(CreateFamilyAction::class)->execute(CreateFamilyData::from([
             'code' => 'shirts',
             'attributes' => array_map(fn (string $code): array => ['attribute' => $code], [
                 'name', 'description', 'ean', 'weight', 'price', 'pack_size', 'rating', 'organic', 'released', 'color', 'size', 'tags',
             ]),
             'label_attribute' => 'name',
-        ]);
+        ]));
 
-        app(CreateFamilyVariantAction::class)->execute([
+        app(CreateFamilyVariantAction::class)->execute(CreateFamilyVariantData::from([
             'code' => 'shirts_by_color_size',
             'family' => 'shirts',
             'levels' => [
                 ['axes' => ['color'], 'attributes' => ['price']],
                 ['axes' => ['size'], 'attributes' => ['ean', 'weight']],
             ],
-        ]);
+        ]));
 
-        app(CreateFamilyVariantAction::class)->execute([
+        app(CreateFamilyVariantAction::class)->execute(CreateFamilyVariantData::from([
             'code' => 'shirts_by_size',
             'family' => 'shirts',
             'levels' => [
                 ['axes' => ['size'], 'attributes' => ['ean']],
             ],
-        ]);
+        ]));
     }
 
     /**

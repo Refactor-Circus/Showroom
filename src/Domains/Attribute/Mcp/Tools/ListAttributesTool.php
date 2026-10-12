@@ -9,7 +9,9 @@ use Laravel\Mcp\Response;
 use Laravel\Mcp\ResponseFactory;
 use Laravel\Mcp\Server\Attributes\Description;
 use RefactorCircus\Keystone\Mcp\Tool;
+use RefactorCircus\Showroom\Domains\Attribute\Data\ListAttributesData;
 use RefactorCircus\Showroom\Domains\Attribute\Mcp\Requests\ListAttributesMcpRequest;
+use RefactorCircus\Showroom\Domains\Attribute\Resources\AttributeResource;
 
 #[Description('List attributes, the typed product characteristics of the catalog, in display order. Filter by type, group, or search. Cursor paginated.')]
 final class ListAttributesTool extends Tool
@@ -25,8 +27,11 @@ final class ListAttributesTool extends Tool
             'type' => $schema->string()->description('Only attributes of this type: text, textarea, number, decimal, boolean, date, select, multiselect, price, or metric.'),
             'group' => $schema->string()->description('Only attributes in this attribute group code.'),
             'search' => $schema->string()->description('Match against the code or any label.'),
-            'cursor' => $schema->string()->description('Cursor from a previous page (next_cursor).'),
-            'per_page' => $schema->integer()->description('Results per page.')->min(1),
-        ];
+        ] + ListAttributesData::pagination()->schema($schema);
+    }
+
+    public function outputSchema(JsonSchema $schema): array
+    {
+        return AttributeResource::collectionSchema($schema, ListAttributesData::pagination());
     }
 }

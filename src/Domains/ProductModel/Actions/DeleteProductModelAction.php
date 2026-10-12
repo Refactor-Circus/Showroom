@@ -16,14 +16,6 @@ use RefactorCircus\Showroom\Domains\Workflow\Services\Versions;
 
 final class DeleteProductModelAction
 {
-    /**
-     * @return array<string, mixed>
-     */
-    public static function rules(): array
-    {
-        return [];
-    }
-
     public function __construct(private readonly ProductIndex $index) {}
 
     public function execute(ProductModelModel $productModel): ProductModelModel

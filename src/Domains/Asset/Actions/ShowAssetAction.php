@@ -10,14 +10,6 @@ use RefactorCircus\Showroom\Domains\Asset\Models\AssetModel;
 
 final class ShowAssetAction
 {
-    /**
-     * @return array<string, mixed>
-     */
-    public static function rules(): array
-    {
-        return [];
-    }
-
     public function execute(AssetModel $asset): AssetModel
     {
         AssetShowingActionEvent::dispatch($asset);

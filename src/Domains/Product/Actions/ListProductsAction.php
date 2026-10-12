@@ -4,15 +4,11 @@ declare(strict_types=1);
 
 namespace RefactorCircus\Showroom\Domains\Product\Actions;
 
-use Illuminate\Validation\Rule;
-use RefactorCircus\Showroom\Domains\Attribute\Data\ValueFilter;
-use RefactorCircus\Showroom\Domains\Product\Enums\ProductStatus;
+use RefactorCircus\Showroom\Domains\Product\Data\ListProductsData;
 use RefactorCircus\Showroom\Domains\Product\Events\ProductsListedActionEvent;
 use RefactorCircus\Showroom\Domains\Product\Events\ProductsListingActionEvent;
 use RefactorCircus\Showroom\Domains\Product\Models\ProductModel;
 use RefactorCircus\Showroom\Domains\Search\Contracts\SearchEngine;
-use RefactorCircus\Showroom\Domains\Search\Data\Filter;
-use RefactorCircus\Showroom\Domains\Search\Data\ProductQuery;
 use RefactorCircus\Showroom\Domains\Search\Support\ProductPage;
 
 /**
@@ -22,59 +18,7 @@ final class ListProductsAction
 {
     public function __construct(private readonly SearchEngine $engine) {}
 
-    /**
-     * @return array<string, mixed>
-     */
-    public static function rules(): array
-    {
-        $sortable = [];
-
-        foreach (ProductQuery::SORTABLE as $field) {
-            $sortable[] = $field;
-            $sortable[] = '-'.$field;
-        }
-
-        return [
-            'search' => ['sometimes', 'nullable', 'string', 'max:255'],
-            'family' => ['sometimes', 'nullable', 'string', 'max:100'],
-            'enabled' => ['sometimes', 'nullable', 'boolean'],
-            'parent' => ['sometimes', 'nullable', 'string', 'max:191'],
-            // Owned by this owner or anything beneath it.
-            'owner' => ['sometimes', 'nullable', 'string', 'max:191'],
-            // In this category or any category beneath it.
-            'category' => ['sometimes', 'nullable', 'string', 'max:100'],
-            'status' => ['sometimes', 'nullable', Rule::enum(ProductStatus::class)],
-            'published' => ['sometimes', 'nullable', 'boolean'],
-            // Products where anything they show changed at or after this
-            // moment — their own data, categories, associations, assets, or
-            // what they inherit from a model, family, category, owner or
-            // channel. Filters on changed_at.
-            'updated_since' => ['sometimes', 'nullable', 'date'],
-            // At least `min` percent complete on a channel, in one locale or all of its locales.
-            'complete' => ['sometimes', 'nullable', 'array'],
-            'complete.scope' => ['required_with:complete', 'string', 'exists:showroom_channels,code'],
-            'complete.locale' => ['sometimes', 'nullable', 'string', 'exists:showroom_locales,code'],
-            'complete.min' => ['sometimes', 'integer', 'min:0', 'max:100'],
-            'filters' => ['sometimes', 'array', 'list', 'max:20'],
-            'filters.*' => ['array'],
-            'filters.*.attribute' => ['required', 'string', 'max:100'],
-            'filters.*.operator' => ['required', 'string', Rule::in(Filter::OPERATORS)],
-            'filters.*.value' => ['nullable'],
-            'filters.*.locale' => ['sometimes', 'nullable', 'string', 'max:20'],
-            'filters.*.scope' => ['sometimes', 'nullable', 'string', 'max:100'],
-            'facets' => ['sometimes', 'array', 'list', 'max:10'],
-            'facets.*' => ['string', 'max:100'],
-            'sort' => ['sometimes', 'string', Rule::in($sortable)],
-            'page' => ['sometimes', 'integer', 'min:1'],
-            'per_page' => ['sometimes', 'integer', 'min:1', 'max:'.config('showroom.pagination.max_per_page', 100)],
-            // Return only one channel's and some locales' values.
-        ] + ValueFilter::rules();
-    }
-
-    /**
-     * @param  array<string, mixed>  $filters
-     */
-    public function execute(array $filters = []): ProductPage
+    public function execute(ListProductsData $filters = new ListProductsData): ProductPage
     {
         ProductsListingActionEvent::dispatch($filters);
 
@@ -86,21 +30,37 @@ final class ListProductsAction
     }
 
     /**
-     * @param  array<string, mixed>  $filters
+     * Everything a listed product's resource reads, so a page costs the same
+     * number of queries however many products it holds: the owner and
+     * categories of the product and each model above it feed `owner` and
+     * `categories`, which a variant inherits.
+     *
+     * @return array<int, string>
      */
-    private function perform(array $filters): ProductPage
+    public static function eagerLoads(): array
     {
-        $query = ProductQuery::fromArray($filters);
+        return [
+            'family.labelAttribute',
+            'owner', 'categories', 'assets',
+            'parent.owner', 'parent.categories', 'parent.assets',
+            'parent.parent.owner', 'parent.parent.categories', 'parent.parent.assets',
+            'completeness.channel', 'completeness.locale',
+        ];
+    }
+
+    private function perform(ListProductsData $filters): ProductPage
+    {
+        $query = $filters->query();
         $results = $this->engine->search($query);
 
         // The engine decides the order; the database supplies the records.
         $products = ProductModel::query()
-            ->with(['family.labelAttribute', 'assets', 'parent.assets', 'parent.parent.assets', 'completeness.channel', 'completeness.locale'])
+            ->with(self::eagerLoads())
             ->whereKey($results->ids)
             ->get()
             ->sortBy(fn (ProductModel $product): int|false => array_search($product->id, $results->ids, true))
             ->values()
-            ->each(fn (ProductModel $product): ProductModel => $product->useValueFilter(ValueFilter::fromArray($filters)));
+            ->each(fn (ProductModel $product): ProductModel => $product->useValueFilter($filters->valueFilter()));
 
         $page = new ProductPage($products, $results->total, $query->perPage, $query->page, [
             'path' => request()->url(),

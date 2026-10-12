@@ -17,7 +17,7 @@ final class DeleteAttributeMcpRequest extends AttributeRequest
 
     protected function rules(): array
     {
-        return DeleteAttributeAction::rules() + [
+        return [
             'attribute' => ['required', 'string', 'max:100'],
         ];
     }

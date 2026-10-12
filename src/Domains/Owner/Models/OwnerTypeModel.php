@@ -14,6 +14,7 @@ use Illuminate\Support\Carbon;
 use RefactorCircus\Keystone\Models\Concerns\DispatchesModelEvents;
 use RefactorCircus\Showroom\Database\Factories\OwnerTypeFactory;
 use RefactorCircus\Showroom\Support\Models\Concerns\HasLabels;
+use RefactorCircus\Showroom\Support\Tables;
 
 /**
  * A kind of owner — manufacturer, vendor, brand, series — and the rules for
@@ -39,7 +40,10 @@ final class OwnerTypeModel extends Model
     use HasLabels;
     use HasUlids;
 
-    protected $table = 'showroom_owner_types';
+    public function getTable(): string
+    {
+        return Tables::name('owner_types');
+    }
 
     protected $fillable = [
         'code',
@@ -57,8 +61,8 @@ final class OwnerTypeModel extends Model
      */
     public function parentTypes(): BelongsToMany
     {
-        return $this->belongsToMany(self::class, 'showroom_owner_type_parents', 'owner_type_id', 'parent_type_id')
-            ->orderBy('showroom_owner_types.code');
+        return $this->belongsToMany(self::class, Tables::name('owner_type_parents'), 'owner_type_id', 'parent_type_id')
+            ->orderBy(Tables::name('owner_types').'.code');
     }
 
     /**

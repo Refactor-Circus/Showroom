@@ -7,6 +7,7 @@ namespace RefactorCircus\Showroom\Domains\ProductModel\Events;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 use RefactorCircus\Keystone\Contracts\ActionStartingEvent;
+use RefactorCircus\Showroom\Domains\ProductModel\Data\ListProductModelsData;
 
 /**
  * Product models are about to be listed.
@@ -16,10 +17,7 @@ final class ProductModelsListingActionEvent implements ActionStartingEvent
     use Dispatchable;
     use SerializesModels;
 
-    /**
-     * @param  array<string, mixed>  $filters
-     */
     public function __construct(
-        public array $filters,
+        public ListProductModelsData $filters,
     ) {}
 }

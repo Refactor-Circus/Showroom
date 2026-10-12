@@ -4,12 +4,15 @@ declare(strict_types=1);
 
 namespace RefactorCircus\Showroom\Domains\ProductModel\Resources;
 
+use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Illuminate\Http\Request;
-use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\JsonSchema\Types\Type;
+use RefactorCircus\Keystone\Http\Resources\JsonResource;
 use RefactorCircus\Showroom\Domains\Asset\Resources\LinkedAssets;
 use RefactorCircus\Showroom\Domains\Association\Services\Associations;
 use RefactorCircus\Showroom\Domains\Attribute\Services\Values;
 use RefactorCircus\Showroom\Domains\Product\Models\ProductModel;
+use RefactorCircus\Showroom\Domains\Product\Resources\ProductResource;
 use RefactorCircus\Showroom\Domains\ProductModel\Models\ProductModelModel;
 
 /**
@@ -17,6 +20,30 @@ use RefactorCircus\Showroom\Domains\ProductModel\Models\ProductModelModel;
  */
 final class ProductModelResource extends JsonResource
 {
+    /**
+     * @return array<string, Type>
+     */
+    public static function schema(JsonSchema $schema): array
+    {
+        return [
+            'id' => $schema->string()->description('ULID.')->required(),
+            'code' => $schema->string()->required(),
+            'family_variant' => $schema->string()->description('Family variant code, when loaded.'),
+            'parent' => $schema->string()->nullable()->description('Parent product model code, when loaded.'),
+            'owner' => $schema->string()->nullable()->required(),
+            'categories' => $schema->array()->items($schema->string())->required(),
+            'assets' => ProductResource::assetsSchema($schema)->description('When loaded.'),
+            'level' => $schema->integer()->description('0 for a root model, 1 for a sub-model.')->required(),
+            'values' => $schema->object()->description('Slots keyed by attribute code: [{locale, scope, data}].')->required(),
+            'children' => $schema->array()->items($schema->string())->description('Sub-model codes, when loaded.'),
+            'products' => $schema->array()->items($schema->string())->description('Variant product identifiers, when loaded.'),
+            'associations' => $schema->object()->description('Per type code: {products, product_models}, when loaded.'),
+            'quantified_associations' => $schema->object()->description('Per type code: {products, product_models} of {identifier, quantity}, when loaded.'),
+            'created_at' => $schema->string()->nullable()->required(),
+            'updated_at' => $schema->string()->nullable()->required(),
+        ];
+    }
+
     /**
      * @return array<string, mixed>
      */

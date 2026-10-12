@@ -17,7 +17,7 @@ final class DeleteCategoryMcpRequest extends CategoryRequest
 
     protected function rules(): array
     {
-        return DeleteCategoryAction::rules() + [
+        return [
             'category' => ['required', 'string', 'max:100'],
         ];
     }

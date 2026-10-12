@@ -9,7 +9,9 @@ use Laravel\Mcp\Response;
 use Laravel\Mcp\ResponseFactory;
 use Laravel\Mcp\Server\Attributes\Description;
 use RefactorCircus\Keystone\Mcp\Tool;
+use RefactorCircus\Showroom\Domains\Channel\Data\ListLocalesData;
 use RefactorCircus\Showroom\Domains\Channel\Mcp\Requests\ListLocalesMcpRequest;
+use RefactorCircus\Showroom\Domains\Channel\Resources\LocaleResource;
 
 #[Description('List the locales the catalog holds content in. Cursor paginated.')]
 final class ListLocalesTool extends Tool
@@ -23,8 +25,11 @@ final class ListLocalesTool extends Tool
     {
         return [
             'search' => $schema->string()->description('Match against the code or any label.'),
-            'cursor' => $schema->string()->description('Cursor from a previous page (next_cursor).'),
-            'per_page' => $schema->integer()->description('Results per page.')->min(1),
-        ];
+        ] + ListLocalesData::pagination()->schema($schema);
+    }
+
+    public function outputSchema(JsonSchema $schema): array
+    {
+        return LocaleResource::collectionSchema($schema, ListLocalesData::pagination());
     }
 }

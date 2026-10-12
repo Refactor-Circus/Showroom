@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
+use RefactorCircus\Keystone\Packages\PackageRegistry;
 use RefactorCircus\Showroom\Domains\Asset\Mcp\Tools\AttachAssetTool;
 use RefactorCircus\Showroom\Domains\Asset\Mcp\Tools\CreateAssetTool;
 use RefactorCircus\Showroom\Domains\Asset\Mcp\Tools\DeleteAssetTool;
@@ -92,11 +93,12 @@ it('offers one tool per use case', function (): void {
     expect(ShowroomServer::TOOLS)->toHaveCount(78);
 });
 
-it('lists its audit history, answering not installed while no audit log is', function (): void {
+it('declares its history tool, but offers it only while Showroom audits', function (): void {
     expect(ShowroomServer::TOOLS)->toContain(ListShowroomHistoryTool::class)
-        ->and(app(ListShowroomHistoryTool::class)->name())->toBe('list-showroom-history-tool');
+        ->and(app(ListShowroomHistoryTool::class)->name())->toBe('list-showroom-history-tool')
+        ->and(app(PackageRegistry::class)->get('showroom')->audits())->toBeFalse();
 
-    mcpTool(ListShowroomHistoryTool::class)->assertHasErrors(['No audit log is installed']);
+    mcpTool(ListShowroomHistoryTool::class)->assertHasErrors();
 });
 
 it('manages attribute groups', function (): void {

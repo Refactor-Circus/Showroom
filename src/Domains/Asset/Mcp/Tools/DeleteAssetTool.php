@@ -25,4 +25,12 @@ final class DeleteAssetTool extends Tool
             'asset' => $schema->string()->description('The asset code.')->required(),
         ];
     }
+
+    public function outputSchema(JsonSchema $schema): array
+    {
+        return [
+            'deleted' => $schema->boolean()->required(),
+            'code' => $schema->string()->required(),
+        ];
+    }
 }

@@ -4,42 +4,26 @@ declare(strict_types=1);
 
 namespace RefactorCircus\Showroom\Domains\Asset\Actions;
 
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use RefactorCircus\Showroom\Domains\Asset\Concerns\StoresAssetFiles;
+use RefactorCircus\Showroom\Domains\Asset\Data\CreateAssetData;
 use RefactorCircus\Showroom\Domains\Asset\Events\AssetCreatedActionEvent;
 use RefactorCircus\Showroom\Domains\Asset\Events\AssetCreatingActionEvent;
 use RefactorCircus\Showroom\Domains\Asset\Models\AssetModel;
 use RefactorCircus\Showroom\Domains\Asset\Services\AssetStorage;
-use Throwable;
 
 final class CreateAssetAction
 {
     use StoresAssetFiles;
 
-    /**
-     * Exactly one of `file`, `path` or `url`. The code is generated from the
-     * file name when omitted.
-     *
-     * @return array<string, mixed>
-     */
-    public static function rules(): array
-    {
-        return [
-            'code' => ['sometimes', 'nullable', 'string', 'max:191', 'regex:/^[A-Za-z0-9][A-Za-z0-9_.-]*$/', 'unique:showroom_assets,code'],
-            'labels' => ['sometimes', 'nullable', 'array'],
-            'labels.*' => ['nullable', 'string', 'max:255'],
-        ] + self::sourceRules(required: true);
-    }
-
     public function __construct(private readonly AssetStorage $storage) {}
 
     /**
-     * @param  array<string, mixed>  $data
-     *
      * @throws ValidationException
      */
-    public function execute(array $data): AssetModel
+    public function execute(CreateAssetData $data): AssetModel
     {
         AssetCreatingActionEvent::dispatch($data);
 
@@ -50,31 +34,30 @@ final class CreateAssetAction
         return $result;
     }
 
-    /**
-     * @param  array<string, mixed>  $data
-     */
-    private function perform(array $data): AssetModel
+    private function perform(CreateAssetData $data): AssetModel
     {
-        $stored = $this->storeSource($this->storage, $data);
+        $stored = $this->storeSource($this->storage, $data->file, $data->path, $data->url);
 
         if ($stored === null) {
             throw ValidationException::withMessages(['file' => 'Send a file, a path on the asset disk, or a URL.']);
         }
 
-        try {
-            return AssetModel::query()->create([
-                'code' => is_string($data['code'] ?? null) ? $data['code'] : $this->codeFor($stored->filename),
-                'labels' => $data['labels'] ?? [],
-                ...$stored->toAttributes(),
-            ]);
-        } catch (Throwable $e) {
-            // A record that failed to save must not leave its file behind.
-            if (! is_string($data['path'] ?? null)) {
-                $this->storage->discard($stored);
+        // The file is written before the transaction, so a slow upload or
+        // download holds no locks.
+        return DB::transaction(function () use ($data, $stored): AssetModel {
+            // A record that is rolled back - here or by a surrounding
+            // transaction - must not leave its file behind. An adopted file
+            // is the caller's.
+            if ($data->path === null) {
+                DB::afterRollBack(fn () => $this->storage->discard($stored));
             }
 
-            throw $e;
-        }
+            return AssetModel::query()->create([
+                'code' => $data->code ?? $this->codeFor($stored->filename),
+                'labels' => $data->labels ?? [],
+                ...$stored->toAttributes(),
+            ]);
+        });
     }
 
     private function codeFor(string $filename): string

@@ -9,6 +9,7 @@ use RefactorCircus\Impex\Domains\Run\Resources\RunResource;
 use RefactorCircus\Keystone\Http\Requests\Request;
 use RefactorCircus\Showroom\Domains\Product\Models\ProductModel;
 use RefactorCircus\Showroom\Domains\Transfer\Actions\StartExportAction;
+use RefactorCircus\Showroom\Domains\Transfer\Data\StartExportData;
 
 /**
  * A queued export run; its result names the file asset.
@@ -22,12 +23,12 @@ final class StartExportRequest extends Request
 
     public function rules(): array
     {
-        return StartExportAction::rules();
+        return StartExportData::rules();
     }
 
     public function persist(): JsonResponse
     {
-        $run = app(StartExportAction::class)->execute($this->validated());
+        $run = app(StartExportAction::class)->execute(StartExportData::fromValidated($this->validated()));
 
         return (new RunResource($run))->response()->setStatusCode(202);
     }

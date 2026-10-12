@@ -7,7 +7,6 @@ namespace RefactorCircus\Showroom\Atrium\Http\Controllers;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
 use RefactorCircus\Atrium\Http\Controllers\Concerns\AuthorizesScreens;
 use RefactorCircus\Showroom\Atrium\Support\CategoryCodes;
 use RefactorCircus\Showroom\Atrium\Support\EditingSlot;
@@ -18,6 +17,9 @@ use RefactorCircus\Showroom\Domains\ProductModel\Actions\DeleteProductModelActio
 use RefactorCircus\Showroom\Domains\ProductModel\Actions\ListProductModelsAction;
 use RefactorCircus\Showroom\Domains\ProductModel\Actions\ShowProductModelAction;
 use RefactorCircus\Showroom\Domains\ProductModel\Actions\UpdateProductModelAction;
+use RefactorCircus\Showroom\Domains\ProductModel\Data\CreateProductModelData;
+use RefactorCircus\Showroom\Domains\ProductModel\Data\ListProductModelsData;
+use RefactorCircus\Showroom\Domains\ProductModel\Data\UpdateProductModelData;
 use RefactorCircus\Showroom\Domains\ProductModel\Models\ProductModelModel;
 
 final class ProductModelUiController
@@ -28,13 +30,14 @@ final class ProductModelUiController
     {
         $this->authorizeScreen('viewAny', ProductModelModel::class);
 
-        $filters = $request->validate(ListProductModelsAction::rules());
+        // The page shows back what was searched for.
+        $filters = $request->validate(ListProductModelsData::rules());
 
         /** @var view-string $view */
         $view = 'showroom::ui.product-models.index';
 
         return view($view, [
-            'models' => app(ListProductModelsAction::class)->execute($filters + ['roots' => true])->withQueryString(),
+            'models' => app(ListProductModelsAction::class)->execute(ListProductModelsData::fromValidated(['roots' => true] + $filters))->withQueryString(),
             'filters' => $filters,
             'variants' => FamilyVariantModel::query()->orderBy('code')->pluck('code', 'code')->all(),
         ]);
@@ -44,7 +47,7 @@ final class ProductModelUiController
     {
         $this->authorizeScreen('create', ProductModelModel::class);
 
-        $model = app(CreateProductModelAction::class)->execute($request->validate(CreateProductModelAction::rules()));
+        $model = app(CreateProductModelAction::class)->execute(CreateProductModelData::from($request->all()));
 
         return redirect()
             ->route('atrium.showroom.product-models.show', $model)
@@ -87,7 +90,7 @@ final class ProductModelUiController
         }
 
         // The form builds the payload, so it is held to the Action's rules too.
-        app(UpdateProductModelAction::class)->execute($productModel, Validator::validate($data, UpdateProductModelAction::rules()));
+        app(UpdateProductModelAction::class)->execute($productModel, UpdateProductModelData::from($data));
 
         return redirect()
             ->route('atrium.showroom.product-models.show', ['productModel' => $productModel, ...$slot->query()])

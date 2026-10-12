@@ -35,4 +35,4 @@ A family — an attribute set — is a kind of product: the attributes it has an
 
 ## Actions
 
-`ListFamiliesAction` (filters: `search`, `attribute`), `ShowFamilyAction`, `CreateFamilyAction`, `UpdateFamilyAction`, `DeleteFamilyAction`.
+`ListFamiliesAction` (filters: `search`, `attribute`), `ShowFamilyAction`, `CreateFamilyAction`, `UpdateFamilyAction`, `DeleteFamilyAction`. `CreateFamilyData::from([...])` / `UpdateFamilyData::from([...])` take `attributes` as above and hold each entry as a `FamilyAttributeData` (`attribute`, `isRequired`, `sortOrder`, `requiredChannels`); a family variant's `levels` are `FamilyLevelData` (`axes`, `attributes`).

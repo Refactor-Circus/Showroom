@@ -14,6 +14,9 @@ use RefactorCircus\Showroom\Domains\Category\Actions\DeleteCategoryAction;
 use RefactorCircus\Showroom\Domains\Category\Actions\ListCategoriesAction;
 use RefactorCircus\Showroom\Domains\Category\Actions\ShowCategoryAction;
 use RefactorCircus\Showroom\Domains\Category\Actions\UpdateCategoryAction;
+use RefactorCircus\Showroom\Domains\Category\Data\CreateCategoryData;
+use RefactorCircus\Showroom\Domains\Category\Data\ListCategoriesData;
+use RefactorCircus\Showroom\Domains\Category\Data\UpdateCategoryData;
 use RefactorCircus\Showroom\Domains\Category\Models\CategoryModel;
 use RefactorCircus\Showroom\Exceptions\ShowroomException;
 
@@ -29,7 +32,7 @@ final class CategoryUiController
         $view = 'showroom::ui.categories.index';
 
         return view($view, [
-            'trees' => app(ListCategoriesAction::class)->execute(['roots' => true] + $request->validate(ListCategoriesAction::rules()))->withQueryString(),
+            'trees' => app(ListCategoriesAction::class)->execute(ListCategoriesData::from(['roots' => true] + $request->query()))->withQueryString(),
         ]);
     }
 
@@ -37,7 +40,7 @@ final class CategoryUiController
     {
         $this->authorizeScreen('create', CategoryModel::class);
 
-        $category = app(CreateCategoryAction::class)->execute(Labels::fromForm($request->validate(CreateCategoryAction::rules())));
+        $category = app(CreateCategoryAction::class)->execute(CreateCategoryData::fromValidated(Labels::fromForm($request->validate(CreateCategoryData::rules()))));
 
         return redirect()
             ->route('atrium.showroom.categories.show', $category->parent ?? $category)
@@ -70,7 +73,7 @@ final class CategoryUiController
     {
         $this->authorizeScreen('update', $category);
 
-        $data = Labels::fromForm($request->validate(UpdateCategoryAction::rules()), $category->labels);
+        $data = UpdateCategoryData::fromValidated(Labels::fromForm($request->validate(UpdateCategoryData::rules()), $category->labels));
 
         app(UpdateCategoryAction::class)->execute($category, $data);
 

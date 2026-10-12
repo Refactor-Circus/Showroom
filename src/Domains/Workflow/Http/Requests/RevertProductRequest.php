@@ -8,6 +8,7 @@ use Illuminate\Http\JsonResponse;
 use RefactorCircus\Showroom\Domains\Product\Http\Requests\ProductRequest;
 use RefactorCircus\Showroom\Domains\Product\Resources\ProductResource;
 use RefactorCircus\Showroom\Domains\Workflow\Actions\RevertProductAction;
+use RefactorCircus\Showroom\Domains\Workflow\Data\RevertProductData;
 
 final class RevertProductRequest extends ProductRequest
 {
@@ -18,12 +19,12 @@ final class RevertProductRequest extends ProductRequest
 
     public function rules(): array
     {
-        return RevertProductAction::rules();
+        return RevertProductData::rules();
     }
 
     public function persist(): JsonResponse
     {
-        $product = app(RevertProductAction::class)->execute($this->product(), $this->validated());
+        $product = app(RevertProductAction::class)->execute($this->product(), RevertProductData::fromValidated($this->validated()));
 
         return (new ProductResource($product))->response();
     }

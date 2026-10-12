@@ -15,11 +15,6 @@ final class ShowAttributeRequest extends AttributeRequest
         return $this->allows('view', $this->catalogAttribute());
     }
 
-    public function rules(): array
-    {
-        return ShowAttributeAction::rules();
-    }
-
     public function persist(): JsonResponse
     {
         $attribute = app(ShowAttributeAction::class)->execute($this->catalogAttribute());

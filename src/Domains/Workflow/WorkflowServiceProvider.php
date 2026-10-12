@@ -21,8 +21,16 @@ class WorkflowServiceProvider extends ServiceProvider
     public function boot(): void
     {
         // How the audit log (refactor-circus/keen) names a version: what it versions, and its number.
-        $this->app->make(AuditHooks::class)
-            ->label(VersionModel::class, fn (VersionModel $version): string => $version->versionable_type.' v'.$version->version);
+        // Registered only while Showroom audits (see Package::audits()), which
+        // is known once every provider has booted.
+        $this->app->booted(function (): void {
+            if (! $this->package()->audits()) {
+                return;
+            }
+
+            $this->app->make(AuditHooks::class)
+                ->label(VersionModel::class, fn (VersionModel $version): string => $version->versionable_type.' v'.$version->version);
+        });
 
         $this->loadApiRoutesFrom(__DIR__.'/routes.php');
     }

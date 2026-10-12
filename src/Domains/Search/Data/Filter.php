@@ -4,10 +4,15 @@ declare(strict_types=1);
 
 namespace RefactorCircus\Showroom\Domains\Search\Data;
 
+use Illuminate\Validation\Rule;
+use RefactorCircus\Keystone\Data\Data;
+
 /**
- * One condition on an attribute value.
+ * One condition on an attribute value: `{"attribute": "color", "operator":
+ * "in", "value": ["red", "blue"]}`, with `locale` and `scope` for localizable
+ * and scopable attributes.
  */
-final readonly class Filter
+final readonly class Filter extends Data
 {
     public const array OPERATORS = ['=', '!=', 'in', 'not_in', '>', '>=', '<', '<=', 'empty', 'not_empty'];
 
@@ -20,17 +25,19 @@ final readonly class Filter
     ) {}
 
     /**
-     * @param  array<string, mixed>  $filter
+     * A condition's rules; a search takes its list under `filters.*`.
+     *
+     * @return array<string, array<int, mixed>>
      */
-    public static function fromArray(array $filter): self
+    public static function rules(): array
     {
-        return new self(
-            attribute: is_string($filter['attribute'] ?? null) ? $filter['attribute'] : '',
-            operator: is_string($filter['operator'] ?? null) ? $filter['operator'] : '=',
-            value: $filter['value'] ?? null,
-            locale: is_string($filter['locale'] ?? null) ? $filter['locale'] : null,
-            scope: is_string($filter['scope'] ?? null) ? $filter['scope'] : null,
-        );
+        return [
+            'attribute' => ['required', 'string', 'max:100'],
+            'operator' => ['required', 'string', Rule::in(self::OPERATORS)],
+            'value' => ['nullable'],
+            'locale' => ['sometimes', 'nullable', 'string', 'max:20'],
+            'scope' => ['sometimes', 'nullable', 'string', 'max:100'],
+        ];
     }
 
     /**

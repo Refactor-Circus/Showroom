@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Support\Carbon;
 use RefactorCircus\Keystone\Models\Concerns\DispatchesModelEvents;
+use RefactorCircus\Showroom\Support\Tables;
 
 /**
  * One recorded state of a product: what it held, what changed since the
@@ -33,7 +34,10 @@ final class VersionModel extends Model
 
     public const null UPDATED_AT = null;
 
-    protected $table = 'showroom_versions';
+    public function getTable(): string
+    {
+        return Tables::name('versions');
+    }
 
     protected $fillable = [
         'versionable_type',

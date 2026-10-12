@@ -6,6 +6,7 @@ namespace RefactorCircus\Showroom\Domains\Owner\Actions;
 
 use Illuminate\Support\Facades\DB;
 use RefactorCircus\Showroom\Domains\Owner\Concerns\WritesOwnerTypes;
+use RefactorCircus\Showroom\Domains\Owner\Data\CreateOwnerTypeData;
 use RefactorCircus\Showroom\Domains\Owner\Events\OwnerTypeCreatedActionEvent;
 use RefactorCircus\Showroom\Domains\Owner\Events\OwnerTypeCreatingActionEvent;
 use RefactorCircus\Showroom\Domains\Owner\Models\OwnerTypeModel;
@@ -14,20 +15,7 @@ final class CreateOwnerTypeAction
 {
     use WritesOwnerTypes;
 
-    /**
-     * @return array<string, mixed>
-     */
-    public static function rules(): array
-    {
-        return [
-            'code' => ['required', 'string', 'max:100', 'regex:/^[a-z][a-z0-9_]*$/', 'unique:showroom_owner_types,code'],
-        ] + self::typeRules();
-    }
-
-    /**
-     * @param  array<string, mixed>  $data
-     */
-    public function execute(array $data): OwnerTypeModel
+    public function execute(CreateOwnerTypeData $data): OwnerTypeModel
     {
         OwnerTypeCreatingActionEvent::dispatch($data);
 
@@ -38,24 +26,18 @@ final class CreateOwnerTypeAction
         return $result;
     }
 
-    /**
-     * @param  array<string, mixed>  $data
-     */
-    private function perform(array $data): OwnerTypeModel
+    private function perform(CreateOwnerTypeData $data): OwnerTypeModel
     {
         return DB::transaction(function () use ($data): OwnerTypeModel {
             $type = OwnerTypeModel::query()->create([
-                'code' => $data['code'],
-                'labels' => $data['labels'] ?? [],
-                'can_be_root' => (bool) ($data['can_be_root'] ?? true),
-                'owns_products' => (bool) ($data['owns_products'] ?? true),
-                'sort_order' => $data['sort_order'] ?? 0,
+                'code' => $data->code,
+                'labels' => $data->labels ?? [],
+                'can_be_root' => $data->canBeRoot,
+                'owns_products' => $data->ownsProducts,
+                'sort_order' => $data->sortOrder,
             ]);
 
-            /** @var array<int, string>|null $parents */
-            $parents = $data['parent_types'] ?? null;
-
-            $this->setParentTypes($type, $parents);
+            $this->setParentTypes($type, $data->parentTypes);
 
             return $type->load('parentTypes');
         });

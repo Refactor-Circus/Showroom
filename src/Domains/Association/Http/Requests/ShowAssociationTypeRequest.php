@@ -15,11 +15,6 @@ final class ShowAssociationTypeRequest extends AssociationTypeRequest
         return $this->allows('view', $this->associationType());
     }
 
-    public function rules(): array
-    {
-        return ShowAssociationTypeAction::rules();
-    }
-
     public function persist(): JsonResponse
     {
         $associationType = app(ShowAssociationTypeAction::class)->execute($this->associationType());

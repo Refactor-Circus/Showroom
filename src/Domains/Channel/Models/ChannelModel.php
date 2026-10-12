@@ -14,6 +14,7 @@ use RefactorCircus\Keystone\Models\Concerns\DispatchesModelEvents;
 use RefactorCircus\Showroom\Database\Factories\ChannelFactory;
 use RefactorCircus\Showroom\Domains\Category\Models\CategoryModel;
 use RefactorCircus\Showroom\Support\Models\Concerns\HasLabels;
+use RefactorCircus\Showroom\Support\Tables;
 
 /**
  * Somewhere products are published — a storefront, a print catalog, a
@@ -39,7 +40,10 @@ final class ChannelModel extends Model
     use HasLabels;
     use HasUlids;
 
-    protected $table = 'showroom_channels';
+    public function getTable(): string
+    {
+        return Tables::name('channels');
+    }
 
     protected $fillable = [
         'code',
@@ -53,7 +57,7 @@ final class ChannelModel extends Model
      */
     public function locales(): BelongsToMany
     {
-        return $this->belongsToMany(LocaleModel::class, 'showroom_channel_locale', 'channel_id', 'locale_id')->orderBy('code');
+        return $this->belongsToMany(LocaleModel::class, Tables::name('channel_locale'), 'channel_id', 'locale_id')->orderBy('code');
     }
 
     /**

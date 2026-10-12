@@ -10,6 +10,7 @@ use Illuminate\Database\Query\JoinClause;
 use RefactorCircus\Showroom\Domains\Attribute\Services\Values;
 use RefactorCircus\Showroom\Domains\Product\Models\ProductModel;
 use RefactorCircus\Showroom\Domains\ProductModel\Models\ProductModelModel;
+use RefactorCircus\Showroom\Support\Tables;
 use stdClass;
 
 /**
@@ -123,8 +124,8 @@ final class ProductSnapshots
     {
         $morph = (new ProductModel)->getMorphClass();
 
-        return array_values($this->db->table('showroom_products as p')
-            ->join('showroom_versions as v', function (JoinClause $join) use ($morph): void {
+        return array_values($this->db->table(Tables::name('products').' as p')
+            ->join(Tables::name('versions').' as v', function (JoinClause $join) use ($morph): void {
                 $join->on('v.versionable_id', '=', 'p.id')
                     ->on('v.version', '=', 'p.published_version')
                     ->where('v.versionable_type', '=', $morph);
@@ -160,7 +161,7 @@ final class ProductSnapshots
         for ($level = 0; $level < 2 && $pending !== []; $level++) {
             $next = [];
 
-            foreach ($this->db->table('showroom_product_models')->whereIn('id', $pending)->get(['id', 'code', 'parent_id', 'owner_id']) as $row) {
+            foreach ($this->db->table(Tables::name('product_models'))->whereIn('id', $pending)->get(['id', 'code', 'parent_id', 'owner_id']) as $row) {
                 /** @var stdClass $row */
                 $models[(string) $row->id] = [
                     'code' => (string) $row->code,
@@ -227,13 +228,13 @@ final class ProductSnapshots
     {
         $categories = [];
 
-        foreach ([['showroom_category_product', 'product_id', $productIds], ['showroom_category_product_model', 'product_model_id', $modelIds]] as [$table, $column, $ids]) {
+        foreach ([[Tables::name('category_product'), 'product_id', $productIds], [Tables::name('category_product_model'), 'product_model_id', $modelIds]] as [$table, $column, $ids]) {
             if ($ids === []) {
                 continue;
             }
 
             $rows = $this->db->table($table.' as link')
-                ->join('showroom_categories as c', 'c.id', '=', 'link.category_id')
+                ->join(Tables::name('categories').' as c', 'c.id', '=', 'link.category_id')
                 ->whereIn('link.'.$column, $ids)
                 ->get(['link.'.$column.' as owner', 'c.code', 'c.path']);
 
@@ -258,7 +259,7 @@ final class ProductSnapshots
             return $owners;
         }
 
-        foreach ($this->db->table('showroom_owners')->whereIn('id', array_values(array_unique($ids)))->get(['id', 'code', 'path']) as $row) {
+        foreach ($this->db->table(Tables::name('owners'))->whereIn('id', array_values(array_unique($ids)))->get(['id', 'code', 'path']) as $row) {
             /** @var stdClass $row */
             $owners[(string) $row->id] = ['code' => (string) $row->code, 'path' => (string) $row->path];
         }
@@ -278,8 +279,8 @@ final class ProductSnapshots
         $productMorph = (new ProductModel)->getMorphClass();
         $modelMorph = (new ProductModelModel)->getMorphClass();
 
-        $rows = $this->db->table('showroom_asset_links as l')
-            ->join('showroom_assets as a', 'a.id', '=', 'l.asset_id')
+        $rows = $this->db->table(Tables::name('asset_links').' as l')
+            ->join(Tables::name('assets').' as a', 'a.id', '=', 'l.asset_id')
             ->where(function (Builder $query) use ($productMorph, $modelMorph, $productIds, $modelIds): void {
                 $query->where(fn (Builder $q) => $q->where('l.linkable_type', $productMorph)->whereIn('l.linkable_id', $productIds));
 

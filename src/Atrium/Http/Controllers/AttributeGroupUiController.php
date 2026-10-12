@@ -14,6 +14,9 @@ use RefactorCircus\Showroom\Domains\Attribute\Actions\DeleteAttributeGroupAction
 use RefactorCircus\Showroom\Domains\Attribute\Actions\ListAttributeGroupsAction;
 use RefactorCircus\Showroom\Domains\Attribute\Actions\ShowAttributeGroupAction;
 use RefactorCircus\Showroom\Domains\Attribute\Actions\UpdateAttributeGroupAction;
+use RefactorCircus\Showroom\Domains\Attribute\Data\CreateAttributeGroupData;
+use RefactorCircus\Showroom\Domains\Attribute\Data\ListAttributeGroupsData;
+use RefactorCircus\Showroom\Domains\Attribute\Data\UpdateAttributeGroupData;
 use RefactorCircus\Showroom\Domains\Attribute\Models\AttributeGroupModel;
 use RefactorCircus\Showroom\Exceptions\ShowroomException;
 
@@ -25,15 +28,15 @@ final class AttributeGroupUiController
     {
         $this->authorizeScreen('viewAny', AttributeGroupModel::class);
 
-        // Filters are validated by the Action's own rules, so the page and the
-        // JSON API accept exactly the same query.
-        $filters = $request->validate(ListAttributeGroupsAction::rules());
+        // Filters are validated by the same rules as the JSON API, so both
+        // accept exactly the same query.
+        $filters = $request->validate(ListAttributeGroupsData::rules());
 
         /** @var view-string $view */
         $view = 'showroom::ui.attribute-groups.index';
 
         return view($view, [
-            'groups' => app(ListAttributeGroupsAction::class)->execute($filters)->withQueryString(),
+            'groups' => app(ListAttributeGroupsAction::class)->execute(ListAttributeGroupsData::fromValidated($filters))->withQueryString(),
             'filters' => $filters,
         ]);
     }
@@ -42,7 +45,7 @@ final class AttributeGroupUiController
     {
         $this->authorizeScreen('create', AttributeGroupModel::class);
 
-        $data = Labels::fromForm($request->validate(CreateAttributeGroupAction::rules()));
+        $data = CreateAttributeGroupData::fromValidated(Labels::fromForm($request->validate(CreateAttributeGroupData::rules())));
 
         $group = app(CreateAttributeGroupAction::class)->execute($data);
 
@@ -67,7 +70,7 @@ final class AttributeGroupUiController
     {
         $this->authorizeScreen('update', $group);
 
-        $data = Labels::fromForm($request->validate(UpdateAttributeGroupAction::rules()), $group->labels);
+        $data = UpdateAttributeGroupData::fromValidated(Labels::fromForm($request->validate(UpdateAttributeGroupData::rules()), $group->labels));
 
         app(UpdateAttributeGroupAction::class)->execute($group, $data);
 

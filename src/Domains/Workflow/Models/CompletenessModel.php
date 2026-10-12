@@ -10,6 +10,8 @@ use Illuminate\Support\Carbon;
 use RefactorCircus\Keystone\Models\Concerns\DispatchesModelEvents;
 use RefactorCircus\Showroom\Domains\Channel\Models\ChannelModel;
 use RefactorCircus\Showroom\Domains\Channel\Models\LocaleModel;
+use RefactorCircus\Showroom\Domains\Product\Models\ProductModel;
+use RefactorCircus\Showroom\Support\Tables;
 
 /**
  * How complete a product is for one channel and locale. Derived: rewritten
@@ -25,6 +27,7 @@ use RefactorCircus\Showroom\Domains\Channel\Models\LocaleModel;
  * @property Carbon|null $updated_at
  * @property-read ChannelModel $channel
  * @property-read LocaleModel $locale
+ * @property-read ProductModel|null $product
  */
 final class CompletenessModel extends Model
 {
@@ -34,7 +37,10 @@ final class CompletenessModel extends Model
 
     public $incrementing = false;
 
-    protected $table = 'showroom_product_completeness';
+    public function getTable(): string
+    {
+        return Tables::name('product_completeness');
+    }
 
     protected $primaryKey = 'product_id';
 
@@ -62,6 +68,14 @@ final class CompletenessModel extends Model
     public function locale(): BelongsTo
     {
         return $this->belongsTo(LocaleModel::class);
+    }
+
+    /**
+     * @return BelongsTo<ProductModel, $this>
+     */
+    public function product(): BelongsTo
+    {
+        return $this->belongsTo(ProductModel::class);
     }
 
     /**

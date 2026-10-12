@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace RefactorCircus\Showroom\Domains\Attribute\Actions;
 
-use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
-use RefactorCircus\Showroom\Domains\Attribute\Enums\AttributeType;
+use RefactorCircus\Showroom\Domains\Attribute\Data\CreateAttributeData;
 use RefactorCircus\Showroom\Domains\Attribute\Events\AttributeCreatedActionEvent;
 use RefactorCircus\Showroom\Domains\Attribute\Events\AttributeCreatingActionEvent;
 use RefactorCircus\Showroom\Domains\Attribute\Models\AttributeGroupModel;
@@ -15,33 +15,9 @@ use RefactorCircus\Showroom\Domains\Attribute\Models\AttributeModel;
 final class CreateAttributeAction
 {
     /**
-     * Type-specific settings are checked against the type in `execute()`,
-     * since the rules for them depend on the value of `type`.
-     *
-     * @return array<string, mixed>
-     */
-    public static function rules(): array
-    {
-        return [
-            'code' => ['required', 'string', 'max:100', 'regex:/^[a-z][a-z0-9_]*$/', 'unique:showroom_attributes,code'],
-            'type' => ['required', Rule::enum(AttributeType::class)],
-            'group' => ['sometimes', 'nullable', 'string', 'exists:showroom_attribute_groups,code'],
-            'labels' => ['sometimes', 'nullable', 'array'],
-            'labels.*' => ['nullable', 'string', 'max:255'],
-            'is_unique' => ['sometimes', 'boolean'],
-            'is_localizable' => ['sometimes', 'boolean'],
-            'is_scopable' => ['sometimes', 'boolean'],
-            'settings' => ['sometimes', 'nullable', 'array'],
-            'sort_order' => ['sometimes', 'integer', 'min:0'],
-        ];
-    }
-
-    /**
-     * @param  array<string, mixed>  $data
-     *
      * @throws ValidationException
      */
-    public function execute(array $data): AttributeModel
+    public function execute(CreateAttributeData $data): AttributeModel
     {
         AttributeCreatingActionEvent::dispatch($data);
 
@@ -52,44 +28,37 @@ final class CreateAttributeAction
         return $result;
     }
 
-    /**
-     * @param  array<string, mixed>  $data
-     */
-    private function perform(array $data): AttributeModel
+    private function perform(CreateAttributeData $data): AttributeModel
     {
-        $type = $data['type'] instanceof AttributeType
-            ? $data['type']
-            : AttributeType::from(is_string($data['type']) ? $data['type'] : '');
+        return DB::transaction(function () use ($data): AttributeModel {
+            $type = $data->type;
+            $unique = $data->isUnique;
 
-        $unique = (bool) ($data['is_unique'] ?? false);
+            if ($unique && ! $type->canBeUnique()) {
+                throw ValidationException::withMessages([
+                    'is_unique' => sprintf('A %s attribute cannot be unique.', $type->value),
+                ]);
+            }
 
-        if ($unique && ! $type->canBeUnique()) {
-            throw ValidationException::withMessages([
-                'is_unique' => sprintf('A %s attribute cannot be unique.', $type->value),
-            ]);
-        }
+            if ($unique && ($data->isLocalizable || $data->isScopable)) {
+                throw ValidationException::withMessages([
+                    'is_unique' => 'A unique attribute cannot be localizable or scopable: it holds one value per product.',
+                ]);
+            }
 
-        if ($unique && ((bool) ($data['is_localizable'] ?? false) || (bool) ($data['is_scopable'] ?? false))) {
-            throw ValidationException::withMessages([
-                'is_unique' => 'A unique attribute cannot be localizable or scopable: it holds one value per product.',
-            ]);
-        }
-
-        /** @var array<string, mixed> $settings */
-        $settings = is_array($data['settings'] ?? null) ? $data['settings'] : [];
-
-        return AttributeModel::query()->create([
-            'code' => $data['code'],
-            'type' => $type,
-            'attribute_group_id' => is_string($data['group'] ?? null)
-                ? AttributeGroupModel::query()->where('code', $data['group'])->value('id')
-                : null,
-            'labels' => $data['labels'] ?? [],
-            'is_unique' => $unique,
-            'is_localizable' => (bool) ($data['is_localizable'] ?? false),
-            'is_scopable' => (bool) ($data['is_scopable'] ?? false),
-            'settings' => $type->validateSettings($settings),
-            'sort_order' => $data['sort_order'] ?? 0,
-        ])->load('group');
+            return AttributeModel::query()->create([
+                'code' => $data->code,
+                'type' => $type,
+                'attribute_group_id' => $data->group !== null
+                    ? AttributeGroupModel::query()->where('code', $data->group)->value('id')
+                    : null,
+                'labels' => $data->labels ?? [],
+                'is_unique' => $unique,
+                'is_localizable' => $data->isLocalizable,
+                'is_scopable' => $data->isScopable,
+                'settings' => $type->validateSettings($data->settings ?? []),
+                'sort_order' => $data->sortOrder,
+            ])->load('group');
+        });
     }
 }

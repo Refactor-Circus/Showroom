@@ -13,14 +13,6 @@ use RefactorCircus\Showroom\Domains\Workflow\Services\Versions;
 
 final class ShowProductVersionAction
 {
-    /**
-     * @return array<string, mixed>
-     */
-    public static function rules(): array
-    {
-        return [];
-    }
-
     public function __construct(private readonly Versions $versions) {}
 
     /**
