@@ -29,7 +29,7 @@
         "laravel/pint": "^1.32.1",
         "laravel/scout": "^11.9",
         "orchestra/testbench": "^11.3",
-        "pestphp/pest": "^5.3.1",
+        "pestphp/pest": "^5.3.4",
         "pestphp/pest-plugin-laravel": "^5.0.1",
         "pestphp/pest-plugin-type-coverage": "^5.0.3",
         "phpstan/extension-installer": "^1.4.3",
@@ -172,8 +172,5 @@
             "type": "vcs",
             "url": "https://github.com/Refactor-Circus/Standards.git"
         }
-    ],
-    "conflict": {
-        "brianium/paratest": ">=7.26.1"
-    }
+    ]
 }
