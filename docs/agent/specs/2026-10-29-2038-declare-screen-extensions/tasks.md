@@ -30,6 +30,6 @@ depends on: 1, 2
 files: README.md, CHANGELOG.md, CLAUDE.md, resources/boost/skills/showroom-development/SKILL.md, docs/agent/standards/showroom/atrium-screens.md, tests/Feature/DocsTest.php
 criteria: 12, 13
 
-- [ ] 3.1 Write the docs test for the 25 keys, the authorization and row-closure rules, Atrium optional, and the absence of `audit-trail`, `historyNavItem` and `atrium.impex`.
-- [ ] 3.2 Update the README, changelog, CLAUDE.md, Boost skill and the atrium-screens standard.
-- [ ] 3.3 Run composer test and vendor/bin/pest; all green.
+- [x] 3.1 Write the docs test for the 25 keys, the authorization and row-closure rules, Atrium optional, and the absence of `audit-trail`, `historyNavItem` and `atrium.impex`.
+- [x] 3.2 Update the README, changelog, CLAUDE.md, Boost skill and the atrium-screens standard.
+- [x] 3.3 Run composer test and vendor/bin/pest; all green.

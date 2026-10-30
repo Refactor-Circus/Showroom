@@ -36,6 +36,12 @@ php artisan vendor:publish --tag="showroom-lang"
 
 `--tag="showroom"` publishes all of them at once.
 
+Atrium is optional: the Actions, the JSON API and the MCP server work without it. Install it for the [dashboard](#dashboard):
+
+```bash
+composer require refactor-circus/atrium
+```
+
 Every table can be renamed before migrating: publish the config and set `showroom.tables` (keys such as `products`, `product_models`, `categories`; a published config that lists only some keeps the defaults for the rest). Migrations, models, validation rules and queries all read it.
 
 ## Attributes
@@ -295,13 +301,13 @@ When [`refactor-circus/cortex`](https://github.com/Refactor-Circus/cortex) is in
 
 ## Dashboard
 
-Showroom registers an Atrium plugin: a **Catalog** navigation group with product, product model, category, asset, owner, channel, family, attribute and attribute group pages, an import and export page, dashboard widgets (products by status, completeness, review queue, recent changes), a settings panel and global search. Atrium owns the dashboard's path, middleware and gate. Disable it with `showroom.ui.enabled`. See [docs/11-dashboard.md](docs/11-dashboard.md).
+Atrium is optional. With `refactor-circus/atrium` installed (`composer require refactor-circus/atrium`), Showroom registers an Atrium plugin: a **Catalog** navigation group with product, product model, category, asset, owner, channel, family, attribute and attribute group pages, an import and export page, dashboard widgets (products by status, completeness, review queue, recent changes), a settings panel and global search. Atrium owns the dashboard's path, middleware and gate. Disable it with `showroom.ui.enabled`. See [docs/11-dashboard.md](docs/11-dashboard.md).
 
 The screens follow Atrium's screen conventions: every action is an icon button (its label shows on hover), statuses are coloured dots (`info` only for products waiting in review and imports or exports waiting to run), and every navigation item has an icon.
 
 Showroom ships no stylesheet or Blade components of its own: its screens are built from `x-atrium::*` components and the utilities Atrium safelists, and `tests/Feature/Ui/StylesTest.php` checks that with `RefactorCircus\Atrium\Testing\AtriumStyles`.
 
-With [refactor-circus/keen](https://github.com/Refactor-Circus/Keen) installed, each product, product model, family, attribute, category, owner, asset and channel page shows that record's audit history, and the product list shows Showroom's (`<x-atrium::audit-trail source="showroom" />`); without it nothing renders. Products keep their own versions and revert alongside. Showroom teaches the audit log what to call its records: labelled records by the current locale's label (else the code), associations by their type and both ends, versions by what they version and their number.
+Showroom renders no other package's UI itself. History comes from [refactor-circus/keen](https://github.com/Refactor-Circus/Keen), which adds its section to Showroom's screens through the screen extensions registry, and the link from a transfer to its Impex run comes from [refactor-circus/impex](https://github.com/refactor-circus/impex) the same way. Products keep their own versions and revert alongside. Showroom teaches the audit log what to call its records: labelled records by the current locale's label (else the code), associations by their type and both ends, versions by what they version and their number.
 
 With `showroom.authorization` on, the screens ask the policies exactly as the API does - the same ability on the same model or model class - so each navigation item, page, button, form and card appears only when its action would be allowed, and the action is refused otherwise. Views use the same check as `@showroomCan('update', $product) ... @endshowroomCan`. Forms a user may view but not save are shown read-only.
 
@@ -315,6 +321,44 @@ Feature::for(null)->deactivate(ShowroomSupportFeature::class);
 ```
 
 Name a subclass or your own features in `showroom.atrium.features`, or empty it to never check one. Without refactor-circus/pennantplus nothing is checked.
+
+### Screen extensions
+
+Every Showroom page declares itself on Atrium's screen extensions registry, so another package adds tabs and sections to it with `Atrium::screens()` from its own `boot()`, and Showroom never needs to know that package exists. List screens declare `header.actions`, `before`, `after` and `row.actions`; detail screens declare `header.actions`, `before`, `after` and `aside`. No screen has built-in tabs, so each opens on `overview` and a registered tab opens through `?tab=`.
+
+| Key | Kind | Route (`atrium.showroom.…`) | `$record` (`row.actions`: the row) |
+|---|---|---|---|
+| `showroom.products` | list | `products.index` | product rows |
+| `showroom.product-create` | detail | `products.create` | none |
+| `showroom.product` | detail | `products.show` | the product |
+| `showroom.product-models` | list | `product-models.index` | product model rows |
+| `showroom.product-model` | detail | `product-models.show` | the product model |
+| `showroom.channels` | list | `channels.index` | channel rows |
+| `showroom.channel` | detail | `channels.show` | the channel |
+| `showroom.assets` | list | `assets.index` | each asset tile |
+| `showroom.asset` | detail | `assets.show` | the asset |
+| `showroom.categories` | list | `categories.index` | each category in the tree |
+| `showroom.category` | detail | `categories.show` | the category |
+| `showroom.owner-types` | list | `owner-types.index` | owner type rows |
+| `showroom.owner-type` | detail | `owner-types.show` | the owner type |
+| `showroom.owners` | list | `owners.index` | owner rows |
+| `showroom.owner` | detail | `owners.show` | the owner |
+| `showroom.families` | list | `families.index` | family rows |
+| `showroom.family` | detail | `families.show` | the family |
+| `showroom.family-variant` | detail | `family-variants.show` | the family variant |
+| `showroom.attributes` | list | `attributes.index` | attribute rows |
+| `showroom.attribute-create` | detail | `attributes.create` | none |
+| `showroom.attribute` | detail | `attributes.show` | the attribute |
+| `showroom.attribute-groups` | list | `attribute-groups.index` | attribute group rows |
+| `showroom.attribute-group` | detail | `attribute-groups.show` | the attribute group |
+| `showroom.association-types` | list | `association-types.index` | association type rows |
+| `showroom.transfers` | list | `transfers.index` | Impex runs |
+
+- **Placement.** `header.actions` sits in the page header. Then come `before`, the page, `aside` (in the side column on the asset page, directly before `after` elsewhere) and `after`. `row.actions` is a trailing cell on every table (on the transfers page, after the flow name) and the foot of each tile on the asset list. While a registered tab is open, its panel replaces the page and only `header.actions` stays.
+- **Own authorization first.** Each page checks its own access before it resolves the screen: a guest gets 401 and a user without access 403, and no registered closure runs.
+- **Authorization.** `permission()` extensions follow `showroom.authorization`: with it on, the permission is asked through the same check as Showroom's own abilities, about the record or row when `showroom.policies` covers its class and about the page's model class otherwise (the product class on the transfers page, so an Impex run never reaches the policies); with it off, every one shows. So registrants that need their own check use `authorize()`.
+- **Row closures.** On a list, the `authorize()` and `resolve()` closures of a `row.actions` section run once per row, with the row as `$record`, so they must not query: decide from the row and the request, and return early on `$screen->key`.
+- With nothing registered, the pages render and query exactly as they would without the registry.
 
 ## Code layout
 

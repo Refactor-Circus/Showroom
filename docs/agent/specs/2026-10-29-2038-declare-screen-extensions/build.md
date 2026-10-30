@@ -117,3 +117,55 @@ The "Group 1" section above was written but not committed, and it describes this
 **Tests.** The suite was not run here. As instructed, task 1.6 is ticked and the gate runs `vendor/bin/pest`.
 
 **Deviations.** None beyond those in "Group 1" above. `AGENTS.md` still has an uncommitted change. It is not in the group's files, so it was left alone.
+
+## Group 3
+
+Branch `ring-master/2026-10-29-2038-declare-screen-extensions`, commit "2026-10-29-2038-declare-screen-extensions: group 3 Docs and gate". Criteria 12 and 13.
+
+### Files
+
+- `tests/Feature/DocsTest.php` (new). It checks that:
+  - the README has a table row for each of the 25 keys with its kind (`| \`showroom.products\` | list |`), and exactly 25 such rows;
+  - the README names the slots of each kind;
+  - the README states the authorization rule: `permission()` extensions follow `showroom.authorization`, every one shows with it off, and registrants that need their own check use `authorize()`;
+  - the README states the row-closure rule: they run once per row and must not query;
+  - the README says Atrium is optional and how to install it;
+  - the changelog says to install Atrium, re-publish `showroom-views` and install `refactor-circus/keen`;
+  - no file under `src`, `resources` or `docs/agent/standards`, and neither `README.md` nor `CLAUDE.md`, contains `audit-trail`, `historyNavItem` or `atrium.impex`.
+- `README.md`:
+  - Installation says Atrium is optional and how to install it.
+  - Dashboard: the plugin is registered only with Atrium installed. The audit-trail paragraph is replaced: History comes from Keen and the run link from Impex, each through the registry.
+  - New "Screen extensions" subsection: slots per kind, a table of the 25 keys (kind, route, `$record`), and the rules for placement, own authorization first (401/403), authorization (D-022/D-024/D-026) and row closures. It also says that with nothing registered, pages render and query as before.
+- `CHANGELOG.md`, Unreleased:
+  - New Breaking entries: install Atrium explicitly (the `conflict` is `<0.1.0`); the audit trails and the Audit log link are gone, so install Keen for History; the transfers run link is gone (Impex adds it); re-publish published views (`--tag="showroom-views" --force`); guests refused on screens get 401 (Showroom's own `AuthorizesScreens`); the start endpoints answer 404 and the start tools are not offered without Impex.
+  - The unreleased "Audit log link" Added entry is replaced by a "screen declarations" entry.
+  - The older unreleased line that said `AuthorizesScreens` was removed in favour of Atrium's drops that clause, since the concern is back.
+- `CLAUDE.md` (a symlink to `AGENTS.md`, so the edit is in `AGENTS.md`):
+  - The component list replaces `audit-trail` with `screen-tabs`, `screen-tab-panel` and `screen-sections`.
+  - The screen controllers bullet names Showroom's own `AuthorizesScreens` (401/403).
+  - The audit-trail bullet is replaced by a screen-declaration bullet.
+  - A new bullet says Atrium is optional (arch rule, WithoutAtrium suite).
+- `resources/boost/skills/showroom-development/SKILL.md`:
+  - The audit-trail line is replaced by three: Atrium is optional; the screen keys, slots and both rules; History and the run link come from Keen and Impex.
+  - Screen refusals are now 401/403.
+  - The import/export rule says the start endpoints are not registered (404) without Impex, where it said 501.
+- `docs/agent/standards/showroom/atrium-screens.md`:
+  - The "Audit trail" section becomes "Screen declarations": how a screen is declared and resolved, the slots, the layout, the authorization rule, and that Showroom names no other package.
+  - The frontmatter description and tags drop the audit trail.
+  - Enforcement names `ScreenExtensionsTest` and `DocsTest`.
+- `docs/12-impex.md` line 19: without Impex active at boot, the start endpoints are not registered (404), and the MCP server does not offer the start tools. It said they answer 501.
+- `docs/11-dashboard.md` (**not in the group's file list**):
+  - The "Audit history" bullet said record pages show audit entries; it now says Keen adds its History section through the registry.
+  - The intro says Atrium is optional.
+  - "Who sees what" now gives 401 for guests and 403 otherwise.
+  - The page was wrong after groups 1 and 2, so it was corrected here.
+
+### Tests
+
+The suite was not run here; the gate runs `composer test` and `vendor/bin/pest`, so 3.3 is ticked for the gate. `vendor/bin/pest tests/Feature/DocsTest.php` alone passes (32 tests, 40 assertions). `vendor/bin/pint --test` passes on `DocsTest.php`. A grep finds no `audit-trail`, `historyNavItem` or `atrium.impex` in `src`, `resources`, `README.md`, `AGENTS.md` or `docs/agent/standards`.
+
+### Deviations and notes
+
+- **`AGENTS.md` partly staged.** Its uncommitted ringside-sync line (the "Keep this checkout on `main`" bullet in the Ring Master block) was there before this group. Only this group's hunk was committed (`git apply --cached`), so that line is still uncommitted.
+- **`docs/agent/standards.index.yml` is stale.** Its `showroom/atrium-screens` description still says "show screens carry the audit trail". The file is generated, so `vendor/bin/ringside sync` should refresh it from the standard's new frontmatter. It is outside the group's files and outside the docs test's scope.
+- `composer.local.json` was not touched. The Atrium `conflict` stays `"<0.1.0"`.

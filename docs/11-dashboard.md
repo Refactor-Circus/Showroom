@@ -1,11 +1,11 @@
 # Dashboard
 
-Showroom registers itself with [Atrium](https://github.com/Refactor-Circus/Atrium) — discovered from `composer.json` and switched off with `showroom.ui.enabled`. Atrium owns the dashboard's path (`/atrium` by default), middleware and `viewAtrium` gate.
+Atrium is optional; install it with `composer require refactor-circus/atrium`. Showroom then registers itself with [Atrium](https://github.com/Refactor-Circus/Atrium) — discovered from `composer.json` and switched off with `showroom.ui.enabled`. Atrium owns the dashboard's path (`/atrium` by default), middleware and `viewAtrium` gate.
 
 - **Catalog → Products:** search through the configured engine, filter by family and status, create products, edit values (one input per attribute, typed), enable or disable, see inherited values.
 - **Catalog → Product models:** create root models, edit their values, add sub-models and variant products by picking their axis values.
 - **Products — workflow:** each product page shows its status and live version with buttons for the transitions open to it (and a comment), completeness per channel and locale with what is missing, and the latest history with revert. The product list shows and filters status. Family pages narrow each requirement to channels.
-- **Audit history (with [refactor-circus/keen](https://github.com/Refactor-Circus/Keen)):** product, product model, family, attribute, category, owner, asset and channel pages show that record's audit entries, and the product list shows Showroom's latest. Without Keen nothing renders. Product versions and revert stay as they are.
+- **Audit history (with [refactor-circus/keen](https://github.com/Refactor-Circus/Keen)):** Keen adds its History section to Showroom's pages through Atrium's screen extensions registry; Showroom renders none itself. Product versions and revert stay as they are. See "Screen extensions" in the README for the screen keys and slots.
 - **Catalog → Association types:** create plain, two-way and quantified types. Product and product model pages list associations (inherited ones marked) and add or remove one at a time.
 - **Catalog → Channels:** add and remove locales; create channels with their locales, currencies and category tree.
 - **Values:** product and product model pages pick a locale and a channel, so every localizable and scopable value can be edited.
@@ -44,7 +44,7 @@ Each dot carries `data-status` with the raw value. Labels such as an attribute's
 
 ## Who sees what
 
-With `showroom.authorization` on, each screen asks the policies in `showroom.policies` exactly as the JSON API and MCP tools ask - the same ability on the same model or model class - through `RefactorCircus\Showroom\Atrium\ScreenAccess`. Controllers refuse with it (403) and views hide controls with it, so a control is shown exactly when its action is allowed:
+With `showroom.authorization` on, each screen asks the policies in `showroom.policies` exactly as the JSON API and MCP tools ask - the same ability on the same model or model class - through `RefactorCircus\Showroom\Atrium\ScreenAccess`. Controllers refuse with it (401 for a guest, 403 for a signed-in user) and views hide controls with it, so a control is shown exactly when its action is allowed:
 
 | Shown / allowed | Asks |
 |---|---|

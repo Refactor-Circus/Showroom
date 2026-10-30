@@ -16,7 +16,7 @@ With it installed (and `showroom.impex.enabled` on), Showroom registers these fl
 | `showroom:export-products` | Products matching a search → a `.jsonl` or `.csv` file |
 | `showroom:feed:{name}` | One per configured feed: a channel's published products → a file, optionally pushed to a URL |
 
-Every flow is an ordinary Impex run: its status, steps, failures and result are on Impex's API, MCP tools and dashboard, and Impex can pause, retry, resume and schedule it. Without Impex, the start endpoints and tools answer `501`.
+Every flow is an ordinary Impex run: its status, steps, failures and result are on Impex's API, MCP tools and dashboard, and Impex can pause, retry, resume and schedule it. Without Impex installed and enabled when the application boots, the start endpoints are not registered (they answer `404`) and the MCP server does not offer the start tools.
 
 ## Importing
 
