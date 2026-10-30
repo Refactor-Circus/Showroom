@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Laravel\Mcp\Server\Testing\TestResponse;
 use Laravel\Mcp\Server\Tool;
+use RefactorCircus\Atrium\Testing\ResetsScreenExtensions;
 use RefactorCircus\Keystone\Testing\McpTools;
 use RefactorCircus\Keystone\Testing\Parity;
 use RefactorCircus\Showroom\Mcp\ShowroomServer;
@@ -13,11 +14,15 @@ use RefactorCircus\Showroom\Tests\PennantPlusTestCase;
 use RefactorCircus\Showroom\Tests\RenamedTablesTestCase;
 use RefactorCircus\Showroom\Tests\TestCase;
 
-uses(TestCase::class)->in('Feature', 'Unit');
-uses(CortexTestCase::class)->in('Cortex');
-uses(PennantPlusTestCase::class)->in('PennantPlus');
-uses(KeenTestCase::class)->in('Keen');
-uses(RenamedTablesTestCase::class)->in('Modes/RenamedTables');
+// These test cases use Atrium. Without it (the CI without-atrium lane) only
+// tests/WithoutAtrium runs, and loading them would fail on the missing classes.
+if (trait_exists(ResetsScreenExtensions::class)) {
+    uses(TestCase::class)->in('Feature', 'Unit');
+    uses(CortexTestCase::class)->in('Cortex');
+    uses(PennantPlusTestCase::class)->in('PennantPlus');
+    uses(KeenTestCase::class)->in('Keen');
+    uses(RenamedTablesTestCase::class)->in('Modes/RenamedTables');
+}
 
 /**
  * Call a catalog tool as an MCP client does, through tool search, with its

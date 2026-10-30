@@ -362,7 +362,7 @@ it('opens a registered tab through ?tab= in place of the page, keeping only the 
         ->and($rows)->toBe([]);
 })->with('showroom screens');
 
-it('refuses a denied user 403 and a guest 401 before any extension is asked or resolved', function (string $key, string $route, ?string $parameter): void {
+it('refuses a denied user 403 and a guest 401 before any extension is asked or resolved', function (string $key, string $route, ?string $parameter, ?string $row, Closure $body): void {
     screenExtWorld();
     screenExtAuthorize();
 

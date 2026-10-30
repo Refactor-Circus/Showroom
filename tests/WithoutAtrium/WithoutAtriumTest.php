@@ -21,15 +21,33 @@ use RefactorCircus\Showroom\Tests\WithoutAtrium\WithoutAtriumTestCase;
 uses(WithoutAtriumTestCase::class);
 
 /**
- * Every Atrium class, interface and trait PHP has loaded.
+ * The Atrium classes the test harness loaded before tests/WithoutAtrium/bootstrap.php
+ * ran: tests/Pest.php's uses() loads the main suite's TestCase and its
+ * ResetsScreenExtensions.
+ *
+ * @return array<int, string>
+ */
+function preloadedAtriumClasses(): array
+{
+    /** @var array<int, string> $preloaded */
+    $preloaded = $GLOBALS['showroom_atrium_preloaded'] ?? [];
+
+    return $preloaded;
+}
+
+/**
+ * Every Atrium class, interface and trait PHP has loaded since the bootstrap.
  *
  * @return array<int, string>
  */
 function loadedAtriumClasses(): array
 {
-    return array_values(array_filter(
-        [...get_declared_classes(), ...get_declared_interfaces(), ...get_declared_traits()],
-        fn (string $class): bool => str_starts_with($class, 'RefactorCircus\\Atrium\\'),
+    return array_values(array_diff(
+        array_filter(
+            [...get_declared_classes(), ...get_declared_interfaces(), ...get_declared_traits()],
+            fn (string $class): bool => str_starts_with($class, 'RefactorCircus\\Atrium\\'),
+        ),
+        preloadedAtriumClasses(),
     ));
 }
 
@@ -54,7 +72,12 @@ function searchedShowroomTools(string $query): array
 it('cannot load any Atrium class', function (): void {
     expect(class_exists('RefactorCircus\\Atrium\\AtriumServiceProvider'))->toBeFalse()
         ->and(class_exists('RefactorCircus\\Atrium\\Atrium'))->toBeFalse()
-        ->and(loadedAtriumClasses())->toBeEmpty();
+        ->and(loadedAtriumClasses())->toBeEmpty()
+        // Only the harness's testing helpers were loaded before the bootstrap.
+        ->and(array_filter(
+            preloadedAtriumClasses(),
+            fn (string $class): bool => ! str_starts_with($class, 'RefactorCircus\\Atrium\\Testing\\'),
+        ))->toBe([]);
 });
 
 it('boots the provider without Atrium', function (): void {

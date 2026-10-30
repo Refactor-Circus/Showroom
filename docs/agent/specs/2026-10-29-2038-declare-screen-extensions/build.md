@@ -189,3 +189,38 @@ The suite was not run here; the gate runs `composer test` and `vendor/bin/pest`,
 **Tests.** The suite was not run here. As instructed, task 3.3 is ticked and the gate runs `composer test` and `vendor/bin/pest`.
 
 **Deviations.** None beyond those in "Group 3" above. The ringside-sync line in `AGENTS.md` is still uncommitted. It is not this group's change.
+
+## Rework round 1
+
+Branch `ring-master/2026-10-29-2038-declare-screen-extensions`, commit "2026-10-29-2038-declare-screen-extensions: rework round 1". Fixes the two gate blockers in `round-1/gate.md`, and the failures they had hidden.
+
+### Fixes
+
+- **Impex plugin 500s (196 failures).** The sibling Impex checkouts (`../Impex` and every `register-showroom-run-link` worktree) still call `historyNavItem()`, which the Atrium registry branch removed; Impex's own task 3.4 drops it. `tests/TestCase.php` now disables the discovered `impex` plugin through `atrium.disabled`, as it already did for `cortex`. Showroom's screens must render without another package's dashboard UI: whatever Impex adds to them comes through the registry, which these tests drive themselves. No Showroom test relied on the Impex plugin.
+- **Ringside.** Ran `vendor/bin/ringside sync`. It rewrote `AGENTS.md` (the "Keep this checkout on `main`" line, uncommitted since group 3) and one git-ignored file. `ringside check` now passes, and this commit includes `AGENTS.md`.
+- **Failures hidden behind the 500s:**
+  - `tests/ArchTest.php`: the Atrium rule called `->ignoring()` before `->not->toUse()`, where `ignoring` is not defined ("Method [ignoring] does not exist in [string]"). It now reads `->expect('RefactorCircus\Showroom')->not->toUse('RefactorCircus\Atrium')->ignoring('RefactorCircus\Showroom\Atrium')`. A temporary probe class in `src/Support` that used an Atrium class made it fail, so the rule bites. The probe was deleted.
+  - `tests/Feature/Ui/ScreenExtensionsTest.php`: the 401/403 test took 3 of the 5 `showroom screens` dataset arguments, so Pest failed with "Undefined array key 4". It now declares all five.
+  - `tests/Feature/Ui/ShowroomPluginTest.php`, `contributes catalog navigation`: it no longer expects the `Audit log` item, which criterion 6 removes. **Changed test, for the PR.**
+- **WithoutAtrium suite (part of `composer test`; the gate never reached it).** 3 of 6 tests failed. Pest reads `tests/Pest.php` before the suite's bootstrap runs, and its `uses(TestCase::class)` loads `TestCase` and Atrium's `ResetsScreenExtensions` (criterion 8). So:
+  - `tests/WithoutAtrium/bootstrap.php` records the Atrium classes already declared when it runs. `WithoutAtriumTest` counts only classes loaded after that, and asserts that the harness loaded nothing but `RefactorCircus\Atrium\Testing\*`.
+  - In the CI `without-atrium` lane, Atrium is uninstalled, so the same `uses()` would be fatal ("Trait … not found" at `tests/Pest.php`). I reproduced this by hiding Atrium's namespace before Pest boots (`php -d auto_prepend_file=…`). `tests/Pest.php` now applies the five Atrium-based test cases only when `trait_exists(ResetsScreenExtensions::class)`. The simulated lane passes.
+
+### Files
+
+`tests/TestCase.php`, `tests/ArchTest.php`, `tests/Pest.php`, `tests/Feature/Ui/ScreenExtensionsTest.php`, `tests/Feature/Ui/ShowroomPluginTest.php`, `tests/WithoutAtrium/bootstrap.php`, `tests/WithoutAtrium/WithoutAtriumTest.php`, `AGENTS.md` (ringside sync), this file. `tests/Pest.php`, the two WithoutAtrium files and `AGENTS.md` are outside the findings' scope but were needed for `composer test` and `ringside check` to pass.
+
+### Tests
+
+- `composer test` passes:
+  - phpstan: 0 errors;
+  - pint: passes;
+  - type coverage: 100%;
+  - `test:unit`: 712 tests, 9174 assertions;
+  - `test:without-atrium`: 6 tests, 31 assertions.
+- `ringside check` passes.
+- The WithoutAtrium suite also passes with Atrium hidden from the start (the simulated CI lane).
+
+### Notes
+
+- Once Impex's `register-showroom-run-link` group 3 lands, the `impex` entry in `atrium.disabled` can stay: Showroom's tests do not need Impex's dashboard.
