@@ -19,10 +19,10 @@ depends on: none
 files: composer.json, composer.local.json, tests/ArchTest.php, tests/Feature/ComposerTest.php, phpunit.without-atrium.xml, tests/WithoutAtrium/*, src/Mcp/ShowroomServer.php, src/ShowroomServiceProvider.php, .github/workflows/tests.yml
 criteria: 9, 10, 11
 
-- [ ] 2.1 Write the composer.json test, the arch rule and the WithoutAtrium suite (bootstrap, test case, boot, routes, JSON API, MCP assertions).
-- [ ] 2.2 Move Atrium to `require-dev` and `suggest`, add the `conflict` entry, regenerate `composer.local.json`, and add the `test:without-atrium` script to `composer test`.
-- [ ] 2.3 Guard the transfer MCP tools and JSON routes on `ImpexIntegration::active()` if they are not already, and add the `without-atrium` CI job.
-- [ ] 2.4 Run vendor/bin/pest; all green.
+- [x] 2.1 Write the composer.json test, the arch rule and the WithoutAtrium suite (bootstrap, test case, boot, routes, JSON API, MCP assertions).
+- [x] 2.2 Move Atrium to `require-dev` and `suggest`, add the `conflict` entry, regenerate `composer.local.json`, and add the `test:without-atrium` script to `composer test`.
+- [x] 2.3 Guard the transfer MCP tools and JSON routes on `ImpexIntegration::active()` if they are not already, and add the `without-atrium` CI job.
+- [x] 2.4 Run vendor/bin/pest; all green.
 
 ## Group 3: Docs and gate
 package: Showroom
