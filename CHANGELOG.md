@@ -1,6 +1,8 @@
 # Release Notes
 
-## [Unreleased](https://github.com/Refactor-Circus/Showroom/commits/main)
+## [Unreleased](https://github.com/Refactor-Circus/Showroom/compare/v0.1.0...main)
+
+## [v0.1.0](https://github.com/Refactor-Circus/Showroom/commits/v0.1.0) - 2026-10-30
 
 ### Breaking
 
@@ -253,8 +255,3 @@
 ### Removed
 
 - Skeleton placeholder config, route, migration, view, command, translation and public assets tag.
-
-
-## [v0.1.0](https://github.com/Refactor-Circus/Showroom/compare/...v0.1.0) - 202x-xx-xx
-
-Initial pre-release.

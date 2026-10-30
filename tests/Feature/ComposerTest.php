@@ -26,7 +26,7 @@ it('keeps Atrium optional: a dev dependency it suggests', function (): void {
     $composer = showroomComposer();
 
     expect($composer['require'])->not->toHaveKey('refactor-circus/atrium')
-        ->and($composer['require-dev'])->toHaveKey('refactor-circus/atrium', 'dev-main')
+        ->and($composer['require-dev'])->toHaveKey('refactor-circus/atrium', '^0.1')
         ->and($composer['suggest'])->toHaveKey('refactor-circus/atrium', 'Browse and manage the catalog from the Atrium dashboard (dev-main).');
 });
 
