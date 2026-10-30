@@ -1,9 +1,15 @@
 id: 2026-10-29-2038-declare-screen-extensions
 title: 'Declare screen extensions'
-status: building
+status: in-review
 created: '2026-10-29 20:38'
 standards:
   refactor-circus/standards:
     version: dev-main
     reference: a5b675396232
 review_passes: 1
+runs:
+  - workflow: ring-master-factory
+    run_id: wf_facddd91-14b
+    result: approved
+    round: 2
+    date: '2026-10-30'
