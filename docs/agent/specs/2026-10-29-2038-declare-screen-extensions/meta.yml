@@ -1,8 +1,9 @@
 id: 2026-10-29-2038-declare-screen-extensions
 title: 'Declare screen extensions'
-status: written
+status: approved
 created: '2026-10-29 20:38'
 standards:
   refactor-circus/standards:
     version: dev-main
     reference: a5b675396232
+review_passes: 1
