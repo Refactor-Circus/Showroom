@@ -7,8 +7,10 @@ namespace RefactorCircus\Showroom\Atrium\Http\Controllers;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use RefactorCircus\Atrium\Http\Controllers\Concerns\AuthorizesScreens;
+use RefactorCircus\Atrium\Domains\Screens\Services\ScreenExtensions;
+use RefactorCircus\Showroom\Atrium\Http\Controllers\Concerns\AuthorizesScreens;
 use RefactorCircus\Showroom\Atrium\Support\Labels;
+use RefactorCircus\Showroom\Atrium\Support\Screens;
 use RefactorCircus\Showroom\Domains\Attribute\Actions\CreateAttributeGroupAction;
 use RefactorCircus\Showroom\Domains\Attribute\Actions\DeleteAttributeGroupAction;
 use RefactorCircus\Showroom\Domains\Attribute\Actions\ListAttributeGroupsAction;
@@ -36,6 +38,7 @@ final class AttributeGroupUiController
         $view = 'showroom::ui.attribute-groups.index';
 
         return view($view, [
+            'resolved' => app(ScreenExtensions::class)->resolve(Screens::list('showroom.attribute-groups', AttributeGroupModel::class), $request),
             'groups' => app(ListAttributeGroupsAction::class)->execute(ListAttributeGroupsData::fromValidated($filters))->withQueryString(),
             'filters' => $filters,
         ]);
@@ -54,15 +57,18 @@ final class AttributeGroupUiController
             ->with('status', __('showroom::showroom.group_created'));
     }
 
-    public function show(AttributeGroupModel $group): View
+    public function show(Request $request, AttributeGroupModel $group): View
     {
         $this->authorizeScreen('view', $group);
+
+        $group = app(ShowAttributeGroupAction::class)->execute($group);
 
         /** @var view-string $view */
         $view = 'showroom::ui.attribute-groups.show';
 
         return view($view, [
-            'group' => app(ShowAttributeGroupAction::class)->execute($group),
+            'resolved' => app(ScreenExtensions::class)->resolve(Screens::detail('showroom.attribute-group', $group, AttributeGroupModel::class), $request),
+            'group' => $group,
         ]);
     }
 

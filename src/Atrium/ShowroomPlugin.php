@@ -113,9 +113,6 @@ class ShowroomPlugin extends Plugin
                 ->authorize(fn (Request $request): bool => ScreenAccess::allows('viewAny', AssociationTypeModel::class, $request)),
             NavItem::make(__('showroom::showroom.attribute_groups'))->icon(Icons::svg('squares-2x2'))->route('atrium.showroom.attribute-groups.index')->group($group)->sort(20)
                 ->authorize(fn (Request $request): bool => ScreenAccess::allows('viewAny', AttributeGroupModel::class, $request)),
-
-            // The package's own audit log, while an audit log is installed.
-            $this->historyNavItem('showroom')->group($group)->sort(90),
         ];
     }
 

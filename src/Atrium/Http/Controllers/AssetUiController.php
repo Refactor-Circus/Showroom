@@ -8,8 +8,10 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use RefactorCircus\Atrium\Http\Controllers\Concerns\AuthorizesScreens;
+use RefactorCircus\Atrium\Domains\Screens\Services\ScreenExtensions;
+use RefactorCircus\Showroom\Atrium\Http\Controllers\Concerns\AuthorizesScreens;
 use RefactorCircus\Showroom\Atrium\Support\Labels;
+use RefactorCircus\Showroom\Atrium\Support\Screens;
 use RefactorCircus\Showroom\Domains\Asset\Actions\AttachAssetAction;
 use RefactorCircus\Showroom\Domains\Asset\Actions\CreateAssetAction;
 use RefactorCircus\Showroom\Domains\Asset\Actions\DeleteAssetAction;
@@ -39,6 +41,7 @@ final class AssetUiController
         $view = 'showroom::ui.assets.index';
 
         return view($view, [
+            'resolved' => app(ScreenExtensions::class)->resolve(Screens::list('showroom.assets', AssetModel::class), $request),
             'assets' => app(ListAssetsAction::class)->execute($filters)->withQueryString(),
             'filters' => $filters->toArray(),
         ]);
@@ -79,15 +82,18 @@ final class AssetUiController
         return back()->with('status', __('showroom::showroom.asset_attached'));
     }
 
-    public function show(AssetModel $asset): View
+    public function show(Request $request, AssetModel $asset): View
     {
         $this->authorizeScreen('view', $asset);
+
+        $asset = app(ShowAssetAction::class)->execute($asset);
 
         /** @var view-string $view */
         $view = 'showroom::ui.assets.show';
 
         return view($view, [
-            'asset' => app(ShowAssetAction::class)->execute($asset),
+            'resolved' => app(ScreenExtensions::class)->resolve(Screens::detail('showroom.asset', $asset, AssetModel::class), $request),
+            'asset' => $asset,
             'types' => array_combine(array_keys(AssetLinks::TYPES), array_keys(AssetLinks::TYPES)),
         ]);
     }

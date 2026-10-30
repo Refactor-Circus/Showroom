@@ -8,8 +8,10 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
-use RefactorCircus\Atrium\Http\Controllers\Concerns\AuthorizesScreens;
+use RefactorCircus\Atrium\Domains\Screens\Services\ScreenExtensions;
+use RefactorCircus\Showroom\Atrium\Http\Controllers\Concerns\AuthorizesScreens;
 use RefactorCircus\Showroom\Atrium\Support\Labels;
+use RefactorCircus\Showroom\Atrium\Support\Screens;
 use RefactorCircus\Showroom\Domains\Owner\Actions\CreateOwnerTypeAction;
 use RefactorCircus\Showroom\Domains\Owner\Actions\DeleteOwnerTypeAction;
 use RefactorCircus\Showroom\Domains\Owner\Actions\ListOwnerTypesAction;
@@ -33,6 +35,7 @@ final class OwnerTypeUiController
         $view = 'showroom::ui.owner-types.index';
 
         return view($view, [
+            'resolved' => app(ScreenExtensions::class)->resolve(Screens::list('showroom.owner-types', OwnerTypeModel::class), $request),
             'types' => app(ListOwnerTypesAction::class)->execute(ListOwnerTypesData::from($request->query()))->withQueryString(),
             'all' => OwnerTypeModel::query()->orderBy('code')->pluck('code')->all(),
         ]);
@@ -51,15 +54,18 @@ final class OwnerTypeUiController
             ->with('status', __('showroom::showroom.owner_type_created'));
     }
 
-    public function show(OwnerTypeModel $ownerType): View
+    public function show(Request $request, OwnerTypeModel $ownerType): View
     {
         $this->authorizeScreen('view', $ownerType);
+
+        $type = app(ShowOwnerTypeAction::class)->execute($ownerType);
 
         /** @var view-string $view */
         $view = 'showroom::ui.owner-types.show';
 
         return view($view, [
-            'type' => app(ShowOwnerTypeAction::class)->execute($ownerType),
+            'resolved' => app(ScreenExtensions::class)->resolve(Screens::detail('showroom.owner-type', $type, OwnerTypeModel::class), $request),
+            'type' => $type,
             'all' => OwnerTypeModel::query()->orderBy('code')->pluck('code')->all(),
         ]);
     }

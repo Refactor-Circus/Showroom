@@ -8,8 +8,10 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
-use RefactorCircus\Atrium\Http\Controllers\Concerns\AuthorizesScreens;
+use RefactorCircus\Atrium\Domains\Screens\Services\ScreenExtensions;
+use RefactorCircus\Showroom\Atrium\Http\Controllers\Concerns\AuthorizesScreens;
 use RefactorCircus\Showroom\Atrium\Support\Labels;
+use RefactorCircus\Showroom\Atrium\Support\Screens;
 use RefactorCircus\Showroom\Domains\Attribute\Actions\CreateAttributeAction;
 use RefactorCircus\Showroom\Domains\Attribute\Actions\CreateAttributeOptionAction;
 use RefactorCircus\Showroom\Domains\Attribute\Actions\DeleteAttributeAction;
@@ -43,6 +45,7 @@ final class AttributeUiController
         $view = 'showroom::ui.attributes.index';
 
         return view($view, [
+            'resolved' => app(ScreenExtensions::class)->resolve(Screens::list('showroom.attributes', AttributeModel::class), $request),
             'catalogAttributes' => app(ListAttributesAction::class)->execute(ListAttributesData::fromValidated($filters))->withQueryString(),
             'filters' => $filters,
             'types' => AttributeType::cases(),
@@ -50,7 +53,7 @@ final class AttributeUiController
         ]);
     }
 
-    public function create(): View
+    public function create(Request $request): View
     {
         $this->authorizeScreen('create', AttributeModel::class);
 
@@ -58,6 +61,7 @@ final class AttributeUiController
         $view = 'showroom::ui.attributes.create';
 
         return view($view, [
+            'resolved' => app(ScreenExtensions::class)->resolve(Screens::detail('showroom.attribute-create', null, AttributeModel::class), $request),
             'types' => AttributeType::cases(),
             'groups' => $this->groups(),
         ]);
@@ -76,15 +80,18 @@ final class AttributeUiController
             ->with('status', __('showroom::showroom.attribute_created'));
     }
 
-    public function show(AttributeModel $attribute): View
+    public function show(Request $request, AttributeModel $attribute): View
     {
         $this->authorizeScreen('view', $attribute);
+
+        $attribute = app(ShowAttributeAction::class)->execute($attribute);
 
         /** @var view-string $view */
         $view = 'showroom::ui.attributes.show';
 
         return view($view, [
-            'attribute' => app(ShowAttributeAction::class)->execute($attribute),
+            'resolved' => app(ScreenExtensions::class)->resolve(Screens::detail('showroom.attribute', $attribute, AttributeModel::class), $request),
+            'attribute' => $attribute,
             'groups' => $this->groups(),
         ]);
     }

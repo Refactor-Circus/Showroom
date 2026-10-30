@@ -7,8 +7,10 @@ namespace RefactorCircus\Showroom\Atrium\Http\Controllers;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use RefactorCircus\Atrium\Http\Controllers\Concerns\AuthorizesScreens;
+use RefactorCircus\Atrium\Domains\Screens\Services\ScreenExtensions;
+use RefactorCircus\Showroom\Atrium\Http\Controllers\Concerns\AuthorizesScreens;
 use RefactorCircus\Showroom\Atrium\Support\Labels;
+use RefactorCircus\Showroom\Atrium\Support\Screens;
 use RefactorCircus\Showroom\Domains\Category\Actions\CreateCategoryAction;
 use RefactorCircus\Showroom\Domains\Category\Actions\DeleteCategoryAction;
 use RefactorCircus\Showroom\Domains\Category\Actions\ListCategoriesAction;
@@ -32,6 +34,7 @@ final class CategoryUiController
         $view = 'showroom::ui.categories.index';
 
         return view($view, [
+            'resolved' => app(ScreenExtensions::class)->resolve(Screens::list('showroom.categories', CategoryModel::class), $request),
             'trees' => app(ListCategoriesAction::class)->execute(ListCategoriesData::from(['roots' => true] + $request->query()))->withQueryString(),
         ]);
     }
@@ -47,7 +50,7 @@ final class CategoryUiController
             ->with('status', __('showroom::showroom.category_created'));
     }
 
-    public function show(CategoryModel $category): View
+    public function show(Request $request, CategoryModel $category): View
     {
         $this->authorizeScreen('view', $category);
 
@@ -57,6 +60,7 @@ final class CategoryUiController
         $view = 'showroom::ui.categories.show';
 
         return view($view, [
+            'resolved' => app(ScreenExtensions::class)->resolve(Screens::detail('showroom.category', $category, CategoryModel::class), $request),
             'category' => $category,
             // The whole branch beneath, grouped by parent for a nested list.
             'branch' => CategoryModel::query()

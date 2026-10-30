@@ -7,11 +7,15 @@ namespace RefactorCircus\Showroom\Tests;
 use Laravel\Mcp\Server\McpServiceProvider;
 use Orchestra\Testbench\TestCase as Orchestra;
 use RefactorCircus\Atrium\AtriumServiceProvider;
+use RefactorCircus\Atrium\Testing\ResetsScreenExtensions;
 use RefactorCircus\Impex\ImpexServiceProvider;
 use RefactorCircus\Showroom\ShowroomServiceProvider;
 
 abstract class TestCase extends Orchestra
 {
+    // What one test registers on a screen never reaches the next.
+    use ResetsScreenExtensions;
+
     /**
      * @return array<int, class-string>
      */

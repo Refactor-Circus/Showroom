@@ -8,8 +8,10 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
-use RefactorCircus\Atrium\Http\Controllers\Concerns\AuthorizesScreens;
+use RefactorCircus\Atrium\Domains\Screens\Services\ScreenExtensions;
+use RefactorCircus\Showroom\Atrium\Http\Controllers\Concerns\AuthorizesScreens;
 use RefactorCircus\Showroom\Atrium\Support\Labels;
+use RefactorCircus\Showroom\Atrium\Support\Screens;
 use RefactorCircus\Showroom\Domains\Association\Actions\CreateAssociationTypeAction;
 use RefactorCircus\Showroom\Domains\Association\Actions\DeleteAssociationTypeAction;
 use RefactorCircus\Showroom\Domains\Association\Actions\ListAssociationTypesAction;
@@ -41,6 +43,7 @@ final class AssociationUiController
         $view = 'showroom::ui.association-types.index';
 
         return view($view, [
+            'resolved' => app(ScreenExtensions::class)->resolve(Screens::list('showroom.association-types', AssociationTypeModel::class), $request),
             'types' => app(ListAssociationTypesAction::class)->execute(ListAssociationTypesData::from($request->query()))->withQueryString(),
         ]);
     }

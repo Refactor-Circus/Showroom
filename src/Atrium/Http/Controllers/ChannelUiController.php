@@ -8,8 +8,10 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
-use RefactorCircus\Atrium\Http\Controllers\Concerns\AuthorizesScreens;
+use RefactorCircus\Atrium\Domains\Screens\Services\ScreenExtensions;
+use RefactorCircus\Showroom\Atrium\Http\Controllers\Concerns\AuthorizesScreens;
 use RefactorCircus\Showroom\Atrium\Support\Labels;
+use RefactorCircus\Showroom\Atrium\Support\Screens;
 use RefactorCircus\Showroom\Domains\Category\Models\CategoryModel;
 use RefactorCircus\Showroom\Domains\Channel\Actions\CreateChannelAction;
 use RefactorCircus\Showroom\Domains\Channel\Actions\CreateLocaleAction;
@@ -35,7 +37,7 @@ final class ChannelUiController
 {
     use AuthorizesScreens;
 
-    public function index(): View
+    public function index(Request $request): View
     {
         $this->authorizeScreen('viewAny', ChannelModel::class);
 
@@ -43,6 +45,7 @@ final class ChannelUiController
         $view = 'showroom::ui.channels.index';
 
         return view($view, [
+            'resolved' => app(ScreenExtensions::class)->resolve(Screens::list('showroom.channels', ChannelModel::class), $request),
             'channels' => app(ListChannelsAction::class)->execute(new ListChannelsData(perPage: 100)),
             'locales' => app(ListLocalesAction::class)->execute(new ListLocalesData(perPage: 100)),
             'allLocales' => LocaleModel::query()->orderBy('code')->pluck('code')->all(),
@@ -63,15 +66,18 @@ final class ChannelUiController
             ->with('status', __('showroom::showroom.channel_created'));
     }
 
-    public function show(ChannelModel $channel): View
+    public function show(Request $request, ChannelModel $channel): View
     {
         $this->authorizeScreen('view', $channel);
+
+        $channel = app(ShowChannelAction::class)->execute($channel);
 
         /** @var view-string $view */
         $view = 'showroom::ui.channels.show';
 
         return view($view, [
-            'channel' => app(ShowChannelAction::class)->execute($channel),
+            'resolved' => app(ScreenExtensions::class)->resolve(Screens::detail('showroom.channel', $channel, ChannelModel::class), $request),
+            'channel' => $channel,
             'allLocales' => LocaleModel::query()->orderBy('code')->pluck('code')->all(),
             'trees' => $this->trees(),
         ]);
