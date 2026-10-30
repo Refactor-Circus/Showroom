@@ -7,6 +7,7 @@ namespace RefactorCircus\Showroom\Mcp;
 use Laravel\Mcp\Server\Attributes\Instructions;
 use Laravel\Mcp\Server\Attributes\Name;
 use Laravel\Mcp\Server\Attributes\Version;
+use Laravel\Mcp\Server\ServerContext;
 use Laravel\Mcp\Server\Tool;
 use Laravel\Mcp\Server\Tools\ToolSearch;
 use RefactorCircus\Keystone\Mcp\Server;
@@ -87,6 +88,7 @@ use RefactorCircus\Showroom\Domains\Workflow\Mcp\Tools\ListProductVersionsTool;
 use RefactorCircus\Showroom\Domains\Workflow\Mcp\Tools\RevertProductTool;
 use RefactorCircus\Showroom\Domains\Workflow\Mcp\Tools\ShowProductVersionTool;
 use RefactorCircus\Showroom\Domains\Workflow\Mcp\Tools\TransitionProductTool;
+use RefactorCircus\Showroom\Impex\ImpexIntegration;
 use RefactorCircus\Showroom\Mcp\Tools\ListShowroomHistoryTool;
 
 #[Name('Showroom')]
@@ -232,9 +234,38 @@ final class ShowroomServer extends Server
     ];
 
     /**
+     * The tools that start Impex runs, offered only while Impex runs
+     * Showroom's flows (see ImpexIntegration::active()).
+     *
+     * @var array<int, class-string<Tool>>
+     */
+    private const array TRANSFER_TOOLS = [
+        StartImportTool::class,
+        StartExportTool::class,
+    ];
+
+    /**
      * @var array<class-string<ToolSearch>, array<int, class-string<Tool>|Tool>>
      */
     protected array $tools = [
         ToolSearch::class => self::TOOLS,
     ];
+
+    /**
+     * Leave the transfer tools out unless Impex is active: they answer with
+     * Impex's RunResource, which an application without Impex cannot load.
+     */
+    public function createContext(): ServerContext
+    {
+        if (! app(ImpexIntegration::class)->active()) {
+            foreach ($this->tools as $search => $tools) {
+                $this->tools[$search] = array_values(array_filter(
+                    $tools,
+                    fn (string|Tool $tool): bool => ! in_array($tool, self::TRANSFER_TOOLS, true),
+                ));
+            }
+        }
+
+        return parent::createContext();
+    }
 }
