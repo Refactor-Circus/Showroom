@@ -6,12 +6,12 @@ depends on: none
 files: src/Atrium/Support/Screens.php, src/Atrium/Http/Controllers/*, src/Atrium/ShowroomPlugin.php, resources/views/ui/**, tests/TestCase.php, tests/Feature/Ui/ScreenExtensionsTest.php, tests/Feature/Ui/ScreenIsolationTest.php, tests/Feature/Ui/TransferPagesTest.php, tests/Feature/Ui/AuditTrailTest.php, tests/Feature/HistoryNavigationTest.php, tests/Feature/PerformanceTest.php, tests/Keen/*
 criteria: 1, 2, 3, 4, 5, 6, 7, 8
 
-- [ ] 1.1 Write the screen tests: declaration and layout dataset over the 25 screens, access closure, 403/401 zero-call dataset, nothing-registered dataset and query counts, audit-trail and nav removal, transfers row slot, and the ordered isolation pair.
-- [ ] 1.2 Add `ResetsScreenExtensions` to `tests/TestCase.php` and the `Atrium\Support\Screens` helper with the criterion 2 access closure.
-- [ ] 1.3 Resolve the screen in every controller after its own check and pass `resolved` to the view.
-- [ ] 1.4 Lay out tabs, panel and slots in every view per criterion 4, remove every `x-atrium::audit-trail` and the Impex run link, and drop `historyNavItem()` from `ShowroomPlugin::navigation()`.
-- [ ] 1.5 Delete the forced tests (`HistoryNavigationTest`, `AuditTrailTest`, the Keen audit-trail UI tests, the Impex run-link transfer test) and list them in the PR.
-- [ ] 1.6 Run vendor/bin/pest; all green.
+- [x] 1.1 Write the screen tests: declaration and layout dataset over the 25 screens, access closure, 403/401 zero-call dataset, nothing-registered dataset and query counts, audit-trail and nav removal, transfers row slot, and the ordered isolation pair.
+- [x] 1.2 Add `ResetsScreenExtensions` to `tests/TestCase.php` and the `Atrium\Support\Screens` helper with the criterion 2 access closure.
+- [x] 1.3 Resolve the screen in every controller after its own check and pass `resolved` to the view.
+- [x] 1.4 Lay out tabs, panel and slots in every view per criterion 4, remove every `x-atrium::audit-trail` and the Impex run link, and drop `historyNavItem()` from `ShowroomPlugin::navigation()`.
+- [x] 1.5 Delete the forced tests (`HistoryNavigationTest`, `AuditTrailTest`, the Keen audit-trail UI tests, the Impex run-link transfer test) and list them in the PR.
+- [x] 1.6 Run vendor/bin/pest; all green.
 
 ## Group 2: Atrium optional
 package: Showroom
