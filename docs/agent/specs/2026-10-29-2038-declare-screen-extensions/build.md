@@ -169,3 +169,23 @@ The suite was not run here; the gate runs `composer test` and `vendor/bin/pest`,
 - **`AGENTS.md` partly staged.** Its uncommitted ringside-sync line (the "Keep this checkout on `main`" bullet in the Ring Master block) was there before this group. Only this group's hunk was committed (`git apply --cached`), so that line is still uncommitted.
 - **`docs/agent/standards.index.yml` is stale.** Its `showroom/atrium-screens` description still says "show screens carry the audit trail". The file is generated, so `vendor/bin/ringside sync` should refresh it from the standard's new frontmatter. It is outside the group's files and outside the docs test's scope.
 - `composer.local.json` was not touched. The Atrium `conflict` stays `"<0.1.0"`.
+
+## Group 3 (retry)
+
+**Files.** Only this file. Tasks 3.1 and 3.2 are already in 44d35af, so no code, test or docs file changed in this round.
+
+**Checks.** Re-checked on the branch:
+- `tests/Feature/DocsTest.php` covers:
+  - the 25 keys with their kinds, and exactly 25 rows;
+  - the slots per kind;
+  - the authorization rule and the row-closure rule;
+  - that Atrium is optional;
+  - the changelog's three upgrade steps;
+  - the absence of `audit-trail`, `historyNavItem` and `atrium.impex`.
+- A grep finds none of those three strings in `src`, `resources`, `README.md`, `AGENTS.md` (`CLAUDE.md`) or `docs/agent/standards`.
+- `docs/12-impex.md` line 19 says the start endpoints are not registered (`404`) without Impex.
+- `composer.json` and `composer.local.json` both have `"refactor-circus/atrium": "<0.1.0"` under `conflict`. `composer.local.json` was not regenerated.
+
+**Tests.** The suite was not run here. As instructed, task 3.3 is ticked and the gate runs `composer test` and `vendor/bin/pest`.
+
+**Deviations.** None beyond those in "Group 3" above. The ringside-sync line in `AGENTS.md` is still uncommitted. It is not this group's change.
