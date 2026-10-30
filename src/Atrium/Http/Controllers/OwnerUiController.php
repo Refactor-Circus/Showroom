@@ -7,8 +7,10 @@ namespace RefactorCircus\Showroom\Atrium\Http\Controllers;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use RefactorCircus\Atrium\Http\Controllers\Concerns\AuthorizesScreens;
+use RefactorCircus\Atrium\Domains\Screens\Services\ScreenExtensions;
+use RefactorCircus\Showroom\Atrium\Http\Controllers\Concerns\AuthorizesScreens;
 use RefactorCircus\Showroom\Atrium\Support\Labels;
+use RefactorCircus\Showroom\Atrium\Support\Screens;
 use RefactorCircus\Showroom\Domains\Owner\Actions\CreateOwnerAction;
 use RefactorCircus\Showroom\Domains\Owner\Actions\DeleteOwnerAction;
 use RefactorCircus\Showroom\Domains\Owner\Actions\ListOwnersAction;
@@ -35,6 +37,7 @@ final class OwnerUiController
         $view = 'showroom::ui.owners.index';
 
         return view($view, [
+            'resolved' => app(ScreenExtensions::class)->resolve(Screens::list('showroom.owners', OwnerModel::class), $request),
             'owners' => app(ListOwnersAction::class)->execute($filters)->withQueryString(),
             'filters' => $filters->toArray(),
             'types' => OwnerTypeModel::query()->orderBy('sort_order')->orderBy('code')->pluck('code', 'code')->all(),
@@ -52,15 +55,18 @@ final class OwnerUiController
             ->with('status', __('showroom::showroom.owner_created'));
     }
 
-    public function show(OwnerModel $owner): View
+    public function show(Request $request, OwnerModel $owner): View
     {
         $this->authorizeScreen('view', $owner);
+
+        $owner = app(ShowOwnerAction::class)->execute($owner);
 
         /** @var view-string $view */
         $view = 'showroom::ui.owners.show';
 
         return view($view, [
-            'owner' => app(ShowOwnerAction::class)->execute($owner),
+            'resolved' => app(ScreenExtensions::class)->resolve(Screens::detail('showroom.owner', $owner, OwnerModel::class), $request),
+            'owner' => $owner,
             'types' => OwnerTypeModel::query()->orderBy('code')->pluck('code', 'code')->all(),
         ]);
     }

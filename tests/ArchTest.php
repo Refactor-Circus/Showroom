@@ -23,6 +23,12 @@ arch('the package source declares strict types')
     ->expect('RefactorCircus\Showroom')
     ->toUseStrictTypes();
 
+// Atrium is optional: only the screens in src/Atrium may name its classes.
+arch('code outside src/Atrium uses no Atrium class')
+    ->expect('RefactorCircus\Showroom')
+    ->not->toUse('RefactorCircus\Atrium')
+    ->ignoring('RefactorCircus\Showroom\Atrium');
+
 arch('models are final')
     ->expect(Arch::domainNamespaces('RefactorCircus\Showroom', SHOWROOM_DOMAINS, 'Models'))
     ->classes()

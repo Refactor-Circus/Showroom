@@ -7,10 +7,12 @@ namespace RefactorCircus\Showroom\Atrium\Http\Controllers;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use RefactorCircus\Atrium\Http\Controllers\Concerns\AuthorizesScreens;
+use RefactorCircus\Atrium\Domains\Screens\Services\ScreenExtensions;
 use RefactorCircus\Impex\Domains\Run\Models\RunModel;
 use RefactorCircus\Impex\Facades\Impex;
+use RefactorCircus\Showroom\Atrium\Http\Controllers\Concerns\AuthorizesScreens;
 use RefactorCircus\Showroom\Atrium\ScreenAccess;
+use RefactorCircus\Showroom\Atrium\Support\Screens;
 use RefactorCircus\Showroom\Domains\Category\Models\CategoryModel;
 use RefactorCircus\Showroom\Domains\Channel\Models\ChannelModel;
 use RefactorCircus\Showroom\Domains\Family\Models\FamilyModel;
@@ -28,9 +30,9 @@ final class TransferUiController
 {
     use AuthorizesScreens;
 
-    public function index(): View
+    public function index(Request $request): View
     {
-        abort_unless(ScreenAccess::transfers(), 403);
+        $this->refuseUnless(ScreenAccess::transfers($request));
 
         $active = app(ImpexIntegration::class)->active();
 
@@ -38,6 +40,9 @@ final class TransferUiController
         $view = 'showroom::ui.transfers.index';
 
         return view($view, [
+            // Runs are Impex's records, so their row extensions are asked
+            // about products, as this page's own check is.
+            'resolved' => app(ScreenExtensions::class)->resolve(Screens::list('showroom.transfers', ProductModel::class), $request),
             'active' => $active,
             'runs' => $active
                 ? RunModel::query()->where('flow', 'like', 'showroom:%')->latest('created_at')->limit(20)->get()

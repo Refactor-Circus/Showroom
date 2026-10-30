@@ -8,9 +8,11 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
-use RefactorCircus\Atrium\Http\Controllers\Concerns\AuthorizesScreens;
+use RefactorCircus\Atrium\Domains\Screens\Services\ScreenExtensions;
+use RefactorCircus\Showroom\Atrium\Http\Controllers\Concerns\AuthorizesScreens;
 use RefactorCircus\Showroom\Atrium\Support\CategoryCodes;
 use RefactorCircus\Showroom\Atrium\Support\EditingSlot;
+use RefactorCircus\Showroom\Atrium\Support\Screens;
 use RefactorCircus\Showroom\Atrium\Support\ValueForm;
 use RefactorCircus\Showroom\Domains\Attribute\Models\AttributeModel;
 use RefactorCircus\Showroom\Domains\Family\Models\FamilyModel;
@@ -57,6 +59,7 @@ final class ProductUiController
         }
 
         return view($view, [
+            'resolved' => app(ScreenExtensions::class)->resolve(Screens::list('showroom.products', ProductModel::class), $request),
             'products' => $products,
             'error' => $error,
             'filters' => $filters,
@@ -64,14 +67,17 @@ final class ProductUiController
         ]);
     }
 
-    public function create(): View
+    public function create(Request $request): View
     {
         $this->authorizeScreen('create', ProductModel::class);
 
         /** @var view-string $view */
         $view = 'showroom::ui.products.create';
 
-        return view($view, ['families' => $this->families()]);
+        return view($view, [
+            'resolved' => app(ScreenExtensions::class)->resolve(Screens::detail('showroom.product-create', null, ProductModel::class), $request),
+            'families' => $this->families(),
+        ]);
     }
 
     public function store(Request $request): RedirectResponse
@@ -95,6 +101,7 @@ final class ProductUiController
         $view = 'showroom::ui.products.show';
 
         return view($view, [
+            'resolved' => app(ScreenExtensions::class)->resolve(Screens::detail('showroom.product', $product, ProductModel::class), $request),
             'product' => $product,
             'attributes' => $this->formAttributes($product, $request->query('add')),
             'slot' => EditingSlot::fromRequest($request),

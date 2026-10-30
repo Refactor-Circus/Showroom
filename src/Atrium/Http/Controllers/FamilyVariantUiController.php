@@ -8,8 +8,10 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
-use RefactorCircus\Atrium\Http\Controllers\Concerns\AuthorizesScreens;
+use RefactorCircus\Atrium\Domains\Screens\Services\ScreenExtensions;
+use RefactorCircus\Showroom\Atrium\Http\Controllers\Concerns\AuthorizesScreens;
 use RefactorCircus\Showroom\Atrium\Support\Labels;
+use RefactorCircus\Showroom\Atrium\Support\Screens;
 use RefactorCircus\Showroom\Domains\Family\Actions\CreateFamilyVariantAction;
 use RefactorCircus\Showroom\Domains\Family\Actions\DeleteFamilyVariantAction;
 use RefactorCircus\Showroom\Domains\Family\Actions\ShowFamilyVariantAction;
@@ -50,15 +52,18 @@ final class FamilyVariantUiController
             ->with('status', __('showroom::showroom.family_variant_created'));
     }
 
-    public function show(FamilyVariantModel $familyVariant): View
+    public function show(Request $request, FamilyVariantModel $familyVariant): View
     {
         $this->authorizeScreen('view', $familyVariant);
+
+        $variant = app(ShowFamilyVariantAction::class)->execute($familyVariant);
 
         /** @var view-string $view */
         $view = 'showroom::ui.family-variants.show';
 
         return view($view, [
-            'variant' => app(ShowFamilyVariantAction::class)->execute($familyVariant),
+            'resolved' => app(ScreenExtensions::class)->resolve(Screens::detail('showroom.family-variant', $variant, FamilyVariantModel::class), $request),
+            'variant' => $variant,
             'models' => $familyVariant->productModels()->whereNull('parent_id')->orderBy('code')->limit(50)->get(),
         ]);
     }

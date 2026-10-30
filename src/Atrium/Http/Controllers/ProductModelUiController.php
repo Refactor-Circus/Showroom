@@ -7,9 +7,11 @@ namespace RefactorCircus\Showroom\Atrium\Http\Controllers;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use RefactorCircus\Atrium\Http\Controllers\Concerns\AuthorizesScreens;
+use RefactorCircus\Atrium\Domains\Screens\Services\ScreenExtensions;
+use RefactorCircus\Showroom\Atrium\Http\Controllers\Concerns\AuthorizesScreens;
 use RefactorCircus\Showroom\Atrium\Support\CategoryCodes;
 use RefactorCircus\Showroom\Atrium\Support\EditingSlot;
+use RefactorCircus\Showroom\Atrium\Support\Screens;
 use RefactorCircus\Showroom\Atrium\Support\ValueForm;
 use RefactorCircus\Showroom\Domains\Family\Models\FamilyVariantModel;
 use RefactorCircus\Showroom\Domains\ProductModel\Actions\CreateProductModelAction;
@@ -37,6 +39,7 @@ final class ProductModelUiController
         $view = 'showroom::ui.product-models.index';
 
         return view($view, [
+            'resolved' => app(ScreenExtensions::class)->resolve(Screens::list('showroom.product-models', ProductModelModel::class), $request),
             'models' => app(ListProductModelsAction::class)->execute(ListProductModelsData::fromValidated(['roots' => true] + $filters))->withQueryString(),
             'filters' => $filters,
             'variants' => FamilyVariantModel::query()->orderBy('code')->pluck('code', 'code')->all(),
@@ -64,6 +67,7 @@ final class ProductModelUiController
         $view = 'showroom::ui.product-models.show';
 
         return view($view, [
+            'resolved' => app(ScreenExtensions::class)->resolve(Screens::detail('showroom.product-model', $model, ProductModelModel::class), $request),
             'model' => $model,
             'attributes' => $model->settableAttributes()->load('options'),
             'slot' => EditingSlot::fromRequest($request),

@@ -22,7 +22,7 @@ it('contributes catalog navigation', function (): void {
         app(ShowroomPlugin::class)->navigation(),
     );
 
-    expect($labels)->toBe(['Products', 'Product models', 'Categories', 'Assets', 'Owners', 'Families', 'Attributes', 'Channels', 'Import & export', 'Association types', 'Attribute groups', 'Audit log']);
+    expect($labels)->toBe(['Products', 'Product models', 'Categories', 'Assets', 'Owners', 'Families', 'Attributes', 'Channels', 'Import & export', 'Association types', 'Attribute groups']);
 });
 
 it('registers its routes inside the atrium group', function (): void {

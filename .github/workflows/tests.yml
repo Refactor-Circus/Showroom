@@ -76,3 +76,39 @@ jobs:
       - name: Test Suite (Windows)
         if: runner.os == 'Windows'
         run: vendor/bin/pest
+
+  # Atrium is optional: install Showroom without it and run the
+  # WithoutAtrium suite. Cortex, Impex and Keen each require Atrium, so they go too.
+  without-atrium:
+    runs-on: ubuntu-latest
+
+    name: P8.5 - L13.* - without Atrium
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # v2
+        with:
+          php-version: 8.5
+          extensions: dom, curl, libxml, mbstring, zip, fileinfo, sqlite, pdo_sqlite, bcmath, intl, gd
+          ini-values: error_reporting=E_ALL
+          tools: composer:v2
+          coverage: none
+
+      # testbench.yaml loads Atrium's provider for the workbench; Testbench's
+      # package:discover (run by Composer's scripts) dies on it once Atrium is gone.
+      - name: Drop Atrium from the Testbench providers
+        run: sed -i '/RefactorCircus\\Atrium\\AtriumServiceProvider/d' testbench.yaml
+
+      - name: Install dependencies without Atrium
+        run: |
+          composer remove --dev refactor-circus/atrium refactor-circus/cortex refactor-circus/impex refactor-circus/keen --no-update
+          composer update --prefer-dist --no-interaction --no-progress
+
+      - name: Atrium is not installed
+        run: test ! -d vendor/refactor-circus/atrium
+
+      - name: WithoutAtrium suite
+        run: composer test:without-atrium

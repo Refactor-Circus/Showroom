@@ -8,8 +8,10 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
-use RefactorCircus\Atrium\Http\Controllers\Concerns\AuthorizesScreens;
+use RefactorCircus\Atrium\Domains\Screens\Services\ScreenExtensions;
+use RefactorCircus\Showroom\Atrium\Http\Controllers\Concerns\AuthorizesScreens;
 use RefactorCircus\Showroom\Atrium\Support\Labels;
+use RefactorCircus\Showroom\Atrium\Support\Screens;
 use RefactorCircus\Showroom\Domains\Attribute\Enums\AttributeType;
 use RefactorCircus\Showroom\Domains\Attribute\Models\AttributeModel;
 use RefactorCircus\Showroom\Domains\Family\Actions\CreateFamilyAction;
@@ -38,6 +40,7 @@ final class FamilyUiController
         $view = 'showroom::ui.families.index';
 
         return view($view, [
+            'resolved' => app(ScreenExtensions::class)->resolve(Screens::list('showroom.families', FamilyModel::class), $request),
             'families' => app(ListFamiliesAction::class)->execute($filters)->withQueryString(),
             'filters' => $filters->toArray(),
         ]);
@@ -56,7 +59,7 @@ final class FamilyUiController
             ->with('status', __('showroom::showroom.family_created'));
     }
 
-    public function show(FamilyModel $family): View
+    public function show(Request $request, FamilyModel $family): View
     {
         $this->authorizeScreen('view', $family);
 
@@ -66,6 +69,7 @@ final class FamilyUiController
         $view = 'showroom::ui.families.show';
 
         return view($view, [
+            'resolved' => app(ScreenExtensions::class)->resolve(Screens::detail('showroom.family', $family, FamilyModel::class), $request),
             'family' => $family,
             'available' => AttributeModel::query()
                 ->whereNotIn('id', $family->familyAttributes->modelKeys())

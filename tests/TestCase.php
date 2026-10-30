@@ -7,11 +7,15 @@ namespace RefactorCircus\Showroom\Tests;
 use Laravel\Mcp\Server\McpServiceProvider;
 use Orchestra\Testbench\TestCase as Orchestra;
 use RefactorCircus\Atrium\AtriumServiceProvider;
+use RefactorCircus\Atrium\Testing\ResetsScreenExtensions;
 use RefactorCircus\Impex\ImpexServiceProvider;
 use RefactorCircus\Showroom\ShowroomServiceProvider;
 
 abstract class TestCase extends Orchestra
 {
+    // What one test registers on a screen never reaches the next.
+    use ResetsScreenExtensions;
+
     /**
      * @return array<int, class-string>
      */
@@ -27,9 +31,11 @@ abstract class TestCase extends Orchestra
 
     protected function defineEnvironment($app): void
     {
-        // refactor-circus/cortex is a dev dependency, so Atrium discovers its plugin here
-        // without its migrations; its navigation would query missing tables.
-        $app['config']->set('atrium.disabled', ['cortex']);
+        // refactor-circus/cortex and refactor-circus/impex are dev dependencies, so Atrium
+        // discovers their plugins here. Cortex's navigation would query missing tables, and
+        // Showroom's screens must render without another package's dashboard UI: what Impex
+        // adds to them comes through the screen registry, which these tests drive themselves.
+        $app['config']->set('atrium.disabled', ['cortex', 'impex']);
 
         $app['config']->set('app.key', 'base64:'.base64_encode(str_repeat('a', 32)));
         $app['config']->set('database.default', 'testing');
