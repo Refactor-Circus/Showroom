@@ -97,6 +97,11 @@ jobs:
           tools: composer:v2
           coverage: none
 
+      # testbench.yaml loads Atrium's provider for the workbench; Testbench's
+      # package:discover (run by Composer's scripts) dies on it once Atrium is gone.
+      - name: Drop Atrium from the Testbench providers
+        run: sed -i '/RefactorCircus\\Atrium\\AtriumServiceProvider/d' testbench.yaml
+
       - name: Install dependencies without Atrium
         run: |
           composer remove --dev refactor-circus/atrium refactor-circus/cortex refactor-circus/impex refactor-circus/keen --no-update
