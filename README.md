@@ -343,6 +343,8 @@ Every Showroom page declares itself on Atrium's screen extensions registry, so a
 | `showroom.owner-type` | detail | `owner-types.show` | the owner type |
 | `showroom.owners` | list | `owners.index` | owner rows |
 | `showroom.owner` | detail | `owners.show` | the owner |
+| `showroom.flags` | list | `flags.index` | flag rows |
+| `showroom.flag` | detail | `flags.show` | the flag |
 | `showroom.families` | list | `families.index` | family rows |
 | `showroom.family` | detail | `families.show` | the family |
 | `showroom.family-variant` | detail | `family-variants.show` | the family variant |

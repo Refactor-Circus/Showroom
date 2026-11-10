@@ -1,5 +1,6 @@
 @use(RefactorCircus\Showroom\Atrium\Badges)
 @use(RefactorCircus\Showroom\Atrium\ScreenAccess)
+@use(RefactorCircus\Showroom\Domains\ExternalId\Services\ExternalIds)
 
 @php($canUpdate = ScreenAccess::allows('update', $product))
 
@@ -72,6 +73,23 @@
                                 <input type="hidden" name="enabled" value="0">
                                 <x-atrium::form.checkbox name="enabled" :label="__('showroom::showroom.enabled')" :checked="$product->enabled" wrapper="h-9 w-auto justify-center" />
                             </x-atrium::form.actions>
+                        </div>
+                    </x-atrium::card>
+
+                    <x-atrium::card :title="__('showroom::showroom.identifiers_and_flags')" data-testid="product-identity">
+                        <div class="flex flex-col gap-4">
+                            <x-atrium::description-list>
+                                <x-atrium::description-list.item :term="__('showroom::showroom.slug')" class="font-mono" data-testid="product-slug">{{ $product->slug }}</x-atrium::description-list.item>
+                            </x-atrium::description-list>
+
+                            @include('showroom::ui.partials.external-ids', ['externalIds' => ExternalIds::present($product->externalIds)])
+
+                            {{-- Changing flags needs the flag policy's assign ability on top of update. --}}
+                            @if ($mayAssign)
+                                @include('showroom::ui.flags.own', ['record' => $product])
+                            @endif
+
+                            @include('showroom::ui.flags.effective', ['record' => $product])
                         </div>
                     </x-atrium::card>
 

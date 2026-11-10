@@ -28,6 +28,7 @@ use RefactorCircus\Showroom\Atrium\Http\Controllers\CategoryUiController;
 use RefactorCircus\Showroom\Atrium\Http\Controllers\ChannelUiController;
 use RefactorCircus\Showroom\Atrium\Http\Controllers\FamilyUiController;
 use RefactorCircus\Showroom\Atrium\Http\Controllers\FamilyVariantUiController;
+use RefactorCircus\Showroom\Atrium\Http\Controllers\FlagUiController;
 use RefactorCircus\Showroom\Atrium\Http\Controllers\OwnerTypeUiController;
 use RefactorCircus\Showroom\Atrium\Http\Controllers\OwnerUiController;
 use RefactorCircus\Showroom\Atrium\Http\Controllers\ProductModelUiController;
@@ -178,6 +179,13 @@ class ShowroomPlugin extends Plugin
             Route::get('showroom/owners/{owner}', [OwnerUiController::class, 'show'])->name('owners.show');
             Route::patch('showroom/owners/{owner}', [OwnerUiController::class, 'update'])->name('owners.update');
             Route::delete('showroom/owners/{owner}', [OwnerUiController::class, 'destroy'])->name('owners.destroy');
+
+            // Flags keep their code in the URL; products and owners take the lookup key.
+            Route::get('showroom/flags', [FlagUiController::class, 'index'])->name('flags.index');
+            Route::post('showroom/flags', [FlagUiController::class, 'store'])->name('flags.store');
+            Route::get('showroom/flags/{flag:code}', [FlagUiController::class, 'show'])->name('flags.show');
+            Route::patch('showroom/flags/{flag:code}', [FlagUiController::class, 'update'])->name('flags.update');
+            Route::delete('showroom/flags/{flag:code}', [FlagUiController::class, 'destroy'])->name('flags.destroy');
 
             Route::post('showroom/family-variants', [FamilyVariantUiController::class, 'store'])->name('family-variants.store');
             Route::get('showroom/family-variants/{familyVariant:code}', [FamilyVariantUiController::class, 'show'])->name('family-variants.show');

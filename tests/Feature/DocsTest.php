@@ -30,6 +30,8 @@ dataset('declared screens', [
     'showroom.owner-type' => ['showroom.owner-type', 'detail'],
     'showroom.owners' => ['showroom.owners', 'list'],
     'showroom.owner' => ['showroom.owner', 'detail'],
+    'showroom.flags' => ['showroom.flags', 'list'],
+    'showroom.flag' => ['showroom.flag', 'detail'],
     'showroom.families' => ['showroom.families', 'list'],
     'showroom.family' => ['showroom.family', 'detail'],
     'showroom.family-variant' => ['showroom.family-variant', 'detail'],
@@ -46,11 +48,11 @@ it('lists every declared screen with its kind in the README', function (string $
     expect(showroomReadme())->toMatch('/^\| `'.preg_quote($key, '/').'` \| '.$kind.' \|/m');
 })->with('declared screens');
 
-it('lists exactly the 25 declared screens in the README', function (): void {
+it('lists exactly the 27 declared screens in the README', function (): void {
     preg_match_all('/^\| `(showroom\.[a-z-]+)` \| (?:list|detail) \|/m', showroomReadme(), $rows);
 
-    expect($rows[1])->toHaveCount(25)
-        ->and(array_unique($rows[1]))->toHaveCount(25);
+    expect($rows[1])->toHaveCount(27)
+        ->and(array_unique($rows[1]))->toHaveCount(27);
 });
 
 it('names the slots each kind of screen declares', function (): void {
