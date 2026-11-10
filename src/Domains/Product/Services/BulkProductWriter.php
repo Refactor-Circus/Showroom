@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace RefactorCircus\Showroom\Domains\Product\Services;
 
 use Illuminate\Contracts\Auth\Factory as Auth;
-use Illuminate\Database\ConnectionInterface;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
@@ -174,7 +173,7 @@ final class BulkProductWriter
             return [];
         }
 
-        return $this->connection()->transaction(function () use ($prepared): array {
+        return Tables::db()->transaction(function () use ($prepared): array {
             $this->insert('products', array_column($prepared, 'product'));
             $this->insert('category_product', array_merge(...array_column($prepared, 'categories')));
             $this->insert('external_ids', array_merge(...array_column($prepared, 'external_ids')));
@@ -354,7 +353,7 @@ final class BulkProductWriter
 
         foreach ($hashes as $attributeId => $attributeHashes) {
             foreach (array_chunk(array_values(array_unique($attributeHashes)), 1000) as $chunk) {
-                $holders = $this->connection()->table(Tables::name('product_unique_values').' as unique_values')
+                $holders = Tables::db()->table(Tables::name('product_unique_values').' as unique_values')
                     ->join($products, $products.'.id', '=', 'unique_values.product_id')
                     ->where('unique_values.attribute_id', $attributeId)
                     ->whereIn('unique_values.value_hash', $chunk)
@@ -459,7 +458,7 @@ final class BulkProductWriter
     private function insert(string $table, array $rows): void
     {
         foreach (array_chunk($rows, self::ROWS_PER_INSERT) as $chunk) {
-            $this->connection()->table(Tables::name($table))->insert($chunk);
+            Tables::db()->table(Tables::name($table))->insert($chunk);
         }
     }
 
@@ -531,13 +530,5 @@ final class BulkProductWriter
         }
 
         return $found;
-    }
-
-    /**
-     * The connection Showroom's product tables live on.
-     */
-    private function connection(): ConnectionInterface
-    {
-        return (new ProductModel)->getConnection();
     }
 }
