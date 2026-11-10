@@ -11,6 +11,7 @@ use RefactorCircus\Impex\Domains\Subscription\Data\CreateSubscriberData;
 use RefactorCircus\Impex\Domains\Subscription\Data\CreateSubscriptionData;
 use RefactorCircus\Impex\Domains\Subscription\Models\SubscriptionModel;
 use RefactorCircus\Impex\Domains\Subscription\Services\Exporter;
+use RefactorCircus\Showroom\Domains\Product\Models\ProductModel;
 use RefactorCircus\Showroom\Impex\ImpexIntegration;
 use RefactorCircus\Showroom\Tests\Fixtures\Catalog;
 
@@ -45,6 +46,14 @@ function vendorSubscription(array $data = []): SubscriptionModel
 }
 
 /**
+ * The API path of a product, addressed by its `id` as routes bind it.
+ */
+function webhookProductPath(string $identifier): string
+{
+    return '/showroom/products/'.ProductModel::query()->where('identifier', $identifier)->value('id');
+}
+
+/**
  * @param  array<string, mixed>  $values
  * @param  list<string>  $categories
  */
@@ -57,7 +66,7 @@ function publishedProduct(string $identifier, array $values, array $categories =
         'values' => $values,
     ])->assertCreated();
 
-    test()->postJson("/showroom/products/{$identifier}/transitions", ['transition' => 'publish'])->assertOk();
+    test()->postJson(webhookProductPath($identifier).'/transitions', ['transition' => 'publish'])->assertOk();
 }
 
 /**
@@ -98,12 +107,12 @@ it('sends only the topics that changed, and only to vendors following them', fun
 
     publishedProduct('TEE-1', ['name' => Catalog::value('Classic tee'), 'price' => Catalog::value([['amount' => 19.99, 'currency' => 'USD']])]);
 
-    $this->patchJson('/showroom/products/TEE-1', ['values' => ['price' => Catalog::value([['amount' => 24.99, 'currency' => 'USD']])]])->assertOk();
+    $this->patchJson(webhookProductPath('TEE-1'), ['values' => ['price' => Catalog::value([['amount' => 24.99, 'currency' => 'USD']])]])->assertOk();
 
     // A draft edit is not published, so nothing leaves.
     expect(deliveredTo('pricing'))->toHaveCount(1);
 
-    $this->postJson('/showroom/products/TEE-1/transitions', ['transition' => 'publish'])->assertOk();
+    $this->postJson(webhookProductPath('TEE-1').'/transitions', ['transition' => 'publish'])->assertOk();
 
     $pricing = deliveredTo('pricing');
 
@@ -120,7 +129,7 @@ it('tells vendors to forget an unpublished product', function (): void {
     vendorSubscription(['path' => 'hooks', 'format' => 'thin']);
 
     publishedProduct('TEE-1', ['name' => Catalog::value('Classic tee')]);
-    $this->postJson('/showroom/products/TEE-1/transitions', ['transition' => 'unpublish'])->assertOk();
+    $this->postJson(webhookProductPath('TEE-1').'/transitions', ['transition' => 'unpublish'])->assertOk();
 
     expect(array_column(deliveredTo('hooks'), 'type'))->toBe(['changed', 'removed']);
 });
@@ -129,7 +138,7 @@ it('tells vendors to forget a deleted product', function (): void {
     vendorSubscription(['path' => 'hooks']);
 
     publishedProduct('TEE-1', ['name' => Catalog::value('Classic tee')]);
-    $this->deleteJson('/showroom/products/TEE-1')->assertNoContent();
+    $this->deleteJson(webhookProductPath('TEE-1'))->assertNoContent();
 
     expect(array_column(deliveredTo('hooks'), 'type'))->toBe(['changed', 'removed']);
 });

@@ -3,7 +3,16 @@
 declare(strict_types=1);
 
 use RefactorCircus\Showroom\Domains\Association\Models\AssociationModel;
+use RefactorCircus\Showroom\Domains\Product\Models\ProductModel;
 use RefactorCircus\Showroom\Tests\Fixtures\Catalog;
+
+/**
+ * The API path of a product, addressed by its `id` as routes bind it.
+ */
+function associationProductPath(string $identifier): string
+{
+    return '/showroom/products/'.ProductModel::query()->where('identifier', $identifier)->value('id');
+}
 
 beforeEach(function (): void {
     Catalog::apparel();
@@ -33,7 +42,7 @@ it('describes association types', function (): void {
 });
 
 it('associates products and product models', function (): void {
-    $this->patchJson('/showroom/products/TEE', [
+    $this->patchJson(associationProductPath('TEE'), [
         'associations' => ['cross_sell' => ['products' => ['CAP', 'SOCKS'], 'product_models' => ['polo']]],
     ])
         ->assertOk()
@@ -41,27 +50,27 @@ it('associates products and product models', function (): void {
         ->assertJsonPath('data.associations.cross_sell.product_models', ['polo']);
 
     // A type sent replaces its targets; types not sent stay.
-    $this->patchJson('/showroom/products/TEE', ['associations' => ['cross_sell' => ['products' => ['BAG']]]])
+    $this->patchJson(associationProductPath('TEE'), ['associations' => ['cross_sell' => ['products' => ['BAG']]]])
         ->assertOk()
         ->assertJsonPath('data.associations.cross_sell.products', ['BAG'])
         ->assertJsonPath('data.associations.cross_sell.product_models', []);
 
-    $this->patchJson('/showroom/products/TEE', ['enabled' => false])->assertOk()->assertJsonPath('data.associations.cross_sell.products', ['BAG']);
+    $this->patchJson(associationProductPath('TEE'), ['enabled' => false])->assertOk()->assertJsonPath('data.associations.cross_sell.products', ['BAG']);
 
-    $this->patchJson('/showroom/products/TEE', ['associations' => ['cross_sell' => ['products' => []]]])
+    $this->patchJson(associationProductPath('TEE'), ['associations' => ['cross_sell' => ['products' => []]]])
         ->assertOk()->assertJsonPath('data.associations', []);
 });
 
 it('mirrors two-way associations on both sides', function (): void {
-    $this->patchJson('/showroom/products/TEE', ['associations' => ['compatible' => ['products' => ['CAP', 'SOCKS']]]])->assertOk();
+    $this->patchJson(associationProductPath('TEE'), ['associations' => ['compatible' => ['products' => ['CAP', 'SOCKS']]]])->assertOk();
 
-    $this->getJson('/showroom/products/CAP')->assertJsonPath('data.associations.compatible.products', ['TEE']);
-    $this->getJson('/showroom/products/SOCKS')->assertJsonPath('data.associations.compatible.products', ['TEE']);
+    $this->getJson(associationProductPath('CAP'))->assertJsonPath('data.associations.compatible.products', ['TEE']);
+    $this->getJson(associationProductPath('SOCKS'))->assertJsonPath('data.associations.compatible.products', ['TEE']);
 
-    $this->patchJson('/showroom/products/TEE', ['associations' => ['compatible' => ['products' => ['CAP']]]])->assertOk();
+    $this->patchJson(associationProductPath('TEE'), ['associations' => ['compatible' => ['products' => ['CAP']]]])->assertOk();
 
-    $this->getJson('/showroom/products/SOCKS')->assertJsonPath('data.associations', []);
-    $this->getJson('/showroom/products/CAP')->assertJsonPath('data.associations.compatible.products', ['TEE']);
+    $this->getJson(associationProductPath('SOCKS'))->assertJsonPath('data.associations', []);
+    $this->getJson(associationProductPath('CAP'))->assertJsonPath('data.associations.compatible.products', ['TEE']);
 });
 
 it('holds bundle components with quantities', function (): void {
@@ -78,25 +87,25 @@ it('holds bundle components with quantities', function (): void {
             ['identifier' => 'CAP', 'quantity' => 1],
         ]);
 
-    $this->patchJson('/showroom/products/GIFT-SET', ['quantified_associations' => ['bundle' => ['products' => [['identifier' => 'TEE', 'quantity' => 0]]]]])
+    $this->patchJson(associationProductPath('GIFT-SET'), ['quantified_associations' => ['bundle' => ['products' => [['identifier' => 'TEE', 'quantity' => 0]]]]])
         ->assertUnprocessable()->assertJsonValidationErrors('quantified_associations.bundle.products.0.quantity');
 });
 
 it('keeps plain and quantified types apart', function (): void {
-    $this->patchJson('/showroom/products/TEE', ['associations' => ['bundle' => ['products' => ['CAP']]]])
+    $this->patchJson(associationProductPath('TEE'), ['associations' => ['bundle' => ['products' => ['CAP']]]])
         ->assertUnprocessable()
         ->assertJsonValidationErrors(['associations.bundle' => 'Association type "bundle" is quantified; send it under quantified_associations with quantities.']);
 
-    $this->patchJson('/showroom/products/TEE', ['quantified_associations' => ['cross_sell' => ['products' => [['identifier' => 'CAP', 'quantity' => 1]]]]])
+    $this->patchJson(associationProductPath('TEE'), ['quantified_associations' => ['cross_sell' => ['products' => [['identifier' => 'CAP', 'quantity' => 1]]]]])
         ->assertUnprocessable()->assertJsonValidationErrors('quantified_associations.cross_sell');
 });
 
 it('validates targets', function (): void {
-    $this->patchJson('/showroom/products/TEE', ['associations' => ['upsell' => ['products' => ['CAP']]]])
+    $this->patchJson(associationProductPath('TEE'), ['associations' => ['upsell' => ['products' => ['CAP']]]])
         ->assertUnprocessable()
         ->assertJsonValidationErrors(['associations.upsell' => 'Association type "upsell" does not exist.']);
 
-    $this->patchJson('/showroom/products/TEE', ['associations' => ['cross_sell' => ['products' => ['NOPE', 'TEE'], 'product_models' => ['nope']]]])
+    $this->patchJson(associationProductPath('TEE'), ['associations' => ['cross_sell' => ['products' => ['NOPE', 'TEE'], 'product_models' => ['nope']]]])
         ->assertUnprocessable()
         ->assertJsonValidationErrors([
             'associations.cross_sell.products.0' => 'No product "NOPE" exists.',
@@ -125,16 +134,16 @@ it('lets variants inherit their models\' associations', function (): void {
 });
 
 it('removes associations from and to a deleted record', function (): void {
-    $this->patchJson('/showroom/products/TEE', ['associations' => ['compatible' => ['products' => ['CAP']], 'cross_sell' => ['products' => ['SOCKS']]]])->assertOk();
+    $this->patchJson(associationProductPath('TEE'), ['associations' => ['compatible' => ['products' => ['CAP']], 'cross_sell' => ['products' => ['SOCKS']]]])->assertOk();
 
     $this->deleteJson('/showroom/association-types/compatible')
         ->assertConflict()
         ->assertJsonPath('message', 'Association type "compatible" is used by 2 association(s). Remove them first.');
 
-    $this->deleteJson('/showroom/products/CAP')->assertNoContent();
+    $this->deleteJson(associationProductPath('CAP'))->assertNoContent();
     $this->deleteJson('/showroom/product-models/polo')->assertNoContent();
 
-    $this->getJson('/showroom/products/TEE')
+    $this->getJson(associationProductPath('TEE'))
         ->assertJsonPath('data.associations', ['cross_sell' => ['products' => ['SOCKS'], 'product_models' => []]]);
 
     expect(AssociationModel::query()->count())->toBe(1);

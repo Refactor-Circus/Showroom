@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use RefactorCircus\Showroom\Domains\Owner\Models\OwnerModel;
+use RefactorCircus\Showroom\Domains\Product\Models\ProductModel;
 use RefactorCircus\Showroom\Tests\Fixtures\Catalog;
 
 beforeEach(function (): void {
@@ -16,6 +17,22 @@ beforeEach(function (): void {
 function owner(string $code, string $type, ?string $parent = null): void
 {
     test()->postJson('/showroom/owners', ['code' => $code, 'type' => $type, 'parent' => $parent])->assertCreated();
+}
+
+/**
+ * The API path of an owner, addressed by its `id` as routes bind it.
+ */
+function ownershipOwnerPath(string $code): string
+{
+    return '/showroom/owners/'.OwnerModel::query()->where('code', $code)->value('id');
+}
+
+/**
+ * The API path of a product, addressed by its `id` as routes bind it.
+ */
+function ownershipProductPath(string $identifier): string
+{
+    return '/showroom/products/'.ProductModel::query()->where('identifier', $identifier)->value('id');
 }
 
 it('describes owner types and their rules', function (): void {
@@ -35,7 +52,7 @@ it('builds chains of any depth', function (): void {
     owner('classic', 'series', 'acme-eu');
     owner('solo', 'vendor');
 
-    $this->getJson('/showroom/owners/classic')
+    $this->getJson(ownershipOwnerPath('classic'))
         ->assertOk()
         ->assertJsonPath('data.type', 'series')
         ->assertJsonPath('data.parent', 'acme-eu')
@@ -66,29 +83,29 @@ it('moves an owner with everything beneath it', function (): void {
     owner('classic', 'series', 'acme-eu');
     owner('initech', 'vendor');
 
-    $this->patchJson('/showroom/owners/acme-eu', ['parent' => 'initech'])->assertOk()->assertJsonPath('data.parent', 'initech');
+    $this->patchJson(ownershipOwnerPath('acme-eu'), ['parent' => 'initech'])->assertOk()->assertJsonPath('data.parent', 'initech');
 
-    $this->getJson('/showroom/owners/classic')
+    $this->getJson(ownershipOwnerPath('classic'))
         ->assertJsonPath('data.chain', ['initech', 'acme-eu', 'classic'])
         ->assertJsonPath('data.depth', 2);
 
     // Moving to the root.
-    $this->patchJson('/showroom/owners/acme-eu', ['parent' => null])->assertOk();
-    $this->getJson('/showroom/owners/classic')->assertJsonPath('data.chain', ['acme-eu', 'classic'])->assertJsonPath('data.depth', 1);
+    $this->patchJson(ownershipOwnerPath('acme-eu'), ['parent' => null])->assertOk();
+    $this->getJson(ownershipOwnerPath('classic'))->assertJsonPath('data.chain', ['acme-eu', 'classic'])->assertJsonPath('data.depth', 1);
 });
 
 it('refuses cycles', function (): void {
     owner('acme', 'vendor');
     owner('acme-eu', 'vendor', 'acme');
 
-    $this->patchJson('/showroom/owners/acme', ['parent' => 'acme-eu'])->assertUnprocessable()->assertJsonValidationErrors('parent');
-    $this->patchJson('/showroom/owners/acme', ['parent' => 'acme'])->assertUnprocessable()->assertJsonValidationErrors('parent');
+    $this->patchJson(ownershipOwnerPath('acme'), ['parent' => 'acme-eu'])->assertUnprocessable()->assertJsonValidationErrors('parent');
+    $this->patchJson(ownershipOwnerPath('acme'), ['parent' => 'acme'])->assertUnprocessable()->assertJsonValidationErrors('parent');
 });
 
 it('never changes an owner\'s code or type', function (): void {
     owner('acme', 'vendor');
 
-    $this->patchJson('/showroom/owners/acme', ['code' => 'x', 'type' => 'series'])
+    $this->patchJson(ownershipOwnerPath('acme'), ['code' => 'x', 'type' => 'series'])
         ->assertUnprocessable()->assertJsonValidationErrors(['code', 'type']);
 });
 
@@ -121,9 +138,9 @@ it('assigns products and root models to owners that own products', function (): 
         ->assertCreated()->assertJsonPath('data.owner', 'acme');
 
     $this->patchJson('/showroom/product-models/tee', ['owner' => 'classic'])->assertOk();
-    $this->getJson('/showroom/products/TEE-RED-M')->assertJsonPath('data.owner', 'classic');
+    $this->getJson(ownershipProductPath('TEE-RED-M'))->assertJsonPath('data.owner', 'classic');
 
-    $this->patchJson('/showroom/products/TEE-1', ['owner' => null])->assertOk()->assertJsonPath('data.owner', null);
+    $this->patchJson(ownershipProductPath('TEE-1'), ['owner' => null])->assertOk()->assertJsonPath('data.owner', null);
 });
 
 it('finds products by owner, including everything beneath it', function (): void {
@@ -150,17 +167,17 @@ it('refuses to delete owners and types still in use', function (): void {
     owner('acme', 'vendor');
     owner('classic', 'series', 'acme');
 
-    $this->deleteJson('/showroom/owners/acme')
+    $this->deleteJson(ownershipOwnerPath('acme'))
         ->assertConflict()
         ->assertJsonPath('message', 'Owner "acme" still has 1 child owner(s) and 0 product(s) or product model(s). Move or delete them first.');
 
     $this->postJson('/showroom/products', ['identifier' => 'P', 'owner' => 'classic'])->assertCreated();
-    $this->deleteJson('/showroom/owners/classic')->assertConflict();
+    $this->deleteJson(ownershipOwnerPath('classic'))->assertConflict();
 
     $this->deleteJson('/showroom/owner-types/series')->assertConflict();
 
-    $this->deleteJson('/showroom/products/P')->assertNoContent();
-    $this->deleteJson('/showroom/owners/classic')->assertNoContent();
+    $this->deleteJson(ownershipProductPath('P'))->assertNoContent();
+    $this->deleteJson(ownershipOwnerPath('classic'))->assertNoContent();
     $this->deleteJson('/showroom/owner-types/series')->assertNoContent();
 
     expect(OwnerModel::query()->pluck('code')->all())->toBe(['acme']);

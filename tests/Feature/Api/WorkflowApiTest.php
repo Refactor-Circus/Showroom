@@ -17,13 +17,21 @@ beforeEach(function (): void {
     $this->postJson('/showroom/products', ['identifier' => 'TEE', 'family' => 'shirts', 'values' => ['name' => Catalog::value('Tee')]])->assertCreated();
 });
 
+/**
+ * The API path of a product, addressed by its `id` as routes bind it.
+ */
+function workflowProduct(string $identifier): string
+{
+    return '/showroom/products/'.ProductModel::query()->where('identifier', $identifier)->value('id');
+}
+
 function transition(string $identifier, string $transition, ?string $comment = null): TestResponse
 {
-    return test()->postJson('/showroom/products/'.$identifier.'/transitions', array_filter(['transition' => $transition, 'comment' => $comment]));
+    return test()->postJson(workflowProduct($identifier).'/transitions', array_filter(['transition' => $transition, 'comment' => $comment]));
 }
 
 it('moves a product through review to publication', function (): void {
-    $this->getJson('/showroom/products/TEE')->assertJsonPath('data.status', 'draft')->assertJsonPath('data.published_version', null);
+    $this->getJson(workflowProduct('TEE'))->assertJsonPath('data.status', 'draft')->assertJsonPath('data.published_version', null);
 
     transition('TEE', 'approve')
         ->assertConflict()
@@ -49,18 +57,18 @@ it('keeps the published version while the working copy changes', function (): vo
     $version = transition('TEE', 'publish')->json('data.published_version');
 
     // Editing an approved product sends it back for review.
-    $this->patchJson('/showroom/products/TEE', ['values' => ['name' => Catalog::value('New tee')]])
+    $this->patchJson(workflowProduct('TEE'), ['values' => ['name' => Catalog::value('New tee')]])
         ->assertOk()
         ->assertJsonPath('data.status', 'draft')
         ->assertJsonPath('data.published_version', $version);
 
-    $this->getJson('/showroom/products/TEE/versions/published')
+    $this->getJson(workflowProduct('TEE').'/versions/published')
         ->assertOk()
         ->assertJsonPath('data.version', $version)
         ->assertJsonPath('data.snapshot.values.name.0.data', 'Tee');
 
     // The version the edit records shows it back in draft.
-    $this->getJson('/showroom/products/TEE/versions/latest')
+    $this->getJson(workflowProduct('TEE').'/versions/latest')
         ->assertJsonPath('data.snapshot.values.name.0.data', 'New tee')
         ->assertJsonPath('data.snapshot.status', 'draft')
         ->assertJsonPath('data.changes.status', ['old' => 'approved', 'new' => 'draft']);
@@ -85,7 +93,7 @@ it('requires completeness to submit when told to', function (): void {
         ->assertConflict()
         ->assertJsonPath('message', 'Product "TEE" is not complete for ecommerce / en, ecommerce / fr, print / en, so it cannot be submitted.');
 
-    $this->patchJson('/showroom/products/TEE', ['values' => ['color' => Catalog::value('red')]])->assertOk();
+    $this->patchJson(workflowProduct('TEE'), ['values' => ['color' => Catalog::value('red')]])->assertOk();
 
     transition('TEE', 'submit')->assertOk();
     transition('CAP', 'submit')->assertConflict()->assertJsonPath('message', 'Product "CAP" is not complete for any channel: it has no family, so it cannot be submitted.');
@@ -106,12 +114,12 @@ it('records every change with its author', function (): void {
     $user = User::forceCreate(['name' => 'Ann', 'email' => 'ann@example.test', 'password' => 'x']);
     $this->actingAs($user);
 
-    $this->patchJson('/showroom/products/TEE', ['values' => ['name' => Catalog::value('Classic tee')], 'categories' => ['master']])->assertOk();
+    $this->patchJson(workflowProduct('TEE'), ['values' => ['name' => Catalog::value('Classic tee')], 'categories' => ['master']])->assertOk();
     // Writing the same thing again is not history.
-    $this->patchJson('/showroom/products/TEE', ['values' => ['name' => Catalog::value('Classic tee')]])->assertOk();
+    $this->patchJson(workflowProduct('TEE'), ['values' => ['name' => Catalog::value('Classic tee')]])->assertOk();
     transition('TEE', 'submit', 'Ready')->assertOk();
 
-    $versions = $this->getJson('/showroom/products/TEE/versions')->assertOk()->json('data');
+    $versions = $this->getJson(workflowProduct('TEE').'/versions')->assertOk()->json('data');
 
     expect(array_column($versions, 'action'))->toBe(['submitted', 'updated', 'created'])
         ->and($versions[0]['comment'])->toBe('Ready')
@@ -121,20 +129,20 @@ it('records every change with its author', function (): void {
         ->and($versions[1]['changes']['categories'])->toBe(['old' => [], 'new' => ['master']])
         ->and($versions[2]['author'])->toBeNull();
 
-    $this->getJson('/showroom/products/TEE/versions/2')->assertOk()->assertJsonPath('data.snapshot.categories', ['master']);
-    $this->getJson('/showroom/products/TEE/versions/9')->assertNotFound();
-    $this->getJson('/showroom/products/TEE/versions/published')->assertNotFound();
+    $this->getJson(workflowProduct('TEE').'/versions/2')->assertOk()->assertJsonPath('data.snapshot.categories', ['master']);
+    $this->getJson(workflowProduct('TEE').'/versions/9')->assertNotFound();
+    $this->getJson(workflowProduct('TEE').'/versions/published')->assertNotFound();
 });
 
 it('reverts to an earlier version', function (): void {
-    $this->patchJson('/showroom/products/TEE', [
+    $this->patchJson(workflowProduct('TEE'), [
         'values' => ['name' => Catalog::value('Renamed'), 'color' => Catalog::value('red')],
         'categories' => ['master'],
         'associations' => ['cross_sell' => ['products' => ['CAP']]],
         'enabled' => false,
     ])->assertOk();
 
-    $this->postJson('/showroom/products/TEE/revert', ['version' => 1])
+    $this->postJson(workflowProduct('TEE').'/revert', ['version' => 1])
         ->assertOk()
         ->assertJsonPath('data.values.name.0.data', 'Tee')
         ->assertJsonMissingPath('data.values.color')
@@ -142,17 +150,17 @@ it('reverts to an earlier version', function (): void {
         ->assertJsonPath('data.associations', [])
         ->assertJsonPath('data.enabled', true);
 
-    $latest = $this->getJson('/showroom/products/TEE/versions/latest')->json('data');
+    $latest = $this->getJson(workflowProduct('TEE').'/versions/latest')->json('data');
 
     expect($latest['action'])->toBe('reverted')
         ->and($latest['comment'])->toBe('Reverted to version 1.');
 
-    $this->postJson('/showroom/products/TEE/revert', ['version' => 99])
+    $this->postJson(workflowProduct('TEE').'/revert', ['version' => 99])
         ->assertUnprocessable()->assertJsonValidationErrors(['version' => 'Product "TEE" has no version 99.']);
 });
 
 it('forgets the versions of deleted products', function (): void {
-    $this->deleteJson('/showroom/products/TEE')->assertNoContent();
+    $this->deleteJson(workflowProduct('TEE'))->assertNoContent();
 
     expect(VersionModel::query()->where('versionable_id', '!=', ProductModel::query()->where('identifier', 'CAP')->value('id'))->count())->toBe(0);
 });

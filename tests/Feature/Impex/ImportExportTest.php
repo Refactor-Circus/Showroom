@@ -35,6 +35,14 @@ beforeEach(function (): void {
     $this->postJson('/showroom/categories', ['code' => 'master'])->assertCreated();
 });
 
+/**
+ * The API path of a product, addressed by its `id` as routes bind it.
+ */
+function importProductPath(string $identifier): string
+{
+    return '/showroom/products/'.ProductModel::query()->where('identifier', $identifier)->value('id');
+}
+
 function fileAsset(string $code, string $filename, string $contents): void
 {
     Storage::disk('assets')->put('incoming/'.$filename, $contents);
@@ -75,7 +83,7 @@ it('imports a CSV file with Akeneo columns', function (): void {
 
     expect(Impex::result(finishedRun($id)))->toMatchArray(['total' => 3, 'succeeded' => 2, 'failed' => 1]);
 
-    $this->getJson('/showroom/products/TEE-1')
+    $this->getJson(importProductPath('TEE-1'))
         ->assertJsonPath('data.family', 'shirts')
         ->assertJsonPath('data.categories', ['master'])
         ->assertJsonPath('data.values.name.0.data', 'Classic tee')
@@ -85,7 +93,7 @@ it('imports a CSV file with Akeneo columns', function (): void {
         ->assertJsonPath('data.values.organic.0.data', true)
         ->assertJsonPath('data.values.pack_size.0.data', 3);
 
-    $this->getJson('/showroom/products/TEE-2')->assertJsonPath('data.enabled', false)->assertJsonPath('data.values.organic.0.data', false);
+    $this->getJson(importProductPath('TEE-2'))->assertJsonPath('data.enabled', false)->assertJsonPath('data.values.organic.0.data', false);
 
     // The bad row's reason is kept with the batch item.
     $failed = collect(Impex::batchItems(Impex::result(finishedRun($id))['batch_id']))->firstWhere('status.value', 'failed');
@@ -194,8 +202,8 @@ it('exports live versions only when asked', function (): void {
     config()->set('showroom.workflow.require_approval', false);
 
     $this->postJson('/showroom/products', ['identifier' => 'LIVE', 'values' => ['name' => Catalog::value('Live name')]])->assertCreated();
-    $this->postJson('/showroom/products/LIVE/transitions', ['transition' => 'publish'])->assertOk();
-    $this->patchJson('/showroom/products/LIVE', ['values' => ['name' => Catalog::value('Draft name')]])->assertOk();
+    $this->postJson(importProductPath('LIVE').'/transitions', ['transition' => 'publish'])->assertOk();
+    $this->patchJson(importProductPath('LIVE'), ['values' => ['name' => Catalog::value('Draft name')]])->assertOk();
     $this->postJson('/showroom/products', ['identifier' => 'NEVER'])->assertCreated();
 
     $id = $this->postJson('/showroom/exports', ['published' => true, 'code' => 'live'])->json('data.id');
@@ -218,7 +226,7 @@ it('builds and delivers a channel feed', function (): void {
         ['locale' => 'en', 'scope' => null, 'data' => 'English'],
         ['locale' => 'fr', 'scope' => null, 'data' => 'French'],
     ]]])->assertCreated();
-    $this->postJson('/showroom/products/LIVE/transitions', ['transition' => 'publish'])->assertOk();
+    $this->postJson(importProductPath('LIVE').'/transitions', ['transition' => 'publish'])->assertOk();
 
     $run = Impex::run('showroom:feed:web');
     $result = Impex::result(finishedRun($run->id));
@@ -249,7 +257,7 @@ it('fires a starting and a finished event around every flow step', function (): 
 
     fileAsset('one', 'one.jsonl', (string) json_encode(['identifier' => 'LIVE']));
     finishedRun($this->postJson('/showroom/imports', ['asset' => 'one'])->json('data.id'));
-    $this->postJson('/showroom/products/LIVE/transitions', ['transition' => 'publish'])->assertOk();
+    $this->postJson(importProductPath('LIVE').'/transitions', ['transition' => 'publish'])->assertOk();
     finishedRun(Impex::run('showroom:feed:web')->id);
 
     expect($seen->getArrayCopy())->toContain(
@@ -280,7 +288,7 @@ it('delivers a feed through a named Impex channel, the channel\'s way', function
     Storage::fake('drops');
 
     $this->postJson('/showroom/products', ['identifier' => 'LIVE'])->assertCreated();
-    $this->postJson('/showroom/products/LIVE/transitions', ['transition' => 'publish'])->assertOk();
+    $this->postJson(importProductPath('LIVE').'/transitions', ['transition' => 'publish'])->assertOk();
 
     $run = Impex::run('showroom:feed:partner');
     $result = Impex::result(finishedRun($run->id));

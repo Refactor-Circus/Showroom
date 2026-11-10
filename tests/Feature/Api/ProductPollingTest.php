@@ -12,19 +12,19 @@ beforeEach(function (): void {
 });
 
 it('answers 304 to a client that already has the product', function (): void {
-    $this->postJson('/showroom/products', ['identifier' => 'TEE-1', 'values' => ['name' => Catalog::value('Tee')]])->assertCreated();
+    $path = '/showroom/products/'.$this->postJson('/showroom/products', ['identifier' => 'TEE-1', 'values' => ['name' => Catalog::value('Tee')]])->assertCreated()->json('data.id');
 
-    $etag = $this->getJson('/showroom/products/TEE-1')->assertOk()->headers->get('ETag');
+    $etag = $this->getJson($path)->assertOk()->headers->get('ETag');
 
     expect($etag)->not->toBeNull();
 
-    $this->getJson('/showroom/products/TEE-1', ['If-None-Match' => (string) $etag])
+    $this->getJson($path, ['If-None-Match' => (string) $etag])
         ->assertStatus(304)
         ->assertContent('');
 
-    $this->patchJson('/showroom/products/TEE-1', ['values' => ['name' => Catalog::value('New tee')]])->assertOk();
+    $this->patchJson($path, ['values' => ['name' => Catalog::value('New tee')]])->assertOk();
 
-    $this->getJson('/showroom/products/TEE-1', ['If-None-Match' => (string) $etag])
+    $this->getJson($path, ['If-None-Match' => (string) $etag])
         ->assertOk()
         ->assertJsonPath('data.values.name.0.data', 'New tee');
 });

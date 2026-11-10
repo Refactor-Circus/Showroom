@@ -3,11 +3,20 @@
 declare(strict_types=1);
 
 use RefactorCircus\Showroom\Domains\Category\Models\CategoryModel;
+use RefactorCircus\Showroom\Domains\Product\Models\ProductModel;
 use RefactorCircus\Showroom\Tests\Fixtures\Catalog;
 
 function category(string $code, ?string $parent = null, int $sort = 0): void
 {
     test()->postJson('/showroom/categories', ['code' => $code, 'parent' => $parent, 'sort_order' => $sort])->assertCreated();
+}
+
+/**
+ * The API path of a product, addressed by its `id` as routes bind it.
+ */
+function categoryProductPath(string $identifier): string
+{
+    return '/showroom/products/'.ProductModel::query()->where('identifier', $identifier)->value('id');
 }
 
 beforeEach(function (): void {
@@ -66,8 +75,8 @@ it('files products and models in categories, and variants inherit them', functio
         ->assertJsonPath('data.categories', ['sale', 'shirts']);
 
     // Replaced, not appended.
-    $this->patchJson('/showroom/products/TEE-1', ['categories' => ['pants']])->assertOk()->assertJsonPath('data.categories', ['pants']);
-    $this->patchJson('/showroom/products/TEE-1', ['enabled' => false])->assertOk()->assertJsonPath('data.categories', ['pants']);
+    $this->patchJson(categoryProductPath('TEE-1'), ['categories' => ['pants']])->assertOk()->assertJsonPath('data.categories', ['pants']);
+    $this->patchJson(categoryProductPath('TEE-1'), ['enabled' => false])->assertOk()->assertJsonPath('data.categories', ['pants']);
 });
 
 it('finds products in a category and everything beneath it', function (): void {
@@ -98,5 +107,5 @@ it('deletes leaves only, unassigning their products', function (): void {
 
     $this->deleteJson('/showroom/categories/shirts')->assertNoContent();
 
-    $this->getJson('/showroom/products/SHIRT')->assertJsonPath('data.categories', ['sale']);
+    $this->getJson(categoryProductPath('SHIRT'))->assertJsonPath('data.categories', ['sale']);
 });
