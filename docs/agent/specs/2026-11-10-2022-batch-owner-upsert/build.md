@@ -88,3 +88,22 @@ UpsertOwnersAction (tasks 2.1-2.4; criteria 1-12b).
   Twelve of each updated owner's queries, and all ten of each created owner's, run inside `OwnerWriter` and the shared `Flags`, `ExternalIds` and `Slugs` services, outside this group's files. The test fixes `C` = 9 and the measured per-owner figures (10 created, 13 updated) so it guards against regressions. Reaching 6 is raised as a decision.
 - **Reindex.** The batch lists the products beneath each moved or re-flagged owner, skipping owners beneath another listed one, through `ProductIndex::productIdsOwnedWithin()`. It queues their ids into the `deferring()` buffer, so the batch pushes one `SyncProductIndex`, per 500 products. That is one query per moved owner, and the batch lists the products itself where `UpdateOwnerAction` defers the listing to a `QueueProductSyncs` job. This is the only reading of "one job, through `deferring()`'s `finally` path" that the existing `ProductIndex` API allows. It is raised as a decision.
 - Unchanged records are stamped inside a `DB::transaction` (one statement), so the action's writes all sit in a transaction, per actions-events.
+
+## Group 2 (salvaged)
+
+### Found
+
+- No `index.lock`, and no merge or rebase in progress. The working tree was clean.
+- The build agent had already committed the whole group as `d962897` ("group 2 UpsertOwnersAction"). That commit holds all eleven listed files, the `tests/Pest.php` `PARITY_EXCEPTIONS` entry described above, tasks 2.1-2.4 ticked, and the "Group 2" section above. Nothing was left uncommitted, so no code needed recovering.
+- The agent ended before it returned its result, so the two decisions its Deviations name never reached the workflow. This salvage returns them:
+  - The criterion 12 per-owner bound: measured at 10 per created owner and 13 per updated owner, against 6, with `C` = 9.
+  - The reindex shape: one `SyncProductIndex` carrying product ids that the batch lists, against criterion 9's one job carrying owner ids.
+
+### Committed
+
+- This note only. The code, tests, docs and the CHANGELOG are in `d962897`, unchanged.
+
+### Left
+
+- The two decisions above. The performance test pins the measured figures (`OWNERS_UPSERT_FIXED_QUERIES` = 9, 10 per created owner, 13 per updated owner) until the decision on criterion 12 is made.
+- Full suite: not run here. The gate runs it.
