@@ -1,0 +1,78 @@
+- id: Q-001
+  question: "Should the old identifier/code route keys keep working for a release after routes bind by slug?"
+  options:
+    - "404 immediately, as AC 7 states"
+    - "Accept identifier or code as a fallback at the same routes for one release, with a deprecation header"
+    - "Fallback via redirect (301) from the identifier or code URL to the slug URL"
+  recommendation: "404 immediately, as AC 7 states"
+  evidence: "The spec's risk list leaves this open. A fallback has a resolution-order risk: an identifier can equal another product's slug (SKU `ab-2` against the second `ab` slug), so the fallback could return the wrong product. Because identifiers now contain `/` and spaces, most old URLs cannot work anyway."
+  source: spec-review
+- id: Q-002
+  question: "Should the Flags domain ship in this spec or be split into its own spec?"
+  options:
+    - "Keep flags in this spec"
+    - "Split flags (AC 13-19, Flag domain) into a follow-up spec"
+  recommendation: "Keep flags in this spec"
+  evidence: "shape.md item 6 and Decisions place flags in scope, and AC 23 already lists flags as a compared field in the batch upsert, so splitting forces a second pass on the upsert comparison and search document."
+  source: spec-review
+- id: Q-003
+  question: "Do Atrium screens for flag definitions and for slug/external ids/flags on product and owner screens ship in this spec?"
+  options:
+    - "Ship them in this spec"
+    - "Defer to Out of scope; API and MCP only"
+  recommendation: "Ship them in this spec"
+  evidence: "shape.md Visuals lists these UI changes and standards.md includes showroom/atrium-screens, but spec.md has no AC or Design for them."
+  source: spec-review
+- id: Q-004
+  question: "How should the query-count bound for the batch upsert (AC 23, 25) be fixed so that a test can fail?"
+  options:
+    - "Fixed constant ceiling asserted in a test, plus a comparison of 10 vs 100 records (unchanged path must be equal; new-record path must stay under a per-chunk formula)"
+    - "Relative only: assert queries(100) < 2 * queries(10)"
+    - "Leave to the implementer to choose in the test"
+  recommendation: "Fixed constant ceiling asserted in a test, plus a comparison of 10 vs 100 records (unchanged path must be equal; new-record path must stay under a per-chunk formula)"
+  evidence: "AC 25 says 'the bound is measured in the test' but sets no number; tests/Feature/PerformanceTest.php already counts queries, so a numeric ceiling can follow that pattern."
+  source: spec-review
+- id: Q-005
+  question: "Where should the webhook-suppression behaviour (AC 26) be tested, given CaptureProductChanges is in the optional src/Impex layer and ProductChangeCapture is core?"
+  options:
+    - "Core unit test for ProductChangeCapture::suppress state handling (including exception restore), plus an Impex-layer test asserting CaptureProductChanges records nothing under suppression and records by default"
+    - "Only an Impex-layer test"
+    - "Only a core test that asserts the suppress flag is set"
+  recommendation: "Core unit test for ProductChangeCapture::suppress state handling (including exception restore), plus an Impex-layer test asserting CaptureProductChanges records nothing under suppression and records by default"
+  evidence: "src/Impex/Webhooks/CaptureProductChanges.php is the only consumer; the spec puts the service in core and the check in Impex."
+  source: spec-review
+- id: Q-006
+  question: "Should bulk-path versus action-path parity be an acceptance criterion rather than only a risk mitigation?"
+  options:
+    - "Yes, add an AC and a parity test comparing rows from both paths, with a mixed valid/invalid/guard-refused chunk for failure isolation"
+    - "No, keep it as a risk note only"
+  recommendation: "Yes, add an AC and a parity test comparing rows from both paths, with a mixed valid/invalid/guard-refused chunk for failure isolation"
+  evidence: "The spec's 'Bulk insert vs actions' risk admits drift, and AC 22 and 24 promise per-record isolation and exactly one 'created' version, which only a parity test can verify."
+  source: spec-review
+- id: Q-007
+  question: "How should identifier and external-id uniqueness handle case and accents given the DB collation?"
+  options:
+    - "Keep the database default collation (case-insensitive) and key all in-memory matching the same way"
+    - "Make `identifier` and `external_id` columns case-sensitive (binary collation) so only exact strings collide"
+    - "Normalize on write (e.g. uppercase) before storing"
+  recommendation: "Keep the database default collation (case-insensitive) and key all in-memory matching the same way"
+  evidence: "The existing migration uses `string('identifier', 191)->unique()` with the default collation. Changing the collation is a schema change on a large table, and normalizing on write alters SKUs that ERP systems treat as identifiers. The risk is only the in-memory comparison, which must follow the collation."
+  source: spec-review
+- id: Q-008
+  question: "Who may assign flags to a product or owner?"
+  options:
+    - "The subject's update permission is enough"
+    - "A separate `assign` ability on `FlagPolicy`, checked whenever `flags` changes"
+    - "Flags can only be set on owners, not products"
+  recommendation: "A separate `assign` ability on `FlagPolicy`, checked whenever `flags` changes"
+  evidence: "Flags such as `restricted` and `pricing_only` carry commercial restrictions that inherit to every product below an owner. The spec only gives `FlagPolicy` control over flag definitions (AC 13)."
+  source: spec-review
+- id: Q-009
+  question: "What should the slug of a record be when its source slugifies to an empty string, or to a reserved route segment?"
+  options:
+    - "Fall back to a fixed base word (`product` / `owner`) and suffix, and suffix any reserved word"
+    - "Refuse creation with a validation error"
+    - "Use the record's ULID as the slug"
+  recommendation: "Fall back to a fixed base word (`product` / `owner`) and suffix, and suffix any reserved word"
+  evidence: "AC 3 and 4 assume a non-empty slug. About 5.8M of the SKUs are non-trivial, and the backfill and bulk insert cannot refuse rows. Refusing would break the migration of existing data."
+  source: spec-review
