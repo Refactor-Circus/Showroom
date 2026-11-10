@@ -214,3 +214,31 @@ Make it practical for host apps to load and resync an ERP-scale catalog (million
 - **Backfill time:** generating slugs for millions of existing rows is slow. Showroom installs today are small, but the migration works in chunks and is resumable (AC 6).
 - **Effective flags cost:** a deep owner chain makes effective-flag resolution walk the path. Owner counts are small, about 3k, so it's resolved per batch and not cached. Revisit if owners grow.
 - **Slug truncation:** a 191-character identifier plus a suffix needs truncation before the suffix. Covered by AC 3.
+
+## Addendum (2026-11-10): decisions D-001 to D-009
+
+Where this addendum and the sections above disagree, this addendum wins. The spec-review recheck folds it into the body.
+
+### Record lookup (D-001)
+
+This replaces AC 7's slug binding.
+
+- **Default lookup:** products and owners are looked up by their ULID `id`. This applies to every HTTP route, including the Workflow routes and the Atrium screens, to MCP tool arguments that name a record, and to the show, update, delete, transition, versions and revert actions.
+- **Configuration:** `showroom.lookup.products` accepts `id` (default), `slug` or `identifier`. `showroom.lookup.owners` accepts `id` (default), `slug` or `code`.
+  - Route binding follows the configured key.
+  - An invalid value fails loud when the app boots.
+- **Per-call override:** actions that resolve a record take an optional `by` argument (an enum: `Id`, `Slug`, `Identifier`/`Code`) that overrides the config for that call. HTTP accepts `?by=` and MCP tools accept a `by` argument, on the same actions.
+- **Inputs that reference other records** (`parent`, `owner`, associations, filters) keep using identifier or code. This decision covers record lookup only.
+- **Resources** include `id`, `slug`, and `identifier` or `code`.
+- **Breaking change:** existing clients that call `products/{identifier}` or `owners/{code}` break unless the host sets the lookup to `identifier` or `code`. Record this in Upgrade notes.
+- **Standards deviation:** `models/stored-identifiers` and `http/resources` say to reference records by slug, never by internal id. Implementation must add a row to `docs/agent/standards-feedback.md` citing D-001.
+
+### Other decisions
+
+- **Scope (D-002, D-003):** flags stay in this spec. The Atrium screens ship in this spec: a flag-definitions screen, and slug, external ids, own and effective flags on the product and owner screens. Each needs acceptance criteria and a Design section.
+- **Flag permission (D-004):** `FlagPolicy` gains an `assign` ability. Any create, update or batch upsert that changes a record's `flags` requires `assign` in addition to update permission on the record.
+- **Case (D-005):** identifiers and external ids keep the database default (case-insensitive) collation. Batch upsert matching in memory and in-batch duplicate detection compare case-insensitively in the same way.
+- **Empty or reserved slugs (D-006):** when the source slugifies to an empty string, the base is `product` or `owner`, followed by the usual suffix rule. A slug that equals a reserved route segment, such as an action verb segment, gets a suffix.
+- **Query bound (D-007):** the implementer chooses the concrete bound for AC 23 and AC 25, but the test must assert a number that fails if queries grow per record.
+- **Parity (D-008):** a new acceptance criterion requires that a product written by the bulk path is identical to one written by `CreateProductAction`, with timestamps and ids ignored. The comparison covers rows, version, unique values, external ids and flag assignments. A mixed chunk of valid, invalid and guard-refused records proves failures stay isolated.
+- **Webhook opt-out tests (D-009):** a core unit test checks that `ProductChangeCapture::suppress()` restores its state, including after an exception. An Impex-layer test checks that `CaptureProductChanges` records nothing while suppressed and records by default.
