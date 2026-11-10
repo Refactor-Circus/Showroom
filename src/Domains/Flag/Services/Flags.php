@@ -45,18 +45,24 @@ final class Flags
      * own flags, replacing what it had. Each must name a flag that applies
      * to this kind of record.
      *
+     * Each flag is read once per set of rules, so a batch that validates many
+     * records against one set reads each code once.
+     *
      * @return array<string, array<int, mixed>>
      */
     public static function rules(FlagSubject $subject): array
     {
+        /** @var array<string, FlagModel|null> $read */
+        $read = [];
+
         return [
             'flags' => ['sometimes', 'array', 'list'],
             'flags.*' => [
                 'bail',
                 'string',
                 'distinct',
-                function (string $attribute, mixed $value, Closure $fail) use ($subject): void {
-                    self::assignable($subject, $attribute, $value, $fail);
+                function (string $attribute, mixed $value, Closure $fail) use ($subject, &$read): void {
+                    self::assignable($subject, $attribute, $value, $fail, $read);
                 },
             ],
         ];
@@ -78,14 +84,20 @@ final class Flags
 
     /**
      * Refuse a code no flag has, or a flag that does not apply to the record.
+     *
+     * @param  array<string, FlagModel|null>  $read  The flags already read, by code.
      */
-    private static function assignable(FlagSubject $subject, string $attribute, mixed $value, Closure $fail): void
+    private static function assignable(FlagSubject $subject, string $attribute, mixed $value, Closure $fail, array &$read): void
     {
         if (! is_string($value)) {
             return;
         }
 
-        $flag = FlagModel::query()->where('code', $value)->first();
+        if (! array_key_exists($value, $read)) {
+            $read[$value] = FlagModel::query()->where('code', $value)->first();
+        }
+
+        $flag = $read[$value];
 
         if ($flag === null) {
             $fail(sprintf('The %s flag "%s" does not exist.', $attribute, $value));
