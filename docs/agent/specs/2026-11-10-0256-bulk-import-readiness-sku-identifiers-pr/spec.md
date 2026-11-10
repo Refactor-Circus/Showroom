@@ -286,3 +286,11 @@ All decisions are folded into the body above and the numbered ACs are authoritat
 
 - **AC 31 (D-011):** turning off capture on the CLI uses `--capture-changes=0`, not `--no-capture-changes`. The flows declare `?bool $captureChanges = null`, where `null` means `true`. A test runs each flow with `--capture-changes=0` and asserts that nothing is recorded for webhooks.
 - **AC 32 (D-012):** the arch rule "code outside `src/Impex` uses no Impex class" names two exceptions: `RefactorCircus\Showroom\Domains\Transfer` and `RefactorCircus\Showroom\Atrium\Http\Controllers\TransferUiController`. Both are the bridge that started Impex runs before this spec. Code this spec adds outside `src/Impex`, including `ProductChangeCapture`, must not use Impex.
+
+## Addendum (2026-11-10): D-013, external ids aligned with Roster links
+
+This addendum replaces the word `system` with `source` throughout the External IDs ACs and Design: the column, the `external_ids` map keys (named sources), the `external[{source}]` filter, the batch upsert `match` (a source name), and the Scout document values (`"{source}:{id}"`).
+
+42. The `showroom_external_ids` table has the columns `subject_type`, `subject_id`, `source` (64), `external_id` (191), a nullable `synced_at`, and timestamps. It has `unique(subject_type, source, external_id)` and `unique(subject_type, subject_id, source)`. A test inserting a second row with the same `source` for the same subject, bypassing the service, fails on the database constraint. This edits the unmerged create migration; no new migration.
+43. Writing an external id through create, update or upsert sets its `synced_at` to now. `UpsertProductsAction` stamps `synced_at` on the external-id rows of every `unchanged` record in one bulk update per batch, as Roster's `SyncCustomersAction::touch()` does. A test asserts the stamp moves forward on an unchanged re-upsert, with no other writes, and the query-count test from AC 27 still holds.
+44. Resources and MCP tools keep `external_ids` as a `{source: id}` map. They also return `external_ids_synced_at` as a `{source: ISO-8601 timestamp|null}` map, which is read-only: sending it on create or update is refused.

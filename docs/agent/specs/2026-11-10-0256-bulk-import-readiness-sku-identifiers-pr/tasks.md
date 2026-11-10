@@ -249,3 +249,49 @@ See the spec addendum for D-011 and D-012.
   - the arch rule passes with exactly the two named exceptions, `Domains\Transfer` and `Atrium\Http\Controllers\TransferUiController`
 - [x] 15.2 Declare `?bool $captureChanges = null` (null means true) on both flows, and set the arch rule's `ignoring()` to exactly those two exceptions.
 - [x] 15.3 Run vendor/bin/pest; all green
+
+## Group 16: Rework 1, external ids schema and source rename
+depends on: 15
+files: database/migrations/2026_11_10_000002_create_showroom_external_ids_table.php, src/Domains/ExternalId/Models/ExternalIdModel.php, src/Domains/ExternalId/Services/ExternalIds.php, src/Domains/Product/Models/ProductModel.php, src/Domains/Owner/Models/OwnerModel.php, src/Domains/Product/Actions/CreateProductAction.php, src/Domains/Product/Actions/UpdateProductAction.php, src/Domains/Owner/Actions/CreateOwnerAction.php, src/Domains/Owner/Actions/UpdateOwnerAction.php, src/Domains/Owner/Actions/ListOwnersAction.php, src/Domains/Product/Data/CreateProductData.php, src/Domains/Product/Data/UpdateProductData.php, src/Domains/Product/Data/ListProductsData.php, src/Domains/Owner/Data/CreateOwnerData.php, src/Domains/Owner/Data/UpdateOwnerData.php, src/Domains/Owner/Data/ListOwnersData.php, src/Domains/Product/Resources/ProductResource.php, src/Domains/Owner/Resources/OwnerResource.php, src/Domains/Search/Data/ProductQuery.php, src/Domains/Search/Services/DatabaseEngine.php, src/Domains/Search/Services/ScoutEngine.php, src/Domains/Search/Services/ProductDocument.php, tests/Feature/ExternalIdsTest.php
+criteria: 13, 14, 15, 16, 36, 42, 43, 44
+
+User note (PR #11 review): "Align showroom_external_ids with Roster's organization_links pattern: (1) rename column and API/config/Data/filter naming `system` -> `source` everywhere; (2) add nullable `synced_at`, set on write and stamped in one bulk update for unchanged records in UpsertProductsAction, exposed read-only; (3) add DB unique (subject_type, subject_id, source). Edit the existing unmerged migration rather than adding a new one." See D-013 and spec ACs 42–44.
+
+- [ ] 16.1 Update `ExternalIdsTest`:
+  - `source` naming throughout
+  - the database-level unique on (subject, source), bypassing the service
+  - `synced_at` set on create and update writes
+  - `external_ids_synced_at` in resources and MCP output
+  - refusal of `external_ids_synced_at` on input
+- [ ] 16.2 Edit the create migration (`source` (64), `synced_at`, both uniques). Rename `system` to `source` in the model, the `ExternalIds` service (write sets `synced_at`; add `touch(array $subjectIds, string $subjectType)` for the bulk stamp), Data rules and messages, list filters, both engines, the search document and the resources.
+- [ ] 16.3 Run vendor/bin/pest tests/Feature/ExternalIdsTest.php tests/Unit/KeyNormalizerTest.php tests/Feature/Search; all green
+
+## Group 17: Rework 2, upsert match by source and synced_at stamp
+depends on: 16
+files: src/Domains/Product/Actions/UpsertProductsAction.php, src/Domains/Product/Data/UpsertProductsData.php, src/Domains/Product/Services/BulkProductWriter.php, tests/Feature/UpsertProductsActionTest.php, tests/Feature/UpsertProductsParityTest.php, tests/Feature/UpsertProductsPerformanceTest.php
+criteria: 25, 27, 38, 43
+
+- [ ] 17.1 Update the upsert tests:
+  - `match` names a source
+  - an unchanged re-upsert moves `synced_at` forward on its external-id rows, in one bulk update, with no other writes; the query bounds still hold
+  - the bulk path sets `synced_at` the same way the action path does (parity)
+- [ ] 17.2 Rename `system` to `source` in the upsert Data and action, stamp unchanged records with `ExternalIds::touch()` once per batch, and set `synced_at` in `BulkProductWriter`.
+- [ ] 17.3 Run vendor/bin/pest tests/Feature/UpsertProductsActionTest.php tests/Feature/UpsertProductsParityTest.php tests/Feature/UpsertProductsPerformanceTest.php; all green
+
+## Group 18: Rework 3, Atrium external ids by source
+depends on: 16
+files: src/Atrium/Support/ExternalIdForm.php, src/Atrium/Http/Controllers/OwnerUiController.php, src/Atrium/Http/Controllers/ProductUiController.php, resources/views/ui/partials/external-ids.blade.php, tests/Feature/Ui/ProductPagesTest.php, tests/Feature/Ui/OwnerPagesTest.php
+criteria: 41, 44
+
+- [ ] 18.1 Update the page tests: the external ids editor labels and fields say "source", and shows each source's last synced time read-only.
+- [ ] 18.2 Rename `system` to `source` in the form, the controllers and the partial, and show `synced_at` read-only.
+- [ ] 18.3 Run vendor/bin/pest tests/Feature/Ui/ProductPagesTest.php tests/Feature/Ui/OwnerPagesTest.php; all green
+
+## Group 19: Rework 4, docs and changelog for D-013
+depends on: 17, 18
+files: CHANGELOG.md, docs/04-products.md, docs/05-search.md, docs/06-ownership.md, docs/09-api.md, docs/10-mcp.md, docs/12-impex.md, tests/Feature/DocsTest.php
+criteria: none (docs)
+
+- [ ] 19.1 Update `DocsTest` if it names the `system` key.
+- [ ] 19.2 Rename `system` to `source` in the docs and changelog, and document `synced_at`, `external_ids_synced_at` and the unique per (record, source).
+- [ ] 19.3 Run vendor/bin/pest; all green

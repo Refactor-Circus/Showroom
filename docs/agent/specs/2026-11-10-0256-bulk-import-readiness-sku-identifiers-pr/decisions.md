@@ -71,3 +71,9 @@
 - Rationale: Accepted after clarifying that "core" means Showroom code outside src/Impex (Impex is optional), not the legacy core app.
 - Date: 2026-11-10
 - Raised by: build (group 9)
+
+## D-013: Should Showroom's external_ids follow Roster's organization_links pattern before PR #11 merges?
+- Choice: Align all three. Rename `system` to `source` everywhere. Add a nullable `synced_at`, set on write and stamped in one bulk update for unchanged records during upsert. Add a database unique on `(subject_type, subject_id, source)`.
+- Rationale: The user compared the two schemas and chose "Align all three". Apps such as `secret` use Roster and Showroom side by side, so one vocabulary and one sync-tracking pattern across both.
+- Date: 2026-11-10
+- Raised by: review (user, PR #11)
