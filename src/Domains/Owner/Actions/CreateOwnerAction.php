@@ -12,10 +12,13 @@ use RefactorCircus\Showroom\Domains\Owner\Events\OwnerCreatedActionEvent;
 use RefactorCircus\Showroom\Domains\Owner\Events\OwnerCreatingActionEvent;
 use RefactorCircus\Showroom\Domains\Owner\Models\OwnerModel;
 use RefactorCircus\Showroom\Domains\Owner\Models\OwnerTypeModel;
+use RefactorCircus\Showroom\Support\Slugs;
 
 final class CreateOwnerAction
 {
     use PlacesOwners;
+
+    public function __construct(private readonly Slugs $slugs) {}
 
     /**
      * @throws ValidationException
@@ -47,7 +50,10 @@ final class CreateOwnerAction
             $this->checkPlacement($owner, $type, $parent);
 
             // The path holds the owner's own id, which exists once saved.
-            $owner->save();
+            $this->slugs->claim('owners', Slugs::ownerSource($owner->labels, $owner->code), function (string $slug) use ($owner): void {
+                $owner->slug = $slug;
+                $owner->save();
+            });
             $this->place($owner, $parent);
 
             return $owner->load(['type', 'parent']);

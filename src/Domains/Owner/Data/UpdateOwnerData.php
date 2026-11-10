@@ -31,6 +31,7 @@ final readonly class UpdateOwnerData extends Data
     {
         return [
             'code' => ['prohibited'],
+            'slug' => ['prohibited'],
             'type' => ['prohibited'],
             'parent' => ['sometimes', 'nullable', 'string', Rule::exists(OwnerModel::class, 'code')],
             'labels' => ['sometimes', 'nullable', 'array'],

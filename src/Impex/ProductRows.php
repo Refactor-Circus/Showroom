@@ -13,6 +13,7 @@ use RefactorCircus\Showroom\Domains\Attribute\Models\AttributeModel;
  * Akeneo's column conventions:
  *
  * - `identifier`, `family`, `parent`, `enabled` (1/0), `categories` (comma-separated);
+ * - `slug` on export only: it is read-only, so a row read back skips it;
  * - one column per value slot: `code`, `code-locale`, `code-scope`, `code-locale-scope`;
  * - prices one column per currency, `code-USD`; metrics `code` and `code-unit`;
  * - multiselect option codes comma-separated; booleans 1/0.
@@ -20,6 +21,11 @@ use RefactorCircus\Showroom\Domains\Attribute\Models\AttributeModel;
 final class ProductRows
 {
     private const array FIELDS = ['identifier', 'family', 'parent', 'owner', 'enabled', 'categories'];
+
+    /**
+     * Columns an export writes that an import must not send back.
+     */
+    private const array READ_ONLY = ['slug'];
 
     /**
      * @var Collection<string, AttributeModel>|null
@@ -55,7 +61,7 @@ final class ProductRows
         $prices = [];
 
         foreach ($row as $column => $cell) {
-            if (in_array($column, self::FIELDS, true)) {
+            if (in_array($column, self::FIELDS, true) || in_array($column, self::READ_ONLY, true)) {
                 continue;
             }
 
@@ -132,6 +138,7 @@ final class ProductRows
     {
         $row = [
             'identifier' => (string) ($record['identifier'] ?? ''),
+            'slug' => (string) ($record['slug'] ?? ''),
             'family' => (string) ($record['family'] ?? ''),
             'parent' => (string) ($record['parent'] ?? ''),
             'owner' => (string) ($record['owner'] ?? ''),

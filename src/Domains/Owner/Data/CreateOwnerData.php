@@ -32,6 +32,8 @@ final readonly class CreateOwnerData extends Data
     {
         return [
             'code' => ['required', 'string', 'max:191', 'regex:/^[A-Za-z0-9][A-Za-z0-9_.-]*$/', Rule::unique(OwnerModel::class, 'code')],
+            // Set from the label or the code; read-only.
+            'slug' => ['prohibited'],
             'type' => ['required', 'string', Rule::exists(OwnerTypeModel::class, 'code')],
             'parent' => ['sometimes', 'nullable', 'string', Rule::exists(OwnerModel::class, 'code')],
             'labels' => ['sometimes', 'nullable', 'array'],

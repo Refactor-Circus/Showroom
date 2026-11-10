@@ -28,6 +28,7 @@ final class ProductResource extends JsonResource
         return [
             'id' => $schema->string()->description('ULID.')->required(),
             'identifier' => $schema->string()->required(),
+            'slug' => $schema->string()->description('URL-safe, unique and never changed; set from the identifier when the product is created. Read-only.')->required(),
             'family' => $schema->string()->nullable()->description('Family code, when loaded.'),
             'parent' => $schema->string()->nullable()->description('Parent product model code, when loaded.'),
             'owner' => $schema->string()->nullable()->required(),
@@ -80,6 +81,7 @@ final class ProductResource extends JsonResource
         return [
             'id' => $this->id,
             'identifier' => $this->identifier,
+            'slug' => $this->slug,
             'family' => $this->whenLoaded('family', fn (): ?string => $this->family?->code),
             'parent' => $this->whenLoaded('parent', fn (): ?string => $this->parent?->code),
             // A variant's owner is its root model's.

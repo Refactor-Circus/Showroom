@@ -17,6 +17,7 @@ use RefactorCircus\Showroom\Domains\Product\Models\ProductModel;
 use RefactorCircus\Showroom\Domains\ProductModel\Models\ProductModelModel;
 use RefactorCircus\Showroom\Support\Models\Concerns\HasLabels;
 use RefactorCircus\Showroom\Support\Models\Concerns\HasPath;
+use RefactorCircus\Showroom\Support\Slugs;
 use RefactorCircus\Showroom\Support\Tables;
 
 /**
@@ -27,6 +28,7 @@ use RefactorCircus\Showroom\Support\Tables;
  * @property string $owner_type_id
  * @property string|null $parent_id
  * @property string $code
+ * @property string $slug Set once, from the default-locale label or the code, when the owner is created.
  * @property array<string, string>|null $labels
  * @property string $path
  * @property int $depth
@@ -99,6 +101,21 @@ final class OwnerModel extends Model
     public function productModels(): HasMany
     {
         return $this->hasMany(ProductModelModel::class, 'owner_id');
+    }
+
+    /**
+     * Give a new owner its ULID and, unless its creator already chose one,
+     * its slug (Slugs::ownerSource()). This runs on every insert, so an owner
+     * written outside the actions gets a slug too, whether or not model
+     * events are faked.
+     */
+    public function setUniqueIds(): void
+    {
+        parent::setUniqueIds();
+
+        if ($this->getAttribute('slug') === null) {
+            $this->setAttribute('slug', app(Slugs::class)->for('owners', Slugs::ownerSource($this->labels, (string) $this->getAttribute('code'))));
+        }
     }
 
     /**

@@ -19,6 +19,7 @@ use RefactorCircus\Showroom\Domains\Product\Models\ProductModel;
 use RefactorCircus\Showroom\Domains\ProductModel\Models\ProductModelModel;
 use RefactorCircus\Showroom\Domains\Search\Services\ProductIndex;
 use RefactorCircus\Showroom\Domains\Workflow\Services\Versions;
+use RefactorCircus\Showroom\Support\Slugs;
 
 final class CreateProductAction
 {
@@ -29,6 +30,7 @@ final class CreateProductAction
     public function __construct(
         private readonly UniqueValues $unique,
         private readonly ProductIndex $index,
+        private readonly Slugs $slugs,
     ) {}
 
     /**
@@ -96,7 +98,11 @@ final class CreateProductAction
             $product->family()->associate($family);
             $product->parent()->associate($parent);
             $product->owner()->associate($owner);
-            $product->save();
+
+            $this->slugs->claim('products', $data->identifier, function (string $slug) use ($product): void {
+                $product->slug = $slug;
+                $product->save();
+            });
 
             $this->assignCategories($product, $data->toArray());
             app(Associations::class)->write($product, $data->toArray());
