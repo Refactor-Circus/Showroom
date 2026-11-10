@@ -155,7 +155,7 @@ depends on: 8, 13, 14
 files: src/Impex/Actions/UpsertProductChunk.php, src/Impex/Actions/ImportProductRow.php (removed), src/Impex/Sources/InlineProductSource.php, src/Impex/Sources/FileProductSource.php, src/Impex/Flows/UpsertProductsFlow.php, src/Impex/Flows/ImportProductsFlow.php, src/Impex/Webhooks/CaptureProductChanges.php, src/Impex/ImpexIntegration.php, tests/ArchTest.php, tests/Feature/Impex/ImportExportTest.php, tests/Feature/Impex/ProductWebhooksTest.php, tests/Feature/Impex/UpsertChunkTest.php
 criteria: 30, 31, 32
 
-Group 4 switched lookup to `id`. `tests/Feature/Impex/ImportExportTest.php` and `ProductWebhooksTest.php` may still call product or owner URLs by identifier or code; update them to `id` as part of this group.
+Group 13 already moved `tests/Feature/Impex/ImportExportTest.php` and `ProductWebhooksTest.php` to `id` lookup. Keep that when changing them.
 
 - [ ] 9.1 Write tests:
   - both flows process per chunk through the action and accept `capture_changes`
@@ -215,10 +215,10 @@ Checkpoint commit 4d664b3 already has partial edits to `DatabaseEngine`, `ScoutE
 
 ## Group 13: Existing API and search tests on id lookup
 depends on: 8, 10, 12
-files: tests/Feature/Api/WorkflowApiTest.php, tests/Feature/Api/ProductApiTest.php, tests/Feature/Api/AssetApiTest.php, tests/Feature/Api/CompletenessApiTest.php, tests/Feature/Api/ProductPollingTest.php, tests/Feature/Api/CategoryApiTest.php, tests/Feature/Api/AssociationApiTest.php, tests/Feature/Api/OwnershipApiTest.php, tests/Feature/Api/ChannelApiTest.php, tests/Feature/PolicyTest.php, tests/Feature/PerformanceTest.php, tests/Feature/Search/ScoutEngineTest.php, tests/Feature/RecordLookupTest.php, tests/Keen/AuditHooksTest.php, tests/Modes/RenamedTables/RenamedTablesTest.php
+files: tests/Feature/Api/WorkflowApiTest.php, tests/Feature/Api/ProductApiTest.php, tests/Feature/Api/AssetApiTest.php, tests/Feature/Api/CompletenessApiTest.php, tests/Feature/Api/ProductPollingTest.php, tests/Feature/Api/CategoryApiTest.php, tests/Feature/Api/AssociationApiTest.php, tests/Feature/Api/OwnershipApiTest.php, tests/Feature/Api/ChannelApiTest.php, tests/Feature/PolicyTest.php, tests/Feature/PerformanceTest.php, tests/Feature/Search/ScoutEngineTest.php, tests/Feature/RecordLookupTest.php, tests/Keen/AuditHooksTest.php, tests/Modes/RenamedTables/RenamedTablesTest.php, tests/Feature/Impex/ImportExportTest.php, tests/Feature/Impex/ProductWebhooksTest.php
 criteria: 8
 
-Group 4 made products and owners bind by ULID `id` by default (AC 8, D-001/D-010), so older tests that build URLs or MCP arguments from an identifier or code now get `404`. Update the tests, not the binding. Leave `tests/Feature/Impex/*` to group 9, and the UI and MCP tests to group 14.
+Group 4 made products and owners bind by ULID `id` by default (AC 8, D-001/D-010), so older tests that build URLs or MCP arguments from an identifier or code now get `404`. Update the tests, not the binding. Include the two Impex tests, so the suite is green before group 9. Group 9 rewrites them afterwards. Leave the UI and MCP tests to group 14.
 
 - [ ] 13.1 Run the files listed above and note every failure that is a `404` or "Not found" on a product or owner URL or MCP argument.
 - [ ] 13.2 Change those tests to address records by `id`, using the model's key or the `id` from the resource response. Don't add slug or identifier fallbacks to the code.
