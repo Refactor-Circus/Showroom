@@ -1,0 +1,50 @@
+- id: Q-001
+  question: "How should the placement, slug, external-id and flags logic be shared between the single owner actions and the batch?"
+  options:
+    - "Extract an internal Owner/Services/OwnerWriter called by CreateOwnerAction, UpdateOwnerAction and the batch"
+    - "Batch gets its own write path duplicating the rules"
+    - "Batch calls the single actions with new optional preloaded type and parent parameters"
+  recommendation: "Extract an internal Owner/Services/OwnerWriter called by CreateOwnerAction, UpdateOwnerAction and the batch"
+  evidence: "spec.md Design: Shared logic; AC 11 parity"
+  source: spec-review
+- id: Q-002
+  question: "On an update, what does a field absent from the record mean?"
+  options:
+    - "Absent leaves the stored value; an explicit null parent moves the owner to root"
+    - "Every record is a full snapshot; absent fields are cleared"
+  recommendation: "Absent leaves the stored value; an explicit null parent moves the owner to root"
+  evidence: "src/Domains/Owner/Data/UpdateOwnerData.php:45 parent is sometimes|nullable"
+  source: spec-review
+- id: Q-003
+  question: "Two records for the same owner in one batch (same code, or same matched external id)?"
+  options:
+    - "The later record fails as a duplicate; the first is written (as products claim keys in batch order)"
+    - "The later record updates the owner the first one wrote"
+  recommendation: "The later record fails as a duplicate; the first is written (as products claim keys in batch order)"
+  evidence: "UpsertProductsAction docblock step 2: of two records sending one, the first persists"
+  source: spec-review
+- id: Q-004
+  question: "Should the batch enforce the owner create/update policy per record?"
+  options:
+    - "No: callers authorize, the action checks only the flags assign ability, as UpsertProductsAction and the single owner actions do"
+    - "Yes: enforce create/update policy per record; a refused record is a failure"
+  recommendation: "No: callers authorize, the action checks only the flags assign ability, as UpsertProductsAction and the single owner actions do"
+  evidence: "src/Domains/Product/Actions/UpsertProductsAction.php:675 only a change of flags is authorized per record"
+  source: spec-review
+- id: Q-005
+  question: "A concurrent change between the batch's preload and its write?"
+  options:
+    - "Accept the race: last write wins, as UpsertProductsAction does"
+    - "Check the preloaded updated_at and fail the record as changed concurrently"
+    - "Lock the owner row and re-compare before writing"
+  recommendation: "Accept the race: last write wins, as UpsertProductsAction does"
+  evidence: "UpsertProductsAction has no concurrency check; a lock adds a query against the 6-per-owner bound"
+  source: spec-review
+- id: Q-006
+  question: "How are skipped records reported?"
+  options:
+    - "Count only in UpsertOwnersResult; the Impex flow counts them as succeeded, as for products"
+    - "List of {index, code} in the result"
+  recommendation: "Count only in UpsertOwnersResult; the Impex flow counts them as succeeded, as for products"
+  evidence: "src/Impex/Actions/UpsertProductChunk.php:61 skipped is a count"
+  source: spec-review

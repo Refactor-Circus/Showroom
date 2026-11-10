@@ -1,8 +1,9 @@
 id: 2026-11-10-2022-batch-owner-upsert
 title: 'Batch owner upsert'
-status: written
+status: needs-decision
 created: '2026-11-10 20:22'
 standards:
   refactor-circus/standards:
     version: dev-main
     reference: a5b675396232
+review_passes: 0
