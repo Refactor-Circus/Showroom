@@ -55,6 +55,33 @@ Owners take `external_ids` (a `{source: id}` map) as products do, and return `ex
 
 Owners take `flags` too, and pass them down. An owner's flags apply to every owner and product beneath it, and nothing beneath can drop them. Changing an owner's flags needs the `assign` ability and re-indexes every product beneath it. See [Flags](14-flags.md).
 
+## Batch upsert
+
+`UpsertOwnersAction` writes a batch of owner records in the API shape, for ERP syncs of vendors and series. It works like the [product batch upsert](04-products.md#batch-upsert), one owner at a time.
+
+```php
+use RefactorCircus\Showroom\Domains\Owner\Actions\UpsertOwnersAction;
+use RefactorCircus\Showroom\Domains\Owner\Data\UpsertOwnersData;
+
+$result = app(UpsertOwnersAction::class)->execute(UpsertOwnersData::from([
+    'records' => $records,  // [{"code": "classic", "type": "series", "parent": "acme", ...}, ...]
+    'mode' => 'upsert',     // or create, update
+    'match' => 'd365',      // or code (the default)
+]));
+```
+
+- `match` pairs records with stored owners by `code`, or by `external_ids[match]` when it names a source. In `create` mode a matched record is skipped; in `update` mode an unmatched one is.
+- Each record is validated with `CreateOwnerData` or `UpdateOwnerData` rules. A matched record can't change the owner's `code` or `type`. A field the record leaves out keeps its stored value, and `"parent": null` moves the owner to the root.
+- Two records with the same `code`, or the same matched external id, can't both be written. The first one keeps it, whatever becomes of it, and the later one fails at `code`.
+- A record's `parent` can name an owner stored before the batch, or one an earlier record created. Send parents before their children: a parent later in the batch is refused as unknown. Once a record moves an owner, later records see its new place, and that of everything beneath it.
+- A record whose sent fields (`labels`, `parent`, `external_ids`, `flags`) match the stored owner is `unchanged`. Nothing is written for it, and no event fires. The only write is the `synced_at` stamp on its external ids, done in one bulk update for all the batch's unchanged records.
+- Every other record is written in its own transaction, with the placement, slug, external id and flag rules of `CreateOwnerAction` and `UpdateOwnerAction`, and fires their events. A record that fails, whether a rule or the database refuses it, rolls back alone and never stops the others.
+- The products beneath every owner that moved or changed its flags get one index sync for the whole batch.
+- Records whose `flags` change need `assign`; see [Flags](14-flags.md#the-assign-ability). The batch checks nothing else per record: its caller authorizes creating and updating owners.
+- The action expects at most `showroom.impex.chunk` records per call, and reads what it needs in lookups of that size. Send larger batches in chunks.
+
+The result, an `UpsertOwnersResult`, counts `created`, `updated`, `unchanged` and `skipped`. `failures` lists each refused record by its `index` in the batch, with its `code` and its `errors` by field. The batch fires `OwnersUpsertingActionEvent` before and `OwnersUpsertedActionEvent` after, with the result.
+
 ## Assigning products
 
 Set `owner` on a simple product or a root product model, naming the deepest owner in the chain — the series, not the vendor. Sub-models and variant products take their root model's owner and cannot set their own; the API returns it as their `owner`.
@@ -65,4 +92,4 @@ Set `owner` on a simple product or a root product model, naming the deepest owne
 
 ## Actions
 
-`ListOwnerTypesAction`, `ShowOwnerTypeAction`, `CreateOwnerTypeAction`, `UpdateOwnerTypeAction`, `DeleteOwnerTypeAction`, `ListOwnersAction`, `ShowOwnerAction`, `CreateOwnerAction`, `UpdateOwnerAction`, `DeleteOwnerAction`.
+`ListOwnerTypesAction`, `ShowOwnerTypeAction`, `CreateOwnerTypeAction`, `UpdateOwnerTypeAction`, `DeleteOwnerTypeAction`, `ListOwnersAction`, `ShowOwnerAction`, `CreateOwnerAction`, `UpdateOwnerAction`, `DeleteOwnerAction`, `UpsertOwnersAction`.
