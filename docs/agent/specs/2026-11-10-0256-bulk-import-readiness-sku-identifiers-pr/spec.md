@@ -112,7 +112,7 @@ Make it practical for host apps to load and resync an ERP-scale catalog (million
 
 ### Case, assignment, parity and Atrium
 
-36. Identifiers and external ids compare under one key normalization, `Support\LookupKey::normalize`: case folding plus accent stripping, matching the database default `utf8mb4` `_ai_ci` collation. Every in-memory match and every Scout document or filter value uses it.
+36. Identifiers and external ids compare under one key normalization, `Support\KeyNormalizer::normalize`: case folding plus accent stripping, matching the database default `utf8mb4` `_ai_ci` collation. Every in-memory match and every Scout document or filter value uses it.
     - `a` and `A` identifiers collide in validation, at `identifier`.
     - An upsert with an identifier that differs only by case or accent matches the stored product and does not create a second one.
     - Inside one batch, a duplicate `(system, id)` that differs only by case fails at `external_ids.{system}` and the first persists.
