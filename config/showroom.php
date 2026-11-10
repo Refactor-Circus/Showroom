@@ -271,6 +271,50 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Products
+    |--------------------------------------------------------------------------
+    |
+    | - `identifier_pattern`: the regular expression every new product
+    |   identifier (its SKU) must match, on top of being unique and at most
+    |   191 characters. The default takes real SKUs, spaces and `/`
+    |   included (`83AL-IC/40 4 RED ALUM`), and refuses an empty identifier,
+    |   leading or trailing whitespace and control characters. Set a
+    |   stricter pattern to hold SKUs to your own format; creating a product
+    |   that does not match then fails validation at `identifier`. A pattern
+    |   that does not compile throws, naming this key. Identifiers are never
+    |   part of a URL, so any character the pattern allows is safe.
+    |
+    */
+
+    'products' => [
+        'identifier_pattern' => '/^[^\s\p{C}](?:[^\p{C}]{0,189}[^\s\p{C}])?$/uD',
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Record Lookup
+    |--------------------------------------------------------------------------
+    |
+    | The key products and owners are found by in API and dashboard URLs,
+    | MCP tool arguments and the show, update, delete, transition, versions
+    | and revert actions. Each is "id" (the ULID, the default) or "slug".
+    | A single call can pick the other key with `?by=` over HTTP or a `by`
+    | tool argument. An identifier or owner code is never a lookup key; it
+    | stays an input reference (`parent`, `owner`, filters). Any other value
+    | throws when the app boots.
+    |
+    | "id" reveals nothing about the record; "slug" makes URLs readable but
+    | derives them from the identifier, owner label or code.
+    |
+    */
+
+    'lookup' => [
+        'products' => 'id',
+        'owners' => 'id',
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Audit
     |--------------------------------------------------------------------------
     |
