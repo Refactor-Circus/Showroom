@@ -23,3 +23,8 @@ runs:
     result: needs-decision
     round: 0
     date: '2026-11-10'
+  - workflow: ring-master-factory
+    run_id: wf_4a6ac0aa-ff1
+    result: approved
+    round: 2
+    date: '2026-11-10'

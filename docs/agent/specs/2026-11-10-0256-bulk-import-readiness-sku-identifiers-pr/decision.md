@@ -28,3 +28,10 @@ Groups 13, 14 and 9 were built. Group 9 asks:
 
 - Q-011: how to turn capture off on the CLI, given Impex's bool flag handling
 - Q-012: Transfer domain exceptions to the AC 32 arch rule
+
+## Run wf_4a6ac0aa-ff1: approved
+
+- Status: approved (stage decide), after 2 review rounds. The gate was red in round 1 and green in round 2.
+- Reasons: gate green; only nits left.
+- Nits: none. Findings left: none. Broken consumers: none.
+- Brief risk: high (breaking lookup change, three migrations, bulk path).
