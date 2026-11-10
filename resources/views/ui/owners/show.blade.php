@@ -1,4 +1,3 @@
-@use(RefactorCircus\Showroom\Domains\ExternalId\Services\ExternalIds)
 @php($locale = app()->getLocale())
 
 <x-atrium::layout :title="$owner->label()">
@@ -62,7 +61,7 @@
                         <x-atrium::form.input name="parent" :label="__('showroom::showroom.parent')" :hint="__('showroom::showroom.move_hint')" :value="$owner->parent?->code" wrapper="w-56" />
                     </div>
 
-                    @include('showroom::ui.partials.external-ids', ['externalIds' => ExternalIds::present($owner->externalIds)])
+                    @include('showroom::ui.partials.external-ids', ['externalIds' => $owner->externalIds])
 
                     {{-- Changing flags needs the flag policy's assign ability on top of update. --}}
                     @if ($mayAssign)

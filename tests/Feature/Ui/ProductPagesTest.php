@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
+use Illuminate\Support\Carbon;
 use RefactorCircus\Showroom\Domains\ExternalId\Services\ExternalIds;
 use RefactorCircus\Showroom\Domains\Family\Models\FamilyVariantModel;
 use RefactorCircus\Showroom\Domains\Flag\Models\FlagModel;
@@ -10,7 +11,9 @@ use RefactorCircus\Showroom\Domains\Owner\Actions\CreateOwnerAction;
 use RefactorCircus\Showroom\Domains\Owner\Data\CreateOwnerData;
 use RefactorCircus\Showroom\Domains\Owner\Models\OwnerTypeModel;
 use RefactorCircus\Showroom\Domains\Product\Actions\CreateProductAction;
+use RefactorCircus\Showroom\Domains\Product\Actions\UpdateProductAction;
 use RefactorCircus\Showroom\Domains\Product\Data\CreateProductData;
+use RefactorCircus\Showroom\Domains\Product\Data\UpdateProductData;
 use RefactorCircus\Showroom\Domains\Product\Models\ProductModel;
 use RefactorCircus\Showroom\Domains\ProductModel\Models\ProductModelModel;
 use RefactorCircus\Showroom\ShowroomServiceProvider;
@@ -206,30 +209,51 @@ describe('slug, external ids and flags', function (): void {
             ->assertDontSee('name="slug"', false);
     });
 
-    it('edits the external ids as a map: change, add and remove a system', function (): void {
+    it('edits the external ids as a map: change, add and remove a source', function (): void {
         $product = uiFlaggedProduct();
 
         $this->get(route('atrium.showroom.products.show', $product))
             ->assertOk()
             ->assertSee('data-testid="external-ids"', false)
+            ->assertSee('data-external-source="erp"', false)
             ->assertSee('name="external_ids[erp]"', false)
             ->assertSee('value="E-1"', false)
-            ->assertSee('name="external_ids_new[system]"', false)
-            ->assertSee('name="external_ids_new[id]"', false);
+            ->assertSee(__('showroom::showroom.external_source'))
+            ->assertSee(__('showroom::showroom.external_id'))
+            ->assertSee('name="external_ids_new[source]"', false)
+            ->assertSee('name="external_ids_new[id]"', false)
+            ->assertDontSee('name="external_ids_new[system]"', false);
 
         $this->patch(route('atrium.showroom.products.update', $product), [
             'external_ids' => ['erp' => 'E-2'],
-            'external_ids_new' => ['system' => 'd365', 'id' => 'D-1'],
+            'external_ids_new' => ['source' => 'd365', 'id' => 'D-1'],
         ])->assertSessionHasNoErrors();
 
         expect(ExternalIds::present(uiProduct('TEE-1')->externalIds))->toBe(['d365' => 'D-1', 'erp' => 'E-2']);
 
         $this->patch(route('atrium.showroom.products.update', $product), [
             'external_ids' => ['d365' => 'D-1', 'erp' => ''],
-            'external_ids_new' => ['system' => '', 'id' => ''],
+            'external_ids_new' => ['source' => '', 'id' => ''],
         ])->assertSessionHasNoErrors();
 
         expect(ExternalIds::present(uiProduct('TEE-1')->externalIds))->toBe(['d365' => 'D-1']);
+    });
+
+    it('shows when each source last synced, read-only', function (): void {
+        $this->travelTo(Carbon::parse('2026-11-01 09:00:00', 'UTC'));
+        $product = uiFlaggedProduct();
+        $this->travelBack();
+
+        app(UpdateProductAction::class)->execute($product, UpdateProductData::from(['external_ids' => ['d365' => 'D-1']]));
+        $product->externalIds()->where('source', 'd365')->toBase()->update(['synced_at' => null]);
+
+        $html = (string) $this->get(route('atrium.showroom.products.show', $product))->assertOk()->getContent();
+
+        expect($html)
+            ->toMatch('/data-external-synced="erp"[^>]*datetime="2026-11-01T09:00:00\+00:00"/')
+            ->toMatch('/data-external-synced="d365"[^>]*>\s*'.preg_quote(__('showroom::showroom.external_never_synced'), '/').'/')
+            ->not->toContain('name="external_ids_synced_at')
+            ->not->toContain('name="synced_at');
     });
 
     it('shows an external id held by another product as the error', function (): void {

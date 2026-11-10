@@ -283,9 +283,9 @@ depends on: 16
 files: src/Atrium/Support/ExternalIdForm.php, src/Atrium/Http/Controllers/OwnerUiController.php, src/Atrium/Http/Controllers/ProductUiController.php, resources/views/ui/partials/external-ids.blade.php, tests/Feature/Ui/ProductPagesTest.php, tests/Feature/Ui/OwnerPagesTest.php
 criteria: 41, 44
 
-- [ ] 18.1 Update the page tests: the external ids editor labels and fields say "source", and shows each source's last synced time read-only.
-- [ ] 18.2 Rename `system` to `source` in the form, the controllers and the partial, and show `synced_at` read-only.
-- [ ] 18.3 Run vendor/bin/pest tests/Feature/Ui/ProductPagesTest.php tests/Feature/Ui/OwnerPagesTest.php; all green
+- [x] 18.1 Update the page tests: the external ids editor labels and fields say "source", and shows each source's last synced time read-only.
+- [x] 18.2 Rename `system` to `source` in the form, the controllers and the partial, and show `synced_at` read-only.
+- [x] 18.3 Run vendor/bin/pest tests/Feature/Ui/ProductPagesTest.php tests/Feature/Ui/OwnerPagesTest.php; all green
 
 ## Group 19: Rework 4, docs and changelog for D-013
 depends on: 17, 18

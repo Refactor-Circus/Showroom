@@ -110,7 +110,7 @@ final class OwnerUiController
     }
 
     /**
-     * The external ids arrive as a map plus one new system, and the own flags
+     * The external ids arrive as a map plus one new source, and the own flags
      * only when the page showed their field.
      *
      * @return array<string, mixed>
