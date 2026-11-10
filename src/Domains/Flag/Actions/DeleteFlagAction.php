@@ -9,6 +9,7 @@ use Illuminate\Validation\ValidationException;
 use RefactorCircus\Showroom\Domains\Flag\Events\FlagDeletedActionEvent;
 use RefactorCircus\Showroom\Domains\Flag\Events\FlagDeletingActionEvent;
 use RefactorCircus\Showroom\Domains\Flag\Models\FlagModel;
+use RefactorCircus\Showroom\Domains\Flag\Services\Flags;
 
 final class DeleteFlagAction
 {
@@ -28,12 +29,13 @@ final class DeleteFlagAction
 
     /**
      * A flag still assigned to a product or owner stays: deleting it would
-     * silently lift the restriction it carries.
+     * silently lift the restriction it carries. Assignments left by a record
+     * deleted outside the Actions hold nothing back, and go with the flag.
      */
     private function perform(FlagModel $flag): FlagModel
     {
         return DB::transaction(function () use ($flag): FlagModel {
-            $assigned = $flag->assignments()->count();
+            $assigned = app(Flags::class)->holders($flag);
 
             if ($assigned > 0) {
                 throw ValidationException::withMessages([
@@ -41,6 +43,7 @@ final class DeleteFlagAction
                 ]);
             }
 
+            $flag->assignments()->delete();
             $flag->delete();
 
             return $flag;

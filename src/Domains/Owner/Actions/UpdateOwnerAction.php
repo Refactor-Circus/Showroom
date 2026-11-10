@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace RefactorCircus\Showroom\Domains\Owner\Actions;
 
+use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use RefactorCircus\Showroom\Domains\ExternalId\Services\ExternalIds;
+use RefactorCircus\Showroom\Domains\Flag\Services\Flags;
 use RefactorCircus\Showroom\Domains\Owner\Concerns\PlacesOwners;
 use RefactorCircus\Showroom\Domains\Owner\Data\UpdateOwnerData;
 use RefactorCircus\Showroom\Domains\Owner\Events\OwnerUpdatedActionEvent;
@@ -22,10 +25,12 @@ final class UpdateOwnerAction
     public function __construct(
         private readonly ProductIndex $index,
         private readonly ExternalIds $externalIds,
+        private readonly Flags $flags,
     ) {}
 
     /**
      * @throws ValidationException
+     * @throws AuthorizationException When the flags change and the caller may not assign them.
      */
     public function execute(OwnerModel $owner, UpdateOwnerData $data): OwnerModel
     {
@@ -41,6 +46,17 @@ final class UpdateOwnerAction
     private function perform(OwnerModel $owner, UpdateOwnerData $data): OwnerModel
     {
         return DB::transaction(function () use ($owner, $data): OwnerModel {
+            // Changing the flags needs `assign`, asked before anything is written;
+            // the same set sent back needs nothing.
+            $flagsChange = is_array($data->flags) && $this->flags->changes($owner, $data->flags);
+
+            if ($flagsChange) {
+                $this->flags->authorizeAssign($owner);
+            }
+
+            // Set when every product beneath shows something new: a move or a flag change.
+            $reindex = false;
+
             if ($data->has('labels')) {
                 $owner->labels = is_array($data->labels) ? $data->labels : [];
                 $owner->save();
@@ -55,9 +71,8 @@ final class UpdateOwnerAction
                     $this->checkPlacement($owner, $type, $parent);
                     $this->place($owner, $parent);
 
-                    // Every product beneath now sits in a different chain;
-                    // a queued job lists them once this commits.
-                    $this->index->queueWithin(SyncScope::Owner, $owner->id);
+                    // Every product beneath now sits in a different chain.
+                    $reindex = true;
                 }
             }
 
@@ -66,7 +81,23 @@ final class UpdateOwnerAction
                 $this->externalIds->write($owner, $data->externalIds);
             }
 
-            return $owner->load(['type', 'parent', 'externalIds']);
+            if ($flagsChange) {
+                $this->flags->write($owner, $data->flags);
+
+                // Every product beneath inherits the owner's flags.
+                $reindex = true;
+            }
+
+            // One queued job lists the products beneath once this commits,
+            // however many of them there are.
+            if ($reindex) {
+                $this->index->queueWithin(SyncScope::Owner, $owner->id);
+            }
+
+            $owner->load(['type', 'parent', 'externalIds']);
+            $this->flags->load(new Collection([$owner]));
+
+            return $owner;
         });
     }
 }

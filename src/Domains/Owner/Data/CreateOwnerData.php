@@ -7,6 +7,8 @@ namespace RefactorCircus\Showroom\Domains\Owner\Data;
 use Illuminate\Validation\Rule;
 use RefactorCircus\Keystone\Data\Data;
 use RefactorCircus\Showroom\Domains\ExternalId\Services\ExternalIds;
+use RefactorCircus\Showroom\Domains\Flag\Enums\FlagSubject;
+use RefactorCircus\Showroom\Domains\Flag\Services\Flags;
 use RefactorCircus\Showroom\Domains\Owner\Models\OwnerModel;
 use RefactorCircus\Showroom\Domains\Owner\Models\OwnerTypeModel;
 
@@ -19,6 +21,7 @@ final readonly class CreateOwnerData extends Data
     /**
      * @param  array<string, string|null>|null  $labels
      * @param  array<string, string|null>|null  $externalIds  The owner's ids in other systems, {system: id}.
+     * @param  list<string>|null  $flags  Codes of the owner's own flags.
      */
     public function __construct(
         public string $code,
@@ -26,6 +29,7 @@ final readonly class CreateOwnerData extends Data
         public ?string $parent = null,
         public ?array $labels = null,
         public ?array $externalIds = null,
+        public ?array $flags = null,
     ) {}
 
     /**
@@ -37,10 +41,12 @@ final readonly class CreateOwnerData extends Data
             'code' => ['required', 'string', 'max:191', 'regex:/^[A-Za-z0-9][A-Za-z0-9_.-]*$/', Rule::unique(OwnerModel::class, 'code')],
             // Set from the label or the code; read-only.
             'slug' => ['prohibited'],
+            // Own flags plus every ancestor's; read-only.
+            'effective_flags' => ['missing'],
             'type' => ['required', 'string', Rule::exists(OwnerTypeModel::class, 'code')],
             'parent' => ['sometimes', 'nullable', 'string', Rule::exists(OwnerModel::class, 'code')],
             'labels' => ['sometimes', 'nullable', 'array'],
             'labels.*' => ['nullable', 'string', 'max:255'],
-        ] + ExternalIds::rules();
+        ] + ExternalIds::rules() + Flags::rules(FlagSubject::Owner);
     }
 }

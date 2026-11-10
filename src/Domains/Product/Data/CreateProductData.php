@@ -11,6 +11,8 @@ use RefactorCircus\Showroom\Domains\Association\Services\Associations;
 use RefactorCircus\Showroom\Domains\Category\Models\CategoryModel;
 use RefactorCircus\Showroom\Domains\ExternalId\Services\ExternalIds;
 use RefactorCircus\Showroom\Domains\Family\Models\FamilyModel;
+use RefactorCircus\Showroom\Domains\Flag\Enums\FlagSubject;
+use RefactorCircus\Showroom\Domains\Flag\Services\Flags;
 use RefactorCircus\Showroom\Domains\Owner\Models\OwnerModel;
 use RefactorCircus\Showroom\Domains\Product\Models\ProductModel;
 use RefactorCircus\Showroom\Domains\ProductModel\Models\ProductModelModel;
@@ -28,6 +30,7 @@ final readonly class CreateProductData extends Data
      * @param  array<string, mixed>|null  $associations
      * @param  array<string, mixed>|null  $quantifiedAssociations
      * @param  array<string, string|null>|null  $externalIds  The product's ids in other systems, {system: id}.
+     * @param  list<string>|null  $flags  Codes of the product's own flags.
      */
     public function __construct(
         public string $identifier,
@@ -40,6 +43,7 @@ final readonly class CreateProductData extends Data
         public ?array $associations = null,
         public ?array $quantifiedAssociations = null,
         public ?array $externalIds = null,
+        public ?array $flags = null,
     ) {}
 
     /**
@@ -59,6 +63,8 @@ final readonly class CreateProductData extends Data
             'identifier' => ['required', 'string', 'max:191', Rule::regex(self::identifierPattern()), Rule::unique(ProductModel::class, 'identifier')],
             // Set from the identifier; read-only.
             'slug' => ['prohibited'],
+            // Own flags plus the owner chain's; read-only.
+            'effective_flags' => ['missing'],
             'family' => ['sometimes', 'nullable', 'string', Rule::exists(FamilyModel::class, 'code')],
             'parent' => ['sometimes', 'nullable', 'string', Rule::exists(ProductModelModel::class, 'code')],
             'owner' => ['sometimes', 'nullable', 'string', Rule::exists(OwnerModel::class, 'code')],
@@ -67,7 +73,7 @@ final readonly class CreateProductData extends Data
             // The whole list of category codes, from any trees.
             'categories' => ['sometimes', 'nullable', 'array', 'list'],
             'categories.*' => ['string', 'distinct', Rule::exists(CategoryModel::class, 'code')],
-        ] + Associations::rules() + ExternalIds::rules();
+        ] + Associations::rules() + ExternalIds::rules() + Flags::rules(FlagSubject::Product);
     }
 
     /**

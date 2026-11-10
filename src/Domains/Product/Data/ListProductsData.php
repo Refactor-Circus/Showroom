@@ -12,6 +12,7 @@ use RefactorCircus\Keystone\Data\Data;
 use RefactorCircus\Keystone\Pagination\Pagination;
 use RefactorCircus\Showroom\Domains\Attribute\Data\ValueFilter;
 use RefactorCircus\Showroom\Domains\ExternalId\Services\ExternalIds;
+use RefactorCircus\Showroom\Domains\Flag\Services\Flags;
 use RefactorCircus\Showroom\Domains\Product\Enums\ProductStatus;
 use RefactorCircus\Showroom\Domains\Search\Data\Complete;
 use RefactorCircus\Showroom\Domains\Search\Data\Filter;
@@ -29,6 +30,7 @@ final readonly class ListProductsData extends Data
      * @param  list<string>  $facets
      * @param  list<string>|null  $locales
      * @param  array<string, string>  $external  Products holding these ids, {system: id}; every pair must match.
+     * @param  list<string>  $flags  Products carrying every one of these flags, own or inherited.
      */
     public function __construct(
         public ?string $search = null,
@@ -50,6 +52,7 @@ final readonly class ListProductsData extends Data
         public ?int $page = null,
         public ?int $perPage = null,
         public array $external = [],
+        public array $flags = [],
     ) {}
 
     /**
@@ -99,7 +102,7 @@ final readonly class ListProductsData extends Data
             'facets.*' => ['string', 'max:100'],
             'sort' => ['sometimes', 'string', Rule::in($sortable)],
             // Return only one channel's and some locales' values.
-        ] + ValueFilter::rules() + ExternalIds::filterRules() + self::pagination()->rules();
+        ] + ValueFilter::rules() + ExternalIds::filterRules() + Flags::filterRules() + self::pagination()->rules();
     }
 
     /**
@@ -141,6 +144,7 @@ final readonly class ListProductsData extends Data
             facets: $this->facets,
             updatedSince: self::filled($this->updatedSince) === null ? null : CarbonImmutable::parse($this->updatedSince),
             external: $this->external,
+            flags: $this->flags,
         );
     }
 

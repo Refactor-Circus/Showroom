@@ -25,11 +25,43 @@ use RefactorCircus\Showroom\Domains\Search\Models\SearchableProductModel;
  * Comparisons (`=`, `!=`, ranges) and `in`/`not_in` pass through Scout's
  * builder, so each works where the chosen engine supports it; `empty`,
  * `not_empty` and price filters are refused. Filterable attributes must be
- * declared in the engine's own index settings, as Scout expects.
+ * declared in the engine's own index settings, as Scout expects:
+ * indexSettings() lists the document's own fields.
  */
 final class ScoutEngine implements SearchEngine
 {
     public function __construct(private readonly EngineManager $engines) {}
+
+    /**
+     * The index settings the product document needs, in Meilisearch's shape:
+     * every field a listing filters or sorts on. Add each
+     * `values.<code>.<channel>.<locale>` and `completeness.<channel>.<locale>`
+     * you filter by, for example in `scout.meilisearch.index-settings`.
+     *
+     * @return array{filterableAttributes: list<string>, sortableAttributes: list<string>}
+     */
+    public static function indexSettings(): array
+    {
+        return [
+            'filterableAttributes' => [
+                'slug',
+                'family',
+                'enabled',
+                'parent',
+                'owner',
+                'owners',
+                'owner_slugs',
+                'categories',
+                'category_tree',
+                'external_ids',
+                'flags',
+                'status',
+                'published',
+                'changed_at',
+            ],
+            'sortableAttributes' => ProductQuery::SORTABLE,
+        ];
+    }
 
     public function maintainsIndex(): bool
     {
@@ -83,6 +115,12 @@ final class ScoutEngine implements SearchEngine
         // and escapes the value when it writes its filter expression.
         foreach ($query->external as $system => $externalId) {
             $builder->where('external_ids', ProductDocument::externalId((string) $system, $externalId));
+        }
+
+        // Effective flags, normalized as the document stores them; every
+        // flag asked for must be carried. Quoted by the engine as above.
+        foreach ($query->flags as $code) {
+            $builder->where('flags', ProductDocument::flag($code));
         }
 
         $metrics = AttributeModel::query()

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace RefactorCircus\Showroom\Domains\Product\Actions;
 
+use RefactorCircus\Showroom\Domains\Flag\Services\Flags;
 use RefactorCircus\Showroom\Domains\Product\Data\ListProductsData;
 use RefactorCircus\Showroom\Domains\Product\Events\ProductsListedActionEvent;
 use RefactorCircus\Showroom\Domains\Product\Events\ProductsListingActionEvent;
@@ -16,7 +17,10 @@ use RefactorCircus\Showroom\Domains\Search\Support\ProductPage;
  */
 final class ListProductsAction
 {
-    public function __construct(private readonly SearchEngine $engine) {}
+    public function __construct(
+        private readonly SearchEngine $engine,
+        private readonly Flags $flags,
+    ) {}
 
     public function execute(ListProductsData $filters = new ListProductsData): ProductPage
     {
@@ -62,6 +66,9 @@ final class ListProductsAction
             ->sortBy(fn (ProductModel $product): int|false => array_search($product->id, $results->ids, true))
             ->values()
             ->each(fn (ProductModel $product): ProductModel => $product->useValueFilter($filters->valueFilter()));
+
+        // One query for the whole page's own and effective flags.
+        $this->flags->load($products);
 
         $page = new ProductPage($products, $results->total, $query->perPage, $query->page, [
             'path' => request()->url(),

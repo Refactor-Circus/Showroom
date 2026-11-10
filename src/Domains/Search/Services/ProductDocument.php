@@ -10,6 +10,7 @@ use RefactorCircus\Showroom\Domains\Attribute\Enums\AttributeType;
 use RefactorCircus\Showroom\Domains\Attribute\Models\AttributeModel;
 use RefactorCircus\Showroom\Domains\Category\Models\CategoryModel;
 use RefactorCircus\Showroom\Domains\ExternalId\Services\ExternalIds;
+use RefactorCircus\Showroom\Domains\Flag\Services\Flags;
 use RefactorCircus\Showroom\Domains\Owner\Models\OwnerModel;
 use RefactorCircus\Showroom\Domains\Product\Models\ProductModel;
 use RefactorCircus\Showroom\Domains\Workflow\Models\CompletenessModel;
@@ -34,8 +35,8 @@ final class ProductDocument
 
     /**
      * The documents of a batch of products, in order, with what they share
-     * looked up once: the attribute types of every value, and the owner and
-     * category chains, read by the ids in their paths.
+     * looked up once: the attribute types of every value, the owner and
+     * category chains, read by the ids in their paths, and the effective flags.
      *
      * @param  iterable<int, ProductModel>  $products
      * @return list<array<string, mixed>>
@@ -52,6 +53,9 @@ final class ProductDocument
 
         // One query for the external ids of every product not loaded with them.
         app(ExternalIds::class)->load($products);
+
+        // One query for the effective flags of the whole batch.
+        $flags = app(Flags::class)->effective($products);
 
         foreach ($products as $product) {
             $values = $product->allValues();
@@ -88,7 +92,7 @@ final class ProductDocument
         $categoryCodes = $categories === [] ? [] : CategoryModel::query()->whereKey(array_keys($categories))->pluck('code', 'id')->all();
 
         return array_map(
-            fn (array $item): array => self::document($item[0], $item[1], $item[2], $item[3], $types, $ownerCodes, $ownerSlugs, $categoryCodes),
+            fn (array $item): array => self::document($item[0], $item[1], $item[2], $item[3], $types, $ownerCodes, $ownerSlugs, $categoryCodes, $flags[$item[0]->id] ?? []),
             $batch,
         );
     }
@@ -100,9 +104,10 @@ final class ProductDocument
      * @param  array<string, string>  $ownerCodes  By id.
      * @param  array<string, string>  $ownerSlugs  By id.
      * @param  array<string, string>  $categoryCodes  By id.
+     * @param  list<string>  $flags  The product's effective flag codes.
      * @return array<string, mixed>
      */
-    private static function document(ProductModel $product, array $values, ?OwnerModel $owner, Collection $assigned, array $types, array $ownerCodes, array $ownerSlugs, array $categoryCodes): array
+    private static function document(ProductModel $product, array $values, ?OwnerModel $owner, Collection $assigned, array $types, array $ownerCodes, array $ownerSlugs, array $categoryCodes, array $flags): array
     {
         $text = [$product->identifier];
 
@@ -142,6 +147,9 @@ final class ProductDocument
             // "{system}:{id}", the id normalized, so a filter matches it
             // whatever its case or accents, as the database does.
             'external_ids' => self::externalIds($product),
+            // Effective flags — own, the owner chain's, a variant's root model
+            // owner's — normalized, so a filter matches whatever its case.
+            'flags' => array_map(self::flag(...), $flags),
             'enabled' => $product->enabled,
             'status' => $product->status->value,
             'published' => $product->published_version !== null,
@@ -164,6 +172,14 @@ final class ProductDocument
     public static function externalId(string $system, string $externalId): string
     {
         return $system.':'.KeyNormalizer::normalize($externalId);
+    }
+
+    /**
+     * The value a document stores, and a filter matches, for one flag code.
+     */
+    public static function flag(string $code): string
+    {
+        return KeyNormalizer::normalize($code);
     }
 
     /**

@@ -19,6 +19,7 @@ final readonly class ProductQuery
      * @param  'asc'|'desc'  $direction
      * @param  list<string>  $facets  Attribute codes to count values of.
      * @param  array<string, string>  $external  Products holding these external ids, {system: id}; every pair must match.
+     * @param  list<string>  $flags  Products carrying every one of these flag codes, own or inherited from their owner chain.
      */
     public function __construct(
         public ?string $search = null,
@@ -38,6 +39,7 @@ final readonly class ProductQuery
         public array $facets = [],
         public ?CarbonImmutable $updatedSince = null,
         public array $external = [],
+        public array $flags = [],
     ) {}
 
     public function offset(): int

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace RefactorCircus\Showroom\Domains\Product\Actions;
 
+use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use RefactorCircus\Showroom\Domains\Association\Services\Associations;
@@ -11,6 +13,7 @@ use RefactorCircus\Showroom\Domains\Attribute\Services\UniqueValues;
 use RefactorCircus\Showroom\Domains\Category\Concerns\AssignsCategories;
 use RefactorCircus\Showroom\Domains\ExternalId\Services\ExternalIds;
 use RefactorCircus\Showroom\Domains\Family\Models\FamilyModel;
+use RefactorCircus\Showroom\Domains\Flag\Services\Flags;
 use RefactorCircus\Showroom\Domains\Owner\Concerns\AssignsOwners;
 use RefactorCircus\Showroom\Domains\Product\Concerns\WritesProducts;
 use RefactorCircus\Showroom\Domains\Product\Data\CreateProductData;
@@ -33,10 +36,12 @@ final class CreateProductAction
         private readonly ProductIndex $index,
         private readonly Slugs $slugs,
         private readonly ExternalIds $externalIds,
+        private readonly Flags $flags,
     ) {}
 
     /**
      * @throws ValidationException
+     * @throws AuthorizationException When flags are given and the caller may not assign them.
      */
     public function execute(CreateProductData $data): ProductModel
     {
@@ -101,6 +106,13 @@ final class CreateProductAction
             $product->parent()->associate($parent);
             $product->owner()->associate($owner);
 
+            $flags = $data->flags ?? [];
+
+            // Giving a product flags needs `assign`, asked before anything is written.
+            if ($this->flags->changes($product, $flags)) {
+                $this->flags->authorizeAssign($product);
+            }
+
             $this->slugs->claim('products', $data->identifier, function (string $slug) use ($product): void {
                 $product->slug = $slug;
                 $product->save();
@@ -108,6 +120,7 @@ final class CreateProductAction
 
             // A (system, id) another product holds throws here, rolling back the product.
             $this->externalIds->write($product, $data->externalIds ?? []);
+            $this->flags->write($product, $flags);
 
             $this->assignCategories($product, $data->toArray());
             app(Associations::class)->write($product, $data->toArray());
@@ -115,7 +128,10 @@ final class CreateProductAction
             app(Versions::class)->record($product, 'created');
             $this->index->queue([$product->id]);
 
-            return $product->load(['family', 'owner', 'categories', 'parent.parent', 'completeness.channel', 'completeness.locale', 'externalIds', ...Associations::eagerLoads()]);
+            $product->load(['family', 'owner', 'categories', 'parent.parent', 'completeness.channel', 'completeness.locale', 'externalIds', ...Associations::eagerLoads()]);
+            $this->flags->load(new Collection([$product]));
+
+            return $product;
         });
     }
 }

@@ -11,6 +11,7 @@ use RefactorCircus\Showroom\Domains\Attribute\Enums\AttributeType;
 use RefactorCircus\Showroom\Domains\Attribute\Models\AttributeModel;
 use RefactorCircus\Showroom\Domains\Attribute\Services\Values;
 use RefactorCircus\Showroom\Domains\Category\Models\CategoryModel;
+use RefactorCircus\Showroom\Domains\Flag\Services\Flags;
 use RefactorCircus\Showroom\Domains\Owner\Models\OwnerModel;
 use RefactorCircus\Showroom\Domains\Product\Models\ProductModel;
 use RefactorCircus\Showroom\Domains\Search\Contracts\SearchEngine;
@@ -199,6 +200,20 @@ final class DatabaseEngine implements SearchEngine
                 ->where(Tables::name('external_ids').'.subject_type', (new ProductModel)->getMorphClass())
                 ->where(Tables::name('external_ids').'.system', (string) $system)
                 ->where(Tables::name('external_ids').'.external_id', $externalId));
+        }
+
+        // Every flag asked for, on effective flags: the product's own, or its
+        // owner's (a variant's root model's) through the owners that carry it
+        // and every owner beneath them.
+        foreach ($query->flags as $code) {
+            $flags = app(Flags::class);
+            $owners = $flags->ownersInheriting($code);
+
+            $builder->where(fn (Builder $builder): Builder => $builder
+                ->whereIn(Tables::name('products').'.id', $flags->productsCarrying($code))
+                ->orWhereIn(Tables::name('products').'.owner_id', $owners)
+                ->orWhereIn('showroom_level1.owner_id', $owners)
+                ->orWhereIn('showroom_level2.owner_id', $owners));
         }
 
         if ($query->complete !== null) {

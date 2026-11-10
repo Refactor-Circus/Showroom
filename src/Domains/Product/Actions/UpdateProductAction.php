@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace RefactorCircus\Showroom\Domains\Product\Actions;
 
+use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use RefactorCircus\Keystone\Data\Missing;
@@ -12,6 +14,7 @@ use RefactorCircus\Showroom\Domains\Attribute\Services\UniqueValues;
 use RefactorCircus\Showroom\Domains\Category\Concerns\AssignsCategories;
 use RefactorCircus\Showroom\Domains\ExternalId\Services\ExternalIds;
 use RefactorCircus\Showroom\Domains\Family\Models\FamilyModel;
+use RefactorCircus\Showroom\Domains\Flag\Services\Flags;
 use RefactorCircus\Showroom\Domains\Owner\Concerns\AssignsOwners;
 use RefactorCircus\Showroom\Domains\Product\Concerns\WritesProducts;
 use RefactorCircus\Showroom\Domains\Product\Data\UpdateProductData;
@@ -32,10 +35,12 @@ final class UpdateProductAction
         private readonly UniqueValues $unique,
         private readonly ProductIndex $index,
         private readonly ExternalIds $externalIds,
+        private readonly Flags $flags,
     ) {}
 
     /**
      * @throws ValidationException
+     * @throws AuthorizationException When the flags change and the caller may not assign them.
      */
     public function execute(ProductModel $product, UpdateProductData $data): ProductModel
     {
@@ -51,6 +56,14 @@ final class UpdateProductAction
     private function perform(ProductModel $product, UpdateProductData $data): ProductModel
     {
         return DB::transaction(function () use ($product, $data): ProductModel {
+            // Changing the flags needs `assign`, asked before anything is written;
+            // the same set sent back needs nothing.
+            $flagsChange = is_array($data->flags) && $this->flags->changes($product, $data->flags);
+
+            if ($flagsChange) {
+                $this->flags->authorizeAssign($product);
+            }
+
             $parent = $product->parent()->with('familyVariant.family.familyAttributes')->first();
 
             if (! $data->family instanceof Missing) {
@@ -98,6 +111,10 @@ final class UpdateProductAction
                 $this->externalIds->write($product, $data->externalIds);
             }
 
+            if ($flagsChange) {
+                $this->flags->write($product, $data->flags);
+            }
+
             $this->assignCategories($product, $data->toArray());
             app(Associations::class)->write($product, $data->toArray());
             $this->unique->sync($product);
@@ -119,7 +136,10 @@ final class UpdateProductAction
             $versions->record($product, 'updated', snapshot: $snapshot);
             $this->index->queue([$product->id]);
 
-            return $product->load(['family', 'owner', 'categories', 'parent.parent', 'completeness.channel', 'completeness.locale', 'externalIds', ...Associations::eagerLoads()]);
+            $product->load(['family', 'owner', 'categories', 'parent.parent', 'completeness.channel', 'completeness.locale', 'externalIds', ...Associations::eagerLoads()]);
+            $this->flags->load(new Collection([$product]));
+
+            return $product;
         });
     }
 }

@@ -16,6 +16,8 @@ use RefactorCircus\Keystone\Models\Concerns\DispatchesModelEvents;
 use RefactorCircus\Showroom\Database\Factories\OwnerFactory;
 use RefactorCircus\Showroom\Domains\Asset\Concerns\HasAssets;
 use RefactorCircus\Showroom\Domains\ExternalId\Models\ExternalIdModel;
+use RefactorCircus\Showroom\Domains\Flag\Concerns\HasFlags;
+use RefactorCircus\Showroom\Domains\Flag\Models\FlagModel;
 use RefactorCircus\Showroom\Domains\Product\Models\ProductModel;
 use RefactorCircus\Showroom\Domains\ProductModel\Models\ProductModelModel;
 use RefactorCircus\Showroom\Support\Models\Concerns\HasLabels;
@@ -41,6 +43,7 @@ use RefactorCircus\Showroom\Support\Tables;
  * @property-read OwnerTypeModel $type
  * @property-read OwnerModel|null $parent
  * @property-read Collection<int, ExternalIdModel> $externalIds
+ * @property-read Collection<int, FlagModel> $flags
  */
 final class OwnerModel extends Model
 {
@@ -50,6 +53,7 @@ final class OwnerModel extends Model
     /** @use HasFactory<OwnerFactory> */
     use HasFactory;
 
+    use HasFlags;
     use HasLabels;
     use HasPath;
     use HasUlids;

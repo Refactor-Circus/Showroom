@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\DB;
 use RefactorCircus\Showroom\Domains\Asset\Services\AssetLinks;
 use RefactorCircus\Showroom\Domains\Association\Services\Associations;
 use RefactorCircus\Showroom\Domains\ExternalId\Services\ExternalIds;
+use RefactorCircus\Showroom\Domains\Flag\Services\Flags;
 use RefactorCircus\Showroom\Domains\Product\Events\ProductDeletedActionEvent;
 use RefactorCircus\Showroom\Domains\Product\Events\ProductDeletingActionEvent;
 use RefactorCircus\Showroom\Domains\Product\Models\ProductModel;
@@ -31,8 +32,8 @@ final class DeleteProductAction
 
     /**
      * Unique values go with the product; the foreign key cascades. Asset
-     * links, associations, external ids and versions are polymorphic, so
-     * they are removed here.
+     * links, associations, external ids, flag assignments and versions are
+     * polymorphic, so they are removed here.
      */
     private function perform(ProductModel $product): ProductModel
     {
@@ -42,6 +43,7 @@ final class DeleteProductAction
             app(AssetLinks::class)->forget(ProductModel::class, [$product->id]);
             app(Associations::class)->forget(ProductModel::class, [$product->id]);
             app(ExternalIds::class)->forget(ProductModel::class, [$product->id]);
+            app(Flags::class)->forget(ProductModel::class, [$product->id]);
             app(Versions::class)->forget([$product->id]);
 
             $this->index->queue([$product->id]);

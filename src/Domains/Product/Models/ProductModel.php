@@ -23,6 +23,8 @@ use RefactorCircus\Showroom\Domains\Attribute\Models\AttributeModel;
 use RefactorCircus\Showroom\Domains\Category\Models\CategoryModel;
 use RefactorCircus\Showroom\Domains\ExternalId\Models\ExternalIdModel;
 use RefactorCircus\Showroom\Domains\Family\Models\FamilyModel;
+use RefactorCircus\Showroom\Domains\Flag\Concerns\HasFlags;
+use RefactorCircus\Showroom\Domains\Flag\Models\FlagModel;
 use RefactorCircus\Showroom\Domains\Owner\Models\OwnerModel;
 use RefactorCircus\Showroom\Domains\Product\Enums\ProductStatus;
 use RefactorCircus\Showroom\Domains\ProductModel\Models\ProductModelModel;
@@ -54,6 +56,7 @@ use RefactorCircus\Showroom\Support\Tables;
  * @property-read ProductModelModel|null $parent
  * @property-read OwnerModel|null $owner
  * @property-read EloquentCollection<int, ExternalIdModel> $externalIds
+ * @property-read EloquentCollection<int, FlagModel> $flags
  */
 final class ProductModel extends Model
 {
@@ -64,6 +67,7 @@ final class ProductModel extends Model
     /** @use HasFactory<ProductFactory> */
     use HasFactory;
 
+    use HasFlags;
     use HasUlids;
     use HasValues;
 
