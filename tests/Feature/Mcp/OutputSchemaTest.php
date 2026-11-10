@@ -25,6 +25,6 @@ it('declares an output schema on every tool that answers with structured content
         ->values()
         ->all();
 
-    expect($structured->count())->toBe(78)
+    expect($structured->count())->toBe(83)
         ->and($missing)->toBe([]);
 });

@@ -62,6 +62,11 @@ use RefactorCircus\Showroom\Domains\Family\Mcp\Tools\ShowFamilyTool;
 use RefactorCircus\Showroom\Domains\Family\Mcp\Tools\ShowFamilyVariantTool;
 use RefactorCircus\Showroom\Domains\Family\Mcp\Tools\UpdateFamilyTool;
 use RefactorCircus\Showroom\Domains\Family\Mcp\Tools\UpdateFamilyVariantTool;
+use RefactorCircus\Showroom\Domains\Flag\Mcp\Tools\CreateFlagTool;
+use RefactorCircus\Showroom\Domains\Flag\Mcp\Tools\DeleteFlagTool;
+use RefactorCircus\Showroom\Domains\Flag\Mcp\Tools\ListFlagsTool;
+use RefactorCircus\Showroom\Domains\Flag\Mcp\Tools\ShowFlagTool;
+use RefactorCircus\Showroom\Domains\Flag\Mcp\Tools\UpdateFlagTool;
 use RefactorCircus\Showroom\Domains\Owner\Mcp\Tools\CreateOwnerTool;
 use RefactorCircus\Showroom\Domains\Owner\Mcp\Tools\CreateOwnerTypeTool;
 use RefactorCircus\Showroom\Domains\Owner\Mcp\Tools\DeleteOwnerTool;
@@ -104,7 +109,8 @@ use RefactorCircus\Showroom\Mcp\Tools\ListShowroomHistoryTool;
     'says how a family\'s products vary: one or two levels of axes. A root product model holds the common '.
     'values; in two-level variants, sub-models hold level-1 values; variant products hold the last level and '.
     'inherit the rest. Owners (vendors, series, ...) form chains of runtime-defined owner types; a product or '.
-    'root product model belongs to the deepest owner. Categories form independent trees (a root category is a '.
+    'root product model belongs to the deepest owner. Flags (restricted, pricing_only, ...) are commercial markers '.
+    'defined by code, each applying to products, owners or both; one still assigned cannot be deleted. Categories form independent trees (a root category is a '.
     'tree); products and product models are filed in any number of them, and variants inherit their models\' '.
     'categories. Assets (images, documents) are added from a URL and linked to products, product models or '.
     'owners under a role; variants show their models\' assets too. Localizable values need an existing locale; '.
@@ -189,6 +195,13 @@ final class ShowroomServer extends Server
         CreateOwnerTool::class,
         UpdateOwnerTool::class,
         DeleteOwnerTool::class,
+
+        // Flags
+        ListFlagsTool::class,
+        ShowFlagTool::class,
+        CreateFlagTool::class,
+        UpdateFlagTool::class,
+        DeleteFlagTool::class,
 
         // Taxonomy
         ListCategoriesTool::class,

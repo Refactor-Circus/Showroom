@@ -25,6 +25,8 @@ use RefactorCircus\Showroom\Domains\Family\Models\FamilyModel;
 use RefactorCircus\Showroom\Domains\Family\Models\FamilyVariantModel;
 use RefactorCircus\Showroom\Domains\Family\Policies\FamilyPolicy;
 use RefactorCircus\Showroom\Domains\Family\Policies\FamilyVariantPolicy;
+use RefactorCircus\Showroom\Domains\Flag\Models\FlagModel;
+use RefactorCircus\Showroom\Domains\Flag\Policies\FlagPolicy;
 use RefactorCircus\Showroom\Domains\Owner\Models\OwnerModel;
 use RefactorCircus\Showroom\Domains\Owner\Models\OwnerTypeModel;
 use RefactorCircus\Showroom\Domains\Owner\Policies\OwnerPolicy;
@@ -74,6 +76,12 @@ return [
     | searchable product Scout indexes the product policy. Every model has an
     | entry; remove one to leave that model without a policy.
     |
+    | FlagPolicy also has an `assign` ability: who may change which flags a
+    | product or owner carries. It is checked on top of `update` on the
+    | record, and only when its flags change. Flags such as `restricted`
+    | carry down whole owner trees, so restrict `assign` to the people who
+    | set commercial terms.
+    |
     */
 
     'policies' => [
@@ -86,6 +94,7 @@ return [
         ProductModel::class => ProductPolicy::class,
         OwnerTypeModel::class => OwnerTypePolicy::class,
         OwnerModel::class => OwnerPolicy::class,
+        FlagModel::class => FlagPolicy::class,
         CategoryModel::class => CategoryPolicy::class,
         AssetModel::class => AssetPolicy::class,
         LocaleModel::class => LocalePolicy::class,
@@ -123,6 +132,8 @@ return [
         'owner_types' => 'showroom_owner_types',
         'owner_type_parents' => 'showroom_owner_type_parents',
         'owners' => 'showroom_owners',
+        'flags' => 'showroom_flags',
+        'flag_assignments' => 'showroom_flag_assignments',
         'categories' => 'showroom_categories',
         'category_product' => 'showroom_category_product',
         'category_product_model' => 'showroom_category_product_model',
