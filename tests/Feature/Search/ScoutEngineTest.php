@@ -3,10 +3,19 @@
 declare(strict_types=1);
 
 use Laravel\Scout\EngineManager;
+use RefactorCircus\Showroom\Domains\Product\Models\ProductModel;
 use RefactorCircus\Showroom\Domains\Search\Contracts\SearchEngine;
 use RefactorCircus\Showroom\Domains\Search\Services\ScoutEngine;
 use RefactorCircus\Showroom\Tests\Fixtures\Catalog;
 use RefactorCircus\Showroom\Tests\Fixtures\RecordingScoutEngine;
+
+/**
+ * The API path of a product, addressed by its `id` as routes bind it.
+ */
+function scoutProductPath(string $identifier): string
+{
+    return '/showroom/products/'.ProductModel::query()->where('identifier', $identifier)->value('id');
+}
 
 beforeEach(function (): void {
     $scout = $this->scout = new RecordingScoutEngine;
@@ -33,7 +42,7 @@ it('indexes products through the configured Scout engine', function (): void {
     expect($this->scout->documents)->toHaveCount(3)
         ->and(collect($this->scout->documents)->pluck('identifier')->sort()->values()->all())->toBe(['MUG', 'TEE-BLUE', 'TEE-RED']);
 
-    $this->deleteJson('/showroom/products/MUG')->assertNoContent();
+    $this->deleteJson(scoutProductPath('MUG'))->assertNoContent();
 
     expect($this->scout->documents)->toHaveCount(2);
 });
@@ -51,7 +60,7 @@ it('searches with equality filters', function (): void {
 });
 
 it('passes comparisons through to the Scout engine', function (): void {
-    $this->patchJson('/showroom/products/TEE-BLUE', ['values' => ['weight' => Catalog::value(['amount' => 300, 'unit' => 'gram'])]])->assertOk();
+    $this->patchJson(scoutProductPath('TEE-BLUE'), ['values' => ['weight' => Catalog::value(['amount' => 300, 'unit' => 'gram'])]])->assertOk();
 
     $this->getJson('/showroom/products?'.http_build_query(['filters' => [['attribute' => 'weight', 'operator' => '>', 'value' => '200']]]))
         ->assertOk()

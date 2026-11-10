@@ -3,14 +3,23 @@
 declare(strict_types=1);
 
 use Illuminate\Http\Client\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
+use RefactorCircus\Impex\Domains\Run\Enums\RunStatus;
 use RefactorCircus\Impex\Domains\Subscription\Actions\CreateSubscriberAction;
 use RefactorCircus\Impex\Domains\Subscription\Actions\CreateSubscriptionAction;
 use RefactorCircus\Impex\Domains\Subscription\Data\CreateSubscriberData;
 use RefactorCircus\Impex\Domains\Subscription\Data\CreateSubscriptionData;
 use RefactorCircus\Impex\Domains\Subscription\Models\SubscriptionModel;
 use RefactorCircus\Impex\Domains\Subscription\Services\Exporter;
+use RefactorCircus\Impex\Facades\Impex;
+use RefactorCircus\Impex\Jobs\DetectStream;
+use RefactorCircus\Impex\Support\Tables as ImpexTables;
+use RefactorCircus\Showroom\Domains\Product\Models\ProductModel;
+use RefactorCircus\Showroom\Domains\Product\Services\ProductChangeCapture;
+use RefactorCircus\Showroom\Domains\Search\Services\ProductIndex;
 use RefactorCircus\Showroom\Impex\ImpexIntegration;
 use RefactorCircus\Showroom\Tests\Fixtures\Catalog;
 
@@ -45,6 +54,14 @@ function vendorSubscription(array $data = []): SubscriptionModel
 }
 
 /**
+ * The API path of a product, addressed by its `id` as routes bind it.
+ */
+function webhookProductPath(string $identifier): string
+{
+    return '/showroom/products/'.ProductModel::query()->where('identifier', $identifier)->value('id');
+}
+
+/**
  * @param  array<string, mixed>  $values
  * @param  list<string>  $categories
  */
@@ -57,7 +74,7 @@ function publishedProduct(string $identifier, array $values, array $categories =
         'values' => $values,
     ])->assertCreated();
 
-    test()->postJson("/showroom/products/{$identifier}/transitions", ['transition' => 'publish'])->assertOk();
+    test()->postJson(webhookProductPath($identifier).'/transitions', ['transition' => 'publish'])->assertOk();
 }
 
 /**
@@ -98,12 +115,12 @@ it('sends only the topics that changed, and only to vendors following them', fun
 
     publishedProduct('TEE-1', ['name' => Catalog::value('Classic tee'), 'price' => Catalog::value([['amount' => 19.99, 'currency' => 'USD']])]);
 
-    $this->patchJson('/showroom/products/TEE-1', ['values' => ['price' => Catalog::value([['amount' => 24.99, 'currency' => 'USD']])]])->assertOk();
+    $this->patchJson(webhookProductPath('TEE-1'), ['values' => ['price' => Catalog::value([['amount' => 24.99, 'currency' => 'USD']])]])->assertOk();
 
     // A draft edit is not published, so nothing leaves.
     expect(deliveredTo('pricing'))->toHaveCount(1);
 
-    $this->postJson('/showroom/products/TEE-1/transitions', ['transition' => 'publish'])->assertOk();
+    $this->postJson(webhookProductPath('TEE-1').'/transitions', ['transition' => 'publish'])->assertOk();
 
     $pricing = deliveredTo('pricing');
 
@@ -120,7 +137,7 @@ it('tells vendors to forget an unpublished product', function (): void {
     vendorSubscription(['path' => 'hooks', 'format' => 'thin']);
 
     publishedProduct('TEE-1', ['name' => Catalog::value('Classic tee')]);
-    $this->postJson('/showroom/products/TEE-1/transitions', ['transition' => 'unpublish'])->assertOk();
+    $this->postJson(webhookProductPath('TEE-1').'/transitions', ['transition' => 'unpublish'])->assertOk();
 
     expect(array_column(deliveredTo('hooks'), 'type'))->toBe(['changed', 'removed']);
 });
@@ -129,7 +146,7 @@ it('tells vendors to forget a deleted product', function (): void {
     vendorSubscription(['path' => 'hooks']);
 
     publishedProduct('TEE-1', ['name' => Catalog::value('Classic tee')]);
-    $this->deleteJson('/showroom/products/TEE-1')->assertNoContent();
+    $this->deleteJson(webhookProductPath('TEE-1'))->assertNoContent();
 
     expect(array_column(deliveredTo('hooks'), 'type'))->toBe(['changed', 'removed']);
 });
@@ -172,6 +189,52 @@ it('narrows values to the channel and locales a vendor subscribed with', functio
     $description = deliveredTo('fr')[0]['data']['values']['description'];
 
     expect($description)->toBe([['locale' => 'fr', 'scope' => null, 'data' => 'Doux']]);
+});
+
+/**
+ * The products CaptureProductChanges told Impex about, by identifier. Stream
+ * detection is held back, so the touches stay to be read.
+ *
+ * @return list<string>
+ */
+function touchedProducts(): array
+{
+    return DB::table(ImpexTables::name('stream_touches'))
+        ->where('stream', 'showroom.products')
+        ->pluck('subject_key')
+        ->map(fn (mixed $key): string => (string) $key)
+        ->all();
+}
+
+it('records an upsert run\'s writes for webhooks by default, and nothing with capture_changes off', function (): void {
+    Queue::fake([DetectStream::class]);
+
+    $captured = Impex::run('showroom:upsert-products', [[['identifier' => 'CAP-ON', 'values' => ['name' => Catalog::value('On')]]]]);
+    $quiet = Impex::run('showroom:upsert-products', [[['identifier' => 'CAP-OFF', 'values' => ['name' => Catalog::value('Off')]]], 'upsert', false]);
+
+    expect($captured->refresh()->status)->toBe(RunStatus::Completed)
+        ->and($quiet->refresh()->status)->toBe(RunStatus::Completed)
+        ->and(ProductModel::query()->where('identifier', 'CAP-OFF')->exists())->toBeTrue()
+        ->and(touchedProducts())->toContain('CAP-ON')
+        ->and(touchedProducts())->not->toContain('CAP-OFF');
+});
+
+it('records nothing while ProductChangeCapture is suppressed, and records again after', function (): void {
+    Queue::fake([DetectStream::class]);
+
+    $this->postJson('/showroom/products', ['identifier' => 'SUPPRESSED'])->assertCreated();
+    DB::table(ImpexTables::name('stream_touches'))->delete();
+
+    $id = (string) ProductModel::query()->where('identifier', 'SUPPRESSED')->value('id');
+    $index = app(ProductIndex::class);
+
+    app(ProductChangeCapture::class)->suppress(fn () => $index->queue([$id]));
+
+    expect(touchedProducts())->toBe([]);
+
+    $index->queue([$id]);
+
+    expect(touchedProducts())->toBe(['SUPPRESSED']);
 });
 
 it('exports what a subscription covers for a vendor starting out', function (): void {

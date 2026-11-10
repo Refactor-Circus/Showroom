@@ -31,8 +31,10 @@ it('adds and removes associations one at a time from a product page', function (
     AssociationTypeModel::factory()->create(['code' => 'cross_sell']);
     AssociationTypeModel::factory()->create(['code' => 'bundle', 'is_quantified' => true]);
 
+    $products = [];
+
     foreach (['TEE', 'CAP', 'SOCKS'] as $identifier) {
-        ProductModel::factory()->create(['identifier' => $identifier]);
+        $products[$identifier] = ProductModel::factory()->create(['identifier' => $identifier]);
     }
 
     $add = fn (string $type, string $target, ?int $quantity = null) => $this->post(route('atrium.showroom.associations.add'), array_filter([
@@ -48,7 +50,7 @@ it('adds and removes associations one at a time from a product page', function (
     $add('cross_sell', 'SOCKS');
     $add('bundle', 'SOCKS', 3);
 
-    $this->get(route('atrium.showroom.products.show', 'TEE'))
+    $this->get(route('atrium.showroom.products.show', $products['TEE']))
         ->assertOk()
         ->assertSee('data-association-type="cross_sell"', false)
         ->assertSee('× 3');
@@ -57,7 +59,7 @@ it('adds and removes associations one at a time from a product page', function (
         'source_kind' => 'product', 'source' => 'TEE', 'type' => 'cross_sell', 'target_kind' => 'products', 'target' => 'CAP',
     ])->assertSessionHasNoErrors();
 
-    $this->getJson('/showroom/products/TEE')
+    $this->getJson('/showroom/products/'.$products['TEE']->id)
         ->assertJsonPath('data.associations.cross_sell.products', ['SOCKS'])
         ->assertJsonPath('data.quantified_associations.bundle.products', [['identifier' => 'SOCKS', 'quantity' => 3]]);
 

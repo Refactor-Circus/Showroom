@@ -1,6 +1,8 @@
 # Families
 
-A family — an attribute set — is a kind of product: the attributes it has and which of them are required. "Shoes" has size and color; "Laptops" has memory and screen size. Products (coming next) each belong to one family.
+A family — an attribute set — is a kind of product: the attributes it has and which of them are required. "Shoes" has size and color; "Laptops" has memory and screen size. Each product belongs to at most one family; see [Products and variants](04-products.md).
+
+Families are addressed by `code`, in API paths, MCP arguments and a product's `family`. They have no slug and no `showroom.lookup` key: those are for products and owners only.
 
 ## Membership
 

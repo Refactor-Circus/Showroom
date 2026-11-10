@@ -1,0 +1,23 @@
+<?php
+
+declare(strict_types=1);
+
+namespace RefactorCircus\Showroom\Domains\Flag\Events;
+
+use Illuminate\Foundation\Events\Dispatchable;
+use Illuminate\Queue\SerializesModels;
+use RefactorCircus\Keystone\Contracts\ActionStartingEvent;
+use RefactorCircus\Showroom\Domains\Flag\Data\CreateFlagData;
+
+/**
+ * A flag is about to be created.
+ */
+final class FlagCreatingActionEvent implements ActionStartingEvent
+{
+    use Dispatchable;
+    use SerializesModels;
+
+    public function __construct(
+        public CreateFlagData $data,
+    ) {}
+}

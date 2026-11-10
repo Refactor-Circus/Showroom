@@ -11,6 +11,7 @@ use RefactorCircus\Showroom\Domains\Attribute\Enums\AttributeType;
 use RefactorCircus\Showroom\Domains\Attribute\Models\AttributeModel;
 use RefactorCircus\Showroom\Domains\Attribute\Services\Values;
 use RefactorCircus\Showroom\Domains\Category\Models\CategoryModel;
+use RefactorCircus\Showroom\Domains\Flag\Services\Flags;
 use RefactorCircus\Showroom\Domains\Owner\Models\OwnerModel;
 use RefactorCircus\Showroom\Domains\Product\Models\ProductModel;
 use RefactorCircus\Showroom\Domains\Search\Contracts\SearchEngine;
@@ -189,6 +190,31 @@ final class DatabaseEngine implements SearchEngine
 
         if ($query->updatedSince !== null) {
             $builder->where(Tables::name('products').'.changed_at', '>=', $query->updatedSince);
+        }
+
+        // Every pair must match, compared under the column's collation as the
+        // unique index compares them. Values are bound, never interpolated.
+        foreach ($query->external as $source => $externalId) {
+            $builder->whereExists(fn (QueryBuilder $sub) => $sub->from(Tables::name('external_ids'))
+                ->whereColumn(Tables::name('external_ids').'.subject_id', Tables::name('products').'.id')
+                ->where(Tables::name('external_ids').'.subject_type', (new ProductModel)->getMorphClass())
+                ->where(Tables::name('external_ids').'.source', (string) $source)
+                ->where(Tables::name('external_ids').'.external_id', $externalId));
+        }
+
+        // Every flag asked for, on effective flags: the product's own, or its
+        // owner's (a variant's root model's) through the owners that carry it
+        // and every owner beneath them.
+        $flags = app(Flags::class);
+
+        foreach ($query->flags as $code) {
+            $owners = $flags->ownersInheriting($code);
+
+            $builder->where(fn (Builder $builder): Builder => $builder
+                ->whereIn(Tables::name('products').'.id', $flags->productsCarrying($code))
+                ->orWhereIn(Tables::name('products').'.owner_id', $owners)
+                ->orWhereIn('showroom_level1.owner_id', $owners)
+                ->orWhereIn('showroom_level2.owner_id', $owners));
         }
 
         if ($query->complete !== null) {

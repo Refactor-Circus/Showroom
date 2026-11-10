@@ -8,6 +8,7 @@ use Laravel\Mcp\ResponseFactory;
 use RefactorCircus\Showroom\Domains\Product\Actions\UpdateProductAction;
 use RefactorCircus\Showroom\Domains\Product\Data\UpdateProductData;
 use RefactorCircus\Showroom\Domains\Product\Resources\ProductResource;
+use RefactorCircus\Showroom\Support\RecordLookup;
 
 final class UpdateProductMcpRequest extends ProductRequest
 {
@@ -20,6 +21,7 @@ final class UpdateProductMcpRequest extends ProductRequest
     {
         return [
             'product' => ['required', 'string', 'max:191'],
+            ...RecordLookup::rules(),
         ] + UpdateProductData::rules();
     }
 

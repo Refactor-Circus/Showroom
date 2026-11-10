@@ -8,6 +8,7 @@ use Laravel\Mcp\ResponseFactory;
 use RefactorCircus\Showroom\Domains\Product\Mcp\Requests\ProductRequest;
 use RefactorCircus\Showroom\Domains\Workflow\Actions\ShowProductVersionAction;
 use RefactorCircus\Showroom\Domains\Workflow\Resources\VersionResource;
+use RefactorCircus\Showroom\Support\RecordLookup;
 
 final class ShowProductVersionMcpRequest extends ProductRequest
 {
@@ -20,6 +21,7 @@ final class ShowProductVersionMcpRequest extends ProductRequest
     {
         return [
             'product' => ['required', 'string', 'max:191'],
+            ...RecordLookup::rules(),
             'version' => ['required', 'string', 'max:20'],
         ];
     }

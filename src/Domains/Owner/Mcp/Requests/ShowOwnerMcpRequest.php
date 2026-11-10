@@ -7,6 +7,7 @@ namespace RefactorCircus\Showroom\Domains\Owner\Mcp\Requests;
 use Laravel\Mcp\ResponseFactory;
 use RefactorCircus\Showroom\Domains\Owner\Actions\ShowOwnerAction;
 use RefactorCircus\Showroom\Domains\Owner\Resources\OwnerResource;
+use RefactorCircus\Showroom\Support\RecordLookup;
 
 final class ShowOwnerMcpRequest extends OwnerRequest
 {
@@ -19,6 +20,7 @@ final class ShowOwnerMcpRequest extends OwnerRequest
     {
         return [
             'owner' => ['required', 'string', 'max:191'],
+            ...RecordLookup::rules(),
         ];
     }
 

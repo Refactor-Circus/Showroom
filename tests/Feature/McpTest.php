@@ -70,6 +70,7 @@ use RefactorCircus\Showroom\Domains\Owner\Mcp\Tools\ShowOwnerTool;
 use RefactorCircus\Showroom\Domains\Owner\Mcp\Tools\ShowOwnerTypeTool;
 use RefactorCircus\Showroom\Domains\Owner\Mcp\Tools\UpdateOwnerTool;
 use RefactorCircus\Showroom\Domains\Owner\Mcp\Tools\UpdateOwnerTypeTool;
+use RefactorCircus\Showroom\Domains\Owner\Models\OwnerModel;
 use RefactorCircus\Showroom\Domains\Product\Mcp\Tools\CreateProductTool;
 use RefactorCircus\Showroom\Domains\Product\Mcp\Tools\DeleteProductTool;
 use RefactorCircus\Showroom\Domains\Product\Mcp\Tools\ListProductsTool;
@@ -90,7 +91,7 @@ use RefactorCircus\Showroom\Mcp\Tools\ListShowroomHistoryTool;
 use RefactorCircus\Showroom\Tests\Fixtures\Catalog;
 
 it('offers one tool per use case', function (): void {
-    expect(ShowroomServer::TOOLS)->toHaveCount(78);
+    expect(ShowroomServer::TOOLS)->toHaveCount(83);
 });
 
 it('declares its history tool, but offers it only while Showroom audits', function (): void {
@@ -211,14 +212,16 @@ it('manages family variants, product models and products', function (): void {
     mcpTool(ShowProductModelTool::class, ['product_model' => 'tee'])->assertOk()->assertSee('TEE-M');
     mcpTool(UpdateProductModelTool::class, ['product_model' => 'tee', 'values' => ['name' => Catalog::value('Organic tee')]])->assertOk();
 
-    mcpTool(ShowProductTool::class, ['product' => 'TEE-M'])->assertOk()->assertSee('Organic tee');
-    mcpTool(UpdateProductTool::class, ['product' => 'TEE-M', 'enabled' => false])->assertOk()->assertSee('"enabled":false');
+    $teeM = ProductModel::query()->where('identifier', 'TEE-M')->firstOrFail()->id;
+
+    mcpTool(ShowProductTool::class, ['product' => $teeM])->assertOk()->assertSee('Organic tee');
+    mcpTool(UpdateProductTool::class, ['product' => $teeM, 'enabled' => false])->assertOk()->assertSee('"enabled":false');
 
     mcpTool(ListProductsTool::class, [
         'filters' => [['attribute' => 'size', 'operator' => '=', 'value' => 'm']],
     ])->assertOk()->assertSee('"total":1')->assertSee('TEE-M');
 
-    mcpTool(DeleteProductTool::class, ['product' => 'TEE-M'])->assertOk()->assertSee('"identifier":"TEE-M"');
+    mcpTool(DeleteProductTool::class, ['product' => $teeM])->assertOk()->assertSee('"identifier":"TEE-M"');
     mcpTool(DeleteProductModelTool::class, ['product_model' => 'tee'])->assertOk();
     mcpTool(DeleteFamilyVariantTool::class, ['family_variant' => 'shirts_by_tag'])->assertOk();
 
@@ -236,10 +239,14 @@ it('manages ownership', function (): void {
     mcpTool(CreateOwnerTool::class, ['code' => 'classic', 'type' => 'series'])->assertHasErrors(['A series needs a parent owner.']);
     mcpTool(CreateOwnerTool::class, ['code' => 'classic', 'type' => 'series', 'parent' => 'acme'])->assertOk();
     mcpTool(ListOwnersTool::class, ['under' => 'acme'])->assertOk()->assertSee('classic');
-    mcpTool(ShowOwnerTool::class, ['owner' => 'classic'])->assertOk()->assertSee('"chain":["acme","classic"]');
-    mcpTool(UpdateOwnerTool::class, ['owner' => 'classic', 'labels' => ['en' => 'Classic']])->assertOk();
-    mcpTool(DeleteOwnerTool::class, ['owner' => 'acme'])->assertHasErrors();
-    mcpTool(DeleteOwnerTool::class, ['owner' => 'classic'])->assertOk();
+
+    $acme = OwnerModel::query()->where('code', 'acme')->firstOrFail()->id;
+    $classic = OwnerModel::query()->where('code', 'classic')->firstOrFail()->id;
+
+    mcpTool(ShowOwnerTool::class, ['owner' => $classic])->assertOk()->assertSee('"chain":["acme","classic"]');
+    mcpTool(UpdateOwnerTool::class, ['owner' => $classic, 'labels' => ['en' => 'Classic']])->assertOk();
+    mcpTool(DeleteOwnerTool::class, ['owner' => $acme])->assertHasErrors();
+    mcpTool(DeleteOwnerTool::class, ['owner' => $classic])->assertOk();
     mcpTool(DeleteOwnerTypeTool::class, ['owner_type' => 'series'])->assertOk();
 });
 
@@ -304,16 +311,19 @@ it('manages association types and associations', function (): void {
 
 it('runs the workflow and reads history', function (): void {
     mcpTool(CreateProductTool::class, ['identifier' => 'TEE'])->assertOk()->assertSee('"status":"draft"');
-    mcpTool(TransitionProductTool::class, ['product' => 'TEE', 'transition' => 'publish'])->assertHasErrors();
-    mcpTool(TransitionProductTool::class, ['product' => 'TEE', 'transition' => 'submit'])->assertOk()->assertSee('"status":"in_review"');
-    mcpTool(TransitionProductTool::class, ['product' => 'TEE', 'transition' => 'approve'])->assertOk();
-    mcpTool(TransitionProductTool::class, ['product' => 'TEE', 'transition' => 'publish'])->assertOk()->assertSee('"published_version":4');
 
-    mcpTool(ListProductVersionsTool::class, ['product' => 'TEE'])->assertOk()->assertSee('"action":"published"');
-    mcpTool(ShowProductVersionTool::class, ['product' => 'TEE', 'version' => 'published'])->assertOk()->assertSee('"snapshot"');
+    $tee = ProductModel::query()->where('identifier', 'TEE')->firstOrFail()->id;
 
-    mcpTool(UpdateProductTool::class, ['product' => 'TEE', 'enabled' => false])->assertOk()->assertSee('"status":"draft"');
-    mcpTool(RevertProductTool::class, ['product' => 'TEE', 'version' => 1])->assertOk()->assertSee('"enabled":true');
+    mcpTool(TransitionProductTool::class, ['product' => $tee, 'transition' => 'publish'])->assertHasErrors();
+    mcpTool(TransitionProductTool::class, ['product' => $tee, 'transition' => 'submit'])->assertOk()->assertSee('"status":"in_review"');
+    mcpTool(TransitionProductTool::class, ['product' => $tee, 'transition' => 'approve'])->assertOk();
+    mcpTool(TransitionProductTool::class, ['product' => $tee, 'transition' => 'publish'])->assertOk()->assertSee('"published_version":4');
+
+    mcpTool(ListProductVersionsTool::class, ['product' => $tee])->assertOk()->assertSee('"action":"published"');
+    mcpTool(ShowProductVersionTool::class, ['product' => $tee, 'version' => 'published'])->assertOk()->assertSee('"snapshot"');
+
+    mcpTool(UpdateProductTool::class, ['product' => $tee, 'enabled' => false])->assertOk()->assertSee('"status":"draft"');
+    mcpTool(RevertProductTool::class, ['product' => $tee, 'version' => 1])->assertOk()->assertSee('"enabled":true');
 });
 
 it('lists an empty catalog', function (): void {

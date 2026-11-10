@@ -9,6 +9,7 @@ use RefactorCircus\Showroom\Domains\Product\Http\Requests\ProductRequest;
 use RefactorCircus\Showroom\Domains\Product\Resources\ProductResource;
 use RefactorCircus\Showroom\Domains\Workflow\Actions\TransitionProductAction;
 use RefactorCircus\Showroom\Domains\Workflow\Data\TransitionProductData;
+use RefactorCircus\Showroom\Support\RecordLookup;
 
 final class TransitionProductRequest extends ProductRequest
 {
@@ -19,7 +20,7 @@ final class TransitionProductRequest extends ProductRequest
 
     public function rules(): array
     {
-        return TransitionProductData::rules();
+        return [...TransitionProductData::rules(), ...RecordLookup::rules()];
     }
 
     public function persist(): JsonResponse

@@ -6,8 +6,17 @@ use RefactorCircus\Keystone\Audit\AuditHooks;
 use RefactorCircus\Showroom\Domains\Association\Models\AssociationModel;
 use RefactorCircus\Showroom\Domains\Attribute\Models\AttributeModel;
 use RefactorCircus\Showroom\Domains\Family\Models\FamilyModel;
+use RefactorCircus\Showroom\Domains\Product\Models\ProductModel;
 use RefactorCircus\Showroom\Domains\Workflow\Models\VersionModel;
 use RefactorCircus\Showroom\Tests\Fixtures\Catalog;
+
+/**
+ * The API path of a product, addressed by its `id` as routes bind it.
+ */
+function auditProductPath(string $identifier): string
+{
+    return '/showroom/products/'.ProductModel::query()->where('identifier', $identifier)->value('id');
+}
 
 /**
  * What the audit log (refactor-circus/keen) calls Showroom's records, where the default
@@ -34,14 +43,14 @@ it('names an association by its type and both ends', function (): void {
     $this->postJson('/showroom/association-types', ['code' => 'cross_sell', 'labels' => ['en' => 'Cross-sell']])->assertCreated();
     $this->postJson('/showroom/products', ['identifier' => 'TEE'])->assertCreated();
     $this->postJson('/showroom/product-models', ['code' => 'polo', 'family_variant' => 'shirts_by_size'])->assertCreated();
-    $this->patchJson('/showroom/products/TEE', ['associations' => ['cross_sell' => ['product_models' => ['polo']]]])->assertOk();
+    $this->patchJson(auditProductPath('TEE'), ['associations' => ['cross_sell' => ['product_models' => ['polo']]]])->assertOk();
 
     expect(app(AuditHooks::class)->labelFor(AssociationModel::query()->firstOrFail()))->toBe('Cross-sell: TEE → polo');
 });
 
 it('names a version by what it versions and its number', function (): void {
     $this->postJson('/showroom/products', ['identifier' => 'TEE'])->assertCreated();
-    $this->patchJson('/showroom/products/TEE', ['enabled' => false])->assertOk();
+    $this->patchJson(auditProductPath('TEE'), ['enabled' => false])->assertOk();
 
     $version = VersionModel::query()->firstOrFail();
 

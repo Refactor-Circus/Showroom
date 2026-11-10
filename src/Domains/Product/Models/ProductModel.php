@@ -21,12 +21,17 @@ use RefactorCircus\Showroom\Domains\Association\Concerns\HasAssociations;
 use RefactorCircus\Showroom\Domains\Attribute\Concerns\HasValues;
 use RefactorCircus\Showroom\Domains\Attribute\Models\AttributeModel;
 use RefactorCircus\Showroom\Domains\Category\Models\CategoryModel;
+use RefactorCircus\Showroom\Domains\ExternalId\Models\ExternalIdModel;
 use RefactorCircus\Showroom\Domains\Family\Models\FamilyModel;
+use RefactorCircus\Showroom\Domains\Flag\Concerns\HasFlags;
+use RefactorCircus\Showroom\Domains\Flag\Models\FlagModel;
 use RefactorCircus\Showroom\Domains\Owner\Models\OwnerModel;
 use RefactorCircus\Showroom\Domains\Product\Enums\ProductStatus;
 use RefactorCircus\Showroom\Domains\ProductModel\Models\ProductModelModel;
 use RefactorCircus\Showroom\Domains\Workflow\Models\CompletenessModel;
 use RefactorCircus\Showroom\Domains\Workflow\Models\VersionModel;
+use RefactorCircus\Showroom\Support\RecordLookup;
+use RefactorCircus\Showroom\Support\Slugs;
 use RefactorCircus\Showroom\Support\Tables;
 
 /**
@@ -35,6 +40,7 @@ use RefactorCircus\Showroom\Support\Tables;
  *
  * @property string $id
  * @property string $identifier
+ * @property string $slug Set once, from the identifier, when the product is created.
  * @property string|null $family_id
  * @property string|null $parent_id
  * @property string|null $owner_id
@@ -49,6 +55,8 @@ use RefactorCircus\Showroom\Support\Tables;
  * @property-read FamilyModel|null $family
  * @property-read ProductModelModel|null $parent
  * @property-read OwnerModel|null $owner
+ * @property-read EloquentCollection<int, ExternalIdModel> $externalIds
+ * @property-read EloquentCollection<int, FlagModel> $flags
  */
 final class ProductModel extends Model
 {
@@ -59,12 +67,22 @@ final class ProductModel extends Model
     /** @use HasFactory<ProductFactory> */
     use HasFactory;
 
+    use HasFlags;
     use HasUlids;
     use HasValues;
 
     public function getTable(): string
     {
         return Tables::name('products');
+    }
+
+    /**
+     * The key URLs and dashboard links name the product by: its `id`, or its
+     * `slug`, from `showroom.lookup.products`. Never its identifier.
+     */
+    public function getRouteKeyName(): string
+    {
+        return app(RecordLookup::class)->key('products')->value;
     }
 
     /**
@@ -181,6 +199,17 @@ final class ProductModel extends Model
     }
 
     /**
+     * The product's ids in other systems, by source. Deleted with the
+     * product by DeleteProductAction.
+     *
+     * @return MorphMany<ExternalIdModel, $this>
+     */
+    public function externalIds(): MorphMany
+    {
+        return $this->morphMany(ExternalIdModel::class, 'subject')->orderBy('source');
+    }
+
+    /**
      * Every recorded version, newest first.
      *
      * @return MorphMany<VersionModel, $this>
@@ -193,6 +222,21 @@ final class ProductModel extends Model
     public function isVariant(): bool
     {
         return $this->parent_id !== null;
+    }
+
+    /**
+     * Give a new product its ULID and, unless its creator already chose one,
+     * its slug from the identifier. This runs on every insert, so a product
+     * written outside the actions (a factory, a host's own code) gets a slug
+     * too, whether or not model events are faked.
+     */
+    public function setUniqueIds(): void
+    {
+        parent::setUniqueIds();
+
+        if ($this->getAttribute('slug') === null) {
+            $this->setAttribute('slug', app(Slugs::class)->for('products', (string) $this->getAttribute('identifier')));
+        }
     }
 
     public function inheritedValues(): array

@@ -16,6 +16,7 @@ use RefactorCircus\Showroom\Domains\Asset\Models\AssetModel;
 use RefactorCircus\Showroom\Domains\Asset\Services\AssetLinks;
 use RefactorCircus\Showroom\Domains\Product\Events\ProductDeletedActionEvent;
 use RefactorCircus\Showroom\Domains\Product\Models\ProductModel;
+use RefactorCircus\Showroom\Domains\Product\Services\ProductChangeCapture;
 use RefactorCircus\Showroom\Domains\ProductModel\Events\ProductModelDeletedActionEvent;
 use RefactorCircus\Showroom\Domains\ProductModel\Events\ProductModelDeletingActionEvent;
 use RefactorCircus\Showroom\Domains\ProductModel\Models\ProductModelModel;
@@ -34,6 +35,9 @@ use stdClass;
  * categories, owners and channels. Deletions are caught before the rows go,
  * while their identifiers can still be read; asset links, which bypass the
  * product, are caught from their own events.
+ *
+ * Nothing is recorded while core's ProductChangeCapture is suppressed, as a
+ * batch upsert sent with `capture_changes: false` asks.
  */
 final class CaptureProductChanges
 {
@@ -76,6 +80,11 @@ final class CaptureProductChanges
      */
     private function touchIds(array $ids): void
     {
+        // Not even read while suppressed: a reload may hold millions.
+        if ($this->suppressed()) {
+            return;
+        }
+
         $this->touch($this->identifiers($ids));
     }
 
@@ -101,7 +110,7 @@ final class CaptureProductChanges
      */
     private function touch(array $identifiers): void
     {
-        if ($identifiers === []) {
+        if ($identifiers === [] || $this->suppressed()) {
             return;
         }
 
@@ -158,6 +167,15 @@ final class CaptureProductChanges
         $models = [$modelId, ...$this->db->table(Tables::name('product_models'))->where('parent_id', $modelId)->pluck('id')->map(fn (mixed $id): string => (string) $id)->all()];
 
         return $this->db->table(Tables::name('products'))->whereIn('parent_id', $models)->pluck('id')->map(fn (mixed $id): string => (string) $id)->all();
+    }
+
+    /**
+     * Resolved on each write, not injected: this subscriber outlives the
+     * request or job the switch is scoped to.
+     */
+    private function suppressed(): bool
+    {
+        return app(ProductChangeCapture::class)->isSuppressed();
     }
 
     private function stream(): string

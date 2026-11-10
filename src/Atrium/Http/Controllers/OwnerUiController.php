@@ -7,10 +7,14 @@ namespace RefactorCircus\Showroom\Atrium\Http\Controllers;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 use RefactorCircus\Atrium\Domains\Screens\Services\ScreenExtensions;
+use RefactorCircus\Showroom\Atrium\FlagScreen;
 use RefactorCircus\Showroom\Atrium\Http\Controllers\Concerns\AuthorizesScreens;
+use RefactorCircus\Showroom\Atrium\Support\ExternalIdForm;
 use RefactorCircus\Showroom\Atrium\Support\Labels;
 use RefactorCircus\Showroom\Atrium\Support\Screens;
+use RefactorCircus\Showroom\Domains\Flag\Enums\FlagSubject;
 use RefactorCircus\Showroom\Domains\Owner\Actions\CreateOwnerAction;
 use RefactorCircus\Showroom\Domains\Owner\Actions\DeleteOwnerAction;
 use RefactorCircus\Showroom\Domains\Owner\Actions\ListOwnersAction;
@@ -60,6 +64,7 @@ final class OwnerUiController
         $this->authorizeScreen('view', $owner);
 
         $owner = app(ShowOwnerAction::class)->execute($owner);
+        $mayAssign = FlagScreen::mayAssign($owner, $request);
 
         /** @var view-string $view */
         $view = 'showroom::ui.owners.show';
@@ -68,6 +73,8 @@ final class OwnerUiController
             'resolved' => app(ScreenExtensions::class)->resolve(Screens::detail('showroom.owner', $owner, OwnerModel::class), $request),
             'owner' => $owner,
             'types' => OwnerTypeModel::query()->orderBy('code')->pluck('code', 'code')->all(),
+            'mayAssign' => $mayAssign,
+            'flagOptions' => $mayAssign ? FlagScreen::options(FlagSubject::Owner) : collect(),
         ]);
     }
 
@@ -75,7 +82,7 @@ final class OwnerUiController
     {
         $this->authorizeScreen('update', $owner);
 
-        $data = UpdateOwnerData::fromValidated(Labels::fromForm($request->validate(UpdateOwnerData::rules()), $owner->labels));
+        $data = UpdateOwnerData::fromValidated(Labels::fromForm(Validator::validate($this->fromForm($request), UpdateOwnerData::rules()), $owner->labels));
 
         app(UpdateOwnerAction::class)->execute($owner, $data);
 
@@ -100,5 +107,30 @@ final class OwnerUiController
             ? redirect()->route('atrium.showroom.owners.show', $parent)
             : redirect()->route('atrium.showroom.owners.index'))
             ->with('status', __('showroom::showroom.owner_deleted'));
+    }
+
+    /**
+     * The external ids arrive as a map plus one new source, and the own flags
+     * only when the page showed their field.
+     *
+     * @return array<string, mixed>
+     */
+    private function fromForm(Request $request): array
+    {
+        $input = $request->except(['_token', '_method', 'external_ids', 'external_ids_new', 'flags', FlagScreen::SENT]);
+
+        $externalIds = ExternalIdForm::fromForm($request);
+
+        if ($externalIds !== null) {
+            $input['external_ids'] = $externalIds;
+        }
+
+        $flags = FlagScreen::fromForm($request);
+
+        if ($flags !== null) {
+            $input['flags'] = $flags;
+        }
+
+        return $input;
     }
 }

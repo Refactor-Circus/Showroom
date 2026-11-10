@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use RefactorCircus\Showroom\Domains\Product\Models\ProductModel;
 use RefactorCircus\Showroom\Tests\Fixtures\Catalog;
 
 beforeEach(function (): void {
@@ -11,6 +12,14 @@ beforeEach(function (): void {
     $this->postJson('/showroom/attributes', ['code' => 'copy', 'type' => 'textarea', 'is_localizable' => true, 'is_scopable' => true])->assertCreated();
     $this->postJson('/showroom/attributes', ['code' => 'list_price', 'type' => 'price', 'is_scopable' => true])->assertCreated();
 });
+
+/**
+ * The API path of a product, addressed by its `id` as routes bind it.
+ */
+function channelProductPath(string $identifier): string
+{
+    return '/showroom/products/'.ProductModel::query()->where('identifier', $identifier)->value('id');
+}
 
 it('manages locales and channels', function (): void {
     $this->getJson('/showroom/locales')->assertOk()->assertJsonCount(3, 'data');
@@ -98,7 +107,7 @@ it('reads one channel\'s and some locales\' values', function (): void {
         ],
     ])->assertCreated();
 
-    $values = $this->getJson('/showroom/products/TEE-1?'.http_build_query(['scope' => 'print', 'locales' => ['en']]))->assertOk()->json('data.values');
+    $values = $this->getJson(channelProductPath('TEE-1').'?'.http_build_query(['scope' => 'print', 'locales' => ['en']]))->assertOk()->json('data.values');
 
     expect(array_keys($values))->toBe(['copy', 'description', 'name'])
         ->and($values['copy'])->toBe([['locale' => 'en', 'scope' => 'print', 'data' => 'Print copy']])
@@ -108,7 +117,7 @@ it('reads one channel\'s and some locales\' values', function (): void {
 
     expect($listed['copy'])->toBe([['locale' => 'fr', 'scope' => 'ecommerce', 'data' => 'Texte web']]);
 
-    $this->getJson('/showroom/products/TEE-1?scope=nowhere')->assertUnprocessable()->assertJsonValidationErrors('scope');
+    $this->getJson(channelProductPath('TEE-1').'?scope=nowhere')->assertUnprocessable()->assertJsonValidationErrors('scope');
 });
 
 it('purges the values of a deleted channel or locale', function (): void {
@@ -134,7 +143,7 @@ it('purges the values of a deleted channel or locale', function (): void {
     $this->patchJson('/showroom/channels/ecommerce', ['locales' => ['en']])->assertOk();
     $this->deleteJson('/showroom/locales/fr')->assertNoContent();
 
-    $values = $this->getJson('/showroom/products/TEE-1')->json('data.values');
+    $values = $this->getJson(channelProductPath('TEE-1'))->json('data.values');
 
     expect($values['copy'])->toBe([['locale' => 'en', 'scope' => 'ecommerce', 'data' => 'Web copy']])
         ->and($values['description'])->toBe([['locale' => 'en', 'scope' => null, 'data' => 'Soft']]);

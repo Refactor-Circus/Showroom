@@ -55,7 +55,7 @@ it('maps every Eloquent hook of every model to its own event', function (): void
             ->not->toContain(false);
     }
 
-    expect($models)->toHaveCount(18);
+    expect($models)->toHaveCount(20);
 });
 
 it('fires one starting and one finished event for every Action', function (): void {
@@ -76,7 +76,7 @@ it('fires one starting and one finished event for every Action', function (): vo
             ->and(is_subclass_of($finished, ActionFinishedEvent::class))->toBeTrue(basename($path).' finishes with '.$finished);
     }
 
-    expect($actions)->toHaveCount(77);
+    expect($actions)->toHaveCount(83);
 });
 
 it('fires the starting and finished events around an action', function (): void {

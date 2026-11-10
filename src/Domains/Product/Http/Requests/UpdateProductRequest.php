@@ -8,6 +8,7 @@ use Illuminate\Http\JsonResponse;
 use RefactorCircus\Showroom\Domains\Product\Actions\UpdateProductAction;
 use RefactorCircus\Showroom\Domains\Product\Data\UpdateProductData;
 use RefactorCircus\Showroom\Domains\Product\Resources\ProductResource;
+use RefactorCircus\Showroom\Support\RecordLookup;
 
 final class UpdateProductRequest extends ProductRequest
 {
@@ -18,7 +19,7 @@ final class UpdateProductRequest extends ProductRequest
 
     public function rules(): array
     {
-        return UpdateProductData::rules();
+        return [...UpdateProductData::rules(), ...RecordLookup::rules()];
     }
 
     public function persist(): JsonResponse

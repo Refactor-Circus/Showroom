@@ -75,6 +75,22 @@ function seedCatalog(int $count, int $from = 1): void
 }
 
 /**
+ * The API path of a product, addressed by its `id` as routes bind it.
+ */
+function performanceProductPath(string $identifier): string
+{
+    return '/showroom/products/'.ProductModel::query()->where('identifier', $identifier)->value('id');
+}
+
+/**
+ * The API path of an owner, addressed by its `id` as routes bind it.
+ */
+function performanceOwnerPath(string $code): string
+{
+    return '/showroom/owners/'.OwnerModel::query()->where('code', $code)->value('id');
+}
+
+/**
  * How many queries a callback runs.
  */
 function queriesDuring(Closure $callback): int
@@ -100,7 +116,7 @@ it('lists products in a fixed number of queries, whatever the page holds', funct
 
     expect($many)->toBe($few);
 
-    $this->getJson('/showroom/products/V-002')->assertOk()
+    $this->getJson(performanceProductPath('V-002'))->assertOk()
         ->assertJsonPath('data.owner', 'acme-tools')
         ->assertJsonPath('data.categories', ['master', 'shirts']);
 });
@@ -244,7 +260,7 @@ it('exports published versions with one version query a page', function (): void
     seedCatalog(3);
 
     foreach (['S-001', 'S-002', 'V-003'] as $identifier) {
-        $this->postJson('/showroom/products/'.$identifier.'/transitions', ['transition' => 'publish'])->assertOk();
+        $this->postJson(performanceProductPath($identifier).'/transitions', ['transition' => 'publish'])->assertOk();
     }
 
     DB::enableQueryLog();
@@ -276,7 +292,8 @@ it('builds search documents for a batch in a fixed number of queries', function 
 
     $variant = collect($documents)->firstWhere('identifier', 'V-002');
 
-    expect($many)->toBe($few)->toBeLessThanOrEqual(3)
+    // Attribute types, owner chains, category chains, external ids and flags: one query each.
+    expect($many)->toBe($few)->toBeLessThanOrEqual(5)
         ->and($variant['owners'])->toBe(['acme', 'acme-tools'])
         ->and($variant['category_tree'])->toBe(['master', 'shirts'])
         ->and(ProductDocument::from($products->firstWhere('identifier', 'V-002')))->toBe($variant);
@@ -352,7 +369,7 @@ it('lists the products of an owner or category subtree that moved in a queued jo
 
     Bus::fake([QueueProductSyncs::class]);
 
-    $this->patchJson('/showroom/owners/acme-tools', ['parent' => 'other'])->assertOk();
+    $this->patchJson(performanceOwnerPath('acme-tools'), ['parent' => 'other'])->assertOk();
     $this->patchJson('/showroom/categories/shirts', ['parent' => 'web'])->assertOk();
 
     Bus::assertDispatched(QueueProductSyncs::class, fn (QueueProductSyncs $job): bool => $job->scope === SyncScope::Owner);
@@ -414,7 +431,7 @@ it('adds no query to a list screen while nothing is registered on it', function 
 
 it('counts products per status in one query, and keeps completeness figures briefly', function (): void {
     seedCatalog(2);
-    $this->postJson('/showroom/products/S-001/transitions', ['transition' => 'submit'])->assertOk();
+    $this->postJson(performanceProductPath('S-001').'/transitions', ['transition' => 'submit'])->assertOk();
 
     $resolve = fn (string $key): array => app(WidgetRegistry::class)->get($key)?->resolveData() ?? [];
     $status = [];

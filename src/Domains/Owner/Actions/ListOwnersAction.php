@@ -6,6 +6,7 @@ namespace RefactorCircus\Showroom\Domains\Owner\Actions;
 
 use Illuminate\Contracts\Pagination\CursorPaginator;
 use Illuminate\Database\Eloquent\Builder;
+use RefactorCircus\Showroom\Domains\Flag\Services\Flags;
 use RefactorCircus\Showroom\Domains\Owner\Data\ListOwnersData;
 use RefactorCircus\Showroom\Domains\Owner\Events\OwnersListedActionEvent;
 use RefactorCircus\Showroom\Domains\Owner\Events\OwnersListingActionEvent;
@@ -13,6 +14,8 @@ use RefactorCircus\Showroom\Domains\Owner\Models\OwnerModel;
 
 final class ListOwnersAction
 {
+    public function __construct(private readonly Flags $flags) {}
+
     /**
      * @return CursorPaginator<int, OwnerModel>
      */
@@ -33,7 +36,7 @@ final class ListOwnersAction
     private function perform(ListOwnersData $filters): CursorPaginator
     {
         $query = OwnerModel::query()
-            ->with(['type', 'parent'])
+            ->with(['type', 'parent', 'externalIds'])
             ->withCount('children')
             ->orderBy('code');
 
@@ -65,9 +68,24 @@ final class ListOwnersAction
             $query->search($filters->search);
         }
 
-        return $query->cursorPaginate(
+        // Compared under the column's collation, as the unique index compares them.
+        foreach ($filters->external as $source => $externalId) {
+            $query->whereHas('externalIds', fn (Builder $ids): Builder => $ids->where('source', (string) $source)->where('external_id', $externalId));
+        }
+
+        // Every flag asked for, own or inherited from an ancestor.
+        foreach ($filters->flags as $code) {
+            $query->whereIn('id', $this->flags->ownersInheriting($code));
+        }
+
+        $page = $query->cursorPaginate(
             perPage: $filters->perPage ?? ListOwnersData::pagination()->default,
             cursor: $filters->cursor,
         );
+
+        // One query for the whole page's own and effective flags.
+        $this->flags->load(collect($page->items()));
+
+        return $page;
     }
 }

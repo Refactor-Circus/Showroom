@@ -37,8 +37,8 @@ it('keeps the class names Impex stores for Showroom flows, sources and actions',
         'RefactorCircus\\Showroom\\Impex\\Sources\\InlineProductSource',
         'RefactorCircus\\Showroom\\Impex\\Actions\\DeliverFeed',
         'RefactorCircus\\Showroom\\Impex\\Actions\\ExportProductPages',
-        'RefactorCircus\\Showroom\\Impex\\Actions\\ImportProductRow',
         'RefactorCircus\\Showroom\\Impex\\Actions\\JoinProductExport',
+        'RefactorCircus\\Showroom\\Impex\\Actions\\UpsertProductChunk',
     ] as $class) {
         expect(class_exists($class))->toBeTrue($class);
     }

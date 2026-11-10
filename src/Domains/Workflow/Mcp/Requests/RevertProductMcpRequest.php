@@ -9,6 +9,7 @@ use RefactorCircus\Showroom\Domains\Product\Mcp\Requests\ProductRequest;
 use RefactorCircus\Showroom\Domains\Product\Resources\ProductResource;
 use RefactorCircus\Showroom\Domains\Workflow\Actions\RevertProductAction;
 use RefactorCircus\Showroom\Domains\Workflow\Data\RevertProductData;
+use RefactorCircus\Showroom\Support\RecordLookup;
 
 final class RevertProductMcpRequest extends ProductRequest
 {
@@ -21,6 +22,7 @@ final class RevertProductMcpRequest extends ProductRequest
     {
         return [
             'product' => ['required', 'string', 'max:191'],
+            ...RecordLookup::rules(),
         ] + RevertProductData::rules();
     }
 

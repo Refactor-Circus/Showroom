@@ -133,8 +133,8 @@ it('lets associations, versions, completeness and searchable products follow the
     Catalog::apparel();
     $this->postJson('/showroom/association-types', ['code' => 'cross_sell'])->assertCreated();
     $this->postJson('/showroom/products', ['identifier' => 'CAP'])->assertCreated();
-    $this->postJson('/showroom/products', ['identifier' => 'TEE', 'family' => 'shirts', 'associations' => ['cross_sell' => ['products' => ['CAP']]]])->assertCreated();
-    $this->postJson('/showroom/products/TEE/transitions', ['transition' => 'submit'])->assertOk();
+    $id = $this->postJson('/showroom/products', ['identifier' => 'TEE', 'family' => 'shirts', 'associations' => ['cross_sell' => ['products' => ['CAP']]]])->assertCreated()->json('data.id');
+    $this->postJson('/showroom/products/'.$id.'/transitions', ['transition' => 'submit'])->assertOk();
 
     $tee = ProductModel::query()->where('identifier', 'TEE')->sole();
     $children = [

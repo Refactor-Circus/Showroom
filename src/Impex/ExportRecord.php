@@ -29,6 +29,8 @@ final class ExportRecord
 
         return [
             'identifier' => $product->identifier,
+            // Read-only: exported, never imported.
+            'slug' => $product->slug,
             'family' => $product->family?->code,
             'parent' => $product->parent?->code,
             'owner' => $product->effectiveOwner()?->code,
@@ -79,6 +81,8 @@ final class ExportRecord
 
         return [
             'identifier' => $snapshot['identifier'] ?? $product->identifier,
+            // A slug never changes, so the current one is the published one.
+            'slug' => $product->slug,
             'family' => $snapshot['family'] ?? null,
             'parent' => $snapshot['parent'] ?? null,
             'owner' => $snapshot['owner'] ?? null,

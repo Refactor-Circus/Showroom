@@ -13,10 +13,15 @@ use RefactorCircus\Showroom\Impex\ProductRows;
 use RuntimeException;
 
 /**
- * Streams product records out of a `.csv` or `.jsonl` asset, a page at a
- * time. The cursor is a byte offset and each row's offset is its key: the
- * file does not change under a run, so a redelivered page maps to the same
- * rows.
+ * Streams product records out of a `.csv` or `.jsonl` asset, a chunk at a
+ * time.
+ *
+ * Each batch item is a chunk of `$chunkSize` records, written by one call to
+ * UpsertProductChunk. Its key is its first record's byte offset, and its
+ * `start` that record's row: the position among the file's records, from 0,
+ * leaving out a CSV header and blank lines. The cursor carries both, as
+ * `{offset}:{row}`. The file does not change under a run, so a redelivered
+ * page maps to the same chunks.
  */
 final class FileProductSource implements BatchSource
 {
@@ -24,8 +29,13 @@ final class FileProductSource implements BatchSource
         private readonly string $asset,
         private readonly string $format,
         private readonly string $mode,
+        private readonly bool $captureChanges = true,
+        private readonly int $chunkSize = 500,
     ) {}
 
+    /**
+     * @param  int  $size  How many chunks to yield.
+     */
     public function chunk(?string $cursor, int $size): BatchChunk
     {
         $asset = AssetModel::query()->where('code', $this->asset)->firstOrFail();
@@ -36,30 +46,75 @@ final class FileProductSource implements BatchSource
         }
 
         try {
+            [$offset, $row] = self::position($cursor);
+
             $header = $this->format === 'csv' ? $this->header($stream) : null;
-            $this->skipTo($stream, $cursor === null ? null : (int) $cursor);
+            $this->skipTo($stream, $offset);
 
             $items = [];
 
             while (count($items) < $size) {
-                $offset = (int) ftell($stream);
-                $record = $this->next($stream, $header);
+                $first = null;
+                $start = $row;
+                $records = [];
 
-                if ($record === false) {
-                    return BatchChunk::last($items);
+                while (count($records) < max(1, $this->chunkSize)) {
+                    $at = (int) ftell($stream);
+                    $record = $this->next($stream, $header);
+
+                    if ($record === false) {
+                        if ($records !== []) {
+                            $items[] = $this->item((int) $first, $start, $records);
+                        }
+
+                        return BatchChunk::last($items);
+                    }
+
+                    if ($record === null) {
+                        continue;
+                    }
+
+                    $first ??= $at;
+                    $records[] = $record;
+                    $row++;
                 }
 
-                if ($record === null) {
-                    continue;
-                }
-
-                $items[] = new BatchChunkItem((string) $offset, ['mode' => $this->mode, 'record' => $record]);
+                $items[] = $this->item((int) $first, $start, $records);
             }
 
-            return BatchChunk::of($items, (string) ftell($stream));
+            return BatchChunk::of($items, (int) ftell($stream).':'.$row);
         } finally {
             fclose($stream);
         }
+    }
+
+    /**
+     * @param  list<array<string, mixed>|string>  $records
+     */
+    private function item(int $offset, int $start, array $records): BatchChunkItem
+    {
+        return new BatchChunkItem((string) $offset, [
+            'mode' => $this->mode,
+            'capture_changes' => $this->captureChanges,
+            'start' => $start,
+            'records' => $records,
+        ]);
+    }
+
+    /**
+     * The byte offset to read from and the row it holds, from a cursor.
+     *
+     * @return array{0: int|null, 1: int}
+     */
+    private static function position(?string $cursor): array
+    {
+        if ($cursor === null) {
+            return [null, 0];
+        }
+
+        [$offset, $row] = array_pad(explode(':', $cursor, 2), 2, '0');
+
+        return [(int) $offset, (int) $row];
     }
 
     /**
@@ -104,13 +159,15 @@ final class FileProductSource implements BatchSource
     }
 
     /**
-     * The next record, null for a blank line, false at the end.
+     * The next record, null for a blank line, false at the end. A line that
+     * is not a JSON object is returned as it is, so it fails visibly, on its
+     * own row.
      *
      * @param  resource  $stream
      * @param  array<int, string>|null  $header
-     * @return array<string, mixed>|false|null
+     * @return array<string, mixed>|string|false|null
      */
-    private function next(mixed $stream, ?array $header): array|false|null
+    private function next(mixed $stream, ?array $header): array|string|false|null
     {
         if ($header !== null) {
             $cells = fgetcsv($stream, escape: '\\');
@@ -146,7 +203,6 @@ final class FileProductSource implements BatchSource
 
         $record = json_decode($line, true);
 
-        // A malformed line still becomes an item, so it fails visibly.
-        return is_array($record) ? $record : ['_invalid' => $line];
+        return is_array($record) && ($record === [] || ! array_is_list($record)) ? $record : $line;
     }
 }

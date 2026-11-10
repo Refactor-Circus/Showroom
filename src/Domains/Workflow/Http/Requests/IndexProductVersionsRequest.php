@@ -9,6 +9,7 @@ use RefactorCircus\Showroom\Domains\Product\Http\Requests\ProductRequest;
 use RefactorCircus\Showroom\Domains\Workflow\Actions\ListProductVersionsAction;
 use RefactorCircus\Showroom\Domains\Workflow\Data\ListProductVersionsData;
 use RefactorCircus\Showroom\Domains\Workflow\Resources\VersionSummaryResource;
+use RefactorCircus\Showroom\Support\RecordLookup;
 
 final class IndexProductVersionsRequest extends ProductRequest
 {
@@ -19,7 +20,7 @@ final class IndexProductVersionsRequest extends ProductRequest
 
     public function rules(): array
     {
-        return ListProductVersionsData::rules();
+        return [...ListProductVersionsData::rules(), ...RecordLookup::rules()];
     }
 
     public function persist(): JsonResponse

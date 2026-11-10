@@ -41,16 +41,36 @@
                 @endforeach
             </nav>
 
+            <x-atrium::card data-testid="owner-identity" :title="__('showroom::showroom.identifiers_and_flags')">
+                <div class="flex flex-col gap-4">
+                    <x-atrium::description-list>
+                        <x-atrium::description-list.item :term="__('showroom::showroom.slug')" class="font-mono" data-testid="owner-slug">{{ $owner->slug }}</x-atrium::description-list.item>
+                    </x-atrium::description-list>
+
+                    @include('showroom::ui.flags.effective', ['record' => $owner])
+                </div>
+            </x-atrium::card>
+
             @showroomCan('update', $owner)
             <x-atrium::card data-testid="owner-details-card" :title="__('showroom::showroom.details')">
-                <form method="POST" action="{{ route('atrium.showroom.owners.update', $owner) }}" class="flex flex-wrap items-start gap-3">
+                <form method="POST" action="{{ route('atrium.showroom.owners.update', $owner) }}" class="flex flex-col gap-4">
                     @csrf
                     @method('PATCH')
-                    <x-atrium::form.input :name="'labels['.$locale.']'" :label="__('showroom::showroom.label_field', ['locale' => $locale])" :value="$owner->labels[$locale] ?? null" wrapper="w-64" />
-                    <x-atrium::form.input name="parent" :label="__('showroom::showroom.parent')" :hint="__('showroom::showroom.move_hint')" :value="$owner->parent?->code" wrapper="w-56" />
-                    <x-atrium::form.actions>
+                    <div class="flex flex-wrap items-start gap-3">
+                        <x-atrium::form.input :name="'labels['.$locale.']'" :label="__('showroom::showroom.label_field', ['locale' => $locale])" :value="$owner->labels[$locale] ?? null" wrapper="w-64" />
+                        <x-atrium::form.input name="parent" :label="__('showroom::showroom.parent')" :hint="__('showroom::showroom.move_hint')" :value="$owner->parent?->code" wrapper="w-56" />
+                    </div>
+
+                    @include('showroom::ui.partials.external-ids', ['externalIds' => $owner->externalIds])
+
+                    {{-- Changing flags needs the flag policy's assign ability on top of update. --}}
+                    @if ($mayAssign)
+                        @include('showroom::ui.flags.own', ['record' => $owner])
+                    @endif
+
+                    <div>
                         <x-atrium::icon-button icon="check" :label="__('showroom::showroom.save')" variant="primary" type="submit" data-testid="save-owner" />
-                    </x-atrium::form.actions>
+                    </div>
                 </form>
             </x-atrium::card>
             @endshowroomCan

@@ -9,13 +9,16 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use RefactorCircus\Atrium\Domains\Screens\Services\ScreenExtensions;
+use RefactorCircus\Showroom\Atrium\FlagScreen;
 use RefactorCircus\Showroom\Atrium\Http\Controllers\Concerns\AuthorizesScreens;
 use RefactorCircus\Showroom\Atrium\Support\CategoryCodes;
 use RefactorCircus\Showroom\Atrium\Support\EditingSlot;
+use RefactorCircus\Showroom\Atrium\Support\ExternalIdForm;
 use RefactorCircus\Showroom\Atrium\Support\Screens;
 use RefactorCircus\Showroom\Atrium\Support\ValueForm;
 use RefactorCircus\Showroom\Domains\Attribute\Models\AttributeModel;
 use RefactorCircus\Showroom\Domains\Family\Models\FamilyModel;
+use RefactorCircus\Showroom\Domains\Flag\Enums\FlagSubject;
 use RefactorCircus\Showroom\Domains\Product\Actions\CreateProductAction;
 use RefactorCircus\Showroom\Domains\Product\Actions\DeleteProductAction;
 use RefactorCircus\Showroom\Domains\Product\Actions\ListProductsAction;
@@ -96,6 +99,7 @@ final class ProductUiController
         $this->authorizeScreen('view', $product);
 
         $product = app(ShowProductAction::class)->execute($product);
+        $mayAssign = FlagScreen::mayAssign($product, $request);
 
         /** @var view-string $view */
         $view = 'showroom::ui.products.show';
@@ -103,6 +107,8 @@ final class ProductUiController
         return view($view, [
             'resolved' => app(ScreenExtensions::class)->resolve(Screens::detail('showroom.product', $product, ProductModel::class), $request),
             'product' => $product,
+            'mayAssign' => $mayAssign,
+            'flagOptions' => $mayAssign ? FlagScreen::options(FlagSubject::Product) : collect(),
             'attributes' => $this->formAttributes($product, $request->query('add')),
             'slot' => EditingSlot::fromRequest($request),
             'inherited' => $product->inheritedValues(),
@@ -160,6 +166,19 @@ final class ProductUiController
 
         if ($request->has('enabled')) {
             $data['enabled'] = $request->boolean('enabled');
+        }
+
+        $externalIds = ExternalIdForm::fromForm($request);
+
+        if ($externalIds !== null) {
+            $data['external_ids'] = $externalIds;
+        }
+
+        // Sent only by those shown the own-flags field; the Action asks `assign` when they change.
+        $flags = FlagScreen::fromForm($request);
+
+        if ($flags !== null) {
+            $data['flags'] = $flags;
         }
 
         if (! $product->isVariant()) {

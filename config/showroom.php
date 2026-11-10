@@ -21,10 +21,14 @@ use RefactorCircus\Showroom\Domains\Channel\Models\ChannelModel;
 use RefactorCircus\Showroom\Domains\Channel\Models\LocaleModel;
 use RefactorCircus\Showroom\Domains\Channel\Policies\ChannelPolicy;
 use RefactorCircus\Showroom\Domains\Channel\Policies\LocalePolicy;
+use RefactorCircus\Showroom\Domains\ExternalId\Models\ExternalIdModel;
+use RefactorCircus\Showroom\Domains\ExternalId\Policies\ExternalIdPolicy;
 use RefactorCircus\Showroom\Domains\Family\Models\FamilyModel;
 use RefactorCircus\Showroom\Domains\Family\Models\FamilyVariantModel;
 use RefactorCircus\Showroom\Domains\Family\Policies\FamilyPolicy;
 use RefactorCircus\Showroom\Domains\Family\Policies\FamilyVariantPolicy;
+use RefactorCircus\Showroom\Domains\Flag\Models\FlagModel;
+use RefactorCircus\Showroom\Domains\Flag\Policies\FlagPolicy;
 use RefactorCircus\Showroom\Domains\Owner\Models\OwnerModel;
 use RefactorCircus\Showroom\Domains\Owner\Models\OwnerTypeModel;
 use RefactorCircus\Showroom\Domains\Owner\Policies\OwnerPolicy;
@@ -70,9 +74,16 @@ return [
     |
     | Records that belong to another follow its policy: an association its
     | source product or product model, a version and a completeness score
-    | their product (`view` for reading, `update` for changing), and the
-    | searchable product Scout indexes the product policy. Every model has an
-    | entry; remove one to leave that model without a policy.
+    | their product, an external id its product or owner (`view` for
+    | reading, `update` for changing), and the searchable product Scout
+    | indexes the product policy. Every model has an entry; remove one to
+    | leave that model without a policy.
+    |
+    | FlagPolicy also has an `assign` ability: who may change which flags a
+    | product or owner carries. It is checked on top of `update` on the
+    | record, and only when its flags change. Flags such as `restricted`
+    | carry down whole owner trees, so restrict `assign` to the people who
+    | set commercial terms.
     |
     */
 
@@ -86,6 +97,8 @@ return [
         ProductModel::class => ProductPolicy::class,
         OwnerTypeModel::class => OwnerTypePolicy::class,
         OwnerModel::class => OwnerPolicy::class,
+        ExternalIdModel::class => ExternalIdPolicy::class,
+        FlagModel::class => FlagPolicy::class,
         CategoryModel::class => CategoryPolicy::class,
         AssetModel::class => AssetPolicy::class,
         LocaleModel::class => LocalePolicy::class,
@@ -123,6 +136,9 @@ return [
         'owner_types' => 'showroom_owner_types',
         'owner_type_parents' => 'showroom_owner_type_parents',
         'owners' => 'showroom_owners',
+        'external_ids' => 'showroom_external_ids',
+        'flags' => 'showroom_flags',
+        'flag_assignments' => 'showroom_flag_assignments',
         'categories' => 'showroom_categories',
         'category_product' => 'showroom_category_product',
         'category_product_model' => 'showroom_category_product_model',
@@ -267,6 +283,50 @@ return [
     'workflow' => [
         'require_approval' => true,
         'require_complete' => false,
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Products
+    |--------------------------------------------------------------------------
+    |
+    | - `identifier_pattern`: the regular expression every new product
+    |   identifier (its SKU) must match, on top of being unique and at most
+    |   191 characters. The default takes real SKUs, spaces and `/`
+    |   included (`83AL-IC/40 4 RED ALUM`), and refuses an empty identifier,
+    |   leading or trailing whitespace and control characters. Set a
+    |   stricter pattern to hold SKUs to your own format; creating a product
+    |   that does not match then fails validation at `identifier`. A pattern
+    |   that does not compile throws, naming this key. Identifiers are never
+    |   part of a URL, so any character the pattern allows is safe.
+    |
+    */
+
+    'products' => [
+        'identifier_pattern' => '/^[^\s\p{C}](?:[^\p{C}]{0,189}[^\s\p{C}])?$/uD',
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Record Lookup
+    |--------------------------------------------------------------------------
+    |
+    | The key products and owners are found by in API and dashboard URLs,
+    | MCP tool arguments and the show, update, delete, transition, versions
+    | and revert actions. Each is "id" (the ULID, the default) or "slug".
+    | A single call can pick the other key with `?by=` over HTTP or a `by`
+    | tool argument. An identifier or owner code is never a lookup key; it
+    | stays an input reference (`parent`, `owner`, filters). Any other value
+    | throws when the app boots.
+    |
+    | "id" reveals nothing about the record; "slug" makes URLs readable but
+    | derives them from the identifier, owner label or code.
+    |
+    */
+
+    'lookup' => [
+        'products' => 'id',
+        'owners' => 'id',
     ],
 
     /*

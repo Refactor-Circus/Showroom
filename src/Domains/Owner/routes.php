@@ -12,8 +12,10 @@ Route::get('owner-types/{ownerType:code}', [OwnerTypeController::class, 'show'])
 Route::patch('owner-types/{ownerType:code}', [OwnerTypeController::class, 'update'])->name('owner-types.update');
 Route::delete('owner-types/{ownerType:code}', [OwnerTypeController::class, 'destroy'])->name('owner-types.destroy');
 
+// `{owner}` binds by the configured lookup key (`id` or `slug`), or a call's
+// `?by=`, through RecordLookup: never by code.
 Route::get('owners', [OwnerController::class, 'index'])->name('owners.index');
 Route::post('owners', [OwnerController::class, 'store'])->name('owners.store');
-Route::get('owners/{owner:code}', [OwnerController::class, 'show'])->name('owners.show');
-Route::patch('owners/{owner:code}', [OwnerController::class, 'update'])->name('owners.update');
-Route::delete('owners/{owner:code}', [OwnerController::class, 'destroy'])->name('owners.destroy');
+Route::get('owners/{owner}', [OwnerController::class, 'show'])->name('owners.show');
+Route::patch('owners/{owner}', [OwnerController::class, 'update'])->name('owners.update');
+Route::delete('owners/{owner}', [OwnerController::class, 'destroy'])->name('owners.destroy');

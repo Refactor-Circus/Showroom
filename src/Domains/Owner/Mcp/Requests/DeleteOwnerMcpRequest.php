@@ -7,6 +7,7 @@ namespace RefactorCircus\Showroom\Domains\Owner\Mcp\Requests;
 use Laravel\Mcp\Response;
 use Laravel\Mcp\ResponseFactory;
 use RefactorCircus\Showroom\Domains\Owner\Actions\DeleteOwnerAction;
+use RefactorCircus\Showroom\Support\RecordLookup;
 
 final class DeleteOwnerMcpRequest extends OwnerRequest
 {
@@ -19,6 +20,7 @@ final class DeleteOwnerMcpRequest extends OwnerRequest
     {
         return [
             'owner' => ['required', 'string', 'max:191'],
+            ...RecordLookup::rules(),
         ];
     }
 

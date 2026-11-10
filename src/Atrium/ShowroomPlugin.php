@@ -28,6 +28,7 @@ use RefactorCircus\Showroom\Atrium\Http\Controllers\CategoryUiController;
 use RefactorCircus\Showroom\Atrium\Http\Controllers\ChannelUiController;
 use RefactorCircus\Showroom\Atrium\Http\Controllers\FamilyUiController;
 use RefactorCircus\Showroom\Atrium\Http\Controllers\FamilyVariantUiController;
+use RefactorCircus\Showroom\Atrium\Http\Controllers\FlagUiController;
 use RefactorCircus\Showroom\Atrium\Http\Controllers\OwnerTypeUiController;
 use RefactorCircus\Showroom\Atrium\Http\Controllers\OwnerUiController;
 use RefactorCircus\Showroom\Atrium\Http\Controllers\ProductModelUiController;
@@ -122,11 +123,11 @@ class ShowroomPlugin extends Plugin
             Route::get('showroom/products', [ProductUiController::class, 'index'])->name('products.index');
             Route::get('showroom/products/create', [ProductUiController::class, 'create'])->name('products.create');
             Route::post('showroom/products', [ProductUiController::class, 'store'])->name('products.store');
-            Route::get('showroom/products/{product:identifier}', [ProductUiController::class, 'show'])->name('products.show');
-            Route::patch('showroom/products/{product:identifier}', [ProductUiController::class, 'update'])->name('products.update');
-            Route::delete('showroom/products/{product:identifier}', [ProductUiController::class, 'destroy'])->name('products.destroy');
-            Route::post('showroom/products/{product:identifier}/transitions', [ProductUiController::class, 'transition'])->name('products.transition');
-            Route::post('showroom/products/{product:identifier}/revert', [ProductUiController::class, 'revert'])->name('products.revert');
+            Route::get('showroom/products/{product}', [ProductUiController::class, 'show'])->name('products.show');
+            Route::patch('showroom/products/{product}', [ProductUiController::class, 'update'])->name('products.update');
+            Route::delete('showroom/products/{product}', [ProductUiController::class, 'destroy'])->name('products.destroy');
+            Route::post('showroom/products/{product}/transitions', [ProductUiController::class, 'transition'])->name('products.transition');
+            Route::post('showroom/products/{product}/revert', [ProductUiController::class, 'revert'])->name('products.revert');
 
             Route::get('showroom/product-models', [ProductModelUiController::class, 'index'])->name('product-models.index');
             Route::post('showroom/product-models', [ProductModelUiController::class, 'store'])->name('product-models.store');
@@ -175,9 +176,16 @@ class ShowroomPlugin extends Plugin
 
             Route::get('showroom/owners', [OwnerUiController::class, 'index'])->name('owners.index');
             Route::post('showroom/owners', [OwnerUiController::class, 'store'])->name('owners.store');
-            Route::get('showroom/owners/{owner:code}', [OwnerUiController::class, 'show'])->name('owners.show');
-            Route::patch('showroom/owners/{owner:code}', [OwnerUiController::class, 'update'])->name('owners.update');
-            Route::delete('showroom/owners/{owner:code}', [OwnerUiController::class, 'destroy'])->name('owners.destroy');
+            Route::get('showroom/owners/{owner}', [OwnerUiController::class, 'show'])->name('owners.show');
+            Route::patch('showroom/owners/{owner}', [OwnerUiController::class, 'update'])->name('owners.update');
+            Route::delete('showroom/owners/{owner}', [OwnerUiController::class, 'destroy'])->name('owners.destroy');
+
+            // Flags keep their code in the URL; products and owners take the lookup key.
+            Route::get('showroom/flags', [FlagUiController::class, 'index'])->name('flags.index');
+            Route::post('showroom/flags', [FlagUiController::class, 'store'])->name('flags.store');
+            Route::get('showroom/flags/{flag:code}', [FlagUiController::class, 'show'])->name('flags.show');
+            Route::patch('showroom/flags/{flag:code}', [FlagUiController::class, 'update'])->name('flags.update');
+            Route::delete('showroom/flags/{flag:code}', [FlagUiController::class, 'destroy'])->name('flags.destroy');
 
             Route::post('showroom/family-variants', [FamilyVariantUiController::class, 'store'])->name('family-variants.store');
             Route::get('showroom/family-variants/{familyVariant:code}', [FamilyVariantUiController::class, 'show'])->name('family-variants.show');

@@ -29,6 +29,20 @@ arch('code outside src/Atrium uses no Atrium class')
     ->not->toUse('RefactorCircus\Atrium')
     ->ignoring('RefactorCircus\Showroom\Atrium');
 
+// Impex is optional: core names none of its classes, so a core switch such
+// as ProductChangeCapture is read by src/Impex, never the other way round.
+// The Transfer domain and its Atrium screen start Impex runs and return them,
+// behind ImpexIntegration::active(), so they are the only two declared
+// exceptions (D-012); nothing else outside src/Impex may join them.
+arch('code outside src/Impex uses no Impex class')
+    ->expect('RefactorCircus\Showroom')
+    ->not->toUse('RefactorCircus\Impex')
+    ->ignoring([
+        'RefactorCircus\Showroom\Impex',
+        'RefactorCircus\Showroom\Domains\Transfer',
+        'RefactorCircus\Showroom\Atrium\Http\Controllers\TransferUiController',
+    ]);
+
 arch('models are final')
     ->expect(Arch::domainNamespaces('RefactorCircus\Showroom', SHOWROOM_DOMAINS, 'Models'))
     ->classes()

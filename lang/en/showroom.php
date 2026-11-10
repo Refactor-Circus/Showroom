@@ -337,6 +337,31 @@ return [
     'import_started' => 'Import started.',
     'export_started' => 'Export started.',
 
+    // Flags
+    'flag_definitions' => 'Flags',
+    'flags_description' => 'Commercial markers - restricted, pricing only, clearance - that products and owners carry. An owner\'s flags reach everything beneath it.',
+    'new_flag' => 'New flag',
+    'no_flags' => 'No flags yet.',
+    'applies_to' => 'Applies to',
+    'flag_subject_product' => 'Products',
+    'flag_subject_owner' => 'Owners',
+    'flag_delete_note' => 'A flag still assigned to a product or owner cannot be deleted; remove it from them first.',
+    'flag_created' => 'Flag created.',
+    'flag_updated' => 'Flag saved.',
+    'flag_deleted' => 'Flag deleted.',
+    'own_flags' => 'Own flags',
+    'effective_flags' => 'Effective flags',
+
+    // Identifiers
+    'identifiers_and_flags' => 'Identifiers and flags',
+    'slug' => 'Slug',
+    'external_ids' => 'External ids',
+    'external_source' => 'New source',
+    'external_source_hint' => 'Lowercase letters, digits, dashes and underscores, such as erp.',
+    'external_id' => 'Id in that source',
+    'external_synced' => 'Synced :time',
+    'external_never_synced' => 'Never synced',
+
     // Shared
     'none' => '—',
 

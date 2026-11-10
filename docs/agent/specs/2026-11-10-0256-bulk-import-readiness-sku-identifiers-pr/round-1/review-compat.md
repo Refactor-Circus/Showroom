@@ -1,0 +1,3 @@
+VERDICT: PASS
+
+Compat review, round 1. Every public break in the diff is settled by the spec or decisions.md and is listed in CHANGELOG.md under Breaking: id lookup replacing identifier/code routes (D-001, D-010), read-only slug/effective_flags/external_ids_synced_at keys, ImportProductRow and its row events replaced by chunk events (spec Impex integration), new migrations and Scout settings, and the looser default identifier pattern. New config keys (products, lookup, tables, policies) have in-code fallbacks for published configs, and the global product/owner binders only act on Showroom controllers. No findings.

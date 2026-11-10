@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace RefactorCircus\Showroom;
 
+use Illuminate\Http\Request;
+use Illuminate\Routing\Route;
+use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\Blade;
 use RefactorCircus\Keystone\Packages\Package;
 use RefactorCircus\Keystone\Support\PackageServiceProvider;
@@ -12,6 +15,7 @@ use RefactorCircus\Showroom\Atrium\ShowroomPlugin;
 use RefactorCircus\Showroom\Domains\DomainServiceProvider;
 use RefactorCircus\Showroom\Impex\ImpexIntegration;
 use RefactorCircus\Showroom\Mcp\ShowroomServer;
+use RefactorCircus\Showroom\Support\RecordLookup;
 
 class ShowroomServiceProvider extends PackageServiceProvider
 {
@@ -47,6 +51,11 @@ class ShowroomServiceProvider extends PackageServiceProvider
      */
     public function boot(): void
     {
+        // A lookup key that is neither `id` nor `slug` fails here, not on the first request.
+        $this->app->make(RecordLookup::class)->assertConfigured();
+
+        $this->registerRecordBindings();
+
         // Cortex is optional: agents get the Showroom tools only when it is loaded.
         $this->registerCortex();
 
@@ -92,5 +101,31 @@ class ShowroomServiceProvider extends PackageServiceProvider
         $this->publishesMigrations([
             __DIR__.'/../database/migrations' => database_path('migrations'),
         ], ['showroom', 'showroom-migrations']);
+    }
+
+    /**
+     * Bind `{product}` and `{owner}` on Showroom's routes (API and dashboard)
+     * through RecordLookup: by the configured key, or the key the request
+     * asks for with `?by=`. The binding runs before the request is
+     * validated, so an invalid `by` answers 422 here, before the action.
+     *
+     * A host route with a parameter of the same name is left to Laravel's
+     * own binding.
+     */
+    private function registerRecordBindings(): void
+    {
+        $router = $this->app->make(Router::class);
+
+        foreach (['product' => 'products', 'owner' => 'owners'] as $parameter => $subject) {
+            $router->bind($parameter, function (string $value, Route $route) use ($subject): mixed {
+                if (! str_starts_with((string) $route->getControllerClass(), __NAMESPACE__.'\\')) {
+                    return $value;
+                }
+
+                $by = RecordLookup::by($this->app->make(Request::class)->query('by'));
+
+                return $this->app->make(RecordLookup::class)->resolve($subject, $value, $by);
+            });
+        }
     }
 }

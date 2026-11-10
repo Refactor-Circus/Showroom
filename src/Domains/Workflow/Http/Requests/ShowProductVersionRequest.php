@@ -8,12 +8,18 @@ use Illuminate\Http\JsonResponse;
 use RefactorCircus\Showroom\Domains\Product\Http\Requests\ProductRequest;
 use RefactorCircus\Showroom\Domains\Workflow\Actions\ShowProductVersionAction;
 use RefactorCircus\Showroom\Domains\Workflow\Resources\VersionResource;
+use RefactorCircus\Showroom\Support\RecordLookup;
 
 final class ShowProductVersionRequest extends ProductRequest
 {
     public function authorize(): bool
     {
         return $this->allows('view', $this->product());
+    }
+
+    public function rules(): array
+    {
+        return RecordLookup::rules();
     }
 
     public function persist(): JsonResponse

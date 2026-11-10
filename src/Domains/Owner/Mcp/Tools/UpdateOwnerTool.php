@@ -11,6 +11,7 @@ use Laravel\Mcp\Server\Attributes\Description;
 use RefactorCircus\Keystone\Mcp\Tool;
 use RefactorCircus\Showroom\Domains\Owner\Mcp\Requests\UpdateOwnerMcpRequest;
 use RefactorCircus\Showroom\Domains\Owner\Resources\OwnerResource;
+use RefactorCircus\Showroom\Support\LookupKey;
 
 #[Description('Update an owner\'s labels, or move it under another parent with everything beneath it. The code and type cannot change.')]
 final class UpdateOwnerTool extends Tool
@@ -23,7 +24,8 @@ final class UpdateOwnerTool extends Tool
     public function schema(JsonSchema $schema): array
     {
         return [
-            'owner' => $schema->string()->description('The owner code.')->required(),
+            'owner' => $schema->string()->description('The owner\'s id, or its slug when showroom.lookup.owners is slug or by is slug. Never its code.')->required(),
+            'by' => $schema->string()->enum(array_column(LookupKey::cases(), 'value'))->description('Find the owner by this key instead of the configured one: id or slug.'),
             'parent' => $schema->string()->description('Code of the parent owner, or null for a root owner. On update, moves the owner with everything beneath it.'),
             'labels' => $schema->object()->description('Labels keyed by locale. Replaces all labels when given.'),
         ];

@@ -11,6 +11,8 @@ use RefactorCircus\Keystone\Http\Resources\JsonResource;
 use RefactorCircus\Showroom\Domains\Asset\Resources\LinkedAssets;
 use RefactorCircus\Showroom\Domains\Association\Services\Associations;
 use RefactorCircus\Showroom\Domains\Attribute\Services\Values;
+use RefactorCircus\Showroom\Domains\ExternalId\Services\ExternalIds;
+use RefactorCircus\Showroom\Domains\Flag\Models\FlagModel;
 use RefactorCircus\Showroom\Domains\Product\Enums\ProductStatus;
 use RefactorCircus\Showroom\Domains\Product\Models\ProductModel;
 use RefactorCircus\Showroom\Domains\Workflow\Models\CompletenessModel;
@@ -28,6 +30,7 @@ final class ProductResource extends JsonResource
         return [
             'id' => $schema->string()->description('ULID.')->required(),
             'identifier' => $schema->string()->required(),
+            'slug' => $schema->string()->description('URL-safe, unique and never changed; set from the identifier when the product is created. Read-only.')->required(),
             'family' => $schema->string()->nullable()->description('Family code, when loaded.'),
             'parent' => $schema->string()->nullable()->description('Parent product model code, when loaded.'),
             'owner' => $schema->string()->nullable()->required(),
@@ -48,6 +51,10 @@ final class ProductResource extends JsonResource
             'values' => $schema->object()->description('Slots keyed by attribute code: [{locale, scope, data}].')->required(),
             'associations' => $schema->object()->description('Per type code: {products, product_models}, when loaded.'),
             'quantified_associations' => $schema->object()->description('Per type code: {products, product_models} of {identifier, quantity}, when loaded.'),
+            'external_ids' => $schema->object()->description('The product\'s ids in other systems, {source: id}, when loaded. An empty map is {}.'),
+            'external_ids_synced_at' => $schema->object()->description('When each source last synced its id, {source: ISO-8601 timestamp|null}, when loaded. An empty map is {}. Read-only.'),
+            'flags' => $schema->array()->items($schema->string())->description('Codes of the flags assigned to the product itself, in flag order, when loaded.'),
+            'effective_flags' => $schema->array()->items($schema->string())->description('Its own flags plus every flag of its owner chain (a variant\'s root model\'s owner), in flag order, when loaded. Read-only.'),
             'created_at' => $schema->string()->nullable()->required(),
             'updated_at' => $schema->string()->nullable()->required(),
             'changed_at' => $schema->string()->nullable()->required(),
@@ -75,11 +82,15 @@ final class ProductResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
+        // Set by Flags::load(); absent when it has not run.
+        $effectiveFlags = $this->resource->loadedEffectiveFlags()?->map(fn (FlagModel $flag): string => $flag->code)->values()->all();
+
         $associations = $this->relationLoaded('associations') ? app(Associations::class)->present($this->resource) : null;
 
         return [
             'id' => $this->id,
             'identifier' => $this->identifier,
+            'slug' => $this->slug,
             'family' => $this->whenLoaded('family', fn (): ?string => $this->family?->code),
             'parent' => $this->whenLoaded('parent', fn (): ?string => $this->parent?->code),
             // A variant's owner is its root model's.
@@ -112,6 +123,12 @@ final class ProductResource extends JsonResource
             // Own and inherited from product models.
             'associations' => $this->when($associations !== null, fn (): array => $associations['associations'] ?? []),
             'quantified_associations' => $this->when($associations !== null, fn (): array => $associations['quantified_associations'] ?? []),
+            // An object even when empty, so clients always read a map.
+            'external_ids' => $this->whenLoaded('externalIds', fn (): object => (object) ExternalIds::present($this->externalIds)),
+            'external_ids_synced_at' => $this->whenLoaded('externalIds', fn (): object => (object) ExternalIds::syncedAt($this->externalIds)),
+            'flags' => $this->whenLoaded('flags', fn (): array => $this->flags->map(fn (FlagModel $flag): string => $flag->code)->values()->all()),
+            // Own plus inherited from the owner chain; a product cannot drop one.
+            'effective_flags' => $this->when($effectiveFlags !== null, $effectiveFlags),
             'created_at' => $this->created_at?->toIso8601String(),
             'updated_at' => $this->updated_at?->toIso8601String(),
             // When anything the product shows last changed, inherited

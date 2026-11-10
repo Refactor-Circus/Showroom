@@ -5,8 +5,8 @@ Publish with `php artisan vendor:publish --tag="showroom-config"`.
 | Key | Default | Meaning |
 |---|---|---|
 | `authorization` | `true` | Require an authenticated user on the API, MCP and Atrium screens, and check every call against `policies`; the screens show only what the user may use |
-| `policies` | bundled policies | Model ⇒ policy class used by the Gate; every model has one, and associations, versions, completeness scores and searchable products follow their product's |
-| `tables.*` | `showroom_*` | The table each record lives in, by key (`products`, `product_models`, `categories`, ...). Set before migrating; keys left out keep their default |
+| `policies` | bundled policies | Model ⇒ policy class used by the Gate; every model has one, and associations, versions, completeness scores and searchable products follow their product's, external ids their product's or owner's. `FlagPolicy`'s `assign` ability decides who may change a product's or owner's flags; see [Flags](14-flags.md) |
+| `tables.*` | `showroom_*` | The table each record lives in, by key (`products`, `product_models`, `categories`, `external_ids`, `flags`, `flag_assignments`, ...). Set before migrating; keys left out keep their default |
 | `routes.enabled` | `true` | Register the HTTP API |
 | `routes.prefix` | `showroom` | API path prefix |
 | `routes.middleware` | `['api']` | API middleware. Add authentication. |
@@ -23,11 +23,14 @@ Publish with `php artisan vendor:publish --tag="showroom-config"`.
 | `atrium.widget_cache_seconds` | `60` | How long the dashboard's completeness widget keeps its figures; `0` reads them fresh on every render |
 | `workflow.require_approval` | `true` | Publish only approved products |
 | `workflow.require_complete` | `false` | Submit only products 100% complete on every channel and locale |
+| `products.identifier_pattern` | `/^[^\s\p{C}](?:[^\p{C}]{0,189}[^\s\p{C}])?$/uD` | The regular expression a new product's `identifier` must match, on top of unique and at most 191 characters. The default takes any SKU, spaces and `/` included, and refuses an empty one, leading or trailing whitespace and control characters. A stricter pattern fails non-matching products at `identifier`; one that doesn't compile throws |
+| `lookup.products` | `id` | The key products are found by in API and Atrium URLs, MCP `product` arguments and the show, update, delete, transition, versions and revert actions: `id` (the ULID) or `slug`. `?by=` or a `by` tool argument overrides it for one call. Any other value throws at boot |
+| `lookup.owners` | `id` | The same for owners: `id` or `slug` |
 | `audit.enabled` | `true` | With refactor-circus/keen installed, record Showroom's changes and offer its history; `false` keeps Showroom out of the audit log |
 | `impex.enabled` | `true` | Register the Impex flows when refactor-circus/impex is installed |
-| `impex.chunk` | `500` | Import rows per batch chunk |
+| `impex.chunk` | `500` | Records per chunk of an import or upsert run; each chunk is one `UpsertProductsAction` call |
 | `impex.allow_failures` | `1.0` | Share of import rows that may fail before the run fails |
-| `impex.tries` | `1` | Attempts per import row |
+| `impex.tries` | `1` | Attempts per import chunk |
 | `impex.export_page_size` | `500` | Products per export page |
 | `impex.export_path` | `showroom/exports` | Folder export files are written under, on the media disk |
 | `impex.feeds` | `[]` | Syndication feeds: `channel`, `format`, `url`, `ledger_channel`, `deliver_through` (an Impex outbound channel to send the file through instead of `POST`ing it to `url`) |

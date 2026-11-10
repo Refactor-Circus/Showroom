@@ -4,6 +4,10 @@
 <x-atrium::layout :title="__('showroom::showroom.products')">
     <x-atrium::page-header :title="__('showroom::showroom.products')">
         <x-slot:actions>
+            @showroomCan('viewAny', \RefactorCircus\Showroom\Domains\Flag\Models\FlagModel::class)
+                <x-atrium::icon-button icon="flag" :label="__('showroom::showroom.flag_definitions')" variant="outline" :href="route('atrium.showroom.flags.index')" data-testid="flag-definitions" />
+            @endshowroomCan
+
             @showroomCan('create', ProductModel::class)
                 <x-atrium::icon-button icon="plus" :label="__('showroom::showroom.new_product')" variant="primary" :href="route('atrium.showroom.products.create')" data-testid="new-product" />
             @endshowroomCan

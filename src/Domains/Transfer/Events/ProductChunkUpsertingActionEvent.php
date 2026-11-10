@@ -10,15 +10,16 @@ use RefactorCircus\Keystone\Contracts\ActionStartingEvent;
 use RefactorCircus\Keystone\Contracts\UnauditedActionEvent;
 
 /**
- * One imported product row is about to be written.
+ * One chunk of an import or upsert run is about to be written. `start` is
+ * the source row of its first record.
  */
-final class ProductRowImportingActionEvent implements ActionStartingEvent, UnauditedActionEvent
+final class ProductChunkUpsertingActionEvent implements ActionStartingEvent, UnauditedActionEvent
 {
     use Dispatchable;
     use SerializesModels;
 
     public function __construct(
-        /** @var array{mode?: string, record?: array<string, mixed>} */
-        public array $item,
+        /** @var array{mode?: string, capture_changes?: bool, start?: int, records?: list<mixed>} */
+        public array $chunk,
     ) {}
 }

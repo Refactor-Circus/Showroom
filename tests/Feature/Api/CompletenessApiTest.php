@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use RefactorCircus\Showroom\Domains\Product\Models\ProductModel;
 use RefactorCircus\Showroom\Tests\Fixtures\Catalog;
 
 beforeEach(function (): void {
@@ -32,11 +33,19 @@ function variantAttributes(?string $except = null): array
 }
 
 /**
+ * The API path of a product, addressed by its `id` as routes bind it.
+ */
+function completenessProductPath(string $identifier): string
+{
+    return '/showroom/products/'.ProductModel::query()->where('identifier', $identifier)->value('id');
+}
+
+/**
  * @return array<string, int>
  */
 function ratios(string $identifier): array
 {
-    return collect(test()->getJson('/showroom/products/'.$identifier)->assertOk()->json('data.completeness'))
+    return collect(test()->getJson(completenessProductPath($identifier))->assertOk()->json('data.completeness'))
         ->mapWithKeys(fn (array $score): array => [$score['scope'].'/'.$score['locale'] => $score['ratio']])
         ->all();
 }
@@ -48,9 +57,9 @@ it('scores each channel and locale', function (): void {
 
     expect(ratios('TEE'))->toBe(['ecommerce/en' => 50, 'ecommerce/fr' => 0, 'print/en' => 0]);
 
-    $this->getJson('/showroom/products/TEE')->assertJsonPath('data.completeness.1.missing_attributes', ['name', 'copy']);
+    $this->getJson(completenessProductPath('TEE'))->assertJsonPath('data.completeness.1.missing_attributes', ['name', 'copy']);
 
-    $this->patchJson('/showroom/products/TEE', ['values' => ['name' => Catalog::value('Classic tee')]])->assertOk();
+    $this->patchJson(completenessProductPath('TEE'), ['values' => ['name' => Catalog::value('Classic tee')]])->assertOk();
 
     expect(ratios('TEE'))->toBe(['ecommerce/en' => 100, 'ecommerce/fr' => 50, 'print/en' => 100]);
 });
