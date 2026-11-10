@@ -15,3 +15,11 @@ Changed in spec.md:
 - Risks: `OwnerWriter` `@internal`, actions stay `final` with same constructors.
 
 Left alone because the open questions depend on them: absent-field semantics on update, duplicate codes / matched owners within a batch, per-record create/update authorization, concurrency between preload and write, and `skipped` reporting and counting (including the exact `total` identity). Findings that required deciding these were not applied and stay listed under Risks.
+
+## Pass 1: recheck of D-001 to D-006
+
+All six decisions landed. Fixed the four gaps the recheck found:
+- 2a: the first record to use a code or matched external id claims it, whatever its outcome; later ones fail with `code`, write nothing, and never become in-batch parents. Tests for each case.
+- 5 and 11: absent fields are left out of the unchanged comparison, and `parent: null` compares as the root. Tests for both, plus an absent-field parity dataset.
+- 13 and Design: `succeeded = total - failed`, with unchanged and skipped rows counted inside it, as `ProductChunkSummary` does. `skipped` is listed as a result field.
+- 7: `assign` applies when flags are set or changed, on create or update.
