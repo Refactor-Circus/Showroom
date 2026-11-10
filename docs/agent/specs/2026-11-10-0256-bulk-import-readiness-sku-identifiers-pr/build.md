@@ -377,6 +377,151 @@ This retry re-checked 7.1 to 7.3 against branch head df773b8. Nothing in `src/` 
 - **Tests:** `tests/Feature/FlagAssignmentTest.php`, `tests/Feature/FlagActionsTest.php` and `tests/Feature/Api/FlagApiTest.php` all pass: 57 tests, 352 assertions. I didn't run the full suite; the gate runs it.
 - **Deviations:** none new. See "Group 7" above.
 
+## Group 12
+
+Flag search and owner reindex (AC 22, 23, 34). Commit 24cf1d4 on `ring-master/2026-11-10-0256-bulk-import-readiness-sku-identifiers-pr--g12`, resumed from checkpoint 4d664b3.
+
+**What the checkpoint already had** (checked against AC 22, 23 and 34, kept as is):
+
+- `ProductDocument` writes `flags` as the normalized effective codes, with one `Flags::effective()` query per batch.
+- `flags[]` on `ListProductsData` → `ProductQuery`:
+  - `DatabaseEngine` matches an own assignment, or the product's owner, level-1 or level-2 owner in `Flags::ownersInheriting()`.
+  - `ScoutEngine` adds one `where('flags', ProductDocument::flag($code))` per code, which the engine quotes.
+- `flags[]` on `ListOwnersData`. `ListOwnersAction` filters on `ownersInheriting()` per code.
+- `UpdateOwnerAction` calls `queueWithin(SyncScope::Owner, …)` once for a move, a flag change or both, and not for an unchanged set.
+- `ScoutEngine::indexSettings()` lists `slug`, `external_ids`, `flags` and `owner_slugs`.
+- `PerformanceTest`: the document batch bound is 5 queries.
+
+**Files changed**
+
+- `tests/Feature/Search/FlagSearchTest.php`: a new AC 23 test on the Scout engine, through HTTP, with `QueueProductSyncs` faked:
+  - A flag change on `acme` queues one `Owner` sync for `acme`. The index stays stale until the queued job runs, then `INHERITED` gains `restricted`.
+  - The same flags in another order queue nothing.
+  - Moving `acme-tools` queues a second sync for it. After the sync, `pricing_only` matches nothing, including the grandchild owner's product and the variant.
+- `src/Domains/Search/Services/DatabaseEngine.php`: `Flags` is resolved once before the loop over codes instead of once per code.
+
+**Tests**
+
+- `tests/Feature/Search/FlagSearchTest.php`: 18 passed, 299 assertions. This covers:
+  - the shared dataset on both engines (own, inherited at any depth, root-model-owner variant, several flags ANDed, an unknown flag)
+  - the flag change and move followed on both engines
+  - the owner listing
+  - normalized and quoted Scout filters
+  - the index settings
+- `tests/Feature/Search` as a whole: 42 of 44 pass. The two failures are `ScoutEngineTest` calling product URLs by identifier, which now answer `404` (group 4, AC 8). That file belongs to group 13.
+- Pint is clean on both changed files. PHPStan (project config) is clean on `DatabaseEngine.php`; tests aren't in its paths.
+
+**Deviations**
+
+- None. `PerformanceTest` still has identifier and code URLs (for example `PATCH /showroom/owners/acme-tools`). I left them for group 13, whose task is to move those tests to `id`.
+
+## Group 10 (salvaged)
+
+Atrium screens (AC 40, 41). Commit a3862e6 on `ring-master/2026-11-10-0256-bulk-import-readiness-sku-identifiers-pr--g10`.
+
+**What I found**
+
+- No `index.lock`, and no merge or rebase in progress. Nothing for group 10 had been committed.
+- The build agent had left the whole group uncommitted, and it was complete:
+  - Flag-definitions screen:
+    - `Atrium/FlagScreen` declares `showroom.flags` (list) and `showroom.flag` (detail) on the screen registry. It also provides the own-flags field: `options()` (flags whose `applies_to` includes the subject), `mayAssign()` (`assign` asked with the record) and `fromForm()` (only when the hidden `flags_sent` marker was sent).
+    - `FlagUiController` runs the five flag Actions.
+    - `ShowroomPlugin` adds the `flags.*` routes, bound by `{flag:code}`.
+    - Views `ui/flags/{index,show,fields}`. `code` is read-only on edit. A refused delete or `applies_to` narrowing shows the Action's message through `x-atrium::flash`.
+    - The products and owners lists link to the screen.
+  - Product and owner screens:
+    - A read-only `slug`.
+    - An `external_ids` map editor: one input per system (an empty value removes it), plus a new system and id.
+    - The own-flags checkboxes, shown only with `assign`.
+    - Read-only `effective_flags`, each marked `data-inherited`.
+    - Partials `ui/flags/{own,effective}` and `ui/partials/external-ids`.
+    - `ProductUiController` and `OwnerUiController` pass `mayAssign` and `flagOptions`, and map the form to `external_ids` and `flags`.
+  - Tests:
+    - `FlagPagesTest`: list, create, edit and delete; `code` refused on edit; the delete and narrowing refusal messages; the screen keys; the list links.
+    - `ProductPagesTest` and `OwnerPagesTest`:
+      - slug read-only
+      - external-id change, add and remove, plus a held id and a malformed system refused
+      - own flags limited by `applies_to`, ticked, replaced and cleared, and left alone when not sent
+      - effective flags with inherited ones marked
+      - the missing-`assign` case: the field is hidden, the rest of the page still saves, and a flag change gets 403
+      - links by `id` by default and by `slug` when configured
+    - Older tests in these two files now address records by `id`.
+
+**What I committed**
+
+- Everything above, unchanged.
+- Pint is clean on every changed PHP file. PHPStan (project config) is clean on the six changed `src/Atrium` files.
+- Targeted run, not the suite:
+  - `FlagPagesTest`, `ProductPagesTest`, `OwnerPagesTest`, `StylesTest` and `DocsTest` pass: 69 tests, 297 assertions.
+  - `ScreenExtensionsTest`: 113 of 128 pass, including the new `flags` and `flag` rows. The 15 failures are all product and owner URLs built from `TEE-1` or `acme` (404 under group 4's `id` binding), or list links expected by identifier or code. None comes from this group's code.
+
+**What is left**
+
+- 10.3: the full `vendor/bin/pest` run, for the gate.
+- The 15 `ScreenExtensionsTest` identifier and code URL failures need the group 13 treatment. That file is not in group 13's list, so whoever runs group 13 or the fix round should add it.
+
+**Deviations**
+
+- Files outside the group's list, committed because the listed files need them:
+  - `src/Atrium/Support/ExternalIdForm.php` (new): turns the map editor's form into the `external_ids` map. Both UI controllers use it.
+  - `resources/views/ui/partials/external-ids.blade.php` (new): the map editor, shared by the product and owner screens.
+  - `lang/en/showroom.php`: the flag, slug and external-id strings.
+  - `README.md`, `tests/Feature/DocsTest.php` and `tests/Feature/Ui/ScreenExtensionsTest.php`: the two new screen keys. `docs/agent/standards/showroom/atrium-screens.md` requires these rows for a new page. `AGENTS.md` and that standard now say 27 keys instead of 25.
+  - `tests/Pest.php`: the five flag actions are removed from `PARITY_EXCEPTIONS`, as group 6's notes asked once the flag screen shipped.
+
+## Group 8 (salvaged)
+
+Batch upsert action (AC 25–29, 35–39). Commit c21d01e on `ring-master/2026-11-10-0256-bulk-import-readiness-sku-identifiers-pr--g8`.
+
+**What I found**
+
+- No `index.lock`, and no merge or rebase in progress. Nothing for group 8 had been committed.
+- The build agent had left the whole group uncommitted, and it was complete:
+  - `UpsertProductsData` (`records`, `mode`, `match`, `captureChanges`), `UpsertProductsResult` (`created`, `updated`, `unchanged`, `skipped`, `failures`, `failed()`), the `UpsertMode` enum and the `ProductsUpserting`/`ProductsUpserted` action-event pair.
+  - `ProductChangeCapture`, bound scoped in `ProductServiceProvider`. `suppress()` restores the previous state in a `finally`.
+  - `BulkProductWriter`:
+    - `takes()` accepts a new product with no parent and no associations.
+    - `prepare()` checks the batch with a few queries: family, owner (`owns_products`), values against the family, external ids and unique values held in storage or earlier in the batch. It builds the rows: product, slug (`Slugs::forMany`), categories, external ids, flag assignments, unique values and the `created` version.
+    - `store()` inserts them in one transaction and queues the index sync.
+  - `UpsertProductsAction`:
+    - It matches records by identifier or `external_ids[match]`, under `KeyNormalizer`, loading the matched products in one query.
+    - It validates each record against `CreateProductData` or `UpdateProductData` rules, and asks `assign` when the flags change.
+    - The preview compares every sent field. Equal records count as `unchanged`.
+    - New simple records are written in bulk, falling back to `CreateProductAction` one by one when the bulk write throws. Every other record goes through `CreateProductAction` or `UpdateProductAction`.
+    - All of it runs inside `ProductIndex::deferring()`, and inside `ProductChangeCapture::suppress()` when `captureChanges` is false.
+  - Tests:
+    - `UpsertProductsActionTest`: modes, matching by identifier and by system, a case-only match on `NOCASE` columns, in-batch duplicates, per-record failures by index/identifier/errors, read-only keys, domain guards, the unchanged preview (rows, `updated_at`, versions, sync job, action and `saved` events), every sent-field category making a record `updated`, version counts, approved → draft, one index sync per batch, `assign` refusals, the event pair, and suppression.
+    - `UpsertProductsParityTest`: bulk path vs `CreateProductAction` across products, slug, categories, external ids, flags, unique values and the `created` version; a mixed chunk; a forced bulk-insert failure that falls back to the same result and rows.
+    - `UpsertProductsPerformanceTest`: unchanged batches of 10 and 100 within 40 queries, and new batches within 60 and under 100 at 100 records.
+    - `ProductChangeCaptureTest`: set inside, restored after, restored on throw, nested, and not leaking past `forgetScopedInstances()`.
+
+**What I committed**
+
+- Everything above, with these fixes:
+  - `UpsertProductsAction`: the private `upsert()` method is renamed `writeBatch()`. `ArchTest`'s "actions write inside a transaction" rule matches `->upsert(` as a write, but the action writes nothing itself: `BulkProductWriter` and the per-record actions each use their own transaction.
+  - `UpsertProductsAction::failWith()`: the `ModelNotFoundException<Model>` generic in its docblock (PHPStan `missingType.generics`).
+  - `BulkProductWriter::prepare()`: its return description moved into the summary, so Pint's `phpdoc_align` is stable.
+  - `BatchPresenceVerifier::getCount()`: `$value` is documented as `mixed` (PHPStan `function.alreadyNarrowedType`).
+- Pint is clean and PHPStan (project config) passes on every changed source file.
+- Targeted run, not the suite: the four group test files, `EventsTest` and `ArchTest` pass, 69 tests and 574 assertions. `FlagAssignmentTest`, `FlagActionsTest`, `ExternalIdsTest`, `SlugsTest`, `ProductIdentifierTest` and `AttributeApiTest` also pass with the shared-service changes below. `ProductApiTest` has 7 failures, all `GET`/`PATCH /showroom/products/{identifier}` answering 404, which belong to group 13.
+
+**What is left**
+
+- 8.3: the full `vendor/bin/pest` run, for the gate. It will still hit the identifier-URL 404s that group 13 owns.
+
+**Deviations**
+
+- Files outside the group's list, committed because the listed files need them. The build agent wrote all of them for this group:
+  - `src/Support/BatchPresenceVerifier.php` (new): answers the batch's `exists` and `unique` rules from one query per column, so validation doesn't cost a query per record (AC 27, 29). The action doesn't load without it.
+  - `src/Domains/Attribute/Services/ValueValidator.php`: it keeps the attributes, locales and channels it has read, so one instance reused across a batch reads each once. It is not bound in the container, so every `app(ValueValidator::class)` is still a fresh instance.
+  - `src/Domains/Flag/Services/Flags.php` (group 7's file): `rules()` reads each flag code once per set of rules, so a batch's flag checks don't run a query per record.
+  - `tests/Feature/EventsTest.php`: 82 → 83 actions.
+  - `tests/Pest.php`: `UpsertProductsAction` in `PARITY_EXCEPTIONS` for `http`, `mcp` and `ui`. The spec puts HTTP and MCP endpoints for the batch upsert out of scope.
+- `BulkProductWriter` mirrors `CreateProductAction`'s write step but doesn't share code with it. `CreateProductAction` isn't in this group's files, and the bulk path builds rows for many products at once, where the action saves one model. `UpsertProductsParityTest` holds the two to identical rows (AC 38), as the spec's risk section asks.
+- For integration:
+  - `tests/Pest.php` is also changed by group 10, which removed the flag lines from `PARITY_EXCEPTIONS` right below the line this group adds. Expect a small merge conflict there. Keep both changes.
+  - `EventsTest`'s action count needs summing at merge if another group adds an action.
+
 ## Group 8
 
 This retry covers task 8.3. The code and tests for 8.1 and 8.2 are in commit c21d01e ("group 8 Batch upsert action (salvaged)"). This commit ticks 8.1 to 8.3 and adds this note. No source or test files changed. `php -l` is clean on the action, the bulk writer and the batch presence verifier. Per the job instructions I didn't run the suite; the gate runs `vendor/bin/pest`.
@@ -410,3 +555,26 @@ This retry covers task 8.3. The code and tests for 8.1 and 8.2 are in commit c21
   - `src/Domains/Flag/Services/Flags.php`: `rules()` reads each flag code once per rule set, for the same reason.
   - `tests/Feature/EventsTest.php`: the pinned action count goes from 82 to 83. Other groups that add actions need to add up their counts at merge.
   - `tests/Pest.php`: adds `UpsertProductsAction` to `PARITY_EXCEPTIONS` for `http`, `mcp` and `ui`. The spec puts HTTP and MCP endpoints for the batch upsert out of scope.
+
+## Group 10
+
+Atrium screens (AC 40, 41), retry for task 10.3. The work is commit a3862e6 on `ring-master/2026-11-10-0256-bulk-import-readiness-sku-identifiers-pr--g10`. See "Group 10 (salvaged)" above for what it contains.
+
+- **Files:** none changed in this retry. The worktree was clean at a3862e6. I checked that its tests cover every 10.1 item (the flag-definitions CRUD and refusal messages, a read-only slug, the external_ids map editor, own flags limited by `applies_to` and hidden without `assign`, effective flags with inherited ones marked, and links by the configured lookup key) and that they're backed by the 10.2 code.
+- **Tests:** Pint `--test` passes on `src/Atrium`, `tests/Feature/Ui`, `tests/Pest.php`, `tests/Feature/DocsTest.php` and `lang`. As instructed, I didn't run the suite myself (10.3); the gate runs `vendor/bin/pest`. Expect these failures, which group 13 or the fix round should clear: the 15 `ScreenExtensionsTest` rows that still build product and owner URLs from an identifier or code (they get 404 under group 4's `id` binding).
+- **Deviations:** none new. The out-of-list files are listed under "Group 10 (salvaged)": `src/Atrium/Support/ExternalIdForm.php`, `resources/views/ui/partials/external-ids.blade.php`, `lang/en/showroom.php`, `README.md`, `AGENTS.md`, `docs/agent/standards/showroom/atrium-screens.md`, `tests/Feature/DocsTest.php`, `tests/Feature/Ui/ScreenExtensionsTest.php` and `tests/Pest.php`.
+
+## Group 12 (retry)
+
+Flag search and owner reindex (AC 22, 23, 34). This retry checked commit 24cf1d4 on `ring-master/2026-11-10-0256-bulk-import-readiness-sku-identifiers-pr--g12`. The worktree was clean. See "Group 12" above for what that commit contains.
+
+- **Files:** none changed in this retry. 12.1 to 12.3 were already ticked.
+- **Checked:**
+  - `FlagSearchTest` covers every 12.1 item.
+  - The code behind it meets AC 22, 23 and 34:
+    - `ProductDocument` writes `flags` as normalized effective flags.
+    - The `flags[]` filter works on `DatabaseEngine`, `ScoutEngine` and `ListOwnersAction`.
+    - `UpdateOwnerAction` queues `queueWithin(SyncScope::Owner, …)` on a flag change or a move, and not for an unchanged set.
+    - `ScoutEngine::indexSettings()` lists the required fields.
+- **Tests:** `tests/Feature/Search/FlagSearchTest.php` passes: 18 tests, 299 assertions. Pint `--test` is clean on `DatabaseEngine.php` and the test file. I didn't run the suite; the gate runs it. Expect the two `ScoutEngineTest` identifier-URL `404` failures, which belong to group 13.
+- **Deviations:** none.

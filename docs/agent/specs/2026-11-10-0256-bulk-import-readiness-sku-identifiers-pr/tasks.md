@@ -171,12 +171,12 @@ depends on: 4, 7
 files: src/Atrium/ShowroomPlugin.php, src/Atrium/FlagScreen.php, src/Atrium/Http/Controllers/FlagUiController.php, src/Atrium/Http/Controllers/ProductUiController.php, src/Atrium/Http/Controllers/OwnerUiController.php, resources/views/ui/flags/*, resources/views/ui/products/*, resources/views/ui/owners/*, tests/Feature/Ui/FlagPagesTest.php, tests/Feature/Ui/ProductPagesTest.php, tests/Feature/Ui/OwnerPagesTest.php
 criteria: 40, 41
 
-- [ ] 10.1 Write tests:
+- [x] 10.1 Write tests:
   - the flag-definitions screen (list, create, edit, delete), with the refusal message shown when a delete is refused
   - product and owner screens: slug read-only, the external_ids map editor, own flags limited to flags that apply to the subject and hidden without `assign`, effective flags read-only with inherited ones marked
   - links use the configured lookup key
-- [ ] 10.2 Implement the screens and fields through the existing Atrium screen registry, using only Atrium components.
-- [ ] 10.3 Run vendor/bin/pest; all green
+- [x] 10.2 Implement the screens and fields through the existing Atrium screen registry, using only Atrium components.
+- [x] 10.3 Run vendor/bin/pest; all green
 
 ## Group 11: Docs and changelog
 depends on: 9, 10, 12, 13
@@ -203,13 +203,13 @@ criteria: 22, 23, 34
 
 Checkpoint commit 4d664b3 already has partial edits to `DatabaseEngine`, `ScoutEngine`, `ProductDocument` and `ProductQuery`. Finish them rather than starting over.
 
-- [ ] 12.1 Write tests in tests/Feature/Search/FlagSearchTest.php:
+- [x] 12.1 Write tests in tests/Feature/Search/FlagSearchTest.php:
   - one shared dataset on both engines (own, inherited, root-model-owner variants, several flags ANDed); flag codes escaped in Scout filters
   - the owner listing filters on effective flags
   - changing an owner's flags, or moving an owner, queues `QueueProductSyncs` (queue fake), and the search reflects it after the sync
   - Scout settings list `slug`, `external_ids`, `flags` and `owner_slugs`
-- [ ] 12.2 Implement `effective_flags` in `ProductDocument`, the `flags[]` filter on both engines and the owner listing, the reindex in `UpdateOwnerAction` when flags change, and the Scout settings.
-- [ ] 12.3 Run vendor/bin/pest tests/Feature/Search; all green
+- [x] 12.2 Implement `effective_flags` in `ProductDocument`, the `flags[]` filter on both engines and the owner listing, the reindex in `UpdateOwnerAction` when flags change, and the Scout settings.
+- [x] 12.3 Run vendor/bin/pest tests/Feature/Search; all green
 
 
 ## Group 13: Existing tests on id lookup
