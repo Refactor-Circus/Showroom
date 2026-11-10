@@ -175,7 +175,7 @@ Make it practical for host apps to load and resync an ERP-scale catalog (million
 
 - **Breaking change to routes:** clients that call product URLs by identifier, or owner URLs by code, break. Should identifier and code be accepted as a fallback for one release? Today the spec answers `404` (AC 7).
 - **Bulk insert vs actions:** the bulk-insert path for new simple products duplicates part of `CreateProductAction`. The risk is drift from the per-record behaviour. Mitigation: a shared write step, and tests that compare a product created through the bulk path with one created through the action.
-- **Scout mappings:** the new `slug`, `external_ids`, `flags` and `owner_slugs` fields need the index settings updated and `showroom:search:reindex` run after upgrade.
+- **Scout mappings:** the new `slug`, `external_ids`, `flags` and `owner_slugs` fields need adding to `ScoutEngine`'s index settings, so the engine keeps parity with the database engine. No consumer runs Showroom on Scout yet, so there is no live index to migrate or reindex on upgrade.
 - **Backfill time:** generating slugs for millions of existing rows is slow. Showroom installs today are small, but the migration has to work in chunks and be resumable.
 - **Effective flags cost:** a deep owner chain makes effective-flag resolution walk the path. Owner counts are small, about 3k, so it's resolved per batch and not cached. Revisit if owners grow.
 - **Slug truncation:** a 191-character identifier plus a suffix needs truncation before the suffix. Covered by AC 3.
