@@ -90,6 +90,7 @@ final class BatchPresenceVerifier implements DatabasePresenceVerifierInterface
             return isset($this->stored[$key][KeyNormalizer::normalize($value)]) ? 1 : 0;
         }
 
+        /** @var int|null $excludeId Laravel declares int|null; string ids pass through untouched at runtime. */
         return $this->ask(
             [__FUNCTION__, $this->connection, $collection, $column, $value, $excludeId, $idColumn],
             $extra,
