@@ -2,8 +2,10 @@
 
 declare(strict_types=1);
 
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
+use RefactorCircus\Showroom\Domains\ExternalId\Models\ExternalIdModel;
 use RefactorCircus\Showroom\Domains\Flag\Models\FlagModel;
 use RefactorCircus\Showroom\Domains\Owner\Actions\CreateOwnerAction;
 use RefactorCircus\Showroom\Domains\Owner\Data\CreateOwnerData;
@@ -45,6 +47,9 @@ beforeEach(function (): void {
 
     // Versions name their author.
     $this->actingAs(User::forceCreate(['name' => 'Ann', 'email' => 'ann@example.test', 'password' => 'x']));
+
+    // Both paths stamp external ids synced now, compared as written.
+    $this->travelTo(Carbon::parse('2026-11-10 09:00:00'));
 });
 
 /**
@@ -57,7 +62,7 @@ function parityUpsert(array $records): UpsertProductsResult
 
 /**
  * Everything a product's creation wrote, by table, with ids, keys and
- * timestamps left out.
+ * timestamps left out; external ids keep `synced_at`.
  *
  * @return array<string, mixed>
  */
@@ -84,7 +89,7 @@ function parityRows(string $identifier): array
             'values' => json_decode((string) $product['values'], true),
         ],
         'categories' => $rows('category_product', 'product_id', ['product_id'], 'category_id'),
-        'external_ids' => $rows('external_ids', 'subject_id', ['id', 'subject_id', 'created_at', 'updated_at'], 'system'),
+        'external_ids' => $rows('external_ids', 'subject_id', ['id', 'subject_id', 'created_at', 'updated_at'], 'source'),
         'flags' => $rows('flag_assignments', 'subject_id', ['subject_id'], 'flag_id'),
         'unique_values' => $rows('product_unique_values', 'product_id', ['product_id'], 'attribute_id'),
         'versions' => $versions,
@@ -169,6 +174,17 @@ it('creates through the bulk path exactly what CreateProductAction creates', fun
     'values without a family' => [['identifier' => 'TEE', 'values' => ['color' => Catalog::value('red')], 'owner' => 'acme']],
     'empty lists and maps' => [['identifier' => 'TEE', 'categories' => [], 'flags' => [], 'external_ids' => []]],
 ]);
+
+it('stamps the external ids it writes in bulk synced now, as ExternalIds::write() does', function (): void {
+    Event::fake([ProductCreatingActionEvent::class]);
+
+    parityUpsert([['identifier' => 'TEE', 'external_ids' => ['erp' => 'E-1', 'shop' => 'S-1']], ['identifier' => 'CAP']]);
+
+    Event::assertNotDispatched(ProductCreatingActionEvent::class);
+
+    expect(ExternalIdModel::query()->orderBy('source')->get()->map(fn (ExternalIdModel $row): array => [$row->source, $row->synced_at?->toIso8601String()])->all())
+        ->toBe([['erp', '2026-11-10T09:00:00+00:00'], ['shop', '2026-11-10T09:00:00+00:00']]);
+});
 
 it('persists every good record of a mixed chunk', function (): void {
     parityUpsert([['identifier' => 'OLD', 'family' => 'shirts']]);

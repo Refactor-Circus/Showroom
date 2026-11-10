@@ -8,6 +8,7 @@ use Illuminate\Contracts\Auth\Factory as Auth;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Carbon;
 use Illuminate\Validation\ValidationException;
 use RefactorCircus\Showroom\Domains\Attribute\Models\AttributeModel;
 use RefactorCircus\Showroom\Domains\Attribute\Services\Values;
@@ -250,8 +251,8 @@ final class BulkProductWriter
     {
         $heldIds = [];
 
-        foreach ($this->wantedExternalIds($records, $products) as $system => $ids) {
-            $heldIds[$system] = $this->externalIds->find(ProductModel::class, $system, $ids);
+        foreach ($this->wantedExternalIds($records, $products) as $source => $ids) {
+            $heldIds[$source] = $this->externalIds->find(ProductModel::class, $source, $ids);
         }
 
         $heldValues = $this->heldUniqueValues($products, $uniqueAttributes);
@@ -264,9 +265,9 @@ final class BulkProductWriter
             $errors = [];
             $wanted = self::externalIds($records[$index]);
 
-            foreach ($wanted as $system => $externalId) {
-                if (isset($heldIds[$system][$externalId]) || isset($claimedIds[$system][KeyNormalizer::normalize($externalId)])) {
-                    $errors['external_ids.'.$system] = [sprintf('Another product already has the %s id "%s".', $system, $externalId)];
+            foreach ($wanted as $source => $externalId) {
+                if (isset($heldIds[$source][$externalId]) || isset($claimedIds[$source][KeyNormalizer::normalize($externalId)])) {
+                    $errors['external_ids.'.$source] = [sprintf('Another product already has the %s id "%s".', $source, $externalId)];
                 }
             }
 
@@ -294,8 +295,8 @@ final class BulkProductWriter
                 continue;
             }
 
-            foreach ($wanted as $system => $externalId) {
-                $claimedIds[$system][KeyNormalizer::normalize($externalId)] = true;
+            foreach ($wanted as $source => $externalId) {
+                $claimedIds[$source][KeyNormalizer::normalize($externalId)] = true;
             }
 
             foreach (self::uniqueValues($product, $uniqueAttributes) as $unique) {
@@ -309,7 +310,7 @@ final class BulkProductWriter
     }
 
     /**
-     * The external ids the batch's products want, by system.
+     * The external ids the batch's products want, by source.
      *
      * @param  array<int, CreateProductData>  $records
      * @param  array<int, ProductModel>  $products
@@ -320,8 +321,8 @@ final class BulkProductWriter
         $wanted = [];
 
         foreach (array_keys($products) as $index) {
-            foreach (self::externalIds($records[$index]) as $system => $externalId) {
-                $wanted[$system][] = $externalId;
+            foreach (self::externalIds($records[$index]) as $source => $externalId) {
+                $wanted[$source][] = $externalId;
             }
         }
 
@@ -368,20 +369,23 @@ final class BulkProductWriter
     }
 
     /**
-     * The rows of a new product's external ids.
+     * The rows of a new product's external ids, each stamped synced now, as
+     * ExternalIds::write() stamps the ids it writes.
      *
      * @return list<array<string, mixed>>
      */
     private function externalIdRows(ProductModel $product, CreateProductData $data): array
     {
         $rows = [];
+        $now = Carbon::now();
 
-        foreach (self::externalIds($data) as $system => $externalId) {
+        foreach (self::externalIds($data) as $source => $externalId) {
             $row = new ExternalIdModel([
                 'subject_type' => $product->getMorphClass(),
                 'subject_id' => $product->id,
-                'system' => $system,
+                'source' => $source,
                 'external_id' => $externalId,
+                'synced_at' => $now,
             ]);
             $row->setUniqueIds();
             $row->updateTimestamps();
@@ -459,7 +463,7 @@ final class BulkProductWriter
     }
 
     /**
-     * The external ids a new product is given: the systems sent with an id.
+     * The external ids a new product is given: the sources sent with an id.
      *
      * @return array<string, string>
      */
@@ -467,9 +471,9 @@ final class BulkProductWriter
     {
         $ids = [];
 
-        foreach ($data->externalIds ?? [] as $system => $externalId) {
+        foreach ($data->externalIds ?? [] as $source => $externalId) {
             if (is_string($externalId)) {
-                $ids[(string) $system] = $externalId;
+                $ids[(string) $source] = $externalId;
             }
         }
 

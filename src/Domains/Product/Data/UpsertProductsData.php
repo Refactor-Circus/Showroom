@@ -14,8 +14,8 @@ use RefactorCircus\Showroom\Domains\Product\Enums\UpsertMode;
  * as an export or a JSONL import line holds them.
  *
  * Each record is matched to a stored product by its `identifier`, or, when
- * `match` names an external system, by its `external_ids[match]`. Records are
- * validated one by one, against CreateProductData's rules or
+ * `match` names a source (an ERP, a shop), by its `external_ids[match]`.
+ * Records are validated one by one, against CreateProductData's rules or
  * UpdateProductData's, by the action: one bad record never refuses the
  * batch, so only the batch's own options are checked here.
  */
@@ -23,7 +23,7 @@ final readonly class UpsertProductsData extends Data
 {
     /**
      * @param  list<mixed>  $records  The product records, each an object in API shape.
-     * @param  string  $match  `identifier`, or the external system whose ids match records to products.
+     * @param  string  $match  `identifier`, or the source whose external ids match records to products.
      * @param  bool  $captureChanges  Off: the writes are not recorded for product webhooks.
      */
     public function __construct(
@@ -49,8 +49,8 @@ final readonly class UpsertProductsData extends Data
     }
 
     /**
-     * Whether records are matched by an external system's ids rather than
-     * by identifier.
+     * Whether records are matched by a source's external ids rather than by
+     * identifier.
      */
     public function matchesExternalIds(): bool
     {
