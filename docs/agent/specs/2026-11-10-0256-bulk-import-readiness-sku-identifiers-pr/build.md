@@ -298,3 +298,57 @@ This retry covers task 5.3 only. The code for 5.1 and 5.2 is in commit 63335ea; 
   - The fix is to address records by `id` in those tests, or to send `?by=slug` with the slug. Changing the binding is not the fix, because AC 8 requires it.
   - None of these files is in group 5's list, so I left them for a fix round.
 - **Deviations:** none new.
+
+## Group 7 (salvaged)
+
+Flag assignment, effective flags and search (AC 19–23, 33, 34, 37). Committed on `ring-master/2026-11-10-0256-bulk-import-readiness-sku-identifiers-pr`.
+
+**What I found**
+
+- No `index.lock`, and no merge or rebase in progress.
+- The build agent left three untracked files and nothing else:
+  - `src/Domains/Flag/Services/Flags.php`, complete: `rules`, `filterRules`, `changes`, `authorizeAssign`, `write`, `forget`, `holders`, `own`, `effective`, `load`, `productsCarrying` and `ownersInheriting`.
+  - `tests/Feature/FlagAssignmentTest.php` and `tests/Feature/Search/FlagSearchTest.php`, covering every 7.1 item.
+- None of the models, actions, Data classes, resources or engines had been changed.
+
+**What I committed**
+
+- Tests (7.1):
+  - The two test files as found, with two fixes:
+    - The unknown/wrong-subject dataset wrapped each closure twice. Pest passes a `Closure`-typed dataset value through without calling it, so the test never ran the create. Each entry is now wrapped once.
+    - The batch-load check reads `loadedEffectiveFlags()` instead of a relation (see below).
+- Implementation (7.2):
+  - `Domains/Flag/Concerns/HasFlags` on `ProductModel` and `OwnerModel`:
+    - `flags()`, a `morphToMany` on `flag_assignments`, in flag order.
+    - `setEffectiveFlags()` and `loadedEffectiveFlags()`. Effective flags are kept on the model outside its relations, because `refresh()` reloads every relation by name and there is no `effectiveFlags` relation to reload. `SlugsTest` refreshes models returned by the update actions, so a relation broke it.
+  - Data:
+    - `flags` (`Flags::rules()`, per subject) on the four create and update Data classes.
+    - `effective_flags` is `missing` on all four: `prohibited` lets an empty list through, and AC 5 refuses `effective_flags: []`.
+    - `flags[]` (`Flags::filterRules()`) on `ListProductsData` and `ListOwnersData`.
+  - Actions:
+    - Create and update for products and owners ask `assign` (`Flags::authorizeAssign()`) before writing anything, and only when `Flags::changes()` says the set differs. They write with `Flags::write()` inside their transaction, then `Flags::load()` the result.
+    - `UpdateOwnerAction` queues `ProductIndex::queueWithin(SyncScope::Owner, …)` once for a move, a flag change or both.
+    - `DeleteProductAction` and `DeleteOwnerAction` call `Flags::forget()`.
+    - `DeleteFlagAction` counts only live holders (`Flags::holders()`), then deletes the orphan rows before the flag, since the foreign key restricts deletes.
+    - `ListOwnersAction` filters on `Flags::ownersInheriting()` per code, and loads the page's flags in one query.
+  - Resources: `flags` (when the relation is loaded) and `effective_flags` (when `Flags::load()` ran) on `ProductResource` and `OwnerResource`, with schema entries.
+  - Search:
+    - `ProductDocument` writes `flags`: effective codes, normalized through `ProductDocument::flag()` (`KeyNormalizer`). One query per batch.
+    - `DatabaseEngine`, for each code: own assignment, or the owner, level-1 or level-2 owner in `ownersInheriting()`.
+    - `ScoutEngine` does `where('flags', ProductDocument::flag($code))` per code, and adds `ScoutEngine::indexSettings()`. Its `filterableAttributes` include `slug`, `external_ids`, `flags` and `owner_slugs`, and its `sortableAttributes` are `ProductQuery::SORTABLE`.
+- Files outside the group's list:
+  - `src/Domains/Flag/Concerns/HasFlags.php` (new): the relation and the effective-flags holder, shared by both models.
+  - `ShowProductAction`, `ListProductsAction` and `ShowOwnerAction` call `Flags::load()`, so the resources return flags without querying, as `http/resources` requires. Group 5 did the same for `externalIds`.
+  - `src/Domains/Search/Data/ProductQuery.php`: the `flags` field the engines read.
+  - `tests/Feature/PerformanceTest.php`: the search-document batch bound goes from 4 to 5 queries (the flags). It stays fixed, and the test still checks that the count doesn't change with batch size.
+- Pint on every changed file. PHPStan (project config) passes on the changed source files.
+- Targeted run: `FlagAssignmentTest`, `FlagSearchTest`, plus the flag, slug, external-id, output-schema and search-document tests. 137 passed. I didn't run the full suite; the gate runs it.
+
+**What is left**
+
+- 7.3, the full `vendor/bin/pest` run, for the gate. The known identifier-URL failures listed under group 5 (for example `ScoutEngineTest`) are still outside this group.
+
+**Notes**
+
+- The design names a model `deleting` hook beside the delete actions. I followed the external-ids pattern instead: the delete actions call `Flags::forget()`, and `DeleteFlagAction` ignores orphans. AC 33 is met either way.
+- Flag filters on the database engine compare codes under the column's collation. The Scout engine normalizes them.

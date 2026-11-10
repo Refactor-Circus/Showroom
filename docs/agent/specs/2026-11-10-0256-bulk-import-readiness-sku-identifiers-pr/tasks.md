@@ -117,7 +117,7 @@ depends on: 5, 6
 files: src/Domains/Flag/Services/Flags.php, src/Domains/Product/Models/ProductModel.php, src/Domains/Owner/Models/OwnerModel.php, src/Domains/Product/Actions/CreateProductAction.php, src/Domains/Product/Actions/UpdateProductAction.php, src/Domains/Product/Actions/DeleteProductAction.php, src/Domains/Owner/Actions/CreateOwnerAction.php, src/Domains/Owner/Actions/UpdateOwnerAction.php, src/Domains/Owner/Actions/DeleteOwnerAction.php, src/Domains/Owner/Actions/ListOwnersAction.php, src/Domains/Flag/Actions/DeleteFlagAction.php, src/Domains/Product/Data/*.php, src/Domains/Owner/Data/*.php, src/Domains/Product/Resources/ProductResource.php, src/Domains/Owner/Resources/OwnerResource.php, src/Domains/Search/Services/ProductDocument.php, src/Domains/Search/Services/DatabaseEngine.php, src/Domains/Search/Services/ScoutEngine.php, tests/Feature/FlagAssignmentTest.php, tests/Feature/Search/FlagSearchTest.php
 criteria: 19, 20, 21, 22, 23, 33, 34, 37
 
-- [ ] 7.1 Write tests:
+- [x] 7.1 Write tests:
   - `flags` on product and owner create and update: replaces the set; unknown codes and wrong `applies_to` refused at `flags.{n}`
   - `assign` required only when flags change (HTTP, MCP and actions; owners too)
   - effective flags through a grandchild owner and a root-model-owner variant; a child cannot drop an inherited flag
@@ -126,7 +126,7 @@ criteria: 19, 20, 21, 22, 23, 33, 34, 37
   - changing an owner's flags or moving an owner queues `QueueProductSyncs` (queue fake), and the search reflects it after the sync
   - assignments deleted with their subject; orphan assignments ignored by flag delete
   - Scout settings list `slug`, `external_ids`, `flags` and `owner_slugs`
-- [ ] 7.2 Implement:
+- [x] 7.2 Implement:
   - the `Flags` service (`write`, `own`, `effective`)
   - the `assign` check and flag writes in the create and update actions
   - cleanup of assignments on delete
