@@ -133,7 +133,7 @@ depends on: 7
 files: src/Domains/Product/Actions/UpsertProductsAction.php, src/Domains/Product/Data/UpsertProductsData.php, src/Domains/Product/Data/UpsertProductsResult.php, src/Domains/Product/Enums/UpsertMode.php, src/Domains/Product/Events/ProductsUpsertingActionEvent.php, src/Domains/Product/Events/ProductsUpsertedActionEvent.php, src/Domains/Product/Services/ProductChangeCapture.php, src/Domains/Product/Services/BulkProductWriter.php, src/Domains/Product/ProductServiceProvider.php, tests/Feature/UpsertProductsActionTest.php, tests/Feature/UpsertProductsParityTest.php, tests/Feature/UpsertProductsPerformanceTest.php, tests/Unit/ProductChangeCaptureTest.php
 criteria: 25, 26, 27, 28, 29, 35, 36, 37, 38, 39
 
-- [ ] 8.1 Write tests:
+- [x] 8.1 Write tests:
   - modes and matching by identifier or external system, including a match that differs only by case
   - per-record validation, with failures reported by index, identifier and errors
   - the unchanged preview: no rows, versions, syncs or events; the query count is flat between 10 and 100 records
@@ -143,12 +143,12 @@ criteria: 25, 26, 27, 28, 29, 35, 36, 37, 38, 39
   - parity between the bulk path and `CreateProductAction`
   - a mixed chunk, and a forced bulk failure that falls back to per-record writes
   - `ProductChangeCapture::suppress()` restoring its state in a `finally`
-- [ ] 8.2 Implement:
+- [x] 8.2 Implement:
   - `UpsertProductsData`, the result Data, the `UpsertMode` enum and the event pair
   - `ProductChangeCapture` (scoped)
   - `BulkProductWriter`, sharing the write step with the create action
   - the action flow: validate (including `assign`) → load → preview → bulk or per-record write inside `ProductIndex::deferring()`
-- [ ] 8.3 Run vendor/bin/pest; all green
+- [x] 8.3 Run vendor/bin/pest; all green
 
 ## Group 9: Impex integration
 depends on: 8
