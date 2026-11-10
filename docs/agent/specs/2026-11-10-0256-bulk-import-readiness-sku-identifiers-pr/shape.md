@@ -29,9 +29,16 @@ In scope:
    - **Webhook opt-out:** callers can pass a flag that skips the product-webhook change capture (`CaptureProductChanges`) for initial loads. By default, changes are captured as usual.
 5. **Owner type that is its own parent.** An owner type can list itself in `parent_types` when it's created (`vendor` under `vendor`, for umbrella companies). Today `CreateOwnerTypeData` validates `parent_types.*` with `Rule::exists`, so the type's own code is refused until it exists, and you have to create it and then update it. `allowsParent()` already handles a type parenting itself once the type is stored.
 
+6. **Flags.** Configurable on/off markers for products and owners, such as `restricted`, `pricing_only`, `inventory_plus` and `order_plus`. They are separate from `enabled` (unchanged, true/false) and from the workflow `status` (unchanged).
+   - **Definitions:** a runtime-managed `showroom_flags` table with `code` (unique, never changes), `labels`, `applies_to` (`product`, `owner` or both) and `sort_order`. Managed by List/Show/Create/Update/Delete actions with HTTP and MCP parity, and a policy. A flag in use cannot be deleted.
+   - **Assignment:** each product and owner holds its own set of flags (`flags: ["restricted"]`), written through the product and owner create/update actions and the batch upsert. A flag must exist and apply to the subject.
+   - **Inheritance (parent always wins):** a record's `effective_flags` are its own flags plus every flag on any owner above it. An owner inherits from its parent owners, and a product from its owner chain (a variant product through its root model's owner). A child cannot remove or override a flag it inherits. For example, a vendor flagged `pricing_only` makes every series and product beneath it `pricing_only`, whatever their own sets hold.
+   - **Surfaces:** resources and MCP tools return both `flags` (own) and `effective_flags`. Product search filters on effective flags (`flags[]=restricted`), and so do owner listings. The search document carries `effective_flags`.
+   - **Reindexing:** changing an owner's flags, or moving an owner, reindexes the products beneath it, as moving an owner already does. A flag's `applies_to` change is refused while the flag is assigned where it would no longer apply.
+
 Out of scope (deferred):
 
-- Owner values and metadata (logos, descriptions, flags).
+- Owner values and metadata (logos, descriptions). Flags are in scope (item 6).
 - Stopping ERP-owned changes from demoting an `approved` product to `draft` (needed before the D365 flow).
 - Configurable product statuses: the built-in four stay.
 - External ids on product models.
@@ -46,7 +53,11 @@ Out of scope (deferred):
 - **External ids are per system.** One row per (subject, system). Uniqueness is per system and subject type, so the same id can appear in two systems, and on an owner and a product.
 - **Bulk surface:** an action plus an Impex flow. No new HTTP endpoint or MCP tool in this spec.
 - **Webhooks during bulk loads:** captured by default, with an opt-out flag.
-- **Statuses stay as they are** (`draft`, `in_review`, `approved`, `archived`). Imported products start as `draft`, and the importer sets `enabled`.
+- **Workflow statuses stay as they are** (`draft`, `in_review`, `approved`, `archived`). Imported products start as `draft`, and the importer sets `enabled`.
+- **Commercial states are flags, not a status.** Restricted, pricing only, inventory plus and order plus are independent on/off values that can all be true at once, so they're modeled as a set of flags rather than one more status field.
+- **Flags are defined at runtime** (a table managed over API and MCP, like owner types), not in config, so adding a flag needs no deploy.
+- **Parent always wins.** Every flag inherits down the owner chain to the products beneath it, and there is no negation: a child cannot clear an inherited flag. The effective set is the union of the record's own flags and its ancestors' flags.
+- **`enabled` is not a flag and doesn't inherit.** Owners have no `enabled`, and a product's `enabled` stays its own.
 - **The consumer's data rules stay in the app:** skipping deleted, d1, redirected and duplicate-uid rows, and choosing series over vendor. Showroom stays generic.
 
 ## Context
@@ -70,13 +81,16 @@ See `references.md`.
 
 ### Visuals
 
-None. The only UI touch is showing `slug` and external ids on existing Atrium product and owner screens, if the screens list fields.
+None. The UI changes are:
+
+- `slug`, external ids and flags shown on the existing Atrium product and owner screens.
+- A flag-definitions screen next to owner types, if Showroom's Atrium plugin gives every managed type a screen (check in write-spec).
 
 ## Standards
 
 - `actions/actions-events`: new batch action and changed create/update actions; event pairs, transactions.
 - `data/data-objects`: new batch Data object; `external_ids` added to the product and owner Data; identifier rules.
-- `models/models`: external-id model, `slug` on `ProductModel`, configurable table name.
+- `models/models`: external-id and flag models, `slug` on `ProductModel`, configurable table names, a policy per model.
 - `models/migrations`: new table, slug column with backfill, sequence filenames.
 - `models/stored-identifiers`: slug as the record reference in routes; inputs keep referencing by identifier or code; external ids.
 - `architecture/configuration`: `showroom.products.identifier_pattern`, the batch size, `showroom.tables.external_ids`.
@@ -86,4 +100,5 @@ None. The only UI touch is showing `slug` and external ids on existing Atrium pr
 - `http/request-persist`: product and owner requests take `external_ids`; route-model lookup by slug.
 - `http/authorization`: the batch action authorizes each record as create/update would; external ids follow their subject's policy.
 - `testing/test-layers`: behaviour tested at the action; surfaces test their wiring only.
-- `testing/arch-tests`: new action, Data and model must pass the arch preset.
+- `testing/arch-tests`: new actions, Data and models must pass the arch preset.
+- `showroom/atrium-screens`: flag definitions and flags on product and owner screens use only Atrium components.
