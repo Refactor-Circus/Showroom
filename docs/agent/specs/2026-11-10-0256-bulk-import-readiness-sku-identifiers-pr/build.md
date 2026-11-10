@@ -774,3 +774,22 @@ All of 11.1 to 11.4 were already committed in `6b2dcca`, with the tasks ticked. 
 **Deviations**
 
 - None.
+
+## Rework round 1
+
+Fixes for the gate's blocker: `composer test` stopped at PHPStan with 4 errors. None of the fixes suppresses an error.
+
+**Fixes**
+
+- `src/Domains/Owner/Data/CreateOwnerTypeData.php`: PHPStan reported the anonymous `DataAwareRule` class's `$data` property and `setData()` as having no value type (`missingType.iterableValue`). Both already had `array<array-key, mixed>` docblocks. PHPStan 2.3.3 ignores docblocks on anonymous class members depending on the working directory: run from another directory, it reports the same error on the untouched performance-indexes migration. Adding more PHPDoc would not have fixed it, so the rule is now a closure. Laravel's `ClosureValidationRule` passes the validator as the closure's fourth argument, and the closure reads `code` from `$validator->getData()`. The rule behaves the same: a parent type must exist, or be the type being created.
+- `src/Impex/Actions/UpsertProductChunk.php`: dropped the redundant `array_values` (`arrayValues.list`). Both chunk sources already yield `records` as a list, and `UpsertProductsData` validates it with `list`, so a non-list payload still fails validation rather than shifting the failure indexes.
+- `src/Support/RecordLookup.php` (`return.type` on `find`): `find()` now takes `Builder<TModel>` instead of `class-string<TModel>`. Larastan resolved `$model::query()` to the bound union, not `TModel`. `product()` and `owner()` pass their model's query. `resolve()` calls `product()` or `owner()` through a `match` on `self::model($subject)`, which still throws for an unknown subject. A union of builders cannot be passed as one, because Builder's template is invariant. The not-found exception names the model from `$query->getModel()`.
+
+**Tests**
+
+- `composer test`, run from the worktree, passes in full: PHPStan 0 errors, Pint passed, type coverage 100%, `test:unit` (parallel) 1254 passed with 12420 assertions, `test:without-atrium` 6 passed. `tests/Feature/Api/OwnerTypeSelfParentTest.php` covers the closure rule.
+- The memory error in the gate report came from a serial `vendor/bin/pest` run of the whole suite under the 512MB limit. `composer test` runs the suite with `--parallel` and completes. I didn't change the memory limit.
+
+**Deviations**
+
+- None. I touched only the three files the finding names, plus this note.

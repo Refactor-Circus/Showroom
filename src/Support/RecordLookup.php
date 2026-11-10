@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace RefactorCircus\Showroom\Support;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\Validator;
@@ -42,7 +43,10 @@ final class RecordLookup
      */
     public function resolve(string $subject, string $value, ?LookupKey $by = null): ProductModel|OwnerModel
     {
-        return $this->find(self::model($subject), $by ?? $this->key($subject), $value);
+        return match (self::model($subject)) {
+            ProductModel::class => $this->product($value, $by),
+            OwnerModel::class => $this->owner($value, $by),
+        };
     }
 
     /**
@@ -52,7 +56,7 @@ final class RecordLookup
      */
     public function product(string $value, ?LookupKey $by = null): ProductModel
     {
-        return $this->find(ProductModel::class, $by ?? $this->key('products'), $value);
+        return $this->find(ProductModel::query(), $by ?? $this->key('products'), $value);
     }
 
     /**
@@ -62,7 +66,7 @@ final class RecordLookup
      */
     public function owner(string $value, ?LookupKey $by = null): OwnerModel
     {
-        return $this->find(OwnerModel::class, $by ?? $this->key('owners'), $value);
+        return $this->find(OwnerModel::query(), $by ?? $this->key('owners'), $value);
     }
 
     /**
@@ -128,19 +132,19 @@ final class RecordLookup
     /**
      * @template TModel of ProductModel|OwnerModel
      *
-     * @param  class-string<TModel>  $model
+     * @param  Builder<TModel>  $query
      * @return TModel
      *
      * @throws ModelNotFoundException
      */
-    private function find(string $model, LookupKey $key, string $value): Model
+    private function find(Builder $query, LookupKey $key, string $value): Model
     {
         // A value that cannot be a ULID matches no id: no query needed.
         if ($key === LookupKey::Id && ! Str::isUlid($value)) {
-            throw (new ModelNotFoundException)->setModel($model, [$value]);
+            throw (new ModelNotFoundException)->setModel($query->getModel()::class, [$value]);
         }
 
-        return $model::query()->where($key->value, $value)->firstOrFail();
+        return $query->where($key->value, $value)->firstOrFail();
     }
 
     /**

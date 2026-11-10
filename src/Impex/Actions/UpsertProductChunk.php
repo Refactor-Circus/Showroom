@@ -43,7 +43,7 @@ final class UpsertProductChunk
      */
     private function perform(array $chunk): array
     {
-        $records = array_values($chunk['records'] ?? []);
+        $records = $chunk['records'] ?? [];
         $start = (int) ($chunk['start'] ?? 0);
 
         // Read back from a queued payload: validated as untrusted input.

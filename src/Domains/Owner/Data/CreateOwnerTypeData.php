@@ -5,10 +5,9 @@ declare(strict_types=1);
 namespace RefactorCircus\Showroom\Domains\Owner\Data;
 
 use Closure;
-use Illuminate\Contracts\Validation\DataAwareRule;
-use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Translation\PotentiallyTranslatedString;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Validator;
 use RefactorCircus\Keystone\Data\Data;
 use RefactorCircus\Showroom\Domains\Owner\Models\OwnerTypeModel;
 
@@ -53,38 +52,22 @@ final readonly class CreateOwnerTypeData extends Data
      * A parent type must exist, or be the type being created: a type may
      * parent itself (a vendor under a vendor), and the action resolves the
      * codes once its row exists.
+     *
+     * A closure rule rather than an anonymous DataAwareRule class: Laravel
+     * hands a closure rule the validator, whose data holds the `code`.
      */
-    private static function existingOrOwnCode(): ValidationRule
+    private static function existingOrOwnCode(): Closure
     {
-        return new class implements DataAwareRule, ValidationRule
-        {
-            /**
-             * @var array<array-key, mixed>
-             */
-            private array $data = [];
-
-            /**
-             * @param  array<array-key, mixed>  $data
-             */
-            public function setData(array $data): static
-            {
-                $this->data = $data;
-
-                return $this;
+        /**
+         * @param  Closure(string, ?string=): PotentiallyTranslatedString  $fail
+         */
+        return static function (string $attribute, mixed $value, Closure $fail, Validator $validator): void {
+            if ($value === ($validator->getData()['code'] ?? null)) {
+                return;
             }
 
-            /**
-             * @param  Closure(string, ?string=): PotentiallyTranslatedString  $fail
-             */
-            public function validate(string $attribute, mixed $value, Closure $fail): void
-            {
-                if ($value === ($this->data['code'] ?? null)) {
-                    return;
-                }
-
-                if (! OwnerTypeModel::query()->where('code', $value)->exists()) {
-                    $fail('validation.exists')->translate();
-                }
+            if (! OwnerTypeModel::query()->where('code', $value)->exists()) {
+                $fail('validation.exists')->translate();
             }
         };
     }
