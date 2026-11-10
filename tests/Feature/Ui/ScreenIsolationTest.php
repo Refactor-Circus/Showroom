@@ -24,7 +24,7 @@ beforeEach(function (): void {
 
     Catalog::apparel();
 
-    ProductModel::query()->create(['identifier' => 'TEE-1']);
+    $this->tee = ProductModel::query()->create(['identifier' => 'TEE-1']);
 
     $directory = sys_get_temp_dir().'/showroom-screen-isolation-'.getmypid();
     File::ensureDirectoryExists($directory);
@@ -37,7 +37,7 @@ it('registers a tab and a section on the product screen', function (): void {
         ->tab('showroom.product', TabDefinition::make('acme.isolated')->view('screen-isolation::marker')->public())
         ->section('showroom.product', 'before', SectionDefinition::make('acme.isolated')->view('screen-isolation::marker')->public());
 
-    $this->get(route('atrium.showroom.products.show', 'TEE-1'))
+    $this->get(route('atrium.showroom.products.show', $this->tee))
         ->assertOk()
         ->assertSee('data-testid="tab-acme.isolated"', false)
         ->assertSee('data-testid="section-acme.isolated"', false);
@@ -48,7 +48,7 @@ it('starts the next test without them', function (): void {
         ->and(Atrium::screens()->tabs('showroom.product'))->toBe([])
         ->and(Atrium::screens()->sections('showroom.product', 'before'))->toBe([]);
 
-    $this->get(route('atrium.showroom.products.show', 'TEE-1'))
+    $this->get(route('atrium.showroom.products.show', $this->tee))
         ->assertOk()
         ->assertDontSee('data-testid="tab-acme.isolated"', false)
         ->assertDontSee('data-testid="section-acme.isolated"', false);

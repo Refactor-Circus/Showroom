@@ -196,6 +196,8 @@ function screenExtGet(string $route, ?string $parameter, array $query = []): Tes
 {
     app()->forgetScopedInstances();
 
+    $parameter = $parameter === null ? null : screenExtKey($route, $parameter);
+
     return test()->get(route($route, array_filter([$parameter, ...$query], fn (mixed $value): bool => $value !== null)));
 }
 
@@ -206,7 +208,23 @@ function screenExtTestid(string $id): string
 
 function screenExtLink(string $resource, string $key): string
 {
-    return 'href="'.route('atrium.showroom.'.$resource.'.show', $key).'"';
+    $route = 'atrium.showroom.'.$resource.'.show';
+
+    return 'href="'.route($route, screenExtKey($route, $key)).'"';
+}
+
+/**
+ * The route key of a record named in a dataset. Product and owner screens
+ * bind by `id`, so their identifier or code is swapped for the record's id;
+ * every other screen keeps its code.
+ */
+function screenExtKey(string $route, string $key): string
+{
+    return match (true) {
+        str_starts_with($route, 'atrium.showroom.products.') => ProductModel::query()->where('identifier', $key)->firstOrFail()->id,
+        str_starts_with($route, 'atrium.showroom.owners.') => OwnerModel::query()->where('code', $key)->firstOrFail()->id,
+        default => $key,
+    };
 }
 
 /**

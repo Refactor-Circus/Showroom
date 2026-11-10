@@ -47,14 +47,14 @@ it('files a product in categories from its page', function (): void {
     $this->post(route('atrium.showroom.categories.store'), ['code' => 'master']);
     $this->post(route('atrium.showroom.categories.store'), ['code' => 'shirts', 'parent' => 'master']);
     $this->post(route('atrium.showroom.categories.store'), ['code' => 'sale', 'parent' => 'master']);
-    ProductModel::factory()->create(['identifier' => 'TEE-1']);
+    $tee = ProductModel::factory()->create(['identifier' => 'TEE-1']);
 
-    $this->patch(route('atrium.showroom.products.update', 'TEE-1'), ['categories' => 'shirts, sale , '])->assertSessionHasNoErrors();
+    $this->patch(route('atrium.showroom.products.update', $tee), ['categories' => 'shirts, sale , '])->assertSessionHasNoErrors();
 
     expect(ProductModel::query()->firstOrFail()->categories->pluck('code')->all())->toBe(['sale', 'shirts']);
 
-    $this->get(route('atrium.showroom.products.show', 'TEE-1'))->assertOk()->assertSee('sale, shirts');
+    $this->get(route('atrium.showroom.products.show', $tee))->assertOk()->assertSee('sale, shirts');
     $this->get(route('atrium.showroom.products.index', ['category' => 'master']))->assertOk()->assertSee('TEE-1');
 
-    $this->patch(route('atrium.showroom.products.update', 'TEE-1'), ['categories' => 'unknown'])->assertSessionHasErrors('categories.0');
+    $this->patch(route('atrium.showroom.products.update', $tee), ['categories' => 'unknown'])->assertSessionHasErrors('categories.0');
 });

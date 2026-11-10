@@ -46,15 +46,17 @@ it('summarises the catalog', function (): void {
         $attributes,
     )])->assertOk();
 
+    $ids = [];
+
     foreach (['TEE-1' => 'Tee', 'TEE-2' => null] as $identifier => $name) {
-        $this->postJson('/showroom/products', [
+        $ids[$identifier] = $this->postJson('/showroom/products', [
             'identifier' => $identifier,
             'family' => 'shirts',
             'values' => $name === null ? [] : ['name' => Catalog::value($name)],
-        ])->assertCreated();
+        ])->assertCreated()->json('data.id');
     }
 
-    $this->postJson('/showroom/products/TEE-1/transitions', ['transition' => 'submit'])->assertOk();
+    $this->postJson('/showroom/products/'.$ids['TEE-1'].'/transitions', ['transition' => 'submit'])->assertOk();
 
     $status = renderWidget('showroom.product-status');
 

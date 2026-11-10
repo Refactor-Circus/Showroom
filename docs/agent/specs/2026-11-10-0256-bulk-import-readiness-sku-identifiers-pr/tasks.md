@@ -232,7 +232,7 @@ criteria: 8
 
 The same id-lookup fallout as group 13, for the Atrium screens and MCP tools.
 
-- [ ] 14.1 Run the files listed above and note every failure that is a `404` or "Not found" on a product or owner screen URL or MCP argument.
-- [ ] 14.2 Change those tests to address records by `id`. If a failure is not about lookup, such as a screen extension change from group 10, fix the test or the screen so it matches the spec, and say which in build.md.
-- [ ] 14.3 Run vendor/bin/pest on the listed files; all green
+- [x] 14.1 Run the files listed above and note every failure that is a `404` or "Not found" on a product or owner screen URL or MCP argument.
+- [x] 14.2 Change those tests to address records by `id`. If a failure is not about lookup, such as a screen extension change from group 10, fix the test or the screen so it matches the spec, and say which in build.md.
+- [x] 14.3 Run vendor/bin/pest on the listed files; all green
 

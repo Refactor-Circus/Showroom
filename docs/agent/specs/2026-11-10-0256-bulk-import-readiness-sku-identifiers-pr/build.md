@@ -578,3 +578,15 @@ Flag search and owner reindex (AC 22, 23, 34). This retry checked commit 24cf1d4
     - `ScoutEngine::indexSettings()` lists the required fields.
 - **Tests:** `tests/Feature/Search/FlagSearchTest.php` passes: 18 tests, 299 assertions. Pint `--test` is clean on `DatabaseEngine.php` and the test file. I didn't run the suite; the gate runs it. Expect the two `ScoutEngineTest` identifier-URL `404` failures, which belong to group 13.
 - **Deviations:** none.
+
+## Group 14
+
+Existing UI and MCP tests on id lookup (AC 8). The test changes are in commit dae1b39; this retry checked them and ran the files.
+
+- **Files:**
+  - `tests/Feature/Ui/WorkflowPagesTest.php`, `AssociationPagesTest.php`, `WidgetsTest.php`, `ScreenIsolationTest.php`, `AssetPagesTest.php`, `CategoryPagesTest.php` and `ChannelPagesTest.php` now build product screen URLs and `/showroom/products/{product}` API calls from the record's `id`. The id comes from the factory model or from `data.id` in the create response.
+  - `tests/Feature/Ui/ScreenAuthorizationTest.php` (`screenRecordKey()`) and `tests/Feature/Ui/ScreenExtensionsTest.php` (`screenExtKey()`) each get a small helper. Their datasets still name records by identifier or code; the helper swaps the name for the record's `id` on `atrium.showroom.products.*` and `atrium.showroom.owners.*` routes and leaves other screens on their code.
+  - `tests/Feature/McpTest.php` passes the product and owner `id` as the `product` and `owner` arguments to the show, update, delete, transition, version and revert tools.
+- **14.1 findings:** every failure was a `404` or "Not found" on a product or owner screen URL, API URL or MCP argument that still used an identifier or code. None came from anything other than lookup, so no screen or source code changed. That includes the 15 `ScreenExtensionsTest` rows flagged in Group 10.
+- **Tests:** the ten listed files pass: 310 tests, 6727 assertions. Pint `--test` is clean on `tests/Feature/Ui` and `tests/Feature/McpTest.php`.
+- **Deviations:** none.

@@ -99,6 +99,20 @@ function control(string $id): string
 }
 
 /**
+ * The route key of a record named in a dataset. Product and owner screens
+ * bind by `id`, so their identifier or code is swapped for the record's id;
+ * every other screen keeps its code.
+ */
+function screenRecordKey(string $route, string $key): string
+{
+    return match (true) {
+        str_starts_with($route, 'atrium.showroom.products.') => ProductModel::query()->where('identifier', $key)->firstOrFail()->id,
+        str_starts_with($route, 'atrium.showroom.owners.') => OwnerModel::query()->where('code', $key)->firstOrFail()->id,
+        default => $key,
+    };
+}
+
+/**
  * A small catalog built through the screens while authorization is off,
  * which is then turned on.
  */
@@ -109,7 +123,7 @@ function screenWorld(): void
     Catalog::apparel();
 
     $test->post(route('atrium.showroom.products.store'), ['identifier' => 'TEE-1', 'family' => 'shirts'])->assertRedirect();
-    $test->patch(route('atrium.showroom.products.update', 'TEE-1'), ['enabled' => '0'])->assertSessionHasNoErrors();
+    $test->patch(route('atrium.showroom.products.update', screenRecordKey('atrium.showroom.products.update', 'TEE-1')), ['enabled' => '0'])->assertSessionHasNoErrors();
 
     $test->post(route('atrium.showroom.product-models.store'), ['code' => 'tee', 'family_variant' => 'shirts_by_size'])->assertRedirect();
     $test->post(route('atrium.showroom.products.store'), [
@@ -285,7 +299,7 @@ it('shows a product to a viewer without its controls', function (): void {
     screenWorld();
 
     $this->actingAs(holding(['view Product']))
-        ->get(route('atrium.showroom.products.show', 'TEE-1'))
+        ->get(route('atrium.showroom.products.show', screenRecordKey('atrium.showroom.products.show', 'TEE-1')))
         ->assertOk()
         ->assertSee('<fieldset class="flex min-w-0 flex-col gap-5" disabled', false)
         ->assertDontSee(control('save-product'), false)
@@ -300,6 +314,7 @@ it('shows a product to a viewer without its controls', function (): void {
 it('hides record page controls without their abilities', function (string $route, string $key, array $grants, string $control): void {
     screenWorld();
 
+    $key = screenRecordKey($route, $key);
     $page = fn (array $held) => $this->actingAs(holding($held))->get(route($route, $key))->assertOk();
 
     $page([$grants[0]])->assertDontSee(control($control), false);
@@ -360,7 +375,7 @@ it('asks for both abilities the API asks to add an option', function (): void {
 it('refuses each record page without view', function (string $route, string $key): void {
     screenWorld();
 
-    $this->actingAs(holding())->get(route($route, $key))->assertForbidden();
+    $this->actingAs(holding())->get(route($route, screenRecordKey($route, $key)))->assertForbidden();
 })->with([
     ['atrium.showroom.products.show', 'TEE-1'],
     ['atrium.showroom.product-models.show', 'tee'],
@@ -377,6 +392,10 @@ it('refuses each record page without view', function (string $route, string $key
 
 it('refuses each action without its ability, and allows it with', function (string $method, string $route, array $parameters, array $data, string $grant): void {
     screenWorld();
+
+    if ($parameters !== []) {
+        $parameters[0] = screenRecordKey($route, $parameters[0]);
+    }
 
     $this->actingAs(holding())->call($method, route($route, $parameters), $data)->assertForbidden();
 
@@ -462,7 +481,7 @@ it('rolls an upload back when the user may create an asset but not link it', fun
 it('leaves records untouched when an action is refused', function (): void {
     screenWorld();
 
-    $this->actingAs(holding(['view Product']))->delete(route('atrium.showroom.products.destroy', 'TEE-1'))->assertForbidden();
+    $this->actingAs(holding(['view Product']))->delete(route('atrium.showroom.products.destroy', screenRecordKey('atrium.showroom.products.destroy', 'TEE-1')))->assertForbidden();
     $this->actingAs(holding(['view Category']))->delete(route('atrium.showroom.categories.destroy', 'master'))->assertForbidden();
 
     expect(ProductModel::query()->where('identifier', 'TEE-1')->exists())->toBeTrue()
