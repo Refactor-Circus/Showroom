@@ -5,9 +5,9 @@ depends on: none
 files: src/Domains/Owner/Services/OwnerWriter.php, src/Domains/Owner/Actions/CreateOwnerAction.php, src/Domains/Owner/Actions/UpdateOwnerAction.php, tests/Feature/OwnerWriterTest.php
 criteria: 4, 6, 7, 11
 
-- [ ] 1.1 Write OwnerWriterTest. Cover create and update through OwnerWriter with a preloaded type and parent: placement rules (can_be_root, parent_types, no move under the owner itself or a descendant, path of the owner and its descendants); slug claimed as CreateOwnerAction does; external ids and flags written; assign refused when flags are set or changed. Assert that the existing owner tests (SlugsTest, FlagAssignmentTest, ExternalIdsTest, RecordLookupTest, Ui/OwnerPagesTest) still pass unchanged.
-- [ ] 1.2 Extract the placement, slug, external-id and flags logic of CreateOwnerAction and UpdateOwnerAction into an @internal `Owner/Services/OwnerWriter` (D-001). It accepts a preloaded type and parent and does not reload the return graph. The single actions keep their final classes, constructor signatures, events, transaction boundary and return values.
-- [ ] 1.3 Run vendor/bin/pest; all green
+- [x] 1.1 Write OwnerWriterTest. Cover create and update through OwnerWriter with a preloaded type and parent: placement rules (can_be_root, parent_types, no move under the owner itself or a descendant, path of the owner and its descendants); slug claimed as CreateOwnerAction does; external ids and flags written; assign refused when flags are set or changed. Assert that the existing owner tests (SlugsTest, FlagAssignmentTest, ExternalIdsTest, RecordLookupTest, Ui/OwnerPagesTest) still pass unchanged.
+- [x] 1.2 Extract the placement, slug, external-id and flags logic of CreateOwnerAction and UpdateOwnerAction into an @internal `Owner/Services/OwnerWriter` (D-001). It accepts a preloaded type and parent and does not reload the return graph. The single actions keep their final classes, constructor signatures, events, transaction boundary and return values.
+- [x] 1.3 Run vendor/bin/pest; all green
 
 ## Group 2: UpsertOwnersAction
 depends on: 1
