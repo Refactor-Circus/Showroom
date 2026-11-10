@@ -122,14 +122,14 @@ final class OwnerModel extends Model
     }
 
     /**
-     * The owner's ids in other systems, by system. Deleted with the owner by
+     * The owner's ids in other systems, by source. Deleted with the owner by
      * DeleteOwnerAction.
      *
      * @return MorphMany<ExternalIdModel, $this>
      */
     public function externalIds(): MorphMany
     {
-        return $this->morphMany(ExternalIdModel::class, 'subject')->orderBy('system');
+        return $this->morphMany(ExternalIdModel::class, 'subject')->orderBy('source');
     }
 
     /**

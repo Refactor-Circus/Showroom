@@ -16,7 +16,7 @@ use RefactorCircus\Showroom\Support\Paging;
 final readonly class ListOwnersData extends Data
 {
     /**
-     * @param  array<string, string>  $external  Owners holding these ids, {system: id}; every pair must match.
+     * @param  array<string, string>  $external  Owners holding these ids, {source: id}; every pair must match.
      * @param  list<string>  $flags  Owners carrying every one of these flags, own or inherited.
      */
     public function __construct(

@@ -44,7 +44,8 @@ final class OwnerResource extends JsonResource
             'children_count' => $schema->integer()->description('When counted.'),
             'products_count' => $schema->integer()->description('When counted.'),
             'product_models_count' => $schema->integer()->description('When counted.'),
-            'external_ids' => $schema->object()->description('The owner\'s ids in other systems, {system: id}, when loaded. An empty map is {}.'),
+            'external_ids' => $schema->object()->description('The owner\'s ids in other systems, {source: id}, when loaded. An empty map is {}.'),
+            'external_ids_synced_at' => $schema->object()->description('When each source last synced its id, {source: ISO-8601 timestamp|null}, when loaded. An empty map is {}. Read-only.'),
             'flags' => $schema->array()->items($schema->string())->description('Codes of the flags assigned to the owner itself, in flag order, when loaded.'),
             'effective_flags' => $schema->array()->items($schema->string())->description('Its own flags plus every ancestor\'s, in flag order, when loaded. Read-only.'),
             'created_at' => $schema->string()->nullable()->required(),
@@ -77,6 +78,7 @@ final class OwnerResource extends JsonResource
             'product_models_count' => $this->whenCounted('productModels'),
             // An object even when empty, so clients always read a map.
             'external_ids' => $this->whenLoaded('externalIds', fn (): object => (object) ExternalIds::present($this->externalIds)),
+            'external_ids_synced_at' => $this->whenLoaded('externalIds', fn (): object => (object) ExternalIds::syncedAt($this->externalIds)),
             'flags' => $this->whenLoaded('flags', fn (): array => $this->flags->map(fn (FlagModel $flag): string => $flag->code)->values()->all()),
             // Own plus every ancestor's; an owner cannot drop one.
             'effective_flags' => $this->when($effectiveFlags !== null, $effectiveFlags),

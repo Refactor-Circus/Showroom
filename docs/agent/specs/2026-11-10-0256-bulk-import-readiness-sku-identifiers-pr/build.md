@@ -793,3 +793,45 @@ Fixes for the gate's blocker: `composer test` stopped at PHPStan with 4 errors. 
 **Deviations**
 
 - None. I touched only the three files the finding names, plus this note.
+
+## Group 16
+
+Rework 1 (D-013, AC 42 to 44): `showroom_external_ids` follows Roster's `organization_links` pattern. `system` is now `source` throughout, each id has a nullable `synced_at`, and the database enforces one id per record and source.
+
+**Files**
+
+- `database/migrations/2026_11_10_000002_create_showroom_external_ids_table.php`: edited the unmerged create migration (no new migration). The column is now `source` (64) instead of `system` (50). Added a nullable `synced_at`. Uniques on `(subject_type, source, external_id)` and `(subject_type, subject_id, source)`. The old `(subject_type, subject_id)` index is gone, because the new unique starts with the same columns and serves the same lookups (Roster has no separate index either).
+- `src/Domains/ExternalId/Models/ExternalIdModel.php`: `source` and `synced_at` are fillable, and `synced_at` is cast to `datetime`.
+- `src/Domains/ExternalId/Services/ExternalIds.php`:
+  - Renamed `SYSTEM_PATTERN` to `SOURCE_PATTERN`, and renamed `system` to `source` in the rules, filter rules and messages (`{source: id} map`, `source "X" must be ...`).
+  - `write()` stamps `synced_at` with one timestamp per call on every id it is sent. A new or changed id is saved with it. An id sent again unchanged gets the stamp in one base update, so only `synced_at` moves and `updated_at` stays.
+  - New `touch(array $subjectIds, string $subjectType)` runs one base update of `synced_at` for every id of the given records, like Roster's `SyncOrganizationsAction::touch()`. It takes a model class or a morph alias, as `find()` does. Its ids and `updated_at` stay as they are and no model events fire. An empty list runs no query.
+  - New static `syncedAt(iterable $rows)`, alongside `present()`, gives `{source: ISO-8601|null}`.
+- `src/Domains/Product/Models/ProductModel.php`, `src/Domains/Owner/Models/OwnerModel.php`: `externalIds()` now orders by `source`.
+- `src/Domains/Product/Data/CreateProductData.php`, `UpdateProductData.php`, `src/Domains/Owner/Data/CreateOwnerData.php`, `UpdateOwnerData.php`: `external_ids_synced_at => ['missing']`, beside `effective_flags`, so an echoed `{}` is refused too. Docblocks now say `{source: id}`.
+- `src/Domains/Product/Data/ListProductsData.php`, `src/Domains/Owner/Data/ListOwnersData.php`, `src/Domains/Search/Data/ProductQuery.php`: renamed in the docblocks.
+- `src/Domains/Owner/Actions/ListOwnersAction.php`, `src/Domains/Search/Services/DatabaseEngine.php`: filter on the `source` column.
+- `src/Domains/Search/Services/ScoutEngine.php`, `src/Domains/Search/Services/ProductDocument.php`: renamed variables and comments. Document values are `"{source}:{id}"`.
+- `src/Domains/Product/Resources/ProductResource.php`, `src/Domains/Owner/Resources/OwnerResource.php`: added `external_ids_synced_at` (an object even when empty) to `toArray()` and the schema, which MCP output uses too. Descriptions now say `{source: id}`.
+- `src/Domains/Product/Actions/CreateProductAction.php`, `UpdateProductAction.php`, `src/Domains/Owner/Actions/CreateOwnerAction.php`, `UpdateOwnerAction.php`: comments only.
+- `tests/Feature/ExternalIdsTest.php`:
+  - `source` naming throughout.
+  - New cases:
+    - `synced_at` set on create and update writes, including an id sent again unchanged.
+    - Left alone when the map is not sent.
+    - `touch()` stamps in one query and leaves other records and `updated_at` alone.
+    - The table's columns.
+    - Both database uniques, checked by inserting rows directly and bypassing the service.
+    - `external_ids_synced_at` in the HTTP show and index responses and MCP show and list output, with `null` for an unstamped row and `{}` when empty.
+    - `external_ids_synced_at` refused on create and update, over HTTP and through Data.
+- Outside the listed files: `src/Domains/Product/Data/UpsertProductsData.php`, one line. The `match` rule now references `ExternalIds::SOURCE_PATTERN`, so the renamed constant still resolves. The rest of the upsert rename belongs to group 17.
+
+**Tests**
+
+- I didn't run the test suite, as the prompt says; the gate runs 16.3. `php -l` is clean on the changed files. Pint passed with the worktree's `pint.json`. PHPStan with `phpstan.neon.dist` reported 0 errors on `src/Domains/ExternalId`, the resources, Search, the Product and Owner Data, and `ListOwnersAction`.
+
+**Deviations and handoffs**
+
+- The source-name rule stays `^[a-z0-9_-]{1,50}$`, as in AC 13, with the D-013 word change. The column is 64, as in AC 42 and Roster, so validation is stricter than the column.
+- Until group 17, `src/Domains/Product/Services/BulkProductWriter.php` still inserts a `system` column, so the bulk upsert path and its tests (`UpsertProducts*Test`) fail against the new schema. Group 17 owns that file, and also stamps `synced_at` there and calls `ExternalIds::touch()` for unchanged records.
+- Groups 18 and 19 still have to rename `system` in the Atrium form and partial (`external_ids_new.system`), and in `tests/Feature/Ui/*PagesTest.php` and `DocsTest`. Those fields never touch the column, so they keep working until then.

@@ -20,7 +20,7 @@ final readonly class CreateOwnerData extends Data
 {
     /**
      * @param  array<string, string|null>|null  $labels
-     * @param  array<string, string|null>|null  $externalIds  The owner's ids in other systems, {system: id}.
+     * @param  array<string, string|null>|null  $externalIds  The owner's ids in other systems, {source: id}.
      * @param  list<string>|null  $flags  Codes of the owner's own flags.
      */
     public function __construct(
@@ -43,6 +43,8 @@ final readonly class CreateOwnerData extends Data
             'slug' => ['prohibited'],
             // Own flags plus every ancestor's; read-only.
             'effective_flags' => ['missing'],
+            // When each source last synced its id; read-only.
+            'external_ids_synced_at' => ['missing'],
             'type' => ['required', 'string', Rule::exists(OwnerTypeModel::class, 'code')],
             'parent' => ['sometimes', 'nullable', 'string', Rule::exists(OwnerModel::class, 'code')],
             'labels' => ['sometimes', 'nullable', 'array'],

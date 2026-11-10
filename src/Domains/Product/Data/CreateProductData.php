@@ -29,7 +29,7 @@ final readonly class CreateProductData extends Data
      * @param  array<int, string>|null  $categories
      * @param  array<string, mixed>|null  $associations
      * @param  array<string, mixed>|null  $quantifiedAssociations
-     * @param  array<string, string|null>|null  $externalIds  The product's ids in other systems, {system: id}.
+     * @param  array<string, string|null>|null  $externalIds  The product's ids in other systems, {source: id}.
      * @param  list<string>|null  $flags  Codes of the product's own flags.
      */
     public function __construct(
@@ -65,6 +65,8 @@ final readonly class CreateProductData extends Data
             'slug' => ['prohibited'],
             // Own flags plus the owner chain's; read-only.
             'effective_flags' => ['missing'],
+            // When each source last synced its id; read-only.
+            'external_ids_synced_at' => ['missing'],
             'family' => ['sometimes', 'nullable', 'string', Rule::exists(FamilyModel::class, 'code')],
             'parent' => ['sometimes', 'nullable', 'string', Rule::exists(ProductModelModel::class, 'code')],
             'owner' => ['sometimes', 'nullable', 'string', Rule::exists(OwnerModel::class, 'code')],

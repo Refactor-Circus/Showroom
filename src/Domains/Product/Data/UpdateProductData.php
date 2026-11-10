@@ -27,7 +27,7 @@ final readonly class UpdateProductData extends Data
      * @param  array<int, string>|null|Missing  $categories
      * @param  array<string, mixed>|Missing  $associations
      * @param  array<string, mixed>|Missing  $quantifiedAssociations
-     * @param  array<string, string|null>|Missing  $externalIds  Only the systems sent change; null removes one.
+     * @param  array<string, string|null>|Missing  $externalIds  Only the sources sent change; null removes one.
      * @param  list<string>|Missing  $flags  Codes of the product's own flags; replaces the set.
      */
     public function __construct(
@@ -51,6 +51,7 @@ final readonly class UpdateProductData extends Data
             'identifier' => ['prohibited'],
             'slug' => ['prohibited'],
             'effective_flags' => ['missing'],
+            'external_ids_synced_at' => ['missing'],
             'parent' => ['prohibited'],
             'family' => ['sometimes', 'nullable', 'string', Rule::exists(FamilyModel::class, 'code')],
             'owner' => ['sometimes', 'nullable', 'string', Rule::exists(OwnerModel::class, 'code')],

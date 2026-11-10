@@ -106,7 +106,7 @@ final class UpdateProductAction
 
             $product->save();
 
-            // A (system, id) another product holds throws here, rolling back every change.
+            // A (source, id) another product holds throws here, rolling back every change.
             if (! $data->externalIds instanceof Missing) {
                 $this->externalIds->write($product, $data->externalIds);
             }

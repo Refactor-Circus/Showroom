@@ -199,14 +199,14 @@ final class ProductModel extends Model
     }
 
     /**
-     * The product's ids in other systems, by system. Deleted with the
+     * The product's ids in other systems, by source. Deleted with the
      * product by DeleteProductAction.
      *
      * @return MorphMany<ExternalIdModel, $this>
      */
     public function externalIds(): MorphMany
     {
-        return $this->morphMany(ExternalIdModel::class, 'subject')->orderBy('system');
+        return $this->morphMany(ExternalIdModel::class, 'subject')->orderBy('source');
     }
 
     /**

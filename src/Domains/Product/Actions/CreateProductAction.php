@@ -118,7 +118,7 @@ final class CreateProductAction
                 $product->save();
             });
 
-            // A (system, id) another product holds throws here, rolling back the product.
+            // A (source, id) another product holds throws here, rolling back the product.
             $this->externalIds->write($product, $data->externalIds ?? []);
             $this->flags->write($product, $flags);
 

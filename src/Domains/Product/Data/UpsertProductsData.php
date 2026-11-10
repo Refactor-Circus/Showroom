@@ -42,8 +42,8 @@ final readonly class UpsertProductsData extends Data
             // Each record is validated by the action, so it can fail alone.
             'records' => ['present', 'array', 'list'],
             'mode' => ['sometimes', Rule::enum(UpsertMode::class)],
-            // `identifier` fits the pattern of a system name too.
-            'match' => ['sometimes', 'string', 'regex:'.ExternalIds::SYSTEM_PATTERN],
+            // `identifier` fits the pattern of a source name too.
+            'match' => ['sometimes', 'string', 'regex:'.ExternalIds::SOURCE_PATTERN],
             'capture_changes' => ['sometimes', 'boolean'],
         ];
     }

@@ -111,10 +111,10 @@ final class ScoutEngine implements SearchEngine
             }
         }
 
-        // A list field of normalized "{system}:{id}" values. The engine quotes
+        // A list field of normalized "{source}:{id}" values. The engine quotes
         // and escapes the value when it writes its filter expression.
-        foreach ($query->external as $system => $externalId) {
-            $builder->where('external_ids', ProductDocument::externalId((string) $system, $externalId));
+        foreach ($query->external as $source => $externalId) {
+            $builder->where('external_ids', ProductDocument::externalId((string) $source, $externalId));
         }
 
         // Effective flags, normalized as the document stores them; every

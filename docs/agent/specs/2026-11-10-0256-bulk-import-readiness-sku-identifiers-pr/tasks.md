@@ -257,14 +257,14 @@ criteria: 13, 14, 15, 16, 36, 42, 43, 44
 
 User note (PR #11 review): "Align showroom_external_ids with Roster's organization_links pattern: (1) rename column and API/config/Data/filter naming `system` -> `source` everywhere; (2) add nullable `synced_at`, set on write and stamped in one bulk update for unchanged records in UpsertProductsAction, exposed read-only; (3) add DB unique (subject_type, subject_id, source). Edit the existing unmerged migration rather than adding a new one." See D-013 and spec ACs 42–44.
 
-- [ ] 16.1 Update `ExternalIdsTest`:
+- [x] 16.1 Update `ExternalIdsTest`:
   - `source` naming throughout
   - the database-level unique on (subject, source), bypassing the service
   - `synced_at` set on create and update writes
   - `external_ids_synced_at` in resources and MCP output
   - refusal of `external_ids_synced_at` on input
-- [ ] 16.2 Edit the create migration (`source` (64), `synced_at`, both uniques). Rename `system` to `source` in the model, the `ExternalIds` service (write sets `synced_at`; add `touch(array $subjectIds, string $subjectType)` for the bulk stamp), Data rules and messages, list filters, both engines, the search document and the resources.
-- [ ] 16.3 Run vendor/bin/pest tests/Feature/ExternalIdsTest.php tests/Unit/KeyNormalizerTest.php tests/Feature/Search; all green
+- [x] 16.2 Edit the create migration (`source` (64), `synced_at`, both uniques). Rename `system` to `source` in the model, the `ExternalIds` service (write sets `synced_at`; add `touch(array $subjectIds, string $subjectType)` for the bulk stamp), Data rules and messages, list filters, both engines, the search document and the resources.
+- [x] 16.3 Run vendor/bin/pest tests/Feature/ExternalIdsTest.php tests/Unit/KeyNormalizerTest.php tests/Feature/Search; all green
 
 ## Group 17: Rework 2, upsert match by source and synced_at stamp
 depends on: 16

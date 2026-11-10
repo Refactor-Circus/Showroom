@@ -51,7 +51,8 @@ final class ProductResource extends JsonResource
             'values' => $schema->object()->description('Slots keyed by attribute code: [{locale, scope, data}].')->required(),
             'associations' => $schema->object()->description('Per type code: {products, product_models}, when loaded.'),
             'quantified_associations' => $schema->object()->description('Per type code: {products, product_models} of {identifier, quantity}, when loaded.'),
-            'external_ids' => $schema->object()->description('The product\'s ids in other systems, {system: id}, when loaded. An empty map is {}.'),
+            'external_ids' => $schema->object()->description('The product\'s ids in other systems, {source: id}, when loaded. An empty map is {}.'),
+            'external_ids_synced_at' => $schema->object()->description('When each source last synced its id, {source: ISO-8601 timestamp|null}, when loaded. An empty map is {}. Read-only.'),
             'flags' => $schema->array()->items($schema->string())->description('Codes of the flags assigned to the product itself, in flag order, when loaded.'),
             'effective_flags' => $schema->array()->items($schema->string())->description('Its own flags plus every flag of its owner chain (a variant\'s root model\'s owner), in flag order, when loaded. Read-only.'),
             'created_at' => $schema->string()->nullable()->required(),
@@ -124,6 +125,7 @@ final class ProductResource extends JsonResource
             'quantified_associations' => $this->when($associations !== null, fn (): array => $associations['quantified_associations'] ?? []),
             // An object even when empty, so clients always read a map.
             'external_ids' => $this->whenLoaded('externalIds', fn (): object => (object) ExternalIds::present($this->externalIds)),
+            'external_ids_synced_at' => $this->whenLoaded('externalIds', fn (): object => (object) ExternalIds::syncedAt($this->externalIds)),
             'flags' => $this->whenLoaded('flags', fn (): array => $this->flags->map(fn (FlagModel $flag): string => $flag->code)->values()->all()),
             // Own plus inherited from the owner chain; a product cannot drop one.
             'effective_flags' => $this->when($effectiveFlags !== null, $effectiveFlags),

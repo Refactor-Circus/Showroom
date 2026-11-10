@@ -194,11 +194,11 @@ final class DatabaseEngine implements SearchEngine
 
         // Every pair must match, compared under the column's collation as the
         // unique index compares them. Values are bound, never interpolated.
-        foreach ($query->external as $system => $externalId) {
+        foreach ($query->external as $source => $externalId) {
             $builder->whereExists(fn (QueryBuilder $sub) => $sub->from(Tables::name('external_ids'))
                 ->whereColumn(Tables::name('external_ids').'.subject_id', Tables::name('products').'.id')
                 ->where(Tables::name('external_ids').'.subject_type', (new ProductModel)->getMorphClass())
-                ->where(Tables::name('external_ids').'.system', (string) $system)
+                ->where(Tables::name('external_ids').'.source', (string) $source)
                 ->where(Tables::name('external_ids').'.external_id', $externalId));
         }
 

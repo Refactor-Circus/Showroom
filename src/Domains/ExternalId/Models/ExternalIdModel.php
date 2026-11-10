@@ -14,16 +14,18 @@ use RefactorCircus\Showroom\Domains\Product\Models\ProductModel;
 use RefactorCircus\Showroom\Support\Tables;
 
 /**
- * A product's or an owner's id in another system — an ERP, a shop — so a
- * later sync finds the record it wrote before. One holder per id in a
- * system, per kind of record. Written only through the subject's actions,
+ * A product's or an owner's id in another system, its source (an ERP, a
+ * shop), so a later sync finds the record it wrote before. One holder per id
+ * in a source, per kind of record, and one id per record and source, as
+ * Roster's organization links. Written only through the subject's actions,
  * by the ExternalIds service.
  *
  * @property string $id
  * @property string $subject_type
  * @property string $subject_id
- * @property string $system
+ * @property string $source
  * @property string $external_id
+ * @property Carbon|null $synced_at When the source last wrote or confirmed the id.
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property-read ProductModel|OwnerModel|null $subject
@@ -41,8 +43,9 @@ final class ExternalIdModel extends Model
     protected $fillable = [
         'subject_type',
         'subject_id',
-        'system',
+        'source',
         'external_id',
+        'synced_at',
     ];
 
     /**
@@ -53,5 +56,15 @@ final class ExternalIdModel extends Model
     public function subject(): MorphTo
     {
         return $this->morphTo();
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'synced_at' => 'datetime',
+        ];
     }
 }

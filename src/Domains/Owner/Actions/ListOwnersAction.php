@@ -69,8 +69,8 @@ final class ListOwnersAction
         }
 
         // Compared under the column's collation, as the unique index compares them.
-        foreach ($filters->external as $system => $externalId) {
-            $query->whereHas('externalIds', fn (Builder $ids): Builder => $ids->where('system', (string) $system)->where('external_id', $externalId));
+        foreach ($filters->external as $source => $externalId) {
+            $query->whereHas('externalIds', fn (Builder $ids): Builder => $ids->where('source', (string) $source)->where('external_id', $externalId));
         }
 
         // Every flag asked for, own or inherited from an ancestor.

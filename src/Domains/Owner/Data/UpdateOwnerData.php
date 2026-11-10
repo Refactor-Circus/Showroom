@@ -21,7 +21,7 @@ final readonly class UpdateOwnerData extends Data
 {
     /**
      * @param  array<string, string|null>|null|Missing  $labels
-     * @param  array<string, string|null>|Missing  $externalIds  Only the systems sent change; null removes one.
+     * @param  array<string, string|null>|Missing  $externalIds  Only the sources sent change; null removes one.
      * @param  list<string>|Missing  $flags  Codes of the owner's own flags; replaces the set.
      */
     public function __construct(
@@ -40,6 +40,7 @@ final readonly class UpdateOwnerData extends Data
             'code' => ['prohibited'],
             'slug' => ['prohibited'],
             'effective_flags' => ['missing'],
+            'external_ids_synced_at' => ['missing'],
             'type' => ['prohibited'],
             'parent' => ['sometimes', 'nullable', 'string', Rule::exists(OwnerModel::class, 'code')],
             'labels' => ['sometimes', 'nullable', 'array'],

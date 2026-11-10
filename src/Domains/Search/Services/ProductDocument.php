@@ -144,7 +144,7 @@ final class ProductDocument
                 ->unique()
                 ->values()
                 ->all(),
-            // "{system}:{id}", the id normalized, so a filter matches it
+            // "{source}:{id}", the id normalized, so a filter matches it
             // whatever its case or accents, as the database does.
             'external_ids' => self::externalIds($product),
             // Effective flags — own, the owner chain's, a variant's root model
@@ -169,9 +169,9 @@ final class ProductDocument
     /**
      * The value a document stores, and a filter matches, for one external id.
      */
-    public static function externalId(string $system, string $externalId): string
+    public static function externalId(string $source, string $externalId): string
     {
-        return $system.':'.KeyNormalizer::normalize($externalId);
+        return $source.':'.KeyNormalizer::normalize($externalId);
     }
 
     /**
@@ -183,7 +183,7 @@ final class ProductDocument
     }
 
     /**
-     * The product's external ids as "{system}:{id}", by system.
+     * The product's external ids as "{source}:{id}", by source.
      *
      * @return list<string>
      */
@@ -191,9 +191,9 @@ final class ProductDocument
     {
         $ids = [];
 
-        foreach (ExternalIds::present($product->externalIds) as $system => $externalId) {
-            // A digits-only system name comes back as an int key.
-            $ids[] = self::externalId((string) $system, $externalId);
+        foreach (ExternalIds::present($product->externalIds) as $source => $externalId) {
+            // A digits-only source name comes back as an int key.
+            $ids[] = self::externalId((string) $source, $externalId);
         }
 
         return $ids;

@@ -76,7 +76,7 @@ final class UpdateOwnerAction
                 }
             }
 
-            // A (system, id) another owner holds throws here, rolling back every change.
+            // A (source, id) another owner holds throws here, rolling back every change.
             if (is_array($data->externalIds)) {
                 $this->externalIds->write($owner, $data->externalIds);
             }

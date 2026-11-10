@@ -72,7 +72,7 @@ final class CreateOwnerAction
             });
             $this->place($owner, $parent);
 
-            // A (system, id) another owner holds throws here, rolling back the owner.
+            // A (source, id) another owner holds throws here, rolling back the owner.
             $this->externalIds->write($owner, $data->externalIds ?? []);
             $this->flags->write($owner, $flags);
 

@@ -3,8 +3,11 @@
 declare(strict_types=1);
 
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Database\UniqueConstraintViolationException;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Laravel\Mcp\Request as McpRequest;
 use Laravel\Mcp\Server\Tool;
@@ -40,8 +43,9 @@ use RefactorCircus\Showroom\Tests\Fixtures\RecordingScoutEngine;
 
 /*
  * Products and owners carry their ids in other systems (an ERP, a shop) as a
- * {system: id} map, unique per subject type and system, so a later sync finds
- * the record it wrote before.
+ * {source: id} map, unique per subject type and source, and one id per record
+ * and source, so a later sync finds the record it wrote before. Each id keeps
+ * when its source last synced it, as Roster's organization links do.
  */
 
 /**
@@ -65,7 +69,7 @@ function externalOwner(string $code, array $input = []): OwnerModel
 }
 
 /**
- * The external ids stored for a record, as {system: id}.
+ * The external ids stored for a record, as {source: id}.
  *
  * @return array<string, string>
  */
@@ -74,9 +78,42 @@ function storedExternalIds(ProductModel|OwnerModel $subject): array
     return ExternalIdModel::query()
         ->where('subject_type', $subject->getMorphClass())
         ->where('subject_id', $subject->getKey())
-        ->orderBy('system')
-        ->pluck('external_id', 'system')
+        ->orderBy('source')
+        ->pluck('external_id', 'source')
         ->all();
+}
+
+/**
+ * When each of a record's external ids last synced, as {source: ISO-8601|null}.
+ *
+ * @return array<string, string|null>
+ */
+function storedSyncedAt(ProductModel|OwnerModel $subject): array
+{
+    return ExternalIdModel::query()
+        ->where('subject_type', $subject->getMorphClass())
+        ->where('subject_id', $subject->getKey())
+        ->orderBy('source')
+        ->get()
+        ->mapWithKeys(fn (ExternalIdModel $row): array => [$row->source => $row->synced_at?->toIso8601String()])
+        ->all();
+}
+
+/**
+ * Insert an external id row directly, bypassing the ExternalIds service.
+ *
+ * @param  array<string, mixed>  $attributes
+ */
+function insertExternalIdRow(ProductModel|OwnerModel $subject, string $source, string $externalId, array $attributes = []): void
+{
+    DB::table(Tables::name('external_ids'))->insert([
+        'id' => (string) Str::ulid(),
+        'subject_type' => $subject->getMorphClass(),
+        'subject_id' => $subject->getKey(),
+        'source' => $source,
+        'external_id' => $externalId,
+        ...$attributes,
+    ]);
 }
 
 /**
@@ -137,7 +174,7 @@ describe('writing the map', function (): void {
             ->and(ExternalIdModel::query()->where('subject_id', $product->id)->value('subject_type'))->toBe($product->getMorphClass());
     });
 
-    it('changes only the systems an update sends, and removes a system sent as null', function (): void {
+    it('changes only the sources an update sends, and removes a source sent as null', function (): void {
         $product = externalProduct('TEE', ['external_ids' => ['erp' => 'E-1', 'shop' => 'S-1', 'pim' => 'P-1']]);
         $owner = externalOwner('acme', ['external_ids' => ['erp' => 'V-1', 'shop' => 'VS-1']]);
 
@@ -156,7 +193,7 @@ describe('writing the map', function (): void {
         expect(storedExternalIds($product))->toBe(['erp' => 'E-1']);
     });
 
-    it('accepts system names and ids within the rules', function (array $map): void {
+    it('accepts source names and ids within the rules', function (array $map): void {
         $product = externalProduct('TEE', ['external_ids' => $map]);
 
         expect(storedExternalIds($product))->toBe($map);
@@ -168,7 +205,7 @@ describe('writing the map', function (): void {
         'an id with spaces, quotes and a slash' => [['erp' => '83AL-IC/40 "4" RED']],
     ]);
 
-    it('refuses a system name or an id outside the rules', function (array $map, string $key): void {
+    it('refuses a source name or an id outside the rules', function (array $map, string $key): void {
         $errors = externalIdErrors(fn () => externalProduct('TEE', ['external_ids' => $map]));
 
         expect($errors)->toHaveKey($key)
@@ -192,10 +229,122 @@ describe('writing the map', function (): void {
             ->and(externalIdErrors(fn () => UpdateOwnerData::from(['external_ids' => null])))->toHaveKey('external_ids')
             ->and(storedExternalIds($product))->toBe([]);
     });
+
+    it('refuses external_ids_synced_at on create and update, even as an empty map', function (): void {
+        $product = externalProduct('TEE', ['external_ids' => ['erp' => 'E-1']]);
+        $owner = externalOwner('acme', ['external_ids' => ['erp' => 'V-1']]);
+        $sent = ['external_ids_synced_at' => ['erp' => '2026-11-10T09:00:00+00:00']];
+
+        $this->postJson(route('showroom.products.store'), ['identifier' => 'CAP', ...$sent])->assertUnprocessable()->assertJsonValidationErrors('external_ids_synced_at');
+        $this->patchJson(route('showroom.products.update', $product), $sent)->assertUnprocessable()->assertJsonValidationErrors('external_ids_synced_at');
+        $this->postJson(route('showroom.owners.store'), ['code' => 'globex', 'type' => 'vendor', ...$sent])->assertUnprocessable()->assertJsonValidationErrors('external_ids_synced_at');
+        $this->patchJson(route('showroom.owners.update', $owner), $sent)->assertUnprocessable()->assertJsonValidationErrors('external_ids_synced_at');
+
+        expect(externalIdErrors(fn () => CreateProductData::from(['identifier' => 'CAP', 'external_ids_synced_at' => []])))->toHaveKey('external_ids_synced_at')
+            ->and(externalIdErrors(fn () => UpdateProductData::from(['external_ids_synced_at' => []])))->toHaveKey('external_ids_synced_at')
+            ->and(externalIdErrors(fn () => CreateOwnerData::from(['code' => 'globex', 'type' => 'vendor', 'external_ids_synced_at' => []])))->toHaveKey('external_ids_synced_at')
+            ->and(externalIdErrors(fn () => UpdateOwnerData::from(['external_ids_synced_at' => []])))->toHaveKey('external_ids_synced_at')
+            ->and(ProductModel::query()->where('identifier', 'CAP')->exists())->toBeFalse()
+            ->and(OwnerModel::query()->where('code', 'globex')->exists())->toBeFalse();
+    });
+});
+
+describe('synced_at', function (): void {
+    it('stamps every id a create or an update writes, including one sent again unchanged', function (): void {
+        $this->travelTo(Carbon::parse('2026-11-10 09:00:00'));
+        $nine = '2026-11-10T09:00:00+00:00';
+
+        $product = externalProduct('TEE', ['external_ids' => ['erp' => 'E-1', 'shop' => 'S-1', 'pim' => 'P-1']]);
+        $owner = externalOwner('acme', ['external_ids' => ['erp' => 'V-1', 'shop' => 'VS-1']]);
+
+        expect(storedSyncedAt($product))->toBe(['erp' => $nine, 'pim' => $nine, 'shop' => $nine])
+            ->and(storedSyncedAt($owner))->toBe(['erp' => $nine, 'shop' => $nine]);
+
+        $this->travelTo(Carbon::parse('2026-11-10 10:00:00'));
+        $ten = '2026-11-10T10:00:00+00:00';
+
+        app(UpdateProductAction::class)->execute($product, UpdateProductData::from(['external_ids' => ['shop' => 'S-2', 'pim' => 'P-1', 'd365' => 'D-1']]));
+        app(UpdateOwnerAction::class)->execute($owner, UpdateOwnerData::from(['external_ids' => ['erp' => 'V-1']]));
+
+        expect(storedSyncedAt($product))->toBe(['d365' => $ten, 'erp' => $nine, 'pim' => $ten, 'shop' => $ten])
+            ->and(storedSyncedAt($owner))->toBe(['erp' => $ten, 'shop' => $nine]);
+    });
+
+    it('leaves synced_at alone when an update does not send the map', function (): void {
+        $this->travelTo(Carbon::parse('2026-11-10 09:00:00'));
+        $product = externalProduct('TEE', ['external_ids' => ['erp' => 'E-1']]);
+
+        $this->travelTo(Carbon::parse('2026-11-10 10:00:00'));
+        app(UpdateProductAction::class)->execute($product, UpdateProductData::from(['enabled' => false]));
+
+        expect(storedSyncedAt($product))->toBe(['erp' => '2026-11-10T09:00:00+00:00']);
+    });
+
+    it('touches the ids of many records of one kind in one query, and nothing else', function (): void {
+        $this->travelTo(Carbon::parse('2026-11-10 09:00:00'));
+        $nine = '2026-11-10T09:00:00+00:00';
+
+        $tee = externalProduct('TEE', ['external_ids' => ['erp' => 'E-1', 'shop' => 'S-1']]);
+        $cap = externalProduct('CAP', ['external_ids' => ['erp' => 'E-2']]);
+        $mug = externalProduct('MUG', ['external_ids' => ['erp' => 'E-3']]);
+        $owner = externalOwner('acme', ['external_ids' => ['erp' => 'E-1']]);
+
+        $this->travelTo(Carbon::parse('2026-11-10 10:00:00'));
+        $ten = '2026-11-10T10:00:00+00:00';
+
+        DB::flushQueryLog();
+        DB::enableQueryLog();
+        app(ExternalIds::class)->touch([$tee->id, $cap->id], ProductModel::class);
+        app(ExternalIds::class)->touch([], ProductModel::class);
+        $queries = count(DB::getQueryLog());
+        DB::disableQueryLog();
+
+        expect($queries)->toBe(1)
+            ->and(storedSyncedAt($tee))->toBe(['erp' => $ten, 'shop' => $ten])
+            ->and(storedSyncedAt($cap))->toBe(['erp' => $ten])
+            ->and(storedSyncedAt($mug))->toBe(['erp' => $nine])
+            ->and(storedSyncedAt($owner))->toBe(['erp' => $nine])
+            // Only the sync stamp moves: the ids themselves did not change.
+            ->and(ExternalIdModel::query()->where('subject_id', $tee->id)->get()->map(fn (ExternalIdModel $row): ?string => $row->updated_at?->toIso8601String())->unique()->all())->toBe([$nine]);
+
+        // The morph alias works as well as the model class.
+        $this->travelTo(Carbon::parse('2026-11-10 11:00:00'));
+        app(ExternalIds::class)->touch([$owner->id], $owner->getMorphClass());
+
+        expect(storedSyncedAt($owner))->toBe(['erp' => '2026-11-10T11:00:00+00:00']);
+    });
+});
+
+describe('the table', function (): void {
+    it('has a source, an external id and a nullable synced_at', function (): void {
+        $table = Tables::name('external_ids');
+
+        expect(Schema::hasColumns($table, ['subject_type', 'subject_id', 'source', 'external_id', 'synced_at', 'created_at', 'updated_at']))->toBeTrue()
+            ->and(Schema::hasColumn($table, 'system'))->toBeFalse()
+            ->and(collect(Schema::getColumns($table))->firstWhere('name', 'synced_at')['nullable'] ?? null)->toBeTrue();
+    });
+
+    it('refuses a second id from one source for one record at the database, bypassing the service', function (): void {
+        $product = externalProduct('TEE', ['external_ids' => ['erp' => 'E-1']]);
+
+        expect(fn () => insertExternalIdRow($product, 'erp', 'E-2'))->toThrow(UniqueConstraintViolationException::class);
+
+        // Another source for the same record is fine.
+        insertExternalIdRow($product, 'shop', 'E-2');
+
+        expect(storedExternalIds($product))->toBe(['erp' => 'E-1', 'shop' => 'E-2']);
+    });
+
+    it('refuses a (source, id) another record of the same kind holds at the database, bypassing the service', function (): void {
+        externalProduct('TEE', ['external_ids' => ['erp' => 'E-1']]);
+        $cap = externalProduct('CAP');
+
+        expect(fn () => insertExternalIdRow($cap, 'erp', 'E-1'))->toThrow(UniqueConstraintViolationException::class);
+    });
 });
 
 describe('uniqueness', function (): void {
-    it('refuses a (system, id) another product holds, and writes nothing', function (): void {
+    it('refuses a (source, id) another product holds, and writes nothing', function (): void {
         Catalog::apparel();
         externalProduct('TEE', ['external_ids' => ['erp' => 'E-1']]);
 
@@ -203,7 +352,7 @@ describe('uniqueness', function (): void {
 
         expect($errors)->toHaveKey('external_ids.erp')
             ->and(ProductModel::query()->where('identifier', 'CAP')->exists())->toBeFalse()
-            ->and(ExternalIdModel::query()->where('system', 'shop')->exists())->toBeFalse();
+            ->and(ExternalIdModel::query()->where('source', 'shop')->exists())->toBeFalse();
 
         $mug = externalProduct('MUG', ['values' => ['name' => Catalog::value('Mug')], 'external_ids' => ['shop' => 'S-9']]);
         $before = ProductModel::query()->findOrFail($mug->id)->only(['slug', 'values', 'updated_at']);
@@ -218,7 +367,7 @@ describe('uniqueness', function (): void {
             ->and(storedExternalIds($mug))->toBe(['shop' => 'S-9']);
     });
 
-    it('refuses a (system, id) another owner holds, and writes nothing', function (): void {
+    it('refuses a (source, id) another owner holds, and writes nothing', function (): void {
         externalOwner('acme', ['external_ids' => ['erp' => 'V-1']]);
         $globex = externalOwner('globex', ['labels' => ['en' => 'Globex']]);
 
@@ -241,13 +390,13 @@ describe('uniqueness', function (): void {
         expect(storedExternalIds($product))->toBe(['erp' => 'E-1']);
     });
 
-    it('lets the same id be held under another system', function (): void {
+    it('lets the same id be held under another source', function (): void {
         externalProduct('TEE', ['external_ids' => ['erp' => 'X-1']]);
 
         expect(storedExternalIds(externalProduct('CAP', ['external_ids' => ['shop' => 'X-1']])))->toBe(['shop' => 'X-1']);
     });
 
-    it('lets one product and one owner hold the same (system, id)', function (): void {
+    it('lets one product and one owner hold the same (source, id)', function (): void {
         $product = externalProduct('TEE', ['external_ids' => ['erp' => '1001']]);
         $owner = externalOwner('acme', ['external_ids' => ['erp' => '1001']]);
 
@@ -255,7 +404,7 @@ describe('uniqueness', function (): void {
             ->and(storedExternalIds($owner))->toBe(['erp' => '1001']);
     });
 
-    it('keeps the first record of a batch when a second holds the same (system, id)', function (): void {
+    it('keeps the first record of a batch when a second holds the same (source, id)', function (): void {
         $refused = [];
 
         DB::transaction(function () use (&$refused): void {
@@ -309,6 +458,32 @@ describe('reading the map', function (): void {
         mcpTool(ListOwnersTool::class)->assertOk()->assertSee('"external_ids":{"erp":"V-1"}');
     });
 
+    it('returns when each source last synced, from the product and owner endpoints and MCP tools', function (): void {
+        $this->travelTo(Carbon::parse('2026-11-10 09:00:00'));
+        $nine = '2026-11-10T09:00:00+00:00';
+
+        $product = externalProduct('TEE', ['external_ids' => ['shop' => 'S-1', 'erp' => 'E-1']]);
+        $owner = externalOwner('acme', ['external_ids' => ['erp' => 'V-1']]);
+        // A row no sync has stamped yet.
+        insertExternalIdRow($owner, 'pim', 'P-1');
+
+        $this->getJson(route('showroom.products.show', $product))->assertOk()->assertJsonPath('data.external_ids_synced_at', ['erp' => $nine, 'shop' => $nine]);
+        $this->getJson(route('showroom.products.index'))->assertOk()->assertJsonPath('data.0.external_ids_synced_at', ['erp' => $nine, 'shop' => $nine]);
+        $this->getJson(route('showroom.owners.show', $owner))->assertOk()->assertJsonPath('data.external_ids_synced_at', ['erp' => $nine, 'pim' => null]);
+        $this->getJson(route('showroom.owners.index'))->assertOk()->assertJsonPath('data.0.external_ids_synced_at', ['erp' => $nine, 'pim' => null]);
+
+        $this->travelTo(Carbon::parse('2026-11-10 10:00:00'));
+
+        $this->patchJson(route('showroom.products.update', $product), ['external_ids' => ['shop' => 'S-2']])
+            ->assertOk()
+            ->assertJsonPath('data.external_ids_synced_at', ['erp' => $nine, 'shop' => '2026-11-10T10:00:00+00:00']);
+
+        mcpTool(ShowProductTool::class, ['product' => $product->id])->assertOk()->assertSee('"external_ids_synced_at":{"erp":"'.$nine.'","shop":"2026-11-10T10:00:00+00:00"}');
+        mcpTool(ListProductsTool::class)->assertOk()->assertSee('"external_ids_synced_at":{"erp":"'.$nine.'","shop":"2026-11-10T10:00:00+00:00"}');
+        mcpTool(ShowOwnerTool::class, ['owner' => $owner->id])->assertOk()->assertSee('"external_ids_synced_at":{"erp":"'.$nine.'","pim":null}');
+        mcpTool(ListOwnersTool::class)->assertOk()->assertSee('"external_ids_synced_at":{"erp":"'.$nine.'","pim":null}');
+    });
+
     it('serialises an empty map as an object', function (): void {
         $product = externalProduct('TEE');
         $owner = externalOwner('acme');
@@ -318,12 +493,15 @@ describe('reading the map', function (): void {
             $this->getJson(route('showroom.products.show', $product)),
             $this->getJson(route('showroom.owners.show', $owner)),
         ] as $response) {
-            expect($response->assertSuccessful()->getContent())->toContain('"external_ids":{}');
+            expect($response->assertSuccessful()->getContent())->toContain('"external_ids":{}')
+                ->toContain('"external_ids_synced_at":{}');
         }
 
         // The JSON the server sends: mcpTool() decodes it to arrays, where {} and [] look alike.
         expect(rawMcpOutput(ShowProductTool::class, ['product' => $product->id]))->toContain('"external_ids":{}')
-            ->and(rawMcpOutput(ShowOwnerTool::class, ['owner' => $owner->id]))->toContain('"external_ids":{}');
+            ->toContain('"external_ids_synced_at":{}')
+            ->and(rawMcpOutput(ShowOwnerTool::class, ['owner' => $owner->id]))->toContain('"external_ids":{}')
+            ->toContain('"external_ids_synced_at":{}');
     });
 
     it('loads the map of many records in one query', function (): void {
@@ -341,7 +519,7 @@ describe('reading the map', function (): void {
             ->and($products->map(fn (ProductModel $product): array => ExternalIds::present($product->externalIds))->all())->toBe([['erp' => 'E-2'], ['erp' => 'E-1']]);
     });
 
-    it('finds the records that hold ids, by subject type and system', function (): void {
+    it('finds the records that hold ids, by subject type and source', function (): void {
         $tee = externalProduct('TEE', ['external_ids' => ['erp' => 'E-1']]);
         $cap = externalProduct('CAP', ['external_ids' => ['erp' => 'E-2', 'shop' => 'E-3']]);
         externalOwner('acme', ['external_ids' => ['erp' => 'E-3']]);
@@ -398,7 +576,7 @@ describe('on the Scout engine', function (): void {
         }
     });
 
-    it('indexes each external id as a normalized "{system}:{id}"', function (): void {
+    it('indexes each external id as a normalized "{source}:{id}"', function (): void {
         $documents = collect($this->scout->documents)->pluck('external_ids', 'identifier')->all();
 
         expect($documents)->toBe([

@@ -29,7 +29,7 @@ final readonly class ListProductsData extends Data
      * @param  list<Filter>  $filters
      * @param  list<string>  $facets
      * @param  list<string>|null  $locales
-     * @param  array<string, string>  $external  Products holding these ids, {system: id}; every pair must match.
+     * @param  array<string, string>  $external  Products holding these ids, {source: id}; every pair must match.
      * @param  list<string>  $flags  Products carrying every one of these flags, own or inherited.
      */
     public function __construct(
