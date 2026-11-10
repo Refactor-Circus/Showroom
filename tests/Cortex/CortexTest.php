@@ -30,7 +30,7 @@ it('offers every Showroom tool to Cortex agents under its own name, the history 
 
     $names = array_map(fn (string $class): string => app($class)->name(), Server::withoutHistory(ShowroomServer::TOOLS));
 
-    expect(ShowroomServer::TOOLS)->toHaveCount(78)
+    expect(ShowroomServer::TOOLS)->toHaveCount(83)
         ->and(array_diff($names, $tools->names()))->toBe([])
         ->and($tools->names())->not->toContain('list-showroom-history-tool')
         ->and($tools->get('list-attributes-tool'))->toBeInstanceOf(AgentTool::class)
