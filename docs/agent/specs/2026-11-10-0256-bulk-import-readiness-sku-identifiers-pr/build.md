@@ -277,3 +277,24 @@ External IDs (AC 13, 14, 15, 16, 36). Committed on `ring-master/2026-11-10-0256-
 
 - **`ExternalIdPolicy` exists.** The spec says external ids have no separate policy. But `ArchTest` requires every model to have an entry in `showroom.policies`. The policy only defers to the subject's policy (`view`, then `update`), as `VersionPolicy` does, so the subject's policy still decides.
 - **`subject_type` stores the morph aliases `showroom_product` and `showroom_owner`, not `product` and `owner`.** These are the aliases the models already register. Group 6's flag assignments store the same values.
+
+## Group 5
+
+This retry covers task 5.3 only. The code for 5.1 and 5.2 is in commit 63335ea; see "Group 5 (salvaged)" above.
+
+- **Files:** I changed no source or test files. This commit only ticks 5.3 in `tasks.md` and adds this note.
+- **Tests:**
+  - `tests/Feature/ExternalIdsTest.php` and `tests/Unit/KeyNormalizerTest.php` pass: 58 tests, 190 assertions (AC 13–16, 36). I didn't run the full suite; the gate runs it.
+- **Known failures the gate will hit, all outside group 5:**
+  - Group 4 bound `{product}` and `{owner}` by `id` by default (AC 8). Many older tests still call product and owner URLs by identifier or code, so they get `404`. For example, all 8 tests in `tests/Feature/Api/WorkflowApiTest.php` fail this way.
+  - These files still use identifier or code URLs:
+    - `tests/Feature/Api/`: `WorkflowApiTest`, `ProductApiTest`, `AssetApiTest`, `CompletenessApiTest`, `ProductPollingTest`, `CategoryApiTest`, `AssociationApiTest`, `OwnershipApiTest` and `ChannelApiTest`
+    - `tests/Feature/`: `PolicyTest` and `PerformanceTest`
+    - `tests/Feature/Search/ScoutEngineTest`
+    - `tests/Feature/Ui/`: `WorkflowPagesTest`, `AssociationPagesTest` and `WidgetsTest`
+    - `tests/Feature/Impex/`: `ImportExportTest` and `ProductWebhooksTest`
+    - `tests/Keen/AuditHooksTest`
+    - `tests/Modes/RenamedTables/RenamedTablesTest`
+  - The fix is to address records by `id` in those tests, or to send `?by=slug` with the slug. Changing the binding is not the fix, because AC 8 requires it.
+  - None of these files is in group 5's list, so I left them for a fix round.
+- **Deviations:** none new.

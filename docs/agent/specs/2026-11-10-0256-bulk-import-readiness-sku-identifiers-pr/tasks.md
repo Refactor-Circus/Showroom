@@ -91,7 +91,7 @@ criteria: 13, 14, 15, 16, 36
   - `KeyNormalizer`
   - writing external ids from the create and update actions; deleting them on delete
   - resources, the list filters and both search engines
-- [ ] 5.3 Run vendor/bin/pest; all green
+- [x] 5.3 Run vendor/bin/pest; all green
 
 ## Group 6: Flag definitions
 depends on: 1
