@@ -756,3 +756,21 @@ Docs and changelog. The upgrade notes come from the spec's Design.
   - `create-product-tool`, `update-product-tool` and the owner create and update tools don't declare `external_ids` or `flags`.
   - `list-products-tool` and `list-owners-tool` don't declare `external` or `flags`.
   - `create-product-tool` still describes `identifier` as "letters, digits, dots, dashes and underscores".
+
+## Group 11 (retry)
+
+All of 11.1 to 11.4 were already committed in `6b2dcca`, with the tasks ticked. This retry checked that work and changed no docs or tests.
+
+**Files**
+
+- None changed apart from this note.
+
+**Tests**
+
+- `tests/Feature/DocsTest.php`, run with the worktree's `phpunit.xml.dist`: 47 passed, 112 assertions. Run against the host app's configuration instead, the file fails at boot with `Undefined array key "external_ids"` in the external-ids migration, because that configuration lacks the new `tables.*` keys. That failure comes from where the tests run, not from the docs.
+- Pint is clean on `tests/Feature/DocsTest.php`.
+- I didn't run the full suite (11.4); the gate runs it.
+
+**Deviations**
+
+- None.
