@@ -70,13 +70,16 @@ final class ProductDocument
             ->mapWithKeys(fn (AttributeModel $attribute): array => [$attribute->code => $attribute->type])
             ->all();
 
+        $chain = $owners === [] ? new Collection : OwnerModel::query()->whereKey(array_keys($owners))->get(['id', 'code', 'slug']);
         /** @var array<string, string> $ownerCodes */
-        $ownerCodes = $owners === [] ? [] : OwnerModel::query()->whereKey(array_keys($owners))->pluck('code', 'id')->all();
+        $ownerCodes = $chain->pluck('code', 'id')->all();
+        /** @var array<string, string> $ownerSlugs */
+        $ownerSlugs = $chain->pluck('slug', 'id')->all();
         /** @var array<string, string> $categoryCodes */
         $categoryCodes = $categories === [] ? [] : CategoryModel::query()->whereKey(array_keys($categories))->pluck('code', 'id')->all();
 
         return array_map(
-            fn (array $item): array => self::document($item[0], $item[1], $item[2], $item[3], $types, $ownerCodes, $categoryCodes),
+            fn (array $item): array => self::document($item[0], $item[1], $item[2], $item[3], $types, $ownerCodes, $ownerSlugs, $categoryCodes),
             $batch,
         );
     }
@@ -86,10 +89,11 @@ final class ProductDocument
      * @param  Collection<int, CategoryModel>  $assigned
      * @param  array<string, AttributeType>  $types
      * @param  array<string, string>  $ownerCodes  By id.
+     * @param  array<string, string>  $ownerSlugs  By id.
      * @param  array<string, string>  $categoryCodes  By id.
      * @return array<string, mixed>
      */
-    private static function document(ProductModel $product, array $values, ?OwnerModel $owner, Collection $assigned, array $types, array $ownerCodes, array $categoryCodes): array
+    private static function document(ProductModel $product, array $values, ?OwnerModel $owner, Collection $assigned, array $types, array $ownerCodes, array $ownerSlugs, array $categoryCodes): array
     {
         $text = [$product->identifier];
 
@@ -110,11 +114,14 @@ final class ProductDocument
         return [
             'id' => $product->id,
             'identifier' => $product->identifier,
+            'slug' => $product->slug,
             'family' => $product->family?->code,
             'parent' => $product->parent?->code,
             'owner' => $owner?->code,
             // The whole chain, so a search for a vendor finds its series' products.
             'owners' => $owner === null ? [] : self::codes($owner->path, $ownerCodes),
+            // The same chain by slug, root first.
+            'owner_slugs' => $owner === null ? [] : self::codes($owner->path, $ownerSlugs),
             'categories' => $assigned->pluck('code')->all(),
             // Assigned categories and all their ancestors, so a branch finds
             // everything filed anywhere beneath it.
@@ -150,7 +157,7 @@ final class ProductDocument
     }
 
     /**
-     * The codes of a path's nodes, root first — the node's chain().
+     * The codes (or slugs) of a path's nodes, root first — the node's chain().
      *
      * @param  array<string, string>  $codes  By id.
      * @return list<string>

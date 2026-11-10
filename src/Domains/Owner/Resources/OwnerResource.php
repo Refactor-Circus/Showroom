@@ -24,6 +24,7 @@ final class OwnerResource extends JsonResource
         return [
             'id' => $schema->string()->description('ULID.')->required(),
             'code' => $schema->string()->required(),
+            'slug' => $schema->string()->description('URL-safe, unique and never changed; set from the default-locale label, else the code, when the owner is created. Read-only.')->required(),
             'type' => $schema->string()->description('Owner type code, when loaded.'),
             'labels' => $schema->object()->description('Labels keyed by locale.')->required(),
             'parent' => $schema->string()->nullable()->description('Parent owner code, when loaded.'),
@@ -54,6 +55,7 @@ final class OwnerResource extends JsonResource
         return [
             'id' => $this->id,
             'code' => $this->code,
+            'slug' => $this->slug,
             'type' => $this->whenLoaded('type', fn (): string => $this->type->code),
             'labels' => $this->labels ?? [],
             'parent' => $this->whenLoaded('parent', fn (): ?string => $this->parent?->code),

@@ -42,6 +42,7 @@ final readonly class UpdateProductData extends Data
     {
         return [
             'identifier' => ['prohibited'],
+            'slug' => ['prohibited'],
             'parent' => ['prohibited'],
             'family' => ['sometimes', 'nullable', 'string', Rule::exists(FamilyModel::class, 'code')],
             'owner' => ['sometimes', 'nullable', 'string', Rule::exists(OwnerModel::class, 'code')],

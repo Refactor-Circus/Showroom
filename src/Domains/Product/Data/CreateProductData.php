@@ -54,6 +54,8 @@ final readonly class CreateProductData extends Data
     {
         return [
             'identifier' => ['required', 'string', 'max:191', Rule::regex(self::identifierPattern()), Rule::unique(ProductModel::class, 'identifier')],
+            // Set from the identifier; read-only.
+            'slug' => ['prohibited'],
             'family' => ['sometimes', 'nullable', 'string', Rule::exists(FamilyModel::class, 'code')],
             'parent' => ['sometimes', 'nullable', 'string', Rule::exists(ProductModelModel::class, 'code')],
             'owner' => ['sometimes', 'nullable', 'string', Rule::exists(OwnerModel::class, 'code')],
