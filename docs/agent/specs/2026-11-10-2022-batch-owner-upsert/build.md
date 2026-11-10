@@ -142,3 +142,8 @@ showroom:upsert-owners Impex flow (tasks 3.1-3.3; criteria 13, 14).
 
 - `InlineOwnerSource` is a new file outside the group's list (above).
 - `docs/12-impex.md` documents `showroom:upsert-products` and its chunk events but is outside the group's list, so the new flow is not documented there yet.
+
+### Retry
+
+- The work above was already committed in `ea408e1`, with tasks 3.1-3.3 ticked. No code changed on the retry.
+- Checked narrowly: `UpsertOwnersFlowTest` and `ArchTest` pass (35 tests, 158 assertions), including the core-does-not-use-Impex rule. Pint passes on the group's files. PHPStan passes on `src/Impex`, `src/Domains/Transfer/Events` and the new test file. The gate runs the full suite.
