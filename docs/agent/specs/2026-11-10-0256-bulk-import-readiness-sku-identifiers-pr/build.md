@@ -367,3 +367,12 @@ Resumed from checkpoint 4d664b3 (see "Group 7 (salvaged)" above). The `Flags` se
     - `src/Support/RecordLookup.php:143` (group 4): a `return.type` mismatch on the `TModel` template.
   - The identifier/code-URL `404` failures listed under group 5 (for example `OwnershipApiTest`) are group 13's.
 - **Deviations:** the design's model `deleting` hook for flag assignments is not added. The delete actions call `Flags::forget()`, as they do for asset links, associations and external ids, and `DeleteFlagAction` ignores orphans, so AC 33 holds. A hook would need a listener on `ProductDeletingEvent`/`OwnerDeletingEvent` in a provider outside this group's files.
+
+## Group 7 (retry 2)
+
+This retry re-checked 7.1 to 7.3 against branch head df773b8. Nothing in `src/` or `tests/` has changed since checkpoint 4d664b3.
+
+- **Files:** no source or test files changed. This commit only adds this note. 7.1 to 7.3 were already ticked.
+- **Checked:** `Flags` (`write`, `own`, `effective`, `load`, `forget`, `holders`), `HasFlags`, the `assign` check before writing in the four create and update actions (only when `Flags::changes()` is true), `Flags::forget()` in both delete actions, the orphan-tolerant count in `DeleteFlagAction`, and `flags`/`effective_flags` in both resources. They meet AC 19, 20, 21, 33 and 37.
+- **Tests:** `tests/Feature/FlagAssignmentTest.php`, `tests/Feature/FlagActionsTest.php` and `tests/Feature/Api/FlagApiTest.php` all pass: 57 tests, 352 assertions. I didn't run the full suite; the gate runs it.
+- **Deviations:** none new. See "Group 7" above.
