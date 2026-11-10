@@ -119,14 +119,14 @@ criteria: 19, 20, 21, 33, 37
 
 Resumes from checkpoint commit 4d664b3, which already has a partial `Flags` service, a `HasFlags` concern and edits to the actions, Data and resources. Read the diff first (`git show 4d664b3 --stat`) and finish that work rather than starting over. Search engine and `ProductDocument` changes in that commit belong to group 12: leave them alone.
 
-- [ ] 7.1 Write tests in tests/Feature/FlagAssignmentTest.php:
+- [x] 7.1 Write tests in tests/Feature/FlagAssignmentTest.php:
   - `flags` on product and owner create and update: replaces the set; unknown codes and wrong `applies_to` refused at `flags.{n}`
   - `assign` required only when flags change (actions, HTTP and MCP; owners too)
   - effective flags through a grandchild owner and a root-model-owner variant; a child cannot drop an inherited flag
   - `flags` and `effective_flags` in resources and MCP output
   - assignments deleted with their subject; orphan assignments ignored by flag delete
-- [ ] 7.2 Finish the `Flags` service (`write`, `own`, `effective`), the `assign` check and flag writes in the create and update actions, cleanup on delete, and the resource fields.
-- [ ] 7.3 Run vendor/bin/pest tests/Feature/FlagAssignmentTest.php tests/Feature/FlagActionsTest.php tests/Feature/Api/FlagApiTest.php; all green
+- [x] 7.2 Finish the `Flags` service (`write`, `own`, `effective`), the `assign` check and flag writes in the create and update actions, cleanup on delete, and the resource fields.
+- [x] 7.3 Run vendor/bin/pest tests/Feature/FlagAssignmentTest.php tests/Feature/FlagActionsTest.php tests/Feature/Api/FlagApiTest.php; all green
 
 ## Group 8: Batch upsert action
 depends on: 7

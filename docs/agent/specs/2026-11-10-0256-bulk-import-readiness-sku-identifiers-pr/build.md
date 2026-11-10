@@ -352,3 +352,18 @@ Flag assignment, effective flags and search (AC 19–23, 33, 34, 37). Committed 
 
 - The design names a model `deleting` hook beside the delete actions. I followed the external-ids pattern instead: the delete actions call `Flags::forget()`, and `DeleteFlagAction` ignores orphans. AC 33 is met either way.
 - Flag filters on the database engine compare codes under the column's collation. The Scout engine normalizes them.
+
+## Group 7
+
+Resumed from checkpoint 4d664b3 (see "Group 7 (salvaged)" above). The `Flags` service (`write`, `own`, `effective`, `load`, `forget`, `holders`), `HasFlags`, the `assign` check and flag writes in the four create/update actions, cleanup in both delete actions, orphan-tolerant `DeleteFlagAction` and the resource fields were already complete. I checked each against AC 19, 20, 21, 33 and 37 and found nothing to change.
+
+- **Files:** no source or test files changed. This commit ticks 7.1 to 7.3 in `tasks.md` and adds this note.
+- **Tests:**
+  - `tests/Feature/FlagAssignmentTest.php`: 26 tests, 187 assertions. They cover flags on create and update (the list replaces the set; unknown codes and the wrong `applies_to` are refused at `flags.{n}`), `assign` only when flags change (actions, HTTP and MCP, for products and owners), effective flags through a grandchild owner and a root-model-owner variant, no dropping of inherited flags, `flags`/`effective_flags` in resources and MCP output, assignments deleted with their subject, and orphan owner assignments ignored by flag delete.
+  - `tests/Feature/FlagActionsTest.php` and `tests/Feature/Api/FlagApiTest.php`: 31 tests, 165 assertions. With `OwnerTypeSelfParentTest` added, the targeted run is 60 passed. Pint `--test` is clean on `src/Domains/{Flag,Product,Owner}` and the test file. I didn't run the full suite; the gate runs it.
+- **Known failures the gate will hit, outside group 7's changes:**
+  - Full `phpstan analyse` reports 3 errors, none introduced here:
+    - `src/Domains/Owner/Data/CreateOwnerTypeData.php:64,69` (group 2): `missingType.iterableValue` on the anonymous `DataAwareRule`'s `$data`, although it has an `array<array-key, mixed>` docblock. I tried replacing it with `Rule::forEach`. The callback gets only the `parent_types` subtree, not `code`, so self-parenting broke, and I reverted. A named rule class (a new file) would fix it.
+    - `src/Support/RecordLookup.php:143` (group 4): a `return.type` mismatch on the `TModel` template.
+  - The identifier/code-URL `404` failures listed under group 5 (for example `OwnershipApiTest`) are group 13's.
+- **Deviations:** the design's model `deleting` hook for flag assignments is not added. The delete actions call `Flags::forget()`, as they do for asset links, associations and external ids, and `DeleteFlagAction` ignores orphans, so AC 33 holds. A hook would need a listener on `ProductDeletingEvent`/`OwnerDeletingEvent` in a provider outside this group's files.
