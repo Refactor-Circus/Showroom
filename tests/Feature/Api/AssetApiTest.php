@@ -12,12 +12,30 @@ use RefactorCircus\Showroom\Domains\Asset\Actions\UpdateAssetAction;
 use RefactorCircus\Showroom\Domains\Asset\Data\CreateAssetData;
 use RefactorCircus\Showroom\Domains\Asset\Data\UpdateAssetData;
 use RefactorCircus\Showroom\Domains\Asset\Models\AssetModel;
+use RefactorCircus\Showroom\Domains\Owner\Models\OwnerModel;
+use RefactorCircus\Showroom\Domains\Product\Models\ProductModel;
 use RefactorCircus\Showroom\Tests\Fixtures\Catalog;
 
 beforeEach(function (): void {
     config()->set('showroom.media.disk', 'assets');
     Storage::fake('assets');
 });
+
+/**
+ * The API path of a product, addressed by its `id` as routes bind it.
+ */
+function assetProductPath(string $identifier): string
+{
+    return '/showroom/products/'.ProductModel::query()->where('identifier', $identifier)->value('id');
+}
+
+/**
+ * The API path of an owner, addressed by its `id` as routes bind it.
+ */
+function assetOwnerPath(string $code): string
+{
+    return '/showroom/owners/'.OwnerModel::query()->where('code', $code)->value('id');
+}
 
 it('uploads a file to the configured disk', function (): void {
     $response = $this->post('/showroom/assets', [
@@ -120,7 +138,7 @@ it('replaces the file but keeps the code and links', function (): void {
 
     Storage::disk('assets')->assertMissing($old);
 
-    $this->getJson('/showroom/products/TEE-1')->assertJsonPath('data.assets.0.code', 'hero');
+    $this->getJson(assetProductPath('TEE-1'))->assertJsonPath('data.assets.0.code', 'hero');
 
     $this->patchJson('/showroom/assets/hero', ['code' => 'other'])->assertUnprocessable()->assertJsonValidationErrors('code');
 });
@@ -145,10 +163,10 @@ it('links assets to products, models and owners under roles', function (): void 
     $this->postJson('/showroom/assets/logo/links', ['type' => 'product', 'target' => 'NOPE'])
         ->assertUnprocessable()->assertJsonValidationErrors(['target' => 'No product "NOPE" exists.']);
 
-    $this->getJson('/showroom/owners/acme')->assertJsonPath('data.assets.0.code', 'logo')->assertJsonPath('data.assets.0.role', 'logo');
+    $this->getJson(assetOwnerPath('acme'))->assertJsonPath('data.assets.0.code', 'logo')->assertJsonPath('data.assets.0.role', 'logo');
 
     // A variant shows its own assets, then its model's.
-    $this->getJson('/showroom/products/TEE-M')
+    $this->getJson(assetProductPath('TEE-M'))
         ->assertJsonPath('data.assets.0.code', 'size-chart')
         ->assertJsonPath('data.assets.0.inherited', false)
         ->assertJsonPath('data.assets.1.code', 'front')
@@ -170,7 +188,7 @@ it('deletes an asset with its links and its file', function (): void {
     $this->deleteJson('/showroom/assets/hero')->assertNoContent();
 
     Storage::disk('assets')->assertMissing($path);
-    $this->getJson('/showroom/products/TEE-1')->assertJsonPath('data.assets', []);
+    $this->getJson(assetProductPath('TEE-1'))->assertJsonPath('data.assets', []);
 });
 
 it('keeps files when told to', function (): void {
@@ -189,7 +207,7 @@ it('removes links when the linked record goes', function (): void {
     $this->post('/showroom/assets', ['code' => 'hero', 'file' => UploadedFile::fake()->image('hero.jpg')], ['Accept' => 'application/json'])->assertCreated();
     $this->postJson('/showroom/assets/hero/links', ['type' => 'product', 'target' => 'TEE-1'])->assertOk();
 
-    $this->deleteJson('/showroom/products/TEE-1')->assertNoContent();
+    $this->deleteJson(assetProductPath('TEE-1'))->assertNoContent();
 
     $this->getJson('/showroom/assets/hero')->assertJsonPath('data.links', []);
 });

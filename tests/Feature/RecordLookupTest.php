@@ -159,7 +159,10 @@ function expectBound(TestResponse $response, string $parameter, Model $record): 
 }
 
 it('lists every route that takes a product or an owner', function (): void {
+    // Only Showroom's own routes and Atrium screens: other packages, such as
+    // Impex's `runs/{run}/owners/{owner}`, define their own `{owner}`.
     $routes = collect(Route::getRoutes()->getRoutes())
+        ->filter(fn (Illuminate\Routing\Route $route): bool => str_starts_with((string) $route->getName(), 'showroom.') || str_starts_with((string) $route->getName(), 'atrium.showroom.'))
         ->filter(fn (Illuminate\Routing\Route $route): bool => array_intersect($route->parameterNames(), ['product', 'owner']) !== [])
         ->map(fn (Illuminate\Routing\Route $route): string => (string) $route->getName())
         ->sort()

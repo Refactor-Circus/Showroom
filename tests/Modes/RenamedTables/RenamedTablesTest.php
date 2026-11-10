@@ -33,6 +33,14 @@ beforeEach(function (): void {
     $this->postJson('/showroom/association-types', ['code' => 'bundle', 'is_quantified' => true])->assertCreated();
 });
 
+/**
+ * The API path of a product, addressed by its `id` as routes bind it.
+ */
+function renamedProductPath(string $identifier): string
+{
+    return '/showroom/products/'.ProductModel::query()->where('identifier', $identifier)->value('id');
+}
+
 it('migrates every table under its configured name', function (): void {
     foreach (Tables::DEFAULTS as $key => $default) {
         expect(Schema::hasTable('crm_'.$key))->toBeTrue()
@@ -54,7 +62,7 @@ it('keeps the catalog, its trees, links and unique values working on renamed tab
         ->assertUnprocessable()
         ->assertJsonValidationErrors('values.ean');
 
-    $this->patchJson('/showroom/products/CAP', [
+    $this->patchJson(renamedProductPath('CAP'), [
         'associations' => ['cross_sell' => ['products' => ['POLO-RED-M'], 'product_models' => ['polo']]],
         'quantified_associations' => ['bundle' => ['products' => [['identifier' => 'POLO-RED-M', 'quantity' => 2]]]],
     ])->assertOk()->assertJsonPath('data.associations.cross_sell.products', ['POLO-RED-M']);
@@ -64,12 +72,12 @@ it('keeps the catalog, its trees, links and unique values working on renamed tab
     $this->postJson('/showroom/assets/front/links', ['type' => 'product', 'target' => 'CAP', 'role' => 'image'])->assertOk();
     $this->getJson('/showroom/assets?product=CAP&role=image')->assertOk()->assertJsonPath('data.0.code', 'front');
 
-    $this->getJson('/showroom/products/CAP')
+    $this->getJson(renamedProductPath('CAP'))
         ->assertOk()
         ->assertJsonPath('data.categories', ['master'])
         ->assertJsonPath('data.assets.0.code', 'front')
         ->assertJsonPath('data.quantified_associations.bundle.products.0.quantity', 2);
-    $this->getJson('/showroom/products/POLO-RED-M')->assertJsonPath('data.owner', 'classic');
+    $this->getJson(renamedProductPath('POLO-RED-M'))->assertJsonPath('data.owner', 'classic');
 
     // Validation rules look in the renamed tables too.
     $this->postJson('/showroom/products', ['identifier' => 'CAP', 'family' => 'nope', 'owner' => 'nobody', 'categories' => ['nowhere']])
@@ -80,7 +88,7 @@ it('keeps the catalog, its trees, links and unique values working on renamed tab
         ->assertJsonValidationErrors(['code', 'locales.0']);
     expect(validator(['scope' => 'ecommerce', 'locale' => 'en'], Complete::rules())->passes())->toBeTrue();
 
-    $this->deleteJson('/showroom/products/CAP')->assertNoContent();
+    $this->deleteJson(renamedProductPath('CAP'))->assertNoContent();
     $this->deleteJson('/showroom/assets/front')->assertNoContent();
 
     expect(DB::table('crm_asset_links')->count())->toBe(0)
@@ -102,11 +110,11 @@ it('searches, scores and versions products on renamed tables', function (): void
         ->and($identifiers(['enabled' => 0]))->toBe(['MUG'])
         ->and($identifiers(['complete' => ['scope' => 'ecommerce', 'locale' => 'en', 'min' => 0]]))->toBe(['POLO-M']);
 
-    $this->postJson('/showroom/products/MUG/transitions', ['transition' => 'submit'])->assertOk();
-    $this->postJson('/showroom/products/MUG/transitions', ['transition' => 'approve'])->assertOk();
-    $this->postJson('/showroom/products/MUG/transitions', ['transition' => 'publish'])->assertOk();
+    $this->postJson(renamedProductPath('MUG').'/transitions', ['transition' => 'submit'])->assertOk();
+    $this->postJson(renamedProductPath('MUG').'/transitions', ['transition' => 'approve'])->assertOk();
+    $this->postJson(renamedProductPath('MUG').'/transitions', ['transition' => 'publish'])->assertOk();
 
-    $this->getJson('/showroom/products/MUG/versions/published')->assertOk()->assertJsonPath('data.snapshot.values.name.0.data', 'Mug');
+    $this->getJson(renamedProductPath('MUG').'/versions/published')->assertOk()->assertJsonPath('data.snapshot.values.name.0.data', 'Mug');
     expect($identifiers(['published' => 1]))->toBe(['MUG'])
         ->and(DB::table('crm_versions')->count())->toBeGreaterThan(0)
         ->and(DB::table('crm_product_completeness')->count())->toBeGreaterThan(0);
@@ -125,7 +133,7 @@ it('pushes published products to webhook subscribers from renamed tables', funct
     );
 
     $this->postJson('/showroom/products', ['identifier' => 'TEE', 'family' => 'shirts', 'owner' => 'classic', 'categories' => ['tools'], 'values' => ['name' => Catalog::value('Tee')]])->assertCreated();
-    $this->postJson('/showroom/products/TEE/transitions', ['transition' => 'publish'])->assertOk();
+    $this->postJson(renamedProductPath('TEE').'/transitions', ['transition' => 'publish'])->assertOk();
 
     $events = collect(Http::recorded())
         ->map(fn (array $pair): Request => $pair[0])

@@ -7,6 +7,14 @@ use RefactorCircus\Showroom\Tests\Fixtures\Catalog;
 
 beforeEach(fn () => Catalog::apparel());
 
+/**
+ * The API path of a product, addressed by its `id` as routes bind it.
+ */
+function productApiPath(string $identifier): string
+{
+    return '/showroom/products/'.ProductModel::query()->where('identifier', $identifier)->value('id');
+}
+
 it('creates a simple product with typed values', function (): void {
     $this->postJson('/showroom/products', [
         'identifier' => 'TEE-001',
@@ -95,7 +103,7 @@ it('patches only the slots sent, and clears a slot with null', function (): void
         'values' => ['name' => Catalog::value('Tee'), 'description' => Catalog::value('Soft', 'en'), 'color' => Catalog::value('red')],
     ])->assertCreated();
 
-    $this->patchJson('/showroom/products/TEE-001', [
+    $this->patchJson(productApiPath('TEE-001'), [
         'values' => ['description' => Catalog::value('Doux', 'fr'), 'color' => Catalog::value(null)],
     ])
         ->assertOk()
@@ -107,7 +115,7 @@ it('patches only the slots sent, and clears a slot with null', function (): void
 it('never changes the identifier', function (): void {
     ProductModel::factory()->create(['identifier' => 'TEE-001']);
 
-    $this->patchJson('/showroom/products/TEE-001', ['identifier' => 'TEE-002'])->assertUnprocessable()->assertJsonValidationErrors('identifier');
+    $this->patchJson(productApiPath('TEE-001'), ['identifier' => 'TEE-002'])->assertUnprocessable()->assertJsonValidationErrors('identifier');
 });
 
 it('enforces unique attributes across products', function (): void {
@@ -120,7 +128,7 @@ it('enforces unique attributes across products', function (): void {
     expect(ProductModel::query()->where('identifier', 'B')->exists())->toBeFalse();
 
     // Freed when A lets go of it.
-    $this->patchJson('/showroom/products/A', ['values' => ['ean' => Catalog::value(null)]])->assertOk();
+    $this->patchJson(productApiPath('A'), ['values' => ['ean' => Catalog::value(null)]])->assertOk();
     $this->postJson('/showroom/products', ['identifier' => 'B', 'values' => ['ean' => Catalog::value('4006381333931')]])->assertCreated();
 });
 
@@ -164,7 +172,7 @@ it('builds variant products that inherit from their models', function (): void {
     // A change on the root model reaches the variant.
     $this->patchJson('/showroom/product-models/tee', ['values' => ['name' => Catalog::value('Organic tee')]])->assertOk();
 
-    $this->getJson('/showroom/products/TEE-RED-M')->assertJsonPath('data.values.name.0.data', 'Organic tee');
+    $this->getJson(productApiPath('TEE-RED-M'))->assertJsonPath('data.values.name.0.data', 'Organic tee');
 
     $this->getJson('/showroom/product-models/tee')
         ->assertJsonPath('data.children', ['tee-red'])
@@ -202,7 +210,7 @@ it('requires every axis and a distinct combination', function (): void {
     $this->postJson('/showroom/products', ['identifier' => 'TEE-L', 'parent' => 'tee', 'values' => ['size' => Catalog::value('l')]])->assertCreated();
 
     // Moving a sibling onto a taken combination is refused too.
-    $this->patchJson('/showroom/products/TEE-L', ['values' => ['size' => Catalog::value('m')]])
+    $this->patchJson(productApiPath('TEE-L'), ['values' => ['size' => Catalog::value('m')]])
         ->assertUnprocessable()->assertJsonValidationErrors('values');
 });
 
@@ -222,7 +230,7 @@ it('refuses a family change on a variant product', function (): void {
     $this->postJson('/showroom/product-models', ['code' => 'tee', 'family_variant' => 'shirts_by_size'])->assertCreated();
     $this->postJson('/showroom/products', ['identifier' => 'TEE-M', 'parent' => 'tee', 'values' => ['size' => Catalog::value('m')]])->assertCreated();
 
-    $this->patchJson('/showroom/products/TEE-M', ['family' => null])->assertUnprocessable()->assertJsonValidationErrors('family');
+    $this->patchJson(productApiPath('TEE-M'), ['family' => null])->assertUnprocessable()->assertJsonValidationErrors('family');
 });
 
 it('deletes a model with its sub-models and variant products', function (): void {
@@ -258,7 +266,7 @@ it('purges the values of a deleted attribute or option', function (): void {
     $this->deleteJson('/showroom/attributes/tags/options/sale')->assertNoContent();
     $this->deleteJson('/showroom/attributes/color/options/red')->assertNoContent();
 
-    $this->getJson('/showroom/products/TEE-1')
+    $this->getJson(productApiPath('TEE-1'))
         ->assertJsonMissingPath('data.values.fabric')
         ->assertJsonMissingPath('data.values.color')
         ->assertJsonPath('data.values.tags.0.data', ['summer']);
