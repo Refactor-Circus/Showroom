@@ -18,6 +18,7 @@ use RefactorCircus\Showroom\Domains\Transfer\Exceptions\ImpexMissingException;
 use RefactorCircus\Showroom\Impex\Flows\ExportProductsFlow;
 use RefactorCircus\Showroom\Impex\Flows\FeedFlow;
 use RefactorCircus\Showroom\Impex\Flows\ImportProductsFlow;
+use RefactorCircus\Showroom\Impex\Flows\UpsertOwnersFlow;
 use RefactorCircus\Showroom\Impex\Flows\UpsertProductsFlow;
 use RefactorCircus\Showroom\Impex\Webhooks\CaptureProductChanges;
 use RefactorCircus\Showroom\Impex\Webhooks\ProductScopeMatcher;
@@ -37,6 +38,8 @@ final class ImpexIntegration
     public const string IMPORT = 'showroom:import-products';
 
     public const string UPSERT = 'showroom:upsert-products';
+
+    public const string UPSERT_OWNERS = 'showroom:upsert-owners';
 
     public const string EXPORT = 'showroom:export-products';
 
@@ -116,6 +119,7 @@ final class ImpexIntegration
         $flows = [
             self::IMPORT => ImportProductsFlow::class,
             self::UPSERT => UpsertProductsFlow::class,
+            self::UPSERT_OWNERS => UpsertOwnersFlow::class,
             self::EXPORT => ExportProductsFlow::class,
         ];
 

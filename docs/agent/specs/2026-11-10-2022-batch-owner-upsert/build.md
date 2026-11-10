@@ -107,3 +107,38 @@ UpsertOwnersAction (tasks 2.1-2.4; criteria 1-12b).
 
 - The two decisions above. The performance test pins the measured figures (`OWNERS_UPSERT_FIXED_QUERIES` = 9, 10 per created owner, 13 per updated owner) until the decision on criterion 12 is made.
 - Full suite: not run here. The gate runs it.
+
+## Group 3
+
+showroom:upsert-owners Impex flow (tasks 3.1-3.3; criteria 13, 14).
+
+### Files
+
+- `src/Impex/Flows/UpsertOwnersFlow.php` (new): `showroom:upsert-owners`, `handle(array $payload, string $mode = 'upsert', string $match = 'code')`. It takes a list, or `{"owners": [...]}` with a list. Any other payload throws a `ValidationException` on `payload` before the batch is started, so the run fails before any chunk. It then batches the records through `InlineOwnerSource` and `UpsertOwnerChunk`, one chunk per item, with `allowFailures(1.0)`, `showroom.impex.tries`, and the row share held to `showroom.impex.allow_failures`, as `UpsertProductsFlow` does.
+- `src/Impex/Actions/UpsertOwnerChunk.php` (new): one `UpsertOwnersAction` call per chunk, with the chunk's `mode` and `match`. It returns `total`, `created`, `updated`, `unchanged`, `skipped`, `failed` and `failures`, each failure's chunk-relative index offset by the chunk's `start`. It fires `OwnerChunkUpsertingActionEvent` and `OwnerChunkUpsertedActionEvent`.
+- `src/Impex/OwnerChunkSummary.php` (new): row counts from the batch items, as `ProductChunkSummary` counts them. `succeeded` is `total - failed`, so skipped and unchanged rows count inside it (D-006), and a chunk that failed as a whole fails all its rows. `tolerate()` names `UpsertOwnerChunk` in the threshold error.
+- `src/Domains/Transfer/Events/OwnerChunkUpsertingActionEvent.php` and `OwnerChunkUpsertedActionEvent.php` (new): the chunk pair, unaudited like the product chunk pair.
+- `src/Impex/ImpexIntegration.php`: `UPSERT_OWNERS = 'showroom:upsert-owners'`, registered in `flows()` next to `UPSERT`.
+- `tests/Feature/Impex/UpsertOwnersFlowTest.php` (new).
+- Outside the group's file list: `src/Impex/Sources/InlineOwnerSource.php` (new). It is the inline owner source the spec's design names, mirroring `InlineProductSource` with `match` in place of `capture_changes` in each chunk's payload.
+- `tests/ArchTest.php`: unchanged. The new code outside `src/Impex` is the two events in `Domains/Transfer`, which name no Impex class, so the core-does-not-use-Impex rule holds as it stands. `UpsertOwnerChunk` dispatches a starting and a finished event and writes nothing itself, so the Impex actions' event and transaction rules hold too.
+
+### Tests
+
+- `UpsertOwnersFlowTest` (12 tests, 15 cases with datasets) covers:
+  - the flow registered next to `showroom:upsert-products`;
+  - records as a list or as `{"owners": [...]}`, with an in-batch parent;
+  - one `UpsertOwnersAction` call per `showroom.impex.chunk` (5 records at 2 per chunk give calls of 2, 2 and 1, and 3 batch items);
+  - `mode` and `match` passed through to the action, and a skipped row counted inside `succeeded` (D-006);
+  - failures kept on the batch items at their global position over three chunks (indexes 3 and 4, with their codes and `parent` and `record` keys);
+  - a malformed payload (`owners` not an array, keyed rather than a list, or missing) failing the run with no chunk event and no owner written;
+  - a chunk that throws counting its rows failed while the next chunk is written;
+  - the row share tolerated;
+  - a second run reporting every row unchanged;
+  - the chunk action alone (offset failures, events, unaudited), and `InlineOwnerSource` chunking.
+- Not run here: the prompt leaves the suite to the gate. Pint passes on every changed file. PHPStan passes on `src/Impex` and `src/Domains/Transfer/Events`, and on the new test file.
+
+### Deviations
+
+- `InlineOwnerSource` is a new file outside the group's list (above).
+- `docs/12-impex.md` documents `showroom:upsert-products` and its chunk events but is outside the group's list, so the new flow is not documented there yet.
