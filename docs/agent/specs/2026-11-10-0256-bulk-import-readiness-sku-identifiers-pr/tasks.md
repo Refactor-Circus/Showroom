@@ -11,67 +11,67 @@ depends on: none
 files: config/showroom.php, src/Domains/Product/Data/CreateProductData.php, tests/Feature/Api/ProductIdentifierTest.php
 criteria: 1, 2
 
-- [ ] 1.1 Write tests for:
+- [x] 1.1 Write tests for:
   - identifiers with spaces and `/` (the AC 1 examples)
   - the boundary dataset: empty, leading/trailing whitespace, control characters, 191 characters
   - a stricter host pattern failing at `identifier`
   - a non-compiling pattern throwing
-- [ ] 1.2 Add every new config key in one pass, each with a banner section:
+- [x] 1.2 Add every new config key in one pass, each with a banner section (`tables.*` and `policies.flag` move to groups 5 and 6; see build.md, Group 1):
   - `products.identifier_pattern`
   - `lookup.products` and `lookup.owners` (`id` or `slug`, default `id`)
   - `tables.external_ids`, `tables.flags` and `tables.flag_assignments`
   - `policies.flag`
-- [ ] 1.3 In `CreateProductData::rules()`, read the pattern as an array rule. Check that it compiles and fail loud if it doesn't.
-- [ ] 1.4 Run vendor/bin/pest; all green
+- [x] 1.3 In `CreateProductData::rules()`, read the pattern as an array rule. Check that it compiles and fail loud if it doesn't.
+- [x] 1.4 Run vendor/bin/pest; all green
 
 ## Group 2: Owner type may parent itself
 depends on: none
 files: src/Domains/Owner/Data/CreateOwnerTypeData.php, src/Domains/Owner/Actions/CreateOwnerTypeAction.php, src/Domains/Owner/Concerns/WritesOwnerTypes.php, tests/Feature/Api/OwnerTypeSelfParentTest.php
 criteria: 24
 
-- [ ] 2.1 Write tests:
+- [x] 2.1 Write tests:
   - create `vendor` with `parent_types: ["vendor"]`
   - create a vendor owner under a vendor owner
   - an unknown parent type is still refused
-- [ ] 2.2 Let `parent_types.*` equal the incoming `code`, and resolve the parent types after the type row exists.
-- [ ] 2.3 Run vendor/bin/pest; all green
+- [x] 2.2 Let `parent_types.*` equal the incoming `code`, and resolve the parent types after the type row exists.
+- [x] 2.3 Run vendor/bin/pest; all green
 
 ## Group 3: Slugs for products and owners
 depends on: 1
 files: database/migrations/2026_11_10_000001_add_slugs_to_showroom_products_and_owners.php, src/Support/Slugs.php, src/Domains/Product/Models/ProductModel.php, src/Domains/Owner/Models/OwnerModel.php, src/Domains/Product/Actions/CreateProductAction.php, src/Domains/Owner/Actions/CreateOwnerAction.php, src/Domains/Product/Data/CreateProductData.php, src/Domains/Product/Data/UpdateProductData.php, src/Domains/Owner/Data/CreateOwnerData.php, src/Domains/Owner/Data/UpdateOwnerData.php, src/Domains/Product/Resources/ProductResource.php, src/Domains/Owner/Resources/OwnerResource.php, src/Domains/Search/Services/ProductDocument.php, src/Impex/ExportRecord.php, src/Impex/ProductRows.php, tests/Unit/SlugsTest.php, tests/Feature/SlugsTest.php, tests/Feature/SlugBackfillTest.php
 criteria: 3, 4, 5, 6, 7, 12
 
-- [ ] 3.1 Write tests for:
+- [x] 3.1 Write tests for:
   - the `Slugs` generator: collisions, no gaps, 191-character truncation, in-call collisions, the empty-source fallback (`product`, `owner`), reserved words
   - product and owner creation assigning slugs
   - a `slug` sent on create or update being refused (round-trip a full resource body)
   - slugs unchanged after values, labels, parent or code changes
   - the backfill: chunking, idempotent re-run, empty-slug rows
   - `slug` in resources, the search document (`slug`, `owner_slugs`), exports and MCP outputs
-- [ ] 3.2 Implement `Support\Slugs` (`for`, `forMany`, `RESERVED`, retry once on a unique race), and the migration (nullable column, chunked `slug IS NULL` backfill, then non-null and unique).
-- [ ] 3.3 Wire slugs into the models, the create actions and the Data `prohibited` rules. Add `slug` to resources, `ProductDocument` and exports.
-- [ ] 3.4 Run vendor/bin/pest; all green
+- [x] 3.2 Implement `Support\Slugs` (`for`, `forMany`, `RESERVED`, retry once on a unique race), and the migration (nullable column, chunked `slug IS NULL` backfill, then non-null and unique).
+- [x] 3.3 Wire slugs into the models, the create actions and the Data `prohibited` rules. Add `slug` to resources, `ProductDocument` and exports.
+- [x] 3.4 Run vendor/bin/pest; all green
 
 ## Group 4: Record lookup by id or slug
 depends on: 3
 files: src/Support/RecordLookup.php, src/Support/LookupKey.php, src/ShowroomServiceProvider.php, src/Domains/Product/routes.php, src/Domains/Workflow/routes.php, src/Domains/Owner/routes.php, src/Atrium/ShowroomPlugin.php, src/Domains/Product/Http/Requests/ShowProductRequest.php, src/Domains/Product/Http/Requests/UpdateProductRequest.php, src/Domains/Product/Http/Requests/DeleteProductRequest.php, src/Domains/Workflow/Http/Requests/TransitionProductRequest.php, src/Domains/Workflow/Http/Requests/IndexProductVersionsRequest.php, src/Domains/Workflow/Http/Requests/ShowProductVersionRequest.php, src/Domains/Workflow/Http/Requests/RevertProductRequest.php, src/Domains/Owner/Http/Requests/ShowOwnerRequest.php, src/Domains/Owner/Http/Requests/UpdateOwnerRequest.php, src/Domains/Owner/Http/Requests/DeleteOwnerRequest.php, src/Domains/Product/Mcp/Tools/*, src/Domains/Owner/Mcp/Tools/ShowOwnerTool.php, src/Domains/Owner/Mcp/Tools/UpdateOwnerTool.php, src/Domains/Owner/Mcp/Tools/DeleteOwnerTool.php, src/Domains/Workflow/Mcp/Tools/*, resources/views/ui/products/*, resources/views/ui/owners/*, tests/Feature/RecordLookupTest.php, docs/agent/standards-feedback.md
 criteria: 8, 9, 10, 11
 
-- [ ] 4.1 Write tests:
+- [x] 4.1 Write tests:
   - a dataset over the `route:list` product and owner routes (API, Workflow, Atrium): `id` binds by default, while slug, identifier and code answer `404`
   - per configured key, the configured key binds
   - `?by=` and MCP `by` override the config
   - an invalid `by` gives `422` or an MCP validation error
   - an invalid config value fails at boot
   - flag routes keep `code` (once group 6 lands; skip-marked until then)
-- [ ] 4.2 Implement:
+- [x] 4.2 Implement:
   - the `LookupKey` enum (`Id`, `Slug`) and the `RecordLookup` resolver
   - explicit `{product}` and `{owner}` binders that read `?by=`
   - the boot check in the provider
   - `by` on the listed requests and MCP tools
   - Atrium links following the configured key
-- [ ] 4.3 Add the D-001 deviation row to `docs/agent/standards-feedback.md`.
-- [ ] 4.4 Run vendor/bin/pest; all green
+- [x] 4.3 Add the D-001 deviation row to `docs/agent/standards-feedback.md`.
+- [x] 4.4 Run vendor/bin/pest; all green
 
 ## Group 5: External IDs
 depends on: 4
@@ -98,19 +98,19 @@ depends on: 1
 files: src/Domains/Flag/** (except Services/Flags.php), src/Domains/DomainServiceProvider.php, src/Mcp/ShowroomServer.php, database/migrations/2026_11_10_000003_create_showroom_flag_tables.php, tests/Feature/Api/FlagApiTest.php, tests/Feature/FlagActionsTest.php
 criteria: 17, 18
 
-- [ ] 6.1 Write tests:
+- [x] 6.1 Write tests:
   - flag create, list, show, update and delete over actions, HTTP and MCP
   - `FlagPolicy` abilities, including `assign`
   - `code` cannot be changed
   - `applies_to` must be a non-empty subset of `product` and `owner`
   - deleting an assigned flag is refused
   - narrowing `applies_to` while the flag is assigned is refused (seed `flag_assignments` rows directly)
-- [ ] 6.2 Implement the Flag domain:
+- [x] 6.2 Implement the Flag domain:
   - model, migration (both tables), policy
   - actions with Data and action-event pairs
   - requests, controller, resource, routes, MCP tools
   - registration in the domain provider and the MCP server
-- [ ] 6.3 Run vendor/bin/pest; all green
+- [x] 6.3 Run vendor/bin/pest; all green
 
 ## Group 7: Flag assignment, effective flags and search
 depends on: 5, 6
