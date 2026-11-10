@@ -7,6 +7,7 @@ namespace RefactorCircus\Showroom\Domains\Product\Mcp\Requests;
 use Laravel\Mcp\Response;
 use Laravel\Mcp\ResponseFactory;
 use RefactorCircus\Showroom\Domains\Product\Actions\DeleteProductAction;
+use RefactorCircus\Showroom\Support\RecordLookup;
 
 final class DeleteProductMcpRequest extends ProductRequest
 {
@@ -19,6 +20,7 @@ final class DeleteProductMcpRequest extends ProductRequest
     {
         return [
             'product' => ['required', 'string', 'max:191'],
+            ...RecordLookup::rules(),
         ];
     }
 

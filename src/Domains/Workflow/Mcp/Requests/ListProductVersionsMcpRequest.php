@@ -9,6 +9,7 @@ use RefactorCircus\Showroom\Domains\Product\Mcp\Requests\ProductRequest;
 use RefactorCircus\Showroom\Domains\Workflow\Actions\ListProductVersionsAction;
 use RefactorCircus\Showroom\Domains\Workflow\Data\ListProductVersionsData;
 use RefactorCircus\Showroom\Domains\Workflow\Resources\VersionSummaryResource;
+use RefactorCircus\Showroom\Support\RecordLookup;
 
 final class ListProductVersionsMcpRequest extends ProductRequest
 {
@@ -21,6 +22,7 @@ final class ListProductVersionsMcpRequest extends ProductRequest
     {
         return [
             'product' => ['required', 'string', 'max:191'],
+            ...RecordLookup::rules(),
         ] + ListProductVersionsData::rules();
     }
 

@@ -8,6 +8,7 @@ use Illuminate\Http\JsonResponse;
 use RefactorCircus\Showroom\Domains\Owner\Actions\UpdateOwnerAction;
 use RefactorCircus\Showroom\Domains\Owner\Data\UpdateOwnerData;
 use RefactorCircus\Showroom\Domains\Owner\Resources\OwnerResource;
+use RefactorCircus\Showroom\Support\RecordLookup;
 
 final class UpdateOwnerRequest extends OwnerRequest
 {
@@ -18,7 +19,7 @@ final class UpdateOwnerRequest extends OwnerRequest
 
     public function rules(): array
     {
-        return UpdateOwnerData::rules();
+        return [...UpdateOwnerData::rules(), ...RecordLookup::rules()];
     }
 
     public function persist(): JsonResponse

@@ -11,6 +11,7 @@ use Laravel\Mcp\Server\Attributes\Description;
 use RefactorCircus\Keystone\Mcp\Tool;
 use RefactorCircus\Showroom\Domains\Product\Mcp\Requests\UpdateProductMcpRequest;
 use RefactorCircus\Showroom\Domains\Product\Resources\ProductResource;
+use RefactorCircus\Showroom\Support\LookupKey;
 
 #[Description('Update a product\'s family (simple products only), enabled flag or values. Only the value slots sent change.')]
 final class UpdateProductTool extends Tool
@@ -23,7 +24,8 @@ final class UpdateProductTool extends Tool
     public function schema(JsonSchema $schema): array
     {
         return [
-            'product' => $schema->string()->description('The product identifier.')->required(),
+            'product' => $schema->string()->description('The product\'s id, or its slug when showroom.lookup.products is slug or by is slug. Never its identifier.')->required(),
+            'by' => $schema->string()->enum(array_column(LookupKey::cases(), 'value'))->description('Find the product by this key instead of the configured one: id or slug.'),
             'family' => $schema->string()->description('Family code. A variant product takes its family variant\'s family.'),
             'enabled' => $schema->boolean()->description('Whether the product is enabled.'),
             'owner' => $schema->string()->description('Code of the owner (deepest in its chain, such as the series) the record belongs to, or null. Only simple products and root product models; variants take their root model\'s owner.'),

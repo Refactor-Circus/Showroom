@@ -9,6 +9,7 @@ use RefactorCircus\Showroom\Domains\Product\Http\Requests\ProductRequest;
 use RefactorCircus\Showroom\Domains\Product\Resources\ProductResource;
 use RefactorCircus\Showroom\Domains\Workflow\Actions\RevertProductAction;
 use RefactorCircus\Showroom\Domains\Workflow\Data\RevertProductData;
+use RefactorCircus\Showroom\Support\RecordLookup;
 
 final class RevertProductRequest extends ProductRequest
 {
@@ -19,7 +20,7 @@ final class RevertProductRequest extends ProductRequest
 
     public function rules(): array
     {
-        return RevertProductData::rules();
+        return [...RevertProductData::rules(), ...RecordLookup::rules()];
     }
 
     public function persist(): JsonResponse

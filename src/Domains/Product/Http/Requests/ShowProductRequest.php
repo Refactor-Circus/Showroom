@@ -8,6 +8,7 @@ use Illuminate\Http\JsonResponse;
 use RefactorCircus\Showroom\Domains\Product\Actions\ShowProductAction;
 use RefactorCircus\Showroom\Domains\Product\Data\ShowProductData;
 use RefactorCircus\Showroom\Domains\Product\Resources\ProductResource;
+use RefactorCircus\Showroom\Support\RecordLookup;
 
 final class ShowProductRequest extends ProductRequest
 {
@@ -18,7 +19,7 @@ final class ShowProductRequest extends ProductRequest
 
     public function rules(): array
     {
-        return ShowProductData::rules();
+        return [...ShowProductData::rules(), ...RecordLookup::rules()];
     }
 
     /**

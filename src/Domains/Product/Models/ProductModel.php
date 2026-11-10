@@ -27,6 +27,7 @@ use RefactorCircus\Showroom\Domains\Product\Enums\ProductStatus;
 use RefactorCircus\Showroom\Domains\ProductModel\Models\ProductModelModel;
 use RefactorCircus\Showroom\Domains\Workflow\Models\CompletenessModel;
 use RefactorCircus\Showroom\Domains\Workflow\Models\VersionModel;
+use RefactorCircus\Showroom\Support\RecordLookup;
 use RefactorCircus\Showroom\Support\Slugs;
 use RefactorCircus\Showroom\Support\Tables;
 
@@ -67,6 +68,15 @@ final class ProductModel extends Model
     public function getTable(): string
     {
         return Tables::name('products');
+    }
+
+    /**
+     * The key URLs and dashboard links name the product by: its `id`, or its
+     * `slug`, from `showroom.lookup.products`. Never its identifier.
+     */
+    public function getRouteKeyName(): string
+    {
+        return app(RecordLookup::class)->key('products')->value;
     }
 
     /**

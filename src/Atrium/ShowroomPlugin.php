@@ -122,11 +122,11 @@ class ShowroomPlugin extends Plugin
             Route::get('showroom/products', [ProductUiController::class, 'index'])->name('products.index');
             Route::get('showroom/products/create', [ProductUiController::class, 'create'])->name('products.create');
             Route::post('showroom/products', [ProductUiController::class, 'store'])->name('products.store');
-            Route::get('showroom/products/{product:identifier}', [ProductUiController::class, 'show'])->name('products.show');
-            Route::patch('showroom/products/{product:identifier}', [ProductUiController::class, 'update'])->name('products.update');
-            Route::delete('showroom/products/{product:identifier}', [ProductUiController::class, 'destroy'])->name('products.destroy');
-            Route::post('showroom/products/{product:identifier}/transitions', [ProductUiController::class, 'transition'])->name('products.transition');
-            Route::post('showroom/products/{product:identifier}/revert', [ProductUiController::class, 'revert'])->name('products.revert');
+            Route::get('showroom/products/{product}', [ProductUiController::class, 'show'])->name('products.show');
+            Route::patch('showroom/products/{product}', [ProductUiController::class, 'update'])->name('products.update');
+            Route::delete('showroom/products/{product}', [ProductUiController::class, 'destroy'])->name('products.destroy');
+            Route::post('showroom/products/{product}/transitions', [ProductUiController::class, 'transition'])->name('products.transition');
+            Route::post('showroom/products/{product}/revert', [ProductUiController::class, 'revert'])->name('products.revert');
 
             Route::get('showroom/product-models', [ProductModelUiController::class, 'index'])->name('product-models.index');
             Route::post('showroom/product-models', [ProductModelUiController::class, 'store'])->name('product-models.store');
@@ -175,9 +175,9 @@ class ShowroomPlugin extends Plugin
 
             Route::get('showroom/owners', [OwnerUiController::class, 'index'])->name('owners.index');
             Route::post('showroom/owners', [OwnerUiController::class, 'store'])->name('owners.store');
-            Route::get('showroom/owners/{owner:code}', [OwnerUiController::class, 'show'])->name('owners.show');
-            Route::patch('showroom/owners/{owner:code}', [OwnerUiController::class, 'update'])->name('owners.update');
-            Route::delete('showroom/owners/{owner:code}', [OwnerUiController::class, 'destroy'])->name('owners.destroy');
+            Route::get('showroom/owners/{owner}', [OwnerUiController::class, 'show'])->name('owners.show');
+            Route::patch('showroom/owners/{owner}', [OwnerUiController::class, 'update'])->name('owners.update');
+            Route::delete('showroom/owners/{owner}', [OwnerUiController::class, 'destroy'])->name('owners.destroy');
 
             Route::post('showroom/family-variants', [FamilyVariantUiController::class, 'store'])->name('family-variants.store');
             Route::get('showroom/family-variants/{familyVariant:code}', [FamilyVariantUiController::class, 'show'])->name('family-variants.show');

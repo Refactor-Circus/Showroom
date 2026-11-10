@@ -17,6 +17,7 @@ use RefactorCircus\Showroom\Domains\Product\Models\ProductModel;
 use RefactorCircus\Showroom\Domains\ProductModel\Models\ProductModelModel;
 use RefactorCircus\Showroom\Support\Models\Concerns\HasLabels;
 use RefactorCircus\Showroom\Support\Models\Concerns\HasPath;
+use RefactorCircus\Showroom\Support\RecordLookup;
 use RefactorCircus\Showroom\Support\Slugs;
 use RefactorCircus\Showroom\Support\Tables;
 
@@ -52,6 +53,15 @@ final class OwnerModel extends Model
     public function getTable(): string
     {
         return Tables::name('owners');
+    }
+
+    /**
+     * The key URLs and dashboard links name the owner by: its `id`, or its
+     * `slug`, from `showroom.lookup.owners`. Never its code.
+     */
+    public function getRouteKeyName(): string
+    {
+        return app(RecordLookup::class)->key('owners')->value;
     }
 
     protected $fillable = [

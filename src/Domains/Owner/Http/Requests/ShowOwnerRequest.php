@@ -7,12 +7,18 @@ namespace RefactorCircus\Showroom\Domains\Owner\Http\Requests;
 use Illuminate\Http\JsonResponse;
 use RefactorCircus\Showroom\Domains\Owner\Actions\ShowOwnerAction;
 use RefactorCircus\Showroom\Domains\Owner\Resources\OwnerResource;
+use RefactorCircus\Showroom\Support\RecordLookup;
 
 final class ShowOwnerRequest extends OwnerRequest
 {
     public function authorize(): bool
     {
         return $this->allows('view', $this->owner());
+    }
+
+    public function rules(): array
+    {
+        return RecordLookup::rules();
     }
 
     public function persist(): JsonResponse

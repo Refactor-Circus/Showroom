@@ -8,6 +8,7 @@ use Laravel\Mcp\ResponseFactory;
 use RefactorCircus\Showroom\Domains\Owner\Actions\UpdateOwnerAction;
 use RefactorCircus\Showroom\Domains\Owner\Data\UpdateOwnerData;
 use RefactorCircus\Showroom\Domains\Owner\Resources\OwnerResource;
+use RefactorCircus\Showroom\Support\RecordLookup;
 
 final class UpdateOwnerMcpRequest extends OwnerRequest
 {
@@ -20,6 +21,7 @@ final class UpdateOwnerMcpRequest extends OwnerRequest
     {
         return [
             'owner' => ['required', 'string', 'max:191'],
+            ...RecordLookup::rules(),
         ] + UpdateOwnerData::rules();
     }
 
