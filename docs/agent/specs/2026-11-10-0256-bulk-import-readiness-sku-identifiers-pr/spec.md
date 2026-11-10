@@ -281,3 +281,8 @@ All decisions are folded into the body above and the numbered ACs are authoritat
 - D-007 query bound: AC 27 and 29.
 - D-008 parity: AC 38 and 39.
 - D-009 webhook opt-out tests: AC 30 and 35.
+
+## Addendum (2026-11-10): build decisions D-011 and D-012
+
+- **AC 31 (D-011):** turning off capture on the CLI uses `--capture-changes=0`, not `--no-capture-changes`. The flows declare `?bool $captureChanges = null`, where `null` means `true`. A test runs each flow with `--capture-changes=0` and asserts that nothing is recorded for webhooks.
+- **AC 32 (D-012):** the arch rule "code outside `src/Impex` uses no Impex class" names two exceptions: `RefactorCircus\Showroom\Domains\Transfer` and `RefactorCircus\Showroom\Atrium\Http\Controllers\TransferUiController`. Both are the bridge that started Impex runs before this spec. Code this spec adds outside `src/Impex`, including `ProductChangeCapture`, must not use Impex.

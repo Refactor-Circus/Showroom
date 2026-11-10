@@ -59,3 +59,15 @@
 - Rationale: "identifier shouldnt be used! just ulid or slug"
 - Date: 2026-11-10
 - Raised by: spec review (recheck)
+
+## D-011: How should turning off webhook capture be offered on the CLI for the Impex flows?
+- Choice: Keep Impex as is; declare `?bool $captureChanges = null` (null means true), giving `--capture-changes=0`, and reword AC 31
+- Rationale: Accepted the recommendation; stays inside Showroom.
+- Date: 2026-11-10
+- Raised by: build (group 9)
+
+## D-012: The AC 32 arch rule fails on the existing Transfer domain and TransferUiController. Keep them as named exceptions?
+- Choice: Keep the rule with the Transfer domain and TransferUiController as named exceptions
+- Rationale: Accepted after clarifying that "core" means Showroom code outside src/Impex (Impex is optional), not the legacy core app.
+- Date: 2026-11-10
+- Raised by: build (group 9)
