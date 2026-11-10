@@ -151,9 +151,11 @@ criteria: 25, 26, 27, 28, 29, 35, 36, 37, 38, 39
 - [x] 8.3 Run vendor/bin/pest; all green
 
 ## Group 9: Impex integration
-depends on: 8
+depends on: 8, 13, 14
 files: src/Impex/Actions/UpsertProductChunk.php, src/Impex/Actions/ImportProductRow.php (removed), src/Impex/Sources/InlineProductSource.php, src/Impex/Sources/FileProductSource.php, src/Impex/Flows/UpsertProductsFlow.php, src/Impex/Flows/ImportProductsFlow.php, src/Impex/Webhooks/CaptureProductChanges.php, src/Impex/ImpexIntegration.php, tests/ArchTest.php, tests/Feature/Impex/ImportExportTest.php, tests/Feature/Impex/ProductWebhooksTest.php, tests/Feature/Impex/UpsertChunkTest.php
 criteria: 30, 31, 32
+
+Group 4 switched lookup to `id`. `tests/Feature/Impex/ImportExportTest.php` and `ProductWebhooksTest.php` may still call product or owner URLs by identifier or code; update them to `id` as part of this group.
 
 - [ ] 9.1 Write tests:
   - both flows process per chunk through the action and accept `capture_changes`
@@ -179,7 +181,7 @@ criteria: 40, 41
 - [x] 10.3 Run vendor/bin/pest; all green
 
 ## Group 11: Docs and changelog
-depends on: 9, 10, 12, 13
+depends on: 9, 10, 12, 13, 14
 files: CHANGELOG.md, docs/03-families.md, docs/04-products.md, docs/05-search.md, docs/06-ownership.md, docs/09-api.md, docs/10-mcp.md, docs/12-impex.md, docs/13-configuration.md, docs/14-flags.md, tests/Feature/DocsTest.php
 criteria: none (upgrade notes from the spec's Design)
 
@@ -211,14 +213,26 @@ Checkpoint commit 4d664b3 already has partial edits to `DatabaseEngine`, `ScoutE
 - [x] 12.2 Implement `effective_flags` in `ProductDocument`, the `flags[]` filter on both engines and the owner listing, the reindex in `UpdateOwnerAction` when flags change, and the Scout settings.
 - [x] 12.3 Run vendor/bin/pest tests/Feature/Search; all green
 
-
-## Group 13: Existing tests on id lookup
-depends on: 9, 10, 12
-files: tests/Feature/Api/WorkflowApiTest.php, tests/Feature/Api/ProductApiTest.php, tests/Feature/Api/AssetApiTest.php, tests/Feature/Api/CompletenessApiTest.php, tests/Feature/Api/ProductPollingTest.php, tests/Feature/Api/CategoryApiTest.php, tests/Feature/Api/AssociationApiTest.php, tests/Feature/Api/OwnershipApiTest.php, tests/Feature/Api/ChannelApiTest.php, tests/Feature/PolicyTest.php, tests/Feature/PerformanceTest.php, tests/Feature/Search/ScoutEngineTest.php, tests/Feature/Ui/WorkflowPagesTest.php, tests/Feature/Ui/AssociationPagesTest.php, tests/Feature/Ui/WidgetsTest.php, tests/Feature/Impex/ImportExportTest.php, tests/Feature/Impex/ProductWebhooksTest.php, tests/Keen/AuditHooksTest.php, tests/Modes/RenamedTables/RenamedTablesTest.php
+## Group 13: Existing API and search tests on id lookup
+depends on: 8, 10, 12
+files: tests/Feature/Api/WorkflowApiTest.php, tests/Feature/Api/ProductApiTest.php, tests/Feature/Api/AssetApiTest.php, tests/Feature/Api/CompletenessApiTest.php, tests/Feature/Api/ProductPollingTest.php, tests/Feature/Api/CategoryApiTest.php, tests/Feature/Api/AssociationApiTest.php, tests/Feature/Api/OwnershipApiTest.php, tests/Feature/Api/ChannelApiTest.php, tests/Feature/PolicyTest.php, tests/Feature/PerformanceTest.php, tests/Feature/Search/ScoutEngineTest.php, tests/Feature/RecordLookupTest.php, tests/Keen/AuditHooksTest.php, tests/Modes/RenamedTables/RenamedTablesTest.php
 criteria: 8
 
-Group 4 made products and owners bind by ULID `id` by default (AC 8, D-001/D-010), so older tests that build URLs or MCP arguments from an identifier or code now get `404`. Update the tests, not the binding.
+Group 4 made products and owners bind by ULID `id` by default (AC 8, D-001/D-010), so older tests that build URLs or MCP arguments from an identifier or code now get `404`. Update the tests, not the binding. Leave `tests/Feature/Impex/*` to group 9, and the UI and MCP tests to group 14.
 
-- [ ] 13.1 Run `composer test` and list every test that fails with `404`, or with "not found", on a product or owner URL or MCP argument.
+- [ ] 13.1 Run the files listed above and note every failure that is a `404` or "Not found" on a product or owner URL or MCP argument.
 - [ ] 13.2 Change those tests to address records by `id`, using the model's key or the `id` from the resource response. Don't add slug or identifier fallbacks to the code.
-- [ ] 13.3 Run vendor/bin/pest; all green
+- [ ] 13.3 In `RecordLookupTest`, limit the "lists every route that takes a product or an owner" dataset to Showroom's own routes (route names starting `showroom.`, plus the Atrium Showroom screens). Other packages, such as Impex's `runs/{run}/owners/{owner}`, define their own `{owner}` parameters.
+- [ ] 13.4 Run vendor/bin/pest on the listed files; all green
+
+## Group 14: Existing UI and MCP tests on id lookup
+depends on: 8, 10, 12
+files: tests/Feature/Ui/WorkflowPagesTest.php, tests/Feature/Ui/AssociationPagesTest.php, tests/Feature/Ui/WidgetsTest.php, tests/Feature/Ui/ScreenAuthorizationTest.php, tests/Feature/Ui/ScreenExtensionsTest.php, tests/Feature/Ui/ScreenIsolationTest.php, tests/Feature/Ui/AssetPagesTest.php, tests/Feature/Ui/CategoryPagesTest.php, tests/Feature/Ui/ChannelPagesTest.php, tests/Feature/McpTest.php
+criteria: 8
+
+The same id-lookup fallout as group 13, for the Atrium screens and MCP tools.
+
+- [ ] 14.1 Run the files listed above and note every failure that is a `404` or "Not found" on a product or owner screen URL or MCP argument.
+- [ ] 14.2 Change those tests to address records by `id`. If a failure is not about lookup, such as a screen extension change from group 10, fix the test or the screen so it matches the spec, and say which in build.md.
+- [ ] 14.3 Run vendor/bin/pest on the listed files; all green
+

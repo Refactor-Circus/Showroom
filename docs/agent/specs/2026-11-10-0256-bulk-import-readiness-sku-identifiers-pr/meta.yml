@@ -13,3 +13,8 @@ runs:
     result: escalated
     round: 0
     date: '2026-11-10'
+  - workflow: ring-master-factory
+    run_id: wf_490ae2eb-1f5
+    result: escalated
+    round: 0
+    date: '2026-11-10'
