@@ -205,8 +205,9 @@ final class DatabaseEngine implements SearchEngine
         // Every flag asked for, on effective flags: the product's own, or its
         // owner's (a variant's root model's) through the owners that carry it
         // and every owner beneath them.
+        $flags = app(Flags::class);
+
         foreach ($query->flags as $code) {
-            $flags = app(Flags::class);
             $owners = $flags->ownersInheriting($code);
 
             $builder->where(fn (Builder $builder): Builder => $builder
