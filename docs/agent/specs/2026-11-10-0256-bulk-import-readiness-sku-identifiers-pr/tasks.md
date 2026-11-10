@@ -181,7 +181,7 @@ criteria: 40, 41
 - [x] 10.3 Run vendor/bin/pest; all green
 
 ## Group 11: Docs and changelog
-depends on: 9, 10, 12, 13, 14
+depends on: 9, 10, 12, 13, 14, 15
 files: CHANGELOG.md, docs/03-families.md, docs/04-products.md, docs/05-search.md, docs/06-ownership.md, docs/09-api.md, docs/10-mcp.md, docs/12-impex.md, docs/13-configuration.md, docs/14-flags.md, tests/Feature/DocsTest.php
 criteria: none (upgrade notes from the spec's Design)
 
@@ -236,3 +236,16 @@ The same id-lookup fallout as group 13, for the Atrium screens and MCP tools.
 - [x] 14.2 Change those tests to address records by `id`. If a failure is not about lookup, such as a screen extension change from group 10, fix the test or the screen so it matches the spec, and say which in build.md.
 - [x] 14.3 Run vendor/bin/pest on the listed files; all green
 
+
+## Group 15: Apply build decisions D-011 and D-012
+depends on: 9
+files: src/Impex/Flows/UpsertProductsFlow.php, src/Impex/Flows/ImportProductsFlow.php, tests/Feature/Impex/UpsertChunkTest.php, tests/ArchTest.php
+criteria: 31, 32
+
+See the spec addendum for D-011 and D-012.
+
+- [ ] 15.1 Write tests:
+  - each flow run with `--capture-changes=0` records nothing for product webhooks, and records by default
+  - the arch rule passes with exactly the two named exceptions, `Domains\Transfer` and `Atrium\Http\Controllers\TransferUiController`
+- [ ] 15.2 Declare `?bool $captureChanges = null` (null means true) on both flows, and set the arch rule's `ignoring()` to exactly those two exceptions.
+- [ ] 15.3 Run vendor/bin/pest; all green
