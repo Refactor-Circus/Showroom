@@ -157,12 +157,12 @@ criteria: 30, 31, 32
 
 Group 13 already moved `tests/Feature/Impex/ImportExportTest.php` and `ProductWebhooksTest.php` to `id` lookup. Keep that when changing them.
 
-- [ ] 9.1 Write tests:
+- [x] 9.1 Write tests:
   - both flows process per chunk through the action and accept `capture_changes`
   - run results have `total`, `succeeded`, `failed` and `unchanged`; per-row failures are kept with the global row index
   - `CaptureProductChanges` records nothing while suppressed and records by default
   - an arch rule that core (outside `src/Impex`) never references Impex
-- [ ] 9.2 Implement:
+- [x] 9.2 Implement:
   - `UpsertProductChunk`, replacing `ImportProductRow` and its per-row event
   - chunked sources and the flow arguments
   - the suppression check in `CaptureProductChanges`

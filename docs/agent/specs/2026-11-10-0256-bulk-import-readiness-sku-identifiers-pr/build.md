@@ -652,3 +652,40 @@ Every failure came from lookup, so no test or screen needed a non-lookup fix (th
 **Deviations**
 
 - None. Apart from `tasks.md` and this note, I touched only files on the group's list.
+
+## Group 9 (salvaged)
+
+Impex integration (AC 30, 31, 32). The build agent stopped without returning a result. I salvaged its uncommitted work and committed it on `ring-master/2026-11-10-0256-bulk-import-readiness-sku-identifiers-pr`.
+
+**What I found**
+
+- There was no index lock and no merge or rebase in progress.
+- The work was complete for 9.1 and 9.2. It was uncommitted: some changes were staged, some unstaged and some files untracked.
+- `src/Impex/Actions/UpsertProductChunk.php` replaces `ImportProductRow`, which is deleted. It makes one `UpsertProductsAction` call per chunk and passes `mode` and `capture_changes` through. It moves each failure's `index` from the chunk's position to the record's row in the source (`start + index`).
+- `InlineProductSource` and `FileProductSource` now yield one batch item per `showroom.impex.chunk` records. Each item holds `{mode, capture_changes, start, records}`.
+  - The file cursor is now `{offset}:{row}`, so row numbers carry across pages. Blank lines and a CSV header are not counted as rows.
+  - A malformed JSONL line goes into the chunk as a string. The action then fails it at `record`, on its own row.
+- `UpsertProductsFlow` and `ImportProductsFlow` take `bool $captureChanges = true`. They run one chunk per batch item (`->chunk(1)`) and count rows with `ProductChunkSummary`, which returns `total`, `succeeded`, `failed` and `unchanged`. They apply `showroom.impex.allow_failures` to rows rather than chunks.
+- `CaptureProductChanges` returns early while `ProductChangeCapture::isSuppressed()` is true. It resolves the service on each write because the subscriber outlives the scoped binding.
+- The tests:
+  - `tests/Feature/Impex/UpsertChunkTest.php` is new.
+  - `ImportExportTest` adds tests for per-chunk calls, a failure in the second chunk reported by its global row (both flows), `capture_changes` passed through both flows, `unchanged` on a re-sent record, and failure tolerance counted by row.
+  - `ProductWebhooksTest` checks that a run records by default and records nothing with `capture_changes` off, and that a direct `suppress()` records nothing and recording works again afterwards.
+  - `tests/ArchTest.php` adds the core-never-uses-Impex rule.
+  - Group 13's `importProductPath` and `webhookProductPath` id helpers are kept.
+
+**What I committed**
+
+- The group's listed files.
+- I ran Pint on them. It fixed import order and brace style in `InlineProductSource` and `ProductChunkSummary`.
+- These files outside the group's list were also changed by the group 9 agent, and the listed files need them:
+  - `src/Impex/ProductChunkSummary.php` (new): the row-level run summary.
+  - `src/Domains/Transfer/Events/ProductChunkUpsertingActionEvent.php` and `ProductChunkUpsertedActionEvent.php`: the per-chunk event pair. They replace `ProductRowImportingActionEvent` and `ProductRowImportedActionEvent`, which are deleted.
+  - `tests/Feature/StoredIdentifiersTest.php`: the stored Impex class list now names `UpsertProductChunk` instead of `ImportProductRow`.
+
+**What is left**
+
+- 9.3: I didn't run the test suite, as the salvage instructions say; the gate runs it.
+- AC 31 asks for a `--no-capture-changes` CLI option. Impex's `FlowArguments` turns a non-null `bool` parameter into a `VALUE_NONE` flag, so only `--capture-changes` exists, and it can't turn off a default of `true`. From the CLI, capture can be turned off only positionally (`--argument=...` with `0`). This is raised as a decision.
+- The arch rule ignores `RefactorCircus\Showroom\Domains\Transfer` and `Atrium\Http\Controllers\TransferUiController` as well as `RefactorCircus\Showroom\Impex`. Those classes used Impex before this spec, to start runs behind `ImpexIntegration::active()`, so the exact rule in AC 32 would fail on existing code. This is raised as a decision.
+- Group 11: `resources/boost/skills/showroom-development/SKILL.md` still names `ProductRowImportedActionEvent`, and the changelog needs the upgrade note for the event replacement.

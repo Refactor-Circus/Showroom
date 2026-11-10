@@ -3,15 +3,23 @@
 declare(strict_types=1);
 
 use Illuminate\Http\Client\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
+use RefactorCircus\Impex\Domains\Run\Enums\RunStatus;
 use RefactorCircus\Impex\Domains\Subscription\Actions\CreateSubscriberAction;
 use RefactorCircus\Impex\Domains\Subscription\Actions\CreateSubscriptionAction;
 use RefactorCircus\Impex\Domains\Subscription\Data\CreateSubscriberData;
 use RefactorCircus\Impex\Domains\Subscription\Data\CreateSubscriptionData;
 use RefactorCircus\Impex\Domains\Subscription\Models\SubscriptionModel;
 use RefactorCircus\Impex\Domains\Subscription\Services\Exporter;
+use RefactorCircus\Impex\Facades\Impex;
+use RefactorCircus\Impex\Jobs\DetectStream;
+use RefactorCircus\Impex\Support\Tables as ImpexTables;
 use RefactorCircus\Showroom\Domains\Product\Models\ProductModel;
+use RefactorCircus\Showroom\Domains\Product\Services\ProductChangeCapture;
+use RefactorCircus\Showroom\Domains\Search\Services\ProductIndex;
 use RefactorCircus\Showroom\Impex\ImpexIntegration;
 use RefactorCircus\Showroom\Tests\Fixtures\Catalog;
 
@@ -181,6 +189,52 @@ it('narrows values to the channel and locales a vendor subscribed with', functio
     $description = deliveredTo('fr')[0]['data']['values']['description'];
 
     expect($description)->toBe([['locale' => 'fr', 'scope' => null, 'data' => 'Doux']]);
+});
+
+/**
+ * The products CaptureProductChanges told Impex about, by identifier. Stream
+ * detection is held back, so the touches stay to be read.
+ *
+ * @return list<string>
+ */
+function touchedProducts(): array
+{
+    return DB::table(ImpexTables::name('stream_touches'))
+        ->where('stream', 'showroom.products')
+        ->pluck('subject_key')
+        ->map(fn (mixed $key): string => (string) $key)
+        ->all();
+}
+
+it('records an upsert run\'s writes for webhooks by default, and nothing with capture_changes off', function (): void {
+    Queue::fake([DetectStream::class]);
+
+    $captured = Impex::run('showroom:upsert-products', [[['identifier' => 'CAP-ON', 'values' => ['name' => Catalog::value('On')]]]]);
+    $quiet = Impex::run('showroom:upsert-products', [[['identifier' => 'CAP-OFF', 'values' => ['name' => Catalog::value('Off')]]], 'upsert', false]);
+
+    expect($captured->refresh()->status)->toBe(RunStatus::Completed)
+        ->and($quiet->refresh()->status)->toBe(RunStatus::Completed)
+        ->and(ProductModel::query()->where('identifier', 'CAP-OFF')->exists())->toBeTrue()
+        ->and(touchedProducts())->toContain('CAP-ON')
+        ->and(touchedProducts())->not->toContain('CAP-OFF');
+});
+
+it('records nothing while ProductChangeCapture is suppressed, and records again after', function (): void {
+    Queue::fake([DetectStream::class]);
+
+    $this->postJson('/showroom/products', ['identifier' => 'SUPPRESSED'])->assertCreated();
+    DB::table(ImpexTables::name('stream_touches'))->delete();
+
+    $id = (string) ProductModel::query()->where('identifier', 'SUPPRESSED')->value('id');
+    $index = app(ProductIndex::class);
+
+    app(ProductChangeCapture::class)->suppress(fn () => $index->queue([$id]));
+
+    expect(touchedProducts())->toBe([]);
+
+    $index->queue([$id]);
+
+    expect(touchedProducts())->toBe(['SUPPRESSED']);
 });
 
 it('exports what a subscription covers for a vendor starting out', function (): void {
