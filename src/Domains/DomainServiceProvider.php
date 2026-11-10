@@ -10,6 +10,7 @@ use RefactorCircus\Showroom\Domains\Association\AssociationServiceProvider;
 use RefactorCircus\Showroom\Domains\Attribute\AttributeServiceProvider;
 use RefactorCircus\Showroom\Domains\Category\CategoryServiceProvider;
 use RefactorCircus\Showroom\Domains\Channel\ChannelServiceProvider;
+use RefactorCircus\Showroom\Domains\ExternalId\ExternalIdServiceProvider;
 use RefactorCircus\Showroom\Domains\Family\FamilyServiceProvider;
 use RefactorCircus\Showroom\Domains\Flag\FlagServiceProvider;
 use RefactorCircus\Showroom\Domains\Owner\OwnerServiceProvider;
@@ -32,6 +33,7 @@ class DomainServiceProvider extends ServiceProvider
         AttributeServiceProvider::class,
         CategoryServiceProvider::class,
         ChannelServiceProvider::class,
+        ExternalIdServiceProvider::class,
         FamilyServiceProvider::class,
         FlagServiceProvider::class,
         OwnerServiceProvider::class,

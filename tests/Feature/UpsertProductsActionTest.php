@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\DB;
@@ -160,6 +161,20 @@ function upsertProduct(string $identifier): ProductModel
 }
 
 /**
+ * The identifier of the product holding an id in a source, if any.
+ */
+function upsertExternalIdHolder(string $source, string $externalId): ?string
+{
+    $subjectId = ExternalIdModel::query()
+        ->where('subject_type', (new ProductModel)->getMorphClass())
+        ->where('source', $source)
+        ->where('external_id', $externalId)
+        ->value('subject_id');
+
+    return $subjectId === null ? null : ProductModel::query()->whereKey($subjectId)->value('identifier');
+}
+
+/**
  * A product's external id rows, as {source: [synced_at, updated_at]} in ISO-8601.
  *
  * @return array<string, array{0: string|null, 1: string|null}>
@@ -276,6 +291,48 @@ describe('modes and matching', function (): void {
             ->and(ProductModel::query()->pluck('identifier')->all())->toBe(['TEE']);
     });
 
+    it('keeps the first record holding a (source, id) in batch order, whichever way it is written', function (string $identifier, array $overrides): void {
+        upsertProducts([upsertRecord('TEE')]);
+
+        $result = upsertProducts([
+            upsertRecord($identifier, ['external_ids' => ['erp' => 'E-1'], ...$overrides]),
+            // A new simple product, written in bulk before the others.
+            upsertRecord('CAP', ['external_ids' => ['erp' => 'E-1']]),
+        ]);
+
+        expect(upsertFailures($result))->toBe([1 => ['CAP', ['external_ids.erp']]])
+            ->and(upsertExternalIdHolder('erp', 'E-1'))->toBe($identifier)
+            ->and(ProductModel::query()->where('identifier', 'CAP')->exists())->toBeFalse();
+    })->with([
+        'a new product written on its own' => ['BAG', ['associations' => ['x_sell' => ['products' => ['TEE']]]]],
+        'an update' => ['TEE', []],
+    ]);
+
+    it('lets a new record take a (source, id) that an update earlier in the batch removes', function (): void {
+        upsertProducts([upsertRecord('TEE')]);
+
+        $result = upsertProducts([
+            upsertRecord('TEE', ['external_ids' => ['erp' => null]]),
+            upsertRecord('CAP', ['external_ids' => ['erp' => 'E-TEE']]),
+        ]);
+
+        expect([$result->created, $result->updated, $result->failed()])->toBe([1, 1, 0])
+            ->and(upsertExternalIdHolder('erp', 'E-TEE'))->toBe('CAP');
+    });
+
+    it('refuses a new record a (source, id) that an update later in the batch removes', function (): void {
+        upsertProducts([upsertRecord('TEE')]);
+
+        $result = upsertProducts([
+            upsertRecord('CAP', ['external_ids' => ['erp' => 'E-TEE']]),
+            upsertRecord('TEE', ['external_ids' => ['erp' => null]]),
+        ]);
+
+        expect(upsertFailures($result))->toBe([0 => ['CAP', ['external_ids.erp']]])
+            ->and($result->updated)->toBe(1)
+            ->and(upsertExternalIdHolder('erp', 'E-TEE'))->toBeNull();
+    });
+
     it('refuses the second of two new records with the same identifier', function (): void {
         $result = upsertProducts([upsertRecord('TEE'), upsertRecord('TEE', ['external_ids' => ['erp' => 'E-2']])]);
 
@@ -329,6 +386,35 @@ describe('validation', function (): void {
 
         expect($result->created)->toBe(1)
             ->and(upsertFailures($result))->toBe([0 => ['TEE', ['owner']]]);
+    });
+
+    it('reports a record whose write fails in the database, and writes the rest', function (): void {
+        upsertProducts([upsertRecord('TEE'), upsertRecord('KEEP')]);
+
+        Event::listen(ProductSavedEvent::class, function (ProductSavedEvent $event): void {
+            if ($event->product->identifier === 'BAG') {
+                throw new UniqueConstraintViolationException('testing', 'insert into products', [], new PDOException('UNIQUE constraint failed'));
+            }
+
+            if ($event->product->identifier === 'TEE') {
+                DB::table('upsert_no_such_table')->insert(['id' => 1]);
+            }
+        });
+
+        $result = upsertProducts([
+            upsertRecord('TEE', ['enabled' => false]),
+            upsertRecord('BAG', ['associations' => ['x_sell' => ['products' => ['KEEP']]]]),
+            upsertRecord('CAP'),
+            upsertRecord('KEEP', ['enabled' => false]),
+        ]);
+
+        expect(upsertFailures($result))->toBe([0 => ['TEE', ['record']], 1 => ['BAG', ['record']]])
+            ->and([$result->created, $result->updated])->toBe([1, 1])
+            ->and(json_encode($result->failures, JSON_THROW_ON_ERROR))->not->toContain('upsert_no_such_table')
+            ->and(upsertProduct('TEE')->enabled)->toBeTrue()
+            ->and(upsertProduct('KEEP')->enabled)->toBeFalse()
+            ->and(ProductModel::query()->where('identifier', 'BAG')->exists())->toBeFalse()
+            ->and(ProductModel::query()->where('identifier', 'CAP')->exists())->toBeTrue();
     });
 });
 

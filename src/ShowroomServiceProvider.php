@@ -13,8 +13,6 @@ use RefactorCircus\Keystone\Support\PackageServiceProvider;
 use RefactorCircus\Showroom\Atrium\ScreenAccess;
 use RefactorCircus\Showroom\Atrium\ShowroomPlugin;
 use RefactorCircus\Showroom\Domains\DomainServiceProvider;
-use RefactorCircus\Showroom\Domains\ExternalId\Models\ExternalIdModel;
-use RefactorCircus\Showroom\Domains\ExternalId\Services\ExternalIds;
 use RefactorCircus\Showroom\Impex\ImpexIntegration;
 use RefactorCircus\Showroom\Mcp\ShowroomServer;
 use RefactorCircus\Showroom\Support\RecordLookup;
@@ -45,9 +43,6 @@ class ShowroomServiceProvider extends PackageServiceProvider
 
         $this->app->singleton(Showroom::class);
 
-        // One instance per request, never shared across Octane requests.
-        $this->app->scoped(ExternalIds::class);
-
         $this->app->register(DomainServiceProvider::class);
     }
 
@@ -58,13 +53,6 @@ class ShowroomServiceProvider extends PackageServiceProvider
     {
         // A lookup key that is neither `id` nor `slug` fails here, not on the first request.
         $this->app->make(RecordLookup::class)->assertConfigured();
-
-        // Polymorphic columns (the audit log's) store this short name, not the
-        // class name. Its rows name their product or owner by those models'
-        // own aliases, showroom_product and showroom_owner.
-        $this->keepMorphAliases([
-            'showroom_external_id' => ExternalIdModel::class,
-        ]);
 
         $this->registerRecordBindings();
 

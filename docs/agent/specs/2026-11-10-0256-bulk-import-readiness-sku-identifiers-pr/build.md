@@ -926,3 +926,36 @@ Rework 4 (D-013): the docs and changelog say `source` instead of `system`, and d
 **Deviations**
 
 - None.
+
+## Rework round 1 (review findings)
+
+Fixes for the three minor findings and the cheap nits of the round-1 review.
+
+**Fixes**
+
+- `src/Domains/Product/Actions/UpsertProductsAction.php`, first-holder rule (AC 14, 36):
+  - `validate()` now claims external ids for the whole batch, in batch order, as it already did for identifiers. It covers creates, updates and unchanged records. A record that sends a (source, id) an earlier record of the batch sends fails at `external_ids.{source}` with "Another record of the batch has the {source} id ...". The first record persists, whichever path writes it: bulk, a create on its own, or an update.
+  - An update that removes or replaces a stored id releases it. A later new record that takes a released id is written on its own after the updates, once the id is free. A new record that comes before the releasing update still fails, because batch order decides.
+- `UpsertProductsAction`, per-record isolation (AC 26, 39): `createOne()` and `updateAll()` also catch `QueryException`. A `UniqueConstraintViolationException` (an identifier race, or `Slugs::claim` running out of retries) fails only its record, at `record`. Any other database error does too, and is also passed to `report()`. Neither message carries SQL. The action's own transaction has already rolled the record back, so neighbours still count and persist.
+- `docs/agent/standards-feedback.md`: added a row for the `BulkProductWriter` raw-insert path. It bypasses actions-events, dependencies and the model lifecycle events. The row cites AC 29, AC 38 and D-008, and names `UpsertProductsParityTest` as the parity guard.
+- Nit: `src/Domains/ExternalId/ExternalIdServiceProvider.php` (new) holds the scoped `ExternalIds` binding and the `showroom_external_id` morph alias. `DomainServiceProvider` lists it, and both moved out of `ShowroomServiceProvider`.
+- Nit: `AGENTS.md` no longer says the config keys never change. It says existing keys are never renamed or removed, and a new key goes under its own banner section.
+- Nit (`by` in the show/update/delete request rules): no change, as the finding allows.
+
+**Tests**
+
+- `tests/Feature/UpsertProductsActionTest.php` has new cases, and each one failed before the fix:
+  - The first holder of a (source, id) persists when it is a create written on its own, or an update, ahead of a bulk create.
+  - An update that removes an id lets a later new record take it.
+  - A new record that comes before the update releasing its id is refused.
+  - A record whose write fails in the database is reported at `record` without SQL, and its neighbours are written. This covers a unique violation on a create and another `QueryException` on an update.
+- Results:
+  - `composer test:unit`: 1273 passed, 12597 assertions.
+  - `composer analyse`: 0 errors.
+  - `composer test:types`: 100%.
+  - Pint is clean on the changed files.
+
+**Deviations**
+
+- None. Outside the files the findings name, I touched `src/Domains/DomainServiceProvider.php` and the new `ExternalIdServiceProvider.php` (for the nit) and `tests/Feature/UpsertProductsActionTest.php`.
+- Not changed: unique attribute values are still claimed by the bulk writer and by `UniqueValues::sync()` in write order, not batch order. The finding covered external ids only.

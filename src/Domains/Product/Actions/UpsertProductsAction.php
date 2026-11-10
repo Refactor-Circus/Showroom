@@ -7,6 +7,8 @@ namespace RefactorCircus\Showroom\Domains\Product\Actions;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Database\QueryException;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\PresenceVerifierInterface;
 use Illuminate\Validation\ValidationException;
@@ -42,15 +44,20 @@ use Throwable;
  *    external id in a source, and the matched products are loaded together.
  * 2. Each record is validated against CreateProductData's rules or
  *    UpdateProductData's, and a change to its flags must pass `assign`.
+ *    Identifiers and external ids are claimed in batch order: of two
+ *    records sending one, the first persists.
  * 3. A matched record whose sent fields equal the stored product's is
  *    unchanged: nothing is written, versioned, queued or announced for it,
  *    but its external ids are stamped synced, every unchanged record's in
  *    one update for the batch (ExternalIds::touch()).
  * 4. The rest are written, with one index sync for the whole batch: new
  *    simple products in bulk (BulkProductWriter), every other record through
- *    CreateProductAction or UpdateProductAction, each on its own.
+ *    CreateProductAction or UpdateProductAction, each on its own. A new
+ *    record taking an external id an earlier update releases is written
+ *    after the updates.
  *
- * A record that fails — invalid, or refused by a rule of the write — is
+ * A record that fails — invalid, refused by a rule of the write, or by the
+ * database — is
  * reported with its index, its identifier and its errors; its neighbours are
  * still written. When the bulk write itself fails, its records are written
  * one by one instead.
@@ -135,11 +142,15 @@ final class UpsertProductsAction
         }
 
         $matched = $this->match($data, $records);
-        [$creates, $updates, $unchanged] = $this->validate($data, $records, $matched);
+        [$creates, $updates, $unchanged, $afterUpdates] = $this->validate($data, $records, $matched);
 
         $this->externalIds->touch($unchanged, ProductModel::class);
-        $this->createAll($creates, $records);
+        $this->createAll(array_diff_key($creates, $afterUpdates), $records);
         $this->updateAll($updates, $records);
+
+        foreach (array_intersect_key($creates, $afterUpdates) as $index => $create) {
+            $this->createOne($index, $create, $records[$index]);
+        }
 
         ksort($this->failures);
 
@@ -217,11 +228,18 @@ final class UpsertProductsAction
     /**
      * Validate each record the mode writes, check `assign` where its flags
      * change, and set aside the matched records that change nothing: the
-     * creates, the updates, and the ids of the unchanged products.
+     * creates, the updates, the ids of the unchanged products, and the
+     * creates to write after the updates.
+     *
+     * External ids are claimed here, in batch order, whichever way each
+     * record is later written: a record sending a (source, id) that an
+     * earlier record of the batch sends fails, and the first persists. A new
+     * record taking an id that an earlier update releases is written after
+     * the updates, once the id is free.
      *
      * @param  array<int, array<string, mixed>>  $records
      * @param  array<int, ProductModel>  $matched
-     * @return array{0: array<int, CreateProductData>, 1: array<int, array{0: ProductModel, 1: UpdateProductData}>, 2: list<string>}
+     * @return array{0: array<int, CreateProductData>, 1: array<int, array{0: ProductModel, 1: UpdateProductData}>, 2: list<string>, 3: array<int, true>}
      */
     private function validate(UpsertProductsData $data, array $records, array $matched): array
     {
@@ -234,8 +252,13 @@ final class UpsertProductsAction
         $creates = [];
         $updates = [];
         $unchanged = [];
+        $afterUpdates = [];
         $newIdentifiers = [];
         $matchedProducts = [];
+        /** @var array<string, array<string, true>> $claimedIds */
+        $claimedIds = [];
+        /** @var array<string, array<string, true>> $releasedIds */
+        $releasedIds = [];
 
         foreach ($records as $index => $record) {
             $product = $matched[$index] ?? null;
@@ -254,7 +277,17 @@ final class UpsertProductsAction
                         throw ValidationException::withMessages(['identifier' => sprintf('Another record of the batch has the identifier "%s".', $record['identifier'])]);
                     }
 
-                    $creates[$index] = $this->validateNew($record, $createRules, $presence);
+                    $create = $this->validateNew($record, $createRules, $presence);
+                    $wanted = self::sentExternalIds($create->externalIds ?? []);
+
+                    self::refuseClaimed($wanted, $claimedIds);
+
+                    $creates[$index] = $create;
+                    self::claim($wanted, $claimedIds);
+
+                    if (self::anyReleased($wanted, $releasedIds)) {
+                        $afterUpdates[$index] = true;
+                    }
 
                     if ($identifier !== null) {
                         $newIdentifiers[$identifier] = true;
@@ -271,19 +304,114 @@ final class UpsertProductsAction
 
                 $matchedProducts[$product->id] = true;
                 $update = $this->validateMatched($record, $product, $updateRules, $presence);
+                $sent = $update->externalIds instanceof Missing ? [] : $update->externalIds;
+                $wanted = self::sentExternalIds($sent);
+
+                self::refuseClaimed($wanted, $claimedIds);
 
                 if ($this->unchanged($product, $update, $values)) {
                     $this->counts['unchanged']++;
                     $unchanged[] = $product->id;
                 } else {
                     $updates[$index] = [$product, $update];
+                    self::release($product, $sent, $releasedIds);
                 }
+
+                self::claim($wanted, $claimedIds);
             } catch (ValidationException|AuthorizationException $exception) {
                 $this->failWith($index, $record, $product, $exception);
             }
         }
 
-        return [$creates, $updates, $unchanged];
+        return [$creates, $updates, $unchanged, $afterUpdates];
+    }
+
+    /**
+     * The ids a record sends, by source, each with an id.
+     *
+     * @param  array<array-key, string|null>  $map
+     * @return array<string, string>
+     */
+    private static function sentExternalIds(array $map): array
+    {
+        $sent = [];
+
+        foreach ($map as $source => $externalId) {
+            if (is_string($externalId)) {
+                $sent[(string) $source] = $externalId;
+            }
+        }
+
+        return $sent;
+    }
+
+    /**
+     * Refuse the ids an earlier record of the batch claimed.
+     *
+     * @param  array<string, string>  $wanted
+     * @param  array<string, array<string, true>>  $claimed
+     *
+     * @throws ValidationException
+     */
+    private static function refuseClaimed(array $wanted, array $claimed): void
+    {
+        $errors = [];
+
+        foreach ($wanted as $source => $externalId) {
+            if (isset($claimed[$source][KeyNormalizer::normalize($externalId)])) {
+                $errors['external_ids.'.$source] = sprintf('Another record of the batch has the %s id "%s".', $source, $externalId);
+            }
+        }
+
+        if ($errors !== []) {
+            throw ValidationException::withMessages($errors);
+        }
+    }
+
+    /**
+     * @param  array<string, string>  $wanted
+     * @param  array<string, array<string, true>>  $claimed
+     */
+    private static function claim(array $wanted, array &$claimed): void
+    {
+        foreach ($wanted as $source => $externalId) {
+            $claimed[$source][KeyNormalizer::normalize($externalId)] = true;
+        }
+    }
+
+    /**
+     * Note the stored ids an update removes or replaces: once it is written,
+     * a later record of the batch may take them.
+     *
+     * @param  array<array-key, string|null>  $sent
+     * @param  array<string, array<string, true>>  $released
+     */
+    private static function release(ProductModel $product, array $sent, array &$released): void
+    {
+        $stored = ExternalIds::present($product->externalIds);
+
+        foreach ($sent as $source => $externalId) {
+            $held = $stored[(string) $source] ?? null;
+
+            if ($held !== null && ! self::same($externalId, $held)) {
+                $released[(string) $source][KeyNormalizer::normalize($held)] = true;
+            }
+        }
+    }
+
+    /**
+     * @param  array<string, string>  $wanted
+     * @param  array<string, array<string, true>>  $released
+     */
+    private static function anyReleased(array $wanted, array $released): bool
+    {
+        foreach ($wanted as $source => $externalId) {
+            if (isset($released[$source][KeyNormalizer::normalize($externalId)])) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
@@ -477,13 +605,16 @@ final class UpsertProductsAction
             try {
                 app(UpdateProductAction::class)->execute($product, $update);
                 $this->counts['updated']++;
-            } catch (ValidationException|AuthorizationException|ModelNotFoundException $exception) {
+            } catch (ValidationException|AuthorizationException|ModelNotFoundException|QueryException $exception) {
                 $this->failWith($index, $records[$index], $product, $exception);
             }
         }
     }
 
     /**
+     * A database error fails only the record it belongs to: the action's
+     * transaction has rolled its writes back.
+     *
      * @param  array<string, mixed>  $record
      */
     private function createOne(int $index, CreateProductData $create, array $record): void
@@ -491,7 +622,7 @@ final class UpsertProductsAction
         try {
             app(CreateProductAction::class)->execute($create);
             $this->counts['created']++;
-        } catch (ValidationException|AuthorizationException|ModelNotFoundException $exception) {
+        } catch (ValidationException|AuthorizationException|ModelNotFoundException|QueryException $exception) {
             $this->failWith($index, $record, null, $exception);
         }
     }
@@ -524,18 +655,27 @@ final class UpsertProductsAction
     }
 
     /**
+     * A database error is reported without its SQL; one other than a unique
+     * key taken mid-write goes to the exception handler as well.
+     *
      * @param  array<string, mixed>  $record
-     * @param  ValidationException|AuthorizationException|ModelNotFoundException<Model>  $exception
+     * @param  ValidationException|AuthorizationException|ModelNotFoundException<Model>|QueryException  $exception
      */
-    private function failWith(int $index, array $record, ?ProductModel $product, ValidationException|AuthorizationException|ModelNotFoundException $exception): void
+    private function failWith(int $index, array $record, ?ProductModel $product, ValidationException|AuthorizationException|ModelNotFoundException|QueryException $exception): void
     {
         $identifier = is_string($record['identifier'] ?? null) ? $record['identifier'] : $product?->identifier;
+
+        if ($exception instanceof QueryException && ! $exception instanceof UniqueConstraintViolationException) {
+            report($exception);
+        }
 
         /** @var array<string, list<string>> $errors */
         $errors = match (true) {
             $exception instanceof ValidationException => $exception->errors(),
             // Only a change of flags is authorized per record.
             $exception instanceof AuthorizationException => ['flags' => [$exception->getMessage()]],
+            $exception instanceof UniqueConstraintViolationException => ['record' => ['Another record took one of this record\'s unique keys while it was written.']],
+            $exception instanceof QueryException => ['record' => ['The record could not be written to the database.']],
             default => ['record' => [$exception->getMessage()]],
         };
 
