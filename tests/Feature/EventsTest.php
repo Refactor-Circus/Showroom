@@ -76,7 +76,7 @@ it('fires one starting and one finished event for every Action', function (): vo
             ->and(is_subclass_of($finished, ActionFinishedEvent::class))->toBeTrue(basename($path).' finishes with '.$finished);
     }
 
-    expect($actions)->toHaveCount(82);
+    expect($actions)->toHaveCount(83);
 });
 
 it('fires the starting and finished events around an action', function (): void {

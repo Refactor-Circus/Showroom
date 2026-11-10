@@ -376,3 +376,37 @@ This retry re-checked 7.1 to 7.3 against branch head df773b8. Nothing in `src/` 
 - **Checked:** `Flags` (`write`, `own`, `effective`, `load`, `forget`, `holders`), `HasFlags`, the `assign` check before writing in the four create and update actions (only when `Flags::changes()` is true), `Flags::forget()` in both delete actions, the orphan-tolerant count in `DeleteFlagAction`, and `flags`/`effective_flags` in both resources. They meet AC 19, 20, 21, 33 and 37.
 - **Tests:** `tests/Feature/FlagAssignmentTest.php`, `tests/Feature/FlagActionsTest.php` and `tests/Feature/Api/FlagApiTest.php` all pass: 57 tests, 352 assertions. I didn't run the full suite; the gate runs it.
 - **Deviations:** none new. See "Group 7" above.
+
+## Group 8
+
+This retry covers task 8.3. The code and tests for 8.1 and 8.2 are in commit c21d01e ("group 8 Batch upsert action (salvaged)"). This commit ticks 8.1 to 8.3 and adds this note. No source or test files changed. `php -l` is clean on the action, the bulk writer and the batch presence verifier. Per the job instructions I didn't run the suite; the gate runs `vendor/bin/pest`.
+
+- **Files (c21d01e):**
+  - `src/Domains/Product/Actions/UpsertProductsAction.php`: validate (including `assign`) → load → preview → bulk or per-record write inside `ProductIndex::deferring()`.
+  - `src/Domains/Product/Data/UpsertProductsData.php`, `src/Domains/Product/Data/UpsertProductsResult.php`, `src/Domains/Product/Enums/UpsertMode.php`.
+  - `src/Domains/Product/Events/ProductsUpsertingActionEvent.php`, `src/Domains/Product/Events/ProductsUpsertedActionEvent.php`.
+  - `src/Domains/Product/Services/ProductChangeCapture.php`: `suppress()` restores its state in a `finally`.
+  - `src/Domains/Product/Services/BulkProductWriter.php`, sharing the write step with the create action.
+  - `src/Domains/Product/ProductServiceProvider.php`: binds `ProductChangeCapture` as `scoped`.
+- **Tests (c21d01e):**
+  - `tests/Feature/UpsertProductsActionTest.php` covers:
+    - modes and matching by identifier or external id, including case-only differences, and duplicate records in a batch
+    - per-record validation reported by index, identifier and errors
+    - read-only keys and domain-guard refusals
+    - the unchanged preview: no writes, versions, syncs or events
+    - created and updated version counts, and approved products sent back to draft
+    - one index sync per batch
+    - `assign` refusal as a per-record failure
+    - the batch events, and change-capture suppression only when asked
+  - `tests/Feature/UpsertProductsPerformanceTest.php`: the query count stays flat between batch sizes for unchanged re-upserts and for new simple products.
+  - `tests/Feature/UpsertProductsParityTest.php`:
+    - the bulk path matches `CreateProductAction`
+    - a mixed chunk
+    - a forced bulk failure that falls back to per-record writes
+  - `tests/Unit/ProductChangeCaptureTest.php`: default capture, restore on throw, nested suppression, and a scoped binding per request.
+- **Deviations: files outside group 8's list (c21d01e):**
+  - `src/Support/BatchPresenceVerifier.php` (new): answers `exists`/`unique` for a whole batch from one primed read. Without it, per-record validation grows the query count with each record, and the performance criteria fail.
+  - `src/Domains/Attribute/Services/ValueValidator.php`: keeps the attributes, locales and channels it has read, so one instance reused across a batch reads each once. A fresh instance per write behaves as before.
+  - `src/Domains/Flag/Services/Flags.php`: `rules()` reads each flag code once per rule set, for the same reason.
+  - `tests/Feature/EventsTest.php`: the pinned action count goes from 82 to 83. Other groups that add actions need to add up their counts at merge.
+  - `tests/Pest.php`: adds `UpsertProductsAction` to `PARITY_EXCEPTIONS` for `http`, `mcp` and `ui`. The spec puts HTTP and MCP endpoints for the batch upsert out of scope.

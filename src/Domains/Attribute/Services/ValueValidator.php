@@ -20,22 +20,34 @@ use RefactorCircus\Showroom\Domains\Channel\Models\LocaleModel;
  *
  * Every error is reported at the path the caller sent, such as
  * `values.weight.0.data.unit`.
+ *
+ * What it reads — attributes, locales, channels — it keeps, so one instance
+ * reused across a batch of records reads each once. Resolve a fresh one per
+ * write; the container does not share it.
  */
 final class ValueValidator
 {
     /**
-     * Existing locale codes, loaded once per validation.
+     * Existing locale codes, loaded when first needed.
      *
-     * @var array<int, string>
+     * @var array<int, string>|null
      */
-    private array $locales = [];
+    private ?array $locales = null;
 
     /**
-     * Existing channels: code => [locales, currencies].
+     * Existing channels: code => [locales, currencies], loaded when first needed.
      *
-     * @var array<string, array{locales: array<int, string>, currencies: array<int, string>}>
+     * @var array<string, array{locales: array<int, string>, currencies: array<int, string>}>|null
      */
-    private array $channels = [];
+    private ?array $channels = null;
+
+    /**
+     * The attributes asked for so far, with their options, by code; null for
+     * a code no attribute has.
+     *
+     * @var array<string, AttributeModel|null>
+     */
+    private array $attributes = [];
 
     /**
      * @param  Collection<int, AttributeModel>|null  $settable  The attributes this record may set, or null for any.
@@ -57,7 +69,7 @@ final class ValueValidator
         /** @var array<string, mixed> $values */
         $codes = array_map('strval', array_keys($values));
 
-        $attributes = AttributeModel::query()->with('options')->whereIn('code', $codes)->get()->keyBy('code');
+        $attributes = $this->attributes($codes);
 
         $errors = [];
 
@@ -107,6 +119,35 @@ final class ValueValidator
     }
 
     /**
+     * The attributes with these codes, with their options, by code: read
+     * once per code for the life of this validator.
+     *
+     * @param  array<int, string>  $codes
+     * @return Collection<string, AttributeModel>
+     */
+    private function attributes(array $codes): Collection
+    {
+        $unread = array_values(array_diff($codes, array_keys($this->attributes)));
+
+        if ($unread !== []) {
+            foreach (AttributeModel::query()->with('options')->whereIn('code', $unread)->get() as $attribute) {
+                $this->attributes[$attribute->code] = $attribute;
+            }
+
+            foreach ($unread as $code) {
+                $this->attributes[$code] ??= null;
+            }
+        }
+
+        /** @var Collection<string, AttributeModel> $attributes */
+        $attributes = collect($codes)
+            ->mapWithKeys(fn (string $code): array => [$code => $this->attributes[$code] ?? null])
+            ->filter();
+
+        return $attributes;
+    }
+
+    /**
      * @return array<string, array<int, mixed>>
      */
     private function rulesFor(AttributeModel $attribute, string $path): array
@@ -117,10 +158,10 @@ final class ValueValidator
             $path => ['array', 'list', 'min:1'],
             $path.'.*' => ['array'],
             $path.'.*.locale' => $attribute->is_localizable
-                ? ['required', 'string', Rule::in($this->locales)]
+                ? ['required', 'string', Rule::in($this->locales ?? [])]
                 : ['nullable', 'prohibited'],
             $path.'.*.scope' => $attribute->is_scopable
-                ? ['required', 'string', Rule::in(array_keys($this->channels))]
+                ? ['required', 'string', Rule::in(array_keys($this->channels ?? []))]
                 : ['nullable', 'prohibited'],
         ];
 
@@ -167,15 +208,13 @@ final class ValueValidator
     }
 
     /**
-     * Load the locales and channels, but only when some attribute needs them.
+     * Load the locales and channels, but only when some attribute needs them,
+     * and only once.
      *
      * @param  iterable<string, AttributeModel>  $attributes
      */
     private function loadScopes(iterable $attributes): void
     {
-        $this->locales = [];
-        $this->channels = [];
-
         $localizable = false;
         $scopable = false;
 
@@ -184,13 +223,15 @@ final class ValueValidator
             $scopable = $scopable || $attribute->is_scopable;
         }
 
-        if ($localizable) {
+        if ($localizable && $this->locales === null) {
             /** @var array<int, string> $codes */
             $codes = LocaleModel::query()->pluck('code')->all();
             $this->locales = $codes;
         }
 
-        if ($scopable) {
+        if ($scopable && $this->channels === null) {
+            $this->channels = [];
+
             foreach (ChannelModel::query()->with('locales')->get() as $channel) {
                 $this->channels[$channel->code] = [
                     'locales' => $channel->locales->pluck('code')->all(),

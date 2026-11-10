@@ -46,6 +46,9 @@ function mcpTool(string $tool, array $arguments = []): TestResponse
  * @var array<string, array<int, string>>
  */
 const PARITY_EXCEPTIONS = [
+    // Batch upserts run through the Impex import flows; their own HTTP and
+    // MCP endpoints are out of scope (bulk import readiness spec).
+    'UpsertProductsAction' => ['http', 'mcp', 'ui'],
     // Not on the dashboard yet; reachable over the API and MCP.
     'ShowAssociationTypeAction' => ['ui'],
     'UpdateAssociationTypeAction' => ['ui'],
