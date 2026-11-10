@@ -112,27 +112,21 @@ criteria: 17, 18
   - registration in the domain provider and the MCP server
 - [x] 6.3 Run vendor/bin/pest; all green
 
-## Group 7: Flag assignment, effective flags and search
+## Group 7: Flag assignment and effective flags
 depends on: 5, 6
-files: src/Domains/Flag/Services/Flags.php, src/Domains/Product/Models/ProductModel.php, src/Domains/Owner/Models/OwnerModel.php, src/Domains/Product/Actions/CreateProductAction.php, src/Domains/Product/Actions/UpdateProductAction.php, src/Domains/Product/Actions/DeleteProductAction.php, src/Domains/Owner/Actions/CreateOwnerAction.php, src/Domains/Owner/Actions/UpdateOwnerAction.php, src/Domains/Owner/Actions/DeleteOwnerAction.php, src/Domains/Owner/Actions/ListOwnersAction.php, src/Domains/Flag/Actions/DeleteFlagAction.php, src/Domains/Product/Data/*.php, src/Domains/Owner/Data/*.php, src/Domains/Product/Resources/ProductResource.php, src/Domains/Owner/Resources/OwnerResource.php, src/Domains/Search/Services/ProductDocument.php, src/Domains/Search/Services/DatabaseEngine.php, src/Domains/Search/Services/ScoutEngine.php, tests/Feature/FlagAssignmentTest.php, tests/Feature/Search/FlagSearchTest.php
-criteria: 19, 20, 21, 22, 23, 33, 34, 37
+files: src/Domains/Flag/Services/Flags.php, src/Domains/Flag/Concerns/HasFlags.php, src/Domains/Product/Models/ProductModel.php, src/Domains/Owner/Models/OwnerModel.php, src/Domains/Product/Actions/CreateProductAction.php, src/Domains/Product/Actions/UpdateProductAction.php, src/Domains/Product/Actions/DeleteProductAction.php, src/Domains/Product/Actions/ShowProductAction.php, src/Domains/Owner/Actions/CreateOwnerAction.php, src/Domains/Owner/Actions/UpdateOwnerAction.php, src/Domains/Owner/Actions/DeleteOwnerAction.php, src/Domains/Owner/Actions/ShowOwnerAction.php, src/Domains/Flag/Actions/DeleteFlagAction.php, src/Domains/Product/Data/*.php, src/Domains/Owner/Data/*.php, src/Domains/Product/Resources/ProductResource.php, src/Domains/Owner/Resources/OwnerResource.php, tests/Feature/FlagAssignmentTest.php
+criteria: 19, 20, 21, 33, 37
 
-- [x] 7.1 Write tests:
+Resumes from checkpoint commit 4d664b3, which already has a partial `Flags` service, a `HasFlags` concern and edits to the actions, Data and resources. Read the diff first (`git show 4d664b3 --stat`) and finish that work rather than starting over. Search engine and `ProductDocument` changes in that commit belong to group 12: leave them alone.
+
+- [ ] 7.1 Write tests in tests/Feature/FlagAssignmentTest.php:
   - `flags` on product and owner create and update: replaces the set; unknown codes and wrong `applies_to` refused at `flags.{n}`
-  - `assign` required only when flags change (HTTP, MCP and actions; owners too)
+  - `assign` required only when flags change (actions, HTTP and MCP; owners too)
   - effective flags through a grandchild owner and a root-model-owner variant; a child cannot drop an inherited flag
   - `flags` and `effective_flags` in resources and MCP output
-  - one shared search dataset on both engines (own, inherited, variants, several flags ANDed), plus the owner listing filter
-  - changing an owner's flags or moving an owner queues `QueueProductSyncs` (queue fake), and the search reflects it after the sync
   - assignments deleted with their subject; orphan assignments ignored by flag delete
-  - Scout settings list `slug`, `external_ids`, `flags` and `owner_slugs`
-- [x] 7.2 Implement:
-  - the `Flags` service (`write`, `own`, `effective`)
-  - the `assign` check and flag writes in the create and update actions
-  - cleanup of assignments on delete
-  - the reindex in `UpdateOwnerAction`
-  - resources, `ProductDocument`, both engines and the Scout settings
-- [ ] 7.3 Run vendor/bin/pest; all green
+- [ ] 7.2 Finish the `Flags` service (`write`, `own`, `effective`), the `assign` check and flag writes in the create and update actions, cleanup on delete, and the resource fields.
+- [ ] 7.3 Run vendor/bin/pest tests/Feature/FlagAssignmentTest.php tests/Feature/FlagActionsTest.php tests/Feature/Api/FlagApiTest.php; all green
 
 ## Group 8: Batch upsert action
 depends on: 7
@@ -185,7 +179,7 @@ criteria: 40, 41
 - [ ] 10.3 Run vendor/bin/pest; all green
 
 ## Group 11: Docs and changelog
-depends on: 9, 10
+depends on: 9, 10, 12, 13
 files: CHANGELOG.md, docs/03-families.md, docs/04-products.md, docs/05-search.md, docs/06-ownership.md, docs/09-api.md, docs/10-mcp.md, docs/12-impex.md, docs/13-configuration.md, docs/14-flags.md, tests/Feature/DocsTest.php
 criteria: none (upgrade notes from the spec's Design)
 
@@ -201,3 +195,30 @@ criteria: none (upgrade notes from the spec's Design)
   - unique-index lock time on large installs
   - Scout settings
 - [ ] 11.4 Run vendor/bin/pest; all green
+
+## Group 12: Flag search and owner reindex
+depends on: 7
+files: src/Domains/Search/Services/ProductDocument.php, src/Domains/Search/Services/DatabaseEngine.php, src/Domains/Search/Services/ScoutEngine.php, src/Domains/Search/Data/ProductQuery.php, src/Domains/Product/Data/ListProductsData.php, src/Domains/Product/Actions/ListProductsAction.php, src/Domains/Owner/Data/ListOwnersData.php, src/Domains/Owner/Actions/ListOwnersAction.php, src/Domains/Owner/Actions/UpdateOwnerAction.php, tests/Feature/Search/FlagSearchTest.php, tests/Feature/PerformanceTest.php
+criteria: 22, 23, 34
+
+Checkpoint commit 4d664b3 already has partial edits to `DatabaseEngine`, `ScoutEngine`, `ProductDocument` and `ProductQuery`. Finish them rather than starting over.
+
+- [ ] 12.1 Write tests in tests/Feature/Search/FlagSearchTest.php:
+  - one shared dataset on both engines (own, inherited, root-model-owner variants, several flags ANDed); flag codes escaped in Scout filters
+  - the owner listing filters on effective flags
+  - changing an owner's flags, or moving an owner, queues `QueueProductSyncs` (queue fake), and the search reflects it after the sync
+  - Scout settings list `slug`, `external_ids`, `flags` and `owner_slugs`
+- [ ] 12.2 Implement `effective_flags` in `ProductDocument`, the `flags[]` filter on both engines and the owner listing, the reindex in `UpdateOwnerAction` when flags change, and the Scout settings.
+- [ ] 12.3 Run vendor/bin/pest tests/Feature/Search; all green
+
+
+## Group 13: Existing tests on id lookup
+depends on: 9, 10, 12
+files: tests/Feature/Api/WorkflowApiTest.php, tests/Feature/Api/ProductApiTest.php, tests/Feature/Api/AssetApiTest.php, tests/Feature/Api/CompletenessApiTest.php, tests/Feature/Api/ProductPollingTest.php, tests/Feature/Api/CategoryApiTest.php, tests/Feature/Api/AssociationApiTest.php, tests/Feature/Api/OwnershipApiTest.php, tests/Feature/Api/ChannelApiTest.php, tests/Feature/PolicyTest.php, tests/Feature/PerformanceTest.php, tests/Feature/Search/ScoutEngineTest.php, tests/Feature/Ui/WorkflowPagesTest.php, tests/Feature/Ui/AssociationPagesTest.php, tests/Feature/Ui/WidgetsTest.php, tests/Feature/Impex/ImportExportTest.php, tests/Feature/Impex/ProductWebhooksTest.php, tests/Keen/AuditHooksTest.php, tests/Modes/RenamedTables/RenamedTablesTest.php
+criteria: 8
+
+Group 4 made products and owners bind by ULID `id` by default (AC 8, D-001/D-010), so older tests that build URLs or MCP arguments from an identifier or code now get `404`. Update the tests, not the binding.
+
+- [ ] 13.1 Run `composer test` and list every test that fails with `404`, or with "not found", on a product or owner URL or MCP argument.
+- [ ] 13.2 Change those tests to address records by `id`, using the model's key or the `id` from the resource response. Don't add slug or identifier fallbacks to the code.
+- [ ] 13.3 Run vendor/bin/pest; all green
