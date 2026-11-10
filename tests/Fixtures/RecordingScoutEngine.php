@@ -54,8 +54,10 @@ final class RecordingScoutEngine extends Engine
             foreach ($builder->wheres as $where) {
                 $actual = data_get($document, $where['field']);
 
+                // A list field matches when it holds the value, as Meilisearch,
+                // Typesense and Algolia match an array attribute.
                 $matches = match ($where['operator']) {
-                    '=' => $actual === $where['value'],
+                    '=' => is_array($actual) ? in_array($where['value'], $actual, true) : $actual === $where['value'],
                     '!=' => $actual !== $where['value'],
                     '>' => $actual > $where['value'],
                     '>=' => $actual >= $where['value'],

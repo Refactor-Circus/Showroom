@@ -23,7 +23,7 @@ final class ShowOwnerAction
 
     private function perform(OwnerModel $owner): OwnerModel
     {
-        $owner->load(['type', 'parent', 'children.type', 'assets'])->loadCount(['products', 'productModels']);
+        $owner->load(['type', 'parent', 'children.type', 'assets', 'externalIds'])->loadCount(['products', 'productModels']);
 
         return $owner->setRelation('chain', $owner->chain()->load('type'));
     }

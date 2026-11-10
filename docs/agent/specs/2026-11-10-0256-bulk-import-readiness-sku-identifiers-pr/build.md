@@ -213,3 +213,67 @@ Retry for task 4.4. The code for 4.1–4.3 is in commit 60272e7; see "Group 4 (s
 - Files: no source or test files changed in this retry. This commit only ticks 4.4 in `tasks.md` and adds this note. It also commits the ticks for groups 1, 2, 3 and 6 and the earlier `build.md` notes, which the merges had left uncommitted in the worktree.
 - Tests: I didn't run the suite, as instructed. The gate runs `vendor/bin/pest`, which covers 4.4 and `tests/Feature/RecordLookupTest.php` (AC 8–11).
 - Deviations: none new. The out-of-list files from 60272e7 (the MCP `Requests/*`, and `getRouteKeyName()` on `ProductModel` and `OwnerModel`) are listed under "Group 4 (salvaged)".
+
+## Group 5 (salvaged)
+
+External IDs (AC 13, 14, 15, 16, 36). Committed on `ring-master/2026-11-10-0256-bulk-import-readiness-sku-identifiers-pr`.
+
+**What I found**
+
+- No `index.lock`, and no merge or rebase in progress. Nothing for group 5 had been committed.
+- The build agent left most of the group uncommitted:
+  - `Domains/ExternalId`:
+    - `ExternalIdModel` on `showroom.tables.external_ids`, plus its ten lifecycle events.
+    - `ExternalIdPolicy`, which defers to the subject's policy.
+    - The scoped `ExternalIds` service: `rules`, `filterRules`, `present`, `write`, `load`, `find` and `forget`.
+  - The migration: unique `(subject_type, system, external_id)`, and an index on `(subject_type, subject_id)`.
+  - `Support\KeyNormalizer`: NFKD, then accents stripped, then full case folding.
+  - `externalIds()` morphMany relations on both models.
+  - Writes from the create and update actions inside their transactions, and `forget()` on delete.
+  - `external_ids` on the four create and update Data classes, and `external` on both list Data classes.
+  - The owner listing filter.
+  - The scoped binding and the `showroom_external_id` morph alias in `ShowroomServiceProvider`.
+  - `tests/Feature/ExternalIdsTest.php` and `tests/Unit/KeyNormalizerTest.php`.
+- Gaps:
+  - Neither resource returned `external_ids`.
+  - `ProductDocument` had no `external_ids`.
+  - Neither search engine applied the `external` filter.
+
+**What I committed**
+
+- Everything above, plus the gaps closed:
+  - `ProductResource` and `OwnerResource` return `external_ids` as `(object)` of the `{system: id}` map, when loaded, so an empty map is `{}`.
+  - `ProductDocument::many()` loads the batch's external ids in one query, and writes `external_ids` as `"{system}:{normalized id}"`, ordered by system. `ProductDocument::externalId()` is the one place that builds that value.
+  - `DatabaseEngine`: a `whereExists` per `external[system]` pair on the external ids table. Values are bound.
+  - `ScoutEngine`: `where('external_ids', ProductDocument::externalId(...))` per pair. Scout's engines quote and escape the value; the test checks the Meilisearch expression for `"`, `\` and ` OR `.
+- Test fix: `mcpTool()` decodes the `execute_tools` envelope into PHP arrays, which turns `{}` into `[]`. The empty-map MCP check now reads the raw envelope JSON through a `rawMcpOutput()` helper in the test file.
+- Files outside the group's list:
+  - `config/showroom.php` and `src/Support/Tables.php`: `tables.external_ids`, as group 1's notes require. Also the `ExternalIdModel => ExternalIdPolicy` entry and a sentence in the Policies banner.
+  - `ShowOwnerAction`, `ShowProductAction` and `ListProductsAction`: eager-load `externalIds` so the resources return the map with no extra queries per record.
+  - `src/Domains/Search/Data/ProductQuery.php`: the `external` field the engines read.
+  - `tests/Feature/EventsTest.php`: 19 → 20 models.
+  - `tests/Fixtures/RecordingScoutEngine.php`: `=` on a list field matches when the list holds the value, as real engines do.
+  - `tests/Feature/PerformanceTest.php`: the search-document batch bound goes from 3 to 4 queries (the external ids). It stays fixed: the test still checks that the count doesn't change with batch size.
+- Pint on every changed file. PHPStan (project config) passes on the changed files.
+
+**Tests**
+
+- I ran only the affected files, not the suite:
+  - `ExternalIdsTest`, `KeyNormalizerTest`, `ArchTest`, `EventsTest` and `OutputSchemaTest` pass.
+  - The `PerformanceTest` document-batch test passes.
+- Failures I saw that come from group 4, not this group:
+  - Six tests still call product URLs by identifier, which now answer 404 because routes bind by `id`:
+    - `PolicyTest` ("associations, versions … follow the product policy")
+    - four `PerformanceTest` cases
+    - two `ScoutEngineTest` cases
+  - PHPStan reports `return.type` in `src/Support/RecordLookup.php:143`.
+  - None of these files is in group 5's list.
+
+**What is left**
+
+- 5.3: the gate runs the suite. It will hit the group 4 failures above until someone updates those tests to `id` URLs.
+
+**Deviations**
+
+- **`ExternalIdPolicy` exists.** The spec says external ids have no separate policy. But `ArchTest` requires every model to have an entry in `showroom.policies`. The policy only defers to the subject's policy (`view`, then `update`), as `VersionPolicy` does, so the subject's policy still decides.
+- **`subject_type` stores the morph aliases `showroom_product` and `showroom_owner`, not `product` and `owner`.** These are the aliases the models already register. Group 6's flag assignments store the same values.

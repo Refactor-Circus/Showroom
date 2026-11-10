@@ -11,6 +11,7 @@ use RefactorCircus\Keystone\Http\Resources\JsonResource;
 use RefactorCircus\Showroom\Domains\Asset\Resources\LinkedAssets;
 use RefactorCircus\Showroom\Domains\Association\Services\Associations;
 use RefactorCircus\Showroom\Domains\Attribute\Services\Values;
+use RefactorCircus\Showroom\Domains\ExternalId\Services\ExternalIds;
 use RefactorCircus\Showroom\Domains\Product\Enums\ProductStatus;
 use RefactorCircus\Showroom\Domains\Product\Models\ProductModel;
 use RefactorCircus\Showroom\Domains\Workflow\Models\CompletenessModel;
@@ -49,6 +50,7 @@ final class ProductResource extends JsonResource
             'values' => $schema->object()->description('Slots keyed by attribute code: [{locale, scope, data}].')->required(),
             'associations' => $schema->object()->description('Per type code: {products, product_models}, when loaded.'),
             'quantified_associations' => $schema->object()->description('Per type code: {products, product_models} of {identifier, quantity}, when loaded.'),
+            'external_ids' => $schema->object()->description('The product\'s ids in other systems, {system: id}, when loaded. An empty map is {}.'),
             'created_at' => $schema->string()->nullable()->required(),
             'updated_at' => $schema->string()->nullable()->required(),
             'changed_at' => $schema->string()->nullable()->required(),
@@ -114,6 +116,8 @@ final class ProductResource extends JsonResource
             // Own and inherited from product models.
             'associations' => $this->when($associations !== null, fn (): array => $associations['associations'] ?? []),
             'quantified_associations' => $this->when($associations !== null, fn (): array => $associations['quantified_associations'] ?? []),
+            // An object even when empty, so clients always read a map.
+            'external_ids' => $this->whenLoaded('externalIds', fn (): object => (object) ExternalIds::present($this->externalIds)),
             'created_at' => $this->created_at?->toIso8601String(),
             'updated_at' => $this->updated_at?->toIso8601String(),
             // When anything the product shows last changed, inherited

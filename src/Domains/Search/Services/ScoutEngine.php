@@ -79,6 +79,12 @@ final class ScoutEngine implements SearchEngine
             }
         }
 
+        // A list field of normalized "{system}:{id}" values. The engine quotes
+        // and escapes the value when it writes its filter expression.
+        foreach ($query->external as $system => $externalId) {
+            $builder->where('external_ids', ProductDocument::externalId((string) $system, $externalId));
+        }
+
         $metrics = AttributeModel::query()
             ->whereIn('code', array_map(fn (Filter $filter): string => $filter->attribute, $query->filters))
             ->whereIn('type', [AttributeType::Metric, AttributeType::Price])

@@ -18,6 +18,7 @@ final readonly class ProductQuery
      * @param  list<Filter>  $filters
      * @param  'asc'|'desc'  $direction
      * @param  list<string>  $facets  Attribute codes to count values of.
+     * @param  array<string, string>  $external  Products holding these external ids, {system: id}; every pair must match.
      */
     public function __construct(
         public ?string $search = null,
@@ -36,6 +37,7 @@ final readonly class ProductQuery
         public int $perPage = 25,
         public array $facets = [],
         public ?CarbonImmutable $updatedSince = null,
+        public array $external = [],
     ) {}
 
     public function offset(): int

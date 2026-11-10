@@ -11,6 +11,7 @@ use RefactorCircus\Keystone\Data\Attributes\ListOf;
 use RefactorCircus\Keystone\Data\Data;
 use RefactorCircus\Keystone\Pagination\Pagination;
 use RefactorCircus\Showroom\Domains\Attribute\Data\ValueFilter;
+use RefactorCircus\Showroom\Domains\ExternalId\Services\ExternalIds;
 use RefactorCircus\Showroom\Domains\Product\Enums\ProductStatus;
 use RefactorCircus\Showroom\Domains\Search\Data\Complete;
 use RefactorCircus\Showroom\Domains\Search\Data\Filter;
@@ -27,6 +28,7 @@ final readonly class ListProductsData extends Data
      * @param  list<Filter>  $filters
      * @param  list<string>  $facets
      * @param  list<string>|null  $locales
+     * @param  array<string, string>  $external  Products holding these ids, {system: id}; every pair must match.
      */
     public function __construct(
         public ?string $search = null,
@@ -47,6 +49,7 @@ final readonly class ListProductsData extends Data
         public ?array $locales = null,
         public ?int $page = null,
         public ?int $perPage = null,
+        public array $external = [],
     ) {}
 
     /**
@@ -96,7 +99,7 @@ final readonly class ListProductsData extends Data
             'facets.*' => ['string', 'max:100'],
             'sort' => ['sometimes', 'string', Rule::in($sortable)],
             // Return only one channel's and some locales' values.
-        ] + ValueFilter::rules() + self::pagination()->rules();
+        ] + ValueFilter::rules() + ExternalIds::filterRules() + self::pagination()->rules();
     }
 
     /**
@@ -137,6 +140,7 @@ final readonly class ListProductsData extends Data
             perPage: $this->perPage ?? self::pagination()->default,
             facets: $this->facets,
             updatedSince: self::filled($this->updatedSince) === null ? null : CarbonImmutable::parse($this->updatedSince),
+            external: $this->external,
         );
     }
 

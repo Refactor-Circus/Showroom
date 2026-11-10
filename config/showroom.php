@@ -21,6 +21,8 @@ use RefactorCircus\Showroom\Domains\Channel\Models\ChannelModel;
 use RefactorCircus\Showroom\Domains\Channel\Models\LocaleModel;
 use RefactorCircus\Showroom\Domains\Channel\Policies\ChannelPolicy;
 use RefactorCircus\Showroom\Domains\Channel\Policies\LocalePolicy;
+use RefactorCircus\Showroom\Domains\ExternalId\Models\ExternalIdModel;
+use RefactorCircus\Showroom\Domains\ExternalId\Policies\ExternalIdPolicy;
 use RefactorCircus\Showroom\Domains\Family\Models\FamilyModel;
 use RefactorCircus\Showroom\Domains\Family\Models\FamilyVariantModel;
 use RefactorCircus\Showroom\Domains\Family\Policies\FamilyPolicy;
@@ -72,9 +74,10 @@ return [
     |
     | Records that belong to another follow its policy: an association its
     | source product or product model, a version and a completeness score
-    | their product (`view` for reading, `update` for changing), and the
-    | searchable product Scout indexes the product policy. Every model has an
-    | entry; remove one to leave that model without a policy.
+    | their product, an external id its product or owner (`view` for
+    | reading, `update` for changing), and the searchable product Scout
+    | indexes the product policy. Every model has an entry; remove one to
+    | leave that model without a policy.
     |
     | FlagPolicy also has an `assign` ability: who may change which flags a
     | product or owner carries. It is checked on top of `update` on the
@@ -94,6 +97,7 @@ return [
         ProductModel::class => ProductPolicy::class,
         OwnerTypeModel::class => OwnerTypePolicy::class,
         OwnerModel::class => OwnerPolicy::class,
+        ExternalIdModel::class => ExternalIdPolicy::class,
         FlagModel::class => FlagPolicy::class,
         CategoryModel::class => CategoryPolicy::class,
         AssetModel::class => AssetPolicy::class,
@@ -132,6 +136,7 @@ return [
         'owner_types' => 'showroom_owner_types',
         'owner_type_parents' => 'showroom_owner_type_parents',
         'owners' => 'showroom_owners',
+        'external_ids' => 'showroom_external_ids',
         'flags' => 'showroom_flags',
         'flag_assignments' => 'showroom_flag_assignments',
         'categories' => 'showroom_categories',

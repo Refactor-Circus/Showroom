@@ -6,6 +6,7 @@ namespace RefactorCircus\Showroom\Domains\Owner\Data;
 
 use Illuminate\Validation\Rule;
 use RefactorCircus\Keystone\Data\Data;
+use RefactorCircus\Showroom\Domains\ExternalId\Services\ExternalIds;
 use RefactorCircus\Showroom\Domains\Owner\Models\OwnerModel;
 use RefactorCircus\Showroom\Domains\Owner\Models\OwnerTypeModel;
 
@@ -17,12 +18,14 @@ final readonly class CreateOwnerData extends Data
 {
     /**
      * @param  array<string, string|null>|null  $labels
+     * @param  array<string, string|null>|null  $externalIds  The owner's ids in other systems, {system: id}.
      */
     public function __construct(
         public string $code,
         public string $type,
         public ?string $parent = null,
         public ?array $labels = null,
+        public ?array $externalIds = null,
     ) {}
 
     /**
@@ -38,6 +41,6 @@ final readonly class CreateOwnerData extends Data
             'parent' => ['sometimes', 'nullable', 'string', Rule::exists(OwnerModel::class, 'code')],
             'labels' => ['sometimes', 'nullable', 'array'],
             'labels.*' => ['nullable', 'string', 'max:255'],
-        ];
+        ] + ExternalIds::rules();
     }
 }

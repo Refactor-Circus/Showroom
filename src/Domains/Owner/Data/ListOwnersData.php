@@ -6,6 +6,7 @@ namespace RefactorCircus\Showroom\Domains\Owner\Data;
 
 use RefactorCircus\Keystone\Data\Data;
 use RefactorCircus\Keystone\Pagination\Pagination;
+use RefactorCircus\Showroom\Domains\ExternalId\Services\ExternalIds;
 use RefactorCircus\Showroom\Support\Paging;
 
 /**
@@ -13,6 +14,9 @@ use RefactorCircus\Showroom\Support\Paging;
  */
 final readonly class ListOwnersData extends Data
 {
+    /**
+     * @param  array<string, string>  $external  Owners holding these ids, {system: id}; every pair must match.
+     */
     public function __construct(
         public ?string $type = null,
         public ?string $parent = null,
@@ -21,6 +25,7 @@ final readonly class ListOwnersData extends Data
         public ?string $search = null,
         public ?string $cursor = null,
         public ?int $perPage = null,
+        public array $external = [],
     ) {}
 
     /**
@@ -44,6 +49,6 @@ final readonly class ListOwnersData extends Data
             'under' => ['sometimes', 'nullable', 'string', 'max:191'],
             'roots' => ['sometimes', 'boolean'],
             'search' => ['sometimes', 'nullable', 'string', 'max:191'],
-        ] + self::pagination()->rules();
+        ] + ExternalIds::filterRules() + self::pagination()->rules();
     }
 }

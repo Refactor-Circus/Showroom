@@ -55,7 +55,7 @@ it('maps every Eloquent hook of every model to its own event', function (): void
             ->not->toContain(false);
     }
 
-    expect($models)->toHaveCount(19);
+    expect($models)->toHaveCount(20);
 });
 
 it('fires one starting and one finished event for every Action', function (): void {

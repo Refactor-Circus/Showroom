@@ -33,7 +33,7 @@ final class ListOwnersAction
     private function perform(ListOwnersData $filters): CursorPaginator
     {
         $query = OwnerModel::query()
-            ->with(['type', 'parent'])
+            ->with(['type', 'parent', 'externalIds'])
             ->withCount('children')
             ->orderBy('code');
 
@@ -63,6 +63,11 @@ final class ListOwnersAction
 
         if ($filters->search !== null && $filters->search !== '') {
             $query->search($filters->search);
+        }
+
+        // Compared under the column's collation, as the unique index compares them.
+        foreach ($filters->external as $system => $externalId) {
+            $query->whereHas('externalIds', fn (Builder $ids): Builder => $ids->where('system', (string) $system)->where('external_id', $externalId));
         }
 
         return $query->cursorPaginate(

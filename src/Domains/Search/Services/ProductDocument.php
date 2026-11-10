@@ -4,13 +4,16 @@ declare(strict_types=1);
 
 namespace RefactorCircus\Showroom\Domains\Search\Services;
 
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Support\Collection;
 use RefactorCircus\Showroom\Domains\Attribute\Enums\AttributeType;
 use RefactorCircus\Showroom\Domains\Attribute\Models\AttributeModel;
 use RefactorCircus\Showroom\Domains\Category\Models\CategoryModel;
+use RefactorCircus\Showroom\Domains\ExternalId\Services\ExternalIds;
 use RefactorCircus\Showroom\Domains\Owner\Models\OwnerModel;
 use RefactorCircus\Showroom\Domains\Product\Models\ProductModel;
 use RefactorCircus\Showroom\Domains\Workflow\Models\CompletenessModel;
+use RefactorCircus\Showroom\Support\KeyNormalizer;
 
 /**
  * The document a search index holds for a product: its identity, its own
@@ -43,6 +46,12 @@ final class ProductDocument
         $codes = [];
         $owners = [];
         $categories = [];
+
+        /** @var EloquentCollection<int, ProductModel> $products */
+        $products = new EloquentCollection(is_array($products) ? array_values($products) : iterator_to_array($products, false));
+
+        // One query for the external ids of every product not loaded with them.
+        app(ExternalIds::class)->load($products);
 
         foreach ($products as $product) {
             $values = $product->allValues();
@@ -130,6 +139,9 @@ final class ProductDocument
                 ->unique()
                 ->values()
                 ->all(),
+            // "{system}:{id}", the id normalized, so a filter matches it
+            // whatever its case or accents, as the database does.
+            'external_ids' => self::externalIds($product),
             'enabled' => $product->enabled,
             'status' => $product->status->value,
             'published' => $product->published_version !== null,
@@ -144,6 +156,31 @@ final class ProductDocument
             'updated_at' => $product->updated_at?->toIso8601String(),
             'changed_at' => $product->changed_at?->toIso8601String(),
         ];
+    }
+
+    /**
+     * The value a document stores, and a filter matches, for one external id.
+     */
+    public static function externalId(string $system, string $externalId): string
+    {
+        return $system.':'.KeyNormalizer::normalize($externalId);
+    }
+
+    /**
+     * The product's external ids as "{system}:{id}", by system.
+     *
+     * @return list<string>
+     */
+    private static function externalIds(ProductModel $product): array
+    {
+        $ids = [];
+
+        foreach (ExternalIds::present($product->externalIds) as $system => $externalId) {
+            // A digits-only system name comes back as an int key.
+            $ids[] = self::externalId((string) $system, $externalId);
+        }
+
+        return $ids;
     }
 
     /**

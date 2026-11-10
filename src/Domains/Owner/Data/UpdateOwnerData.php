@@ -7,6 +7,7 @@ namespace RefactorCircus\Showroom\Domains\Owner\Data;
 use Illuminate\Validation\Rule;
 use RefactorCircus\Keystone\Data\Data;
 use RefactorCircus\Keystone\Data\Missing;
+use RefactorCircus\Showroom\Domains\ExternalId\Services\ExternalIds;
 use RefactorCircus\Showroom\Domains\Owner\Models\OwnerModel;
 
 /**
@@ -18,10 +19,12 @@ final readonly class UpdateOwnerData extends Data
 {
     /**
      * @param  array<string, string|null>|null|Missing  $labels
+     * @param  array<string, string|null>|Missing  $externalIds  Only the systems sent change; null removes one.
      */
     public function __construct(
         public string|null|Missing $parent = new Missing,
         public array|null|Missing $labels = new Missing,
+        public array|Missing $externalIds = new Missing,
     ) {}
 
     /**
@@ -36,6 +39,6 @@ final readonly class UpdateOwnerData extends Data
             'parent' => ['sometimes', 'nullable', 'string', Rule::exists(OwnerModel::class, 'code')],
             'labels' => ['sometimes', 'nullable', 'array'],
             'labels.*' => ['nullable', 'string', 'max:255'],
-        ];
+        ] + ExternalIds::rules();
     }
 }

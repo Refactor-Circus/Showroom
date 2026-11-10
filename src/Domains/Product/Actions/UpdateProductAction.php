@@ -10,6 +10,7 @@ use RefactorCircus\Keystone\Data\Missing;
 use RefactorCircus\Showroom\Domains\Association\Services\Associations;
 use RefactorCircus\Showroom\Domains\Attribute\Services\UniqueValues;
 use RefactorCircus\Showroom\Domains\Category\Concerns\AssignsCategories;
+use RefactorCircus\Showroom\Domains\ExternalId\Services\ExternalIds;
 use RefactorCircus\Showroom\Domains\Family\Models\FamilyModel;
 use RefactorCircus\Showroom\Domains\Owner\Concerns\AssignsOwners;
 use RefactorCircus\Showroom\Domains\Product\Concerns\WritesProducts;
@@ -30,6 +31,7 @@ final class UpdateProductAction
     public function __construct(
         private readonly UniqueValues $unique,
         private readonly ProductIndex $index,
+        private readonly ExternalIds $externalIds,
     ) {}
 
     /**
@@ -91,6 +93,11 @@ final class UpdateProductAction
 
             $product->save();
 
+            // A (system, id) another product holds throws here, rolling back every change.
+            if (! $data->externalIds instanceof Missing) {
+                $this->externalIds->write($product, $data->externalIds);
+            }
+
             $this->assignCategories($product, $data->toArray());
             app(Associations::class)->write($product, $data->toArray());
             $this->unique->sync($product);
@@ -112,7 +119,7 @@ final class UpdateProductAction
             $versions->record($product, 'updated', snapshot: $snapshot);
             $this->index->queue([$product->id]);
 
-            return $product->load(['family', 'owner', 'categories', 'parent.parent', 'completeness.channel', 'completeness.locale', ...Associations::eagerLoads()]);
+            return $product->load(['family', 'owner', 'categories', 'parent.parent', 'completeness.channel', 'completeness.locale', 'externalIds', ...Associations::eagerLoads()]);
         });
     }
 }

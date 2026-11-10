@@ -36,6 +36,7 @@ final class Tables extends KeystoneTables
         'owner_types' => 'showroom_owner_types',
         'owner_type_parents' => 'showroom_owner_type_parents',
         'owners' => 'showroom_owners',
+        'external_ids' => 'showroom_external_ids',
         'flags' => 'showroom_flags',
         'flag_assignments' => 'showroom_flag_assignments',
         'categories' => 'showroom_categories',

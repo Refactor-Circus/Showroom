@@ -276,7 +276,8 @@ it('builds search documents for a batch in a fixed number of queries', function 
 
     $variant = collect($documents)->firstWhere('identifier', 'V-002');
 
-    expect($many)->toBe($few)->toBeLessThanOrEqual(3)
+    // Attribute types, owner chains, category chains and external ids: one query each.
+    expect($many)->toBe($few)->toBeLessThanOrEqual(4)
         ->and($variant['owners'])->toBe(['acme', 'acme-tools'])
         ->and($variant['category_tree'])->toBe(['master', 'shirts'])
         ->and(ProductDocument::from($products->firstWhere('identifier', 'V-002')))->toBe($variant);

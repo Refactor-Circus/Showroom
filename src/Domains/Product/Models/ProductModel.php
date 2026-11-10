@@ -21,6 +21,7 @@ use RefactorCircus\Showroom\Domains\Association\Concerns\HasAssociations;
 use RefactorCircus\Showroom\Domains\Attribute\Concerns\HasValues;
 use RefactorCircus\Showroom\Domains\Attribute\Models\AttributeModel;
 use RefactorCircus\Showroom\Domains\Category\Models\CategoryModel;
+use RefactorCircus\Showroom\Domains\ExternalId\Models\ExternalIdModel;
 use RefactorCircus\Showroom\Domains\Family\Models\FamilyModel;
 use RefactorCircus\Showroom\Domains\Owner\Models\OwnerModel;
 use RefactorCircus\Showroom\Domains\Product\Enums\ProductStatus;
@@ -52,6 +53,7 @@ use RefactorCircus\Showroom\Support\Tables;
  * @property-read FamilyModel|null $family
  * @property-read ProductModelModel|null $parent
  * @property-read OwnerModel|null $owner
+ * @property-read EloquentCollection<int, ExternalIdModel> $externalIds
  */
 final class ProductModel extends Model
 {
@@ -190,6 +192,17 @@ final class ProductModel extends Model
     public function completeness(): HasMany
     {
         return $this->hasMany(CompletenessModel::class, 'product_id');
+    }
+
+    /**
+     * The product's ids in other systems, by system. Deleted with the
+     * product by DeleteProductAction.
+     *
+     * @return MorphMany<ExternalIdModel, $this>
+     */
+    public function externalIds(): MorphMany
+    {
+        return $this->morphMany(ExternalIdModel::class, 'subject')->orderBy('system');
     }
 
     /**

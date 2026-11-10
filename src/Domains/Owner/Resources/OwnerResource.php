@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\JsonSchema\Types\Type;
 use RefactorCircus\Keystone\Http\Resources\JsonResource;
 use RefactorCircus\Showroom\Domains\Asset\Resources\LinkedAssets;
+use RefactorCircus\Showroom\Domains\ExternalId\Services\ExternalIds;
 use RefactorCircus\Showroom\Domains\Owner\Models\OwnerModel;
 
 /**
@@ -42,6 +43,7 @@ final class OwnerResource extends JsonResource
             'children_count' => $schema->integer()->description('When counted.'),
             'products_count' => $schema->integer()->description('When counted.'),
             'product_models_count' => $schema->integer()->description('When counted.'),
+            'external_ids' => $schema->object()->description('The owner\'s ids in other systems, {system: id}, when loaded. An empty map is {}.'),
             'created_at' => $schema->string()->nullable()->required(),
             'updated_at' => $schema->string()->nullable()->required(),
         ];
@@ -67,6 +69,8 @@ final class OwnerResource extends JsonResource
             'children_count' => $this->whenCounted('children'),
             'products_count' => $this->whenCounted('products'),
             'product_models_count' => $this->whenCounted('productModels'),
+            // An object even when empty, so clients always read a map.
+            'external_ids' => $this->whenLoaded('externalIds', fn (): object => (object) ExternalIds::present($this->externalIds)),
             'created_at' => $this->created_at?->toIso8601String(),
             'updated_at' => $this->updated_at?->toIso8601String(),
         ];

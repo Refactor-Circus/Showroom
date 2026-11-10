@@ -25,6 +25,6 @@ final class ShowProductAction
 
     private function perform(ProductModel $product): ProductModel
     {
-        return $product->load(['family', 'owner', 'categories', 'assets', 'parent.assets', 'parent.parent.assets', 'parent.categories', 'parent.parent.owner', 'parent.parent.categories', 'parent.owner', 'parent.familyVariant', 'completeness.channel', 'completeness.locale', ...Associations::eagerLoads()]);
+        return $product->load(['family', 'owner', 'categories', 'assets', 'parent.assets', 'parent.parent.assets', 'parent.categories', 'parent.parent.owner', 'parent.parent.categories', 'parent.owner', 'parent.familyVariant', 'completeness.channel', 'completeness.locale', 'externalIds', ...Associations::eagerLoads()]);
     }
 }

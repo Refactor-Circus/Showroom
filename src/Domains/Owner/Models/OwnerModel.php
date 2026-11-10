@@ -4,15 +4,18 @@ declare(strict_types=1);
 
 namespace RefactorCircus\Showroom\Domains\Owner\Models;
 
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Support\Carbon;
 use RefactorCircus\Keystone\Models\Concerns\DispatchesModelEvents;
 use RefactorCircus\Showroom\Database\Factories\OwnerFactory;
 use RefactorCircus\Showroom\Domains\Asset\Concerns\HasAssets;
+use RefactorCircus\Showroom\Domains\ExternalId\Models\ExternalIdModel;
 use RefactorCircus\Showroom\Domains\Product\Models\ProductModel;
 use RefactorCircus\Showroom\Domains\ProductModel\Models\ProductModelModel;
 use RefactorCircus\Showroom\Support\Models\Concerns\HasLabels;
@@ -37,6 +40,7 @@ use RefactorCircus\Showroom\Support\Tables;
  * @property Carbon|null $updated_at
  * @property-read OwnerTypeModel $type
  * @property-read OwnerModel|null $parent
+ * @property-read Collection<int, ExternalIdModel> $externalIds
  */
 final class OwnerModel extends Model
 {
@@ -111,6 +115,17 @@ final class OwnerModel extends Model
     public function productModels(): HasMany
     {
         return $this->hasMany(ProductModelModel::class, 'owner_id');
+    }
+
+    /**
+     * The owner's ids in other systems, by system. Deleted with the owner by
+     * DeleteOwnerAction.
+     *
+     * @return MorphMany<ExternalIdModel, $this>
+     */
+    public function externalIds(): MorphMany
+    {
+        return $this->morphMany(ExternalIdModel::class, 'subject')->orderBy('system');
     }
 
     /**

@@ -9,6 +9,7 @@ use InvalidArgumentException;
 use RefactorCircus\Keystone\Data\Data;
 use RefactorCircus\Showroom\Domains\Association\Services\Associations;
 use RefactorCircus\Showroom\Domains\Category\Models\CategoryModel;
+use RefactorCircus\Showroom\Domains\ExternalId\Services\ExternalIds;
 use RefactorCircus\Showroom\Domains\Family\Models\FamilyModel;
 use RefactorCircus\Showroom\Domains\Owner\Models\OwnerModel;
 use RefactorCircus\Showroom\Domains\Product\Models\ProductModel;
@@ -26,6 +27,7 @@ final readonly class CreateProductData extends Data
      * @param  array<int, string>|null  $categories
      * @param  array<string, mixed>|null  $associations
      * @param  array<string, mixed>|null  $quantifiedAssociations
+     * @param  array<string, string|null>|null  $externalIds  The product's ids in other systems, {system: id}.
      */
     public function __construct(
         public string $identifier,
@@ -37,6 +39,7 @@ final readonly class CreateProductData extends Data
         public ?array $categories = null,
         public ?array $associations = null,
         public ?array $quantifiedAssociations = null,
+        public ?array $externalIds = null,
     ) {}
 
     /**
@@ -64,7 +67,7 @@ final readonly class CreateProductData extends Data
             // The whole list of category codes, from any trees.
             'categories' => ['sometimes', 'nullable', 'array', 'list'],
             'categories.*' => ['string', 'distinct', Rule::exists(CategoryModel::class, 'code')],
-        ] + Associations::rules();
+        ] + Associations::rules() + ExternalIds::rules();
     }
 
     /**

@@ -78,7 +78,7 @@ depends on: 4
 files: src/Domains/ExternalId/** (no domain provider), src/ShowroomServiceProvider.php, database/migrations/2026_11_10_000002_create_showroom_external_ids_table.php, src/Support/KeyNormalizer.php, src/Domains/Product/Models/ProductModel.php, src/Domains/Owner/Models/OwnerModel.php, src/Domains/Product/Actions/CreateProductAction.php, src/Domains/Product/Actions/UpdateProductAction.php, src/Domains/Product/Actions/DeleteProductAction.php, src/Domains/Owner/Actions/CreateOwnerAction.php, src/Domains/Owner/Actions/UpdateOwnerAction.php, src/Domains/Owner/Actions/DeleteOwnerAction.php, src/Domains/Product/Data/*.php, src/Domains/Owner/Data/*.php, src/Domains/Product/Resources/ProductResource.php, src/Domains/Owner/Resources/OwnerResource.php, src/Domains/Search/Services/ProductDocument.php, src/Domains/Search/Services/DatabaseEngine.php, src/Domains/Search/Services/ScoutEngine.php, src/Domains/Owner/Actions/ListOwnersAction.php, tests/Feature/ExternalIdsTest.php, tests/Unit/KeyNormalizerTest.php
 criteria: 13, 14, 15, 16, 36
 
-- [ ] 5.1 Write tests:
+- [x] 5.1 Write tests:
   - writing the map on create and update: partial update, `null` removes, system and id rules
   - uniqueness per subject type and system, an atomic failure, an in-batch duplicate
   - the same id allowed on one product and one owner
@@ -86,7 +86,7 @@ criteria: 13, 14, 15, 16, 36
   - the `external[...]` filter on both engines, with escaped values (`"`, `\`, ` OR `)
   - deleting a record deletes its external ids
   - `KeyNormalizer` case and accent folding, and collisions that differ only by case
-- [ ] 5.2 Implement:
+- [x] 5.2 Implement:
   - the `ExternalId` domain (model, migration, scoped `ExternalIds` service, morph aliases); register the binding and morph aliases in `ShowroomServiceProvider`, not `DomainServiceProvider` (group 6 owns that file)
   - `KeyNormalizer`
   - writing external ids from the create and update actions; deleting them on delete

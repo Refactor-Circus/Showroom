@@ -6,6 +6,7 @@ namespace RefactorCircus\Showroom\Domains\Owner\Actions;
 
 use Illuminate\Support\Facades\DB;
 use RefactorCircus\Showroom\Domains\Asset\Services\AssetLinks;
+use RefactorCircus\Showroom\Domains\ExternalId\Services\ExternalIds;
 use RefactorCircus\Showroom\Domains\Owner\Events\OwnerDeletedActionEvent;
 use RefactorCircus\Showroom\Domains\Owner\Events\OwnerDeletingActionEvent;
 use RefactorCircus\Showroom\Domains\Owner\Models\OwnerModel;
@@ -41,6 +42,7 @@ final class DeleteOwnerAction
             $owner->delete();
 
             app(AssetLinks::class)->forget(OwnerModel::class, [$owner->id]);
+            app(ExternalIds::class)->forget(OwnerModel::class, [$owner->id]);
 
             return $owner;
         });

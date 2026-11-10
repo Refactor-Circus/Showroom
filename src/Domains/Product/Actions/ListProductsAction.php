@@ -45,6 +45,7 @@ final class ListProductsAction
             'parent.owner', 'parent.categories', 'parent.assets',
             'parent.parent.owner', 'parent.parent.categories', 'parent.parent.assets',
             'completeness.channel', 'completeness.locale',
+            'externalIds',
         ];
     }
 

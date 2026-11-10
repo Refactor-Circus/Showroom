@@ -6,6 +6,7 @@ namespace RefactorCircus\Showroom\Domains\Owner\Actions;
 
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
+use RefactorCircus\Showroom\Domains\ExternalId\Services\ExternalIds;
 use RefactorCircus\Showroom\Domains\Owner\Concerns\PlacesOwners;
 use RefactorCircus\Showroom\Domains\Owner\Data\CreateOwnerData;
 use RefactorCircus\Showroom\Domains\Owner\Events\OwnerCreatedActionEvent;
@@ -18,7 +19,10 @@ final class CreateOwnerAction
 {
     use PlacesOwners;
 
-    public function __construct(private readonly Slugs $slugs) {}
+    public function __construct(
+        private readonly Slugs $slugs,
+        private readonly ExternalIds $externalIds,
+    ) {}
 
     /**
      * @throws ValidationException
@@ -56,7 +60,10 @@ final class CreateOwnerAction
             });
             $this->place($owner, $parent);
 
-            return $owner->load(['type', 'parent']);
+            // A (system, id) another owner holds throws here, rolling back the owner.
+            $this->externalIds->write($owner, $data->externalIds ?? []);
+
+            return $owner->load(['type', 'parent', 'externalIds']);
         });
     }
 }

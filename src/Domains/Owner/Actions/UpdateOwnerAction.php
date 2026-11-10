@@ -6,6 +6,7 @@ namespace RefactorCircus\Showroom\Domains\Owner\Actions;
 
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
+use RefactorCircus\Showroom\Domains\ExternalId\Services\ExternalIds;
 use RefactorCircus\Showroom\Domains\Owner\Concerns\PlacesOwners;
 use RefactorCircus\Showroom\Domains\Owner\Data\UpdateOwnerData;
 use RefactorCircus\Showroom\Domains\Owner\Events\OwnerUpdatedActionEvent;
@@ -18,7 +19,10 @@ final class UpdateOwnerAction
 {
     use PlacesOwners;
 
-    public function __construct(private readonly ProductIndex $index) {}
+    public function __construct(
+        private readonly ProductIndex $index,
+        private readonly ExternalIds $externalIds,
+    ) {}
 
     /**
      * @throws ValidationException
@@ -57,7 +61,12 @@ final class UpdateOwnerAction
                 }
             }
 
-            return $owner->load(['type', 'parent']);
+            // A (system, id) another owner holds throws here, rolling back every change.
+            if (is_array($data->externalIds)) {
+                $this->externalIds->write($owner, $data->externalIds);
+            }
+
+            return $owner->load(['type', 'parent', 'externalIds']);
         });
     }
 }
