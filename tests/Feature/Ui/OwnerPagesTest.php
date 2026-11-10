@@ -3,10 +3,13 @@
 declare(strict_types=1);
 
 use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
+use Illuminate\Support\Carbon;
 use RefactorCircus\Showroom\Domains\ExternalId\Services\ExternalIds;
 use RefactorCircus\Showroom\Domains\Flag\Models\FlagModel;
 use RefactorCircus\Showroom\Domains\Owner\Actions\CreateOwnerAction;
+use RefactorCircus\Showroom\Domains\Owner\Actions\UpdateOwnerAction;
 use RefactorCircus\Showroom\Domains\Owner\Data\CreateOwnerData;
+use RefactorCircus\Showroom\Domains\Owner\Data\UpdateOwnerData;
 use RefactorCircus\Showroom\Domains\Owner\Models\OwnerModel;
 use RefactorCircus\Showroom\Domains\Owner\Models\OwnerTypeModel;
 use RefactorCircus\Showroom\Domains\Product\Models\ProductModel;
@@ -143,20 +146,24 @@ describe('slug, external ids and flags', function (): void {
             ->assertDontSee('name="slug"', false);
     });
 
-    it('edits the external ids as a map: change, add and remove a system', function (): void {
+    it('edits the external ids as a map: change, add and remove a source', function (): void {
         $series = uiFlaggedSeries();
 
         $this->get(route('atrium.showroom.owners.show', $series))
             ->assertOk()
             ->assertSee('data-testid="external-ids"', false)
+            ->assertSee('data-external-source="erp"', false)
             ->assertSee('name="external_ids[erp]"', false)
             ->assertSee('value="V-1"', false)
-            ->assertSee('name="external_ids_new[system]"', false)
-            ->assertSee('name="external_ids_new[id]"', false);
+            ->assertSee(__('showroom::showroom.external_source'))
+            ->assertSee(__('showroom::showroom.external_id'))
+            ->assertSee('name="external_ids_new[source]"', false)
+            ->assertSee('name="external_ids_new[id]"', false)
+            ->assertDontSee('name="external_ids_new[system]"', false);
 
         $this->patch(route('atrium.showroom.owners.update', $series), [
             'external_ids' => ['erp' => 'V-2'],
-            'external_ids_new' => ['system' => 'd365', 'id' => 'D-1'],
+            'external_ids_new' => ['source' => 'd365', 'id' => 'D-1'],
         ])->assertSessionHasNoErrors();
 
         expect(ExternalIds::present(uiOwner('acme-tools')->externalIds))->toBe(['d365' => 'D-1', 'erp' => 'V-2']);
@@ -168,14 +175,31 @@ describe('slug, external ids and flags', function (): void {
         expect(ExternalIds::present(uiOwner('acme-tools')->externalIds))->toBe(['erp' => 'V-2']);
     });
 
-    it('refuses a malformed new system at external_ids', function (): void {
+    it('refuses a malformed new source at external_ids', function (): void {
         $series = uiFlaggedSeries();
 
         $this->from(route('atrium.showroom.owners.show', $series))
-            ->patch(route('atrium.showroom.owners.update', $series), ['external_ids_new' => ['system' => 'Not Valid', 'id' => 'X']])
+            ->patch(route('atrium.showroom.owners.update', $series), ['external_ids_new' => ['source' => 'Not Valid', 'id' => 'X']])
             ->assertSessionHasErrors('external_ids');
 
         expect(ExternalIds::present(uiOwner('acme-tools')->externalIds))->toBe(['erp' => 'V-1']);
+    });
+
+    it('shows when each source last synced, read-only', function (): void {
+        $this->travelTo(Carbon::parse('2026-11-01 09:00:00', 'UTC'));
+        $series = uiFlaggedSeries();
+        $this->travelBack();
+
+        app(UpdateOwnerAction::class)->execute($series, UpdateOwnerData::from(['external_ids' => ['d365' => 'D-1']]));
+        $series->externalIds()->where('source', 'd365')->toBase()->update(['synced_at' => null]);
+
+        $html = (string) $this->get(route('atrium.showroom.owners.show', $series))->assertOk()->getContent();
+
+        expect($html)
+            ->toMatch('/data-external-synced="erp"[^>]*datetime="2026-11-01T09:00:00\+00:00"/')
+            ->toMatch('/data-external-synced="d365"[^>]*>\s*'.preg_quote(__('showroom::showroom.external_never_synced'), '/').'/')
+            ->not->toContain('name="external_ids_synced_at')
+            ->not->toContain('name="synced_at');
     });
 
     it('offers as own flags only the flags that apply to owners, with the own ones ticked', function (): void {

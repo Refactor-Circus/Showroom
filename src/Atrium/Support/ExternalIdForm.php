@@ -7,10 +7,11 @@ namespace RefactorCircus\Showroom\Atrium\Support;
 use Illuminate\Http\Request;
 
 /**
- * The dashboard edits a record's external ids as a map: one input per system
- * it holds, which an empty value removes, and one new system and id to add.
- * The Actions take the `{system: id}` map, where null removes a system and
- * systems left out are kept.
+ * The dashboard edits a record's external ids as a map: one input per source
+ * it holds, which an empty value removes, and one new source and id to add.
+ * The Actions take the `{source: id}` map, where null removes a source and
+ * sources left out are kept. When each source last synced is shown, never
+ * sent: the Actions stamp it.
  */
 final class ExternalIdForm
 {
@@ -27,15 +28,15 @@ final class ExternalIdForm
 
         $map = [];
 
-        foreach ((array) $request->input('external_ids', []) as $system => $externalId) {
-            $map[(string) $system] = is_string($externalId) && $externalId !== '' ? $externalId : null;
+        foreach ((array) $request->input('external_ids', []) as $source => $externalId) {
+            $map[(string) $source] = is_string($externalId) && $externalId !== '' ? $externalId : null;
         }
 
-        $system = $request->input('external_ids_new.system');
+        $source = $request->input('external_ids_new.source');
         $externalId = $request->input('external_ids_new.id');
 
-        if (is_string($system) && $system !== '' && is_string($externalId) && $externalId !== '') {
-            $map[$system] = $externalId;
+        if (is_string($source) && $source !== '' && is_string($externalId) && $externalId !== '') {
+            $map[$source] = $externalId;
         }
 
         return $map;

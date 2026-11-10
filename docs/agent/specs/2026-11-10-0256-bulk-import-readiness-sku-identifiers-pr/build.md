@@ -863,3 +863,32 @@ Rework 2 (D-013, AC 25, 27, 38, 43): the batch upsert matches by a source and st
 **Deviations**
 
 - None. Note: following AC 43 and `ExternalIds::touch()`, an unchanged record's stamp covers all of its sources, including ones the record didn't send. Roster stamps only the link it matched, because a Roster record has one source.
+
+## Group 18
+
+Rework 3 (D-013, AC 41 and 44): the Atrium external ids editor says "source", and shows when each source last synced, read-only.
+
+**Files**
+
+- `src/Atrium/Support/ExternalIdForm.php`: reads `external_ids_new[source]` instead of `external_ids_new[system]`. Variables and docblock say source. There is no fallback for the old field name.
+- `src/Atrium/Http/Controllers/OwnerUiController.php`: docblock only ("one new source").
+- `src/Atrium/Http/Controllers/ProductUiController.php`: unchanged. It never named `system`.
+- `resources/views/ui/partials/external-ids.blade.php`:
+  - Takes the record's external id rows (`$externalIds`, the `externalIds` relation, already ordered by source) instead of the `{system: id}` map, so it can show `synced_at`.
+  - Each row has `data-external-source`, the editable id input, and a read-only `synced_at`. That is a `<time data-external-synced datetime="ISO-8601">` showing "Synced 2 days ago", or "Never synced" when null. No input carries `synced_at`, so the form can't send it.
+  - The new-id fields are `external_ids_new[source]` and `external_ids_new[id]`, labelled "New source" and "Id in that source".
+- `tests/Feature/Ui/ProductPagesTest.php`, `tests/Feature/Ui/OwnerPagesTest.php`:
+  - The map-editing tests use `external_ids_new[source]`, check the "source" labels and the `data-external-source` row, and check that `external_ids_new[system]` is gone. The owner test for a malformed new source posts `source`.
+  - A new "shows when each source last synced, read-only" test on each page. One id is written at a frozen time and shows that ISO-8601 time. One id has its stamp cleared and shows "Never synced". No `synced_at` input is rendered.
+- Outside the listed files:
+  - `lang/en/showroom.php`: `external_system` and `external_system_hint` are renamed to `external_source` and `external_source_hint`. `external_id` now reads "Id in that source". Added `external_synced` ("Synced :time") and `external_never_synced`. The partial's labels come from here, so the rename can't be done without this file.
+  - `resources/views/ui/products/show.blade.php`, `resources/views/ui/owners/show.blade.php`: they pass `$product->externalIds` / `$owner->externalIds` to the partial instead of `ExternalIds::present(...)`, and drop the unused `@use`. The partial needs the rows to read `synced_at`.
+
+**Tests**
+
+- I didn't run the test suite, as the prompt says; the gate runs 18.3. `php -l` is clean on the changed PHP files. Pint passed with the worktree's `pint.json`.
+
+**Deviations and handoffs**
+
+- None from standards. The three extra files are listed above.
+- Group 19 (docs) can describe the dashboard fields as "source" now that the form posts `external_ids_new[source]`.

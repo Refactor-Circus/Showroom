@@ -356,9 +356,11 @@ return [
     'identifiers_and_flags' => 'Identifiers and flags',
     'slug' => 'Slug',
     'external_ids' => 'External ids',
-    'external_system' => 'New system',
-    'external_system_hint' => 'Lowercase letters, digits, dashes and underscores, such as erp.',
-    'external_id' => 'Id in that system',
+    'external_source' => 'New source',
+    'external_source_hint' => 'Lowercase letters, digits, dashes and underscores, such as erp.',
+    'external_id' => 'Id in that source',
+    'external_synced' => 'Synced :time',
+    'external_never_synced' => 'Never synced',
 
     // Shared
     'none' => '—',

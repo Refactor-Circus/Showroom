@@ -1,6 +1,5 @@
 @use(RefactorCircus\Showroom\Atrium\Badges)
 @use(RefactorCircus\Showroom\Atrium\ScreenAccess)
-@use(RefactorCircus\Showroom\Domains\ExternalId\Services\ExternalIds)
 
 @php($canUpdate = ScreenAccess::allows('update', $product))
 
@@ -82,7 +81,7 @@
                                 <x-atrium::description-list.item :term="__('showroom::showroom.slug')" class="font-mono" data-testid="product-slug">{{ $product->slug }}</x-atrium::description-list.item>
                             </x-atrium::description-list>
 
-                            @include('showroom::ui.partials.external-ids', ['externalIds' => ExternalIds::present($product->externalIds)])
+                            @include('showroom::ui.partials.external-ids', ['externalIds' => $product->externalIds])
 
                             {{-- Changing flags needs the flag policy's assign ability on top of update. --}}
                             @if ($mayAssign)
