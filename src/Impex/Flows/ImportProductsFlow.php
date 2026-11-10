@@ -18,6 +18,10 @@ use RefactorCircus\Showroom\Impex\Sources\FileProductSource;
  * than `showroom.impex.allow_failures` tolerates. With `$captureChanges`
  * false the writes are not recorded for product webhooks.
  *
+ * `$captureChanges` is nullable, with null meaning true, so the console
+ * offers it as `--capture-changes=0` rather than as a flag that could only
+ * switch it on (D-011).
+ *
  * The result counts rows: `total`, `succeeded`, `failed` and `unchanged`.
  * Each failed row's reason is kept on its chunk's batch item, by its row in
  * the file.
@@ -27,11 +31,11 @@ final class ImportProductsFlow extends Flow
     /**
      * @return array{batch_id: string, total: int, succeeded: int, failed: int, unchanged: int}
      */
-    public function handle(string $asset, string $format, string $mode = 'upsert', bool $captureChanges = true): array
+    public function handle(string $asset, string $format, string $mode = 'upsert', ?bool $captureChanges = null): array
     {
         $this->tag('showroom', 'import');
 
-        $batch = $this->batch(FileProductSource::class, $asset, $format, $mode, $captureChanges, (int) config('showroom.impex.chunk', 500))
+        $batch = $this->batch(FileProductSource::class, $asset, $format, $mode, $captureChanges ?? true, (int) config('showroom.impex.chunk', 500))
             ->using(UpsertProductChunk::class)
             // One chunk of rows per seeded page, as many rows as a page held before.
             ->chunk(1)

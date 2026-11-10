@@ -244,8 +244,8 @@ criteria: 31, 32
 
 See the spec addendum for D-011 and D-012.
 
-- [ ] 15.1 Write tests:
+- [x] 15.1 Write tests:
   - each flow run with `--capture-changes=0` records nothing for product webhooks, and records by default
   - the arch rule passes with exactly the two named exceptions, `Domains\Transfer` and `Atrium\Http\Controllers\TransferUiController`
-- [ ] 15.2 Declare `?bool $captureChanges = null` (null means true) on both flows, and set the arch rule's `ignoring()` to exactly those two exceptions.
-- [ ] 15.3 Run vendor/bin/pest; all green
+- [x] 15.2 Declare `?bool $captureChanges = null` (null means true) on both flows, and set the arch rule's `ignoring()` to exactly those two exceptions.
+- [x] 15.3 Run vendor/bin/pest; all green

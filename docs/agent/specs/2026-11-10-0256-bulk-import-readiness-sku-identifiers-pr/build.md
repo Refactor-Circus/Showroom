@@ -689,3 +689,25 @@ Impex integration (AC 30, 31, 32). The build agent stopped without returning a r
 - AC 31 asks for a `--no-capture-changes` CLI option. Impex's `FlowArguments` turns a non-null `bool` parameter into a `VALUE_NONE` flag, so only `--capture-changes` exists, and it can't turn off a default of `true`. From the CLI, capture can be turned off only positionally (`--argument=...` with `0`). This is raised as a decision.
 - The arch rule ignores `RefactorCircus\Showroom\Domains\Transfer` and `Atrium\Http\Controllers\TransferUiController` as well as `RefactorCircus\Showroom\Impex`. Those classes used Impex before this spec, to start runs behind `ImpexIntegration::active()`, so the exact rule in AC 32 would fail on existing code. This is raised as a decision.
 - Group 11: `resources/boost/skills/showroom-development/SKILL.md` still names `ProductRowImportedActionEvent`, and the changelog needs the upgrade note for the event replacement.
+
+## Group 15
+
+Applies build decisions D-011 (AC 31) and D-012 (AC 32).
+
+**Files**
+
+- `src/Impex/Flows/UpsertProductsFlow.php` and `src/Impex/Flows/ImportProductsFlow.php`: `handle()` now declares `?bool $captureChanges = null` and passes `$captureChanges ?? true` to its source. Impex's `FlowArguments` turns a nullable `bool` into a value option, so `impex:run <flow> --capture-changes=0` turns capture off, and leaving the option out keeps the default of true. Positional and in-code callers that pass `true` or `false` work as before.
+- `tests/ArchTest.php`: the "code outside src/Impex uses no Impex class" rule already ignored exactly `RefactorCircus\Showroom\Impex` plus the two D-012 exceptions, `RefactorCircus\Showroom\Domains\Transfer` and `RefactorCircus\Showroom\Atrium\Http\Controllers\TransferUiController`. Only its comment changed: it now cites D-012 and says no other exception may join them.
+- `tests/Feature/Impex/UpsertChunkTest.php`: two new tests.
+
+**Tests**
+
+- `showroom:import-products` is run twice through `impex:run`: once with no option and once with `--capture-changes=0`. Both runs complete and both products are written. The default run's product is in the `showroom.products` stream touches and the `--capture-changes=0` run's product is not.
+- `showroom:upsert-products` can't take its `array $payload` from a command line, because the console carries only strings. So the test reads the flow's options the way `impex:run` does (`FlowArguments::options()` and `FlowArguments::from()` on an `ArrayInput`), asserts that `--capture-changes=0` becomes `['captureChanges' => false]`, and starts the run with those arguments plus the records. The same record and no-record assertions follow.
+- Both tests fail before the change. While the parameter is a non-null `bool`, `--capture-changes` is a `VALUE_NONE` flag, so giving it `0` raises `InvalidOptionException`.
+- The helper names (`captureProductWebhooks`, `recordedForWebhooks`, `flowCommandArguments`) differ from the global helpers in `ProductWebhooksTest` and `ImportExportTest`.
+- Pint is clean on the changed files. I didn't run the suite; the gate runs it (15.3).
+
+**Deviations**
+
+- None. Apart from `tasks.md` and this note, I touched only the files on the group's list.

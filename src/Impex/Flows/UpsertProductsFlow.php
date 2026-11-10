@@ -18,6 +18,10 @@ use RefactorCircus\Showroom\Impex\Sources\InlineProductSource;
  * call to UpsertProductsAction. With `$captureChanges` false the writes are
  * not recorded for product webhooks.
  *
+ * `$captureChanges` is nullable, with null meaning true, so the console
+ * offers it as `--capture-changes=0` rather than as a flag that could only
+ * switch it on (D-011).
+ *
  * The result counts rows: `total`, `succeeded`, `failed` and `unchanged`.
  * Each failed row's reason is kept on its chunk's batch item, by its
  * position in the records sent.
@@ -28,13 +32,13 @@ final class UpsertProductsFlow extends Flow
      * @param  array<int|string, mixed>  $payload
      * @return array{batch_id: string, total: int, succeeded: int, failed: int, unchanged: int}
      */
-    public function handle(array $payload, string $mode = 'upsert', bool $captureChanges = true): array
+    public function handle(array $payload, string $mode = 'upsert', ?bool $captureChanges = null): array
     {
         $this->tag('showroom', 'upsert');
 
         $products = array_is_list($payload) ? $payload : (array) ($payload['products'] ?? []);
 
-        $batch = $this->batch(InlineProductSource::class, array_values($products), $mode, $captureChanges, (int) config('showroom.impex.chunk', 500))
+        $batch = $this->batch(InlineProductSource::class, array_values($products), $mode, $captureChanges ?? true, (int) config('showroom.impex.chunk', 500))
             ->using(UpsertProductChunk::class)
             // One chunk of records per seeded page.
             ->chunk(1)
