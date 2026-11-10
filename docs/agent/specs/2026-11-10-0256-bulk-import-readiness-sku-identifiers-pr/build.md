@@ -579,14 +579,76 @@ Flag search and owner reindex (AC 22, 23, 34). This retry checked commit 24cf1d4
 - **Tests:** `tests/Feature/Search/FlagSearchTest.php` passes: 18 tests, 299 assertions. Pint `--test` is clean on `DatabaseEngine.php` and the test file. I didn't run the suite; the gate runs it. Expect the two `ScoutEngineTest` identifier-URL `404` failures, which belong to group 13.
 - **Deviations:** none.
 
+## Group 13
+
+Existing API and search tests on id lookup (AC 8). Commit c2c991f on `ring-master/2026-11-10-0256-bulk-import-readiness-sku-identifiers-pr--g13`. Only tests changed. No code changed, and no slug or identifier fallback was added.
+
+**13.1: failures found.** Running the 17 listed files gave 62 failures before the change. All but one were `404`s on product or owner URLs built from an identifier or code. The 404s showed up as status mismatches, or as `null` JSON paths read from a 404 body. None came from an MCP argument: these files call MCP tools only for list, attribute and transfer tools. The other failure was the `RecordLookupTest` route-list dataset, which picked up Impex's `impex.runs.owners.destroy`.
+
+**Files changed**
+
+- `tests/Feature/RecordLookupTest.php`: the "lists every route that takes a product or an owner" test now keeps only routes named `showroom.*` or `atrium.showroom.*` before it checks for `{product}` or `{owner}` (13.3).
+- `tests/Feature/Api/ProductPollingTest.php` and `tests/Feature/PolicyTest.php`: they take the `id` from the create response (`json('data.id')`).
+- The other 14 files each get a small file-local helper that returns `/showroom/products/{id}` or `/showroom/owners/{id}`, using the model's key looked up by identifier or code. Their identifier and code URLs now call it:
+  - `workflowProduct`
+  - `productApiPath`
+  - `assetProductPath` and `assetOwnerPath`
+  - `completenessProductPath`
+  - `categoryProductPath`
+  - `associationProductPath`
+  - `ownershipProductPath` and `ownershipOwnerPath`
+  - `channelProductPath`
+  - `performanceProductPath` and `performanceOwnerPath`
+  - `scoutProductPath`
+  - `auditProductPath`
+  - `renamedProductPath`
+  - `importProductPath`
+  - `webhookProductPath`
+- Request bodies and filters still reference records by identifier or code (`parent`, `owner`, associations, asset link targets), as the spec says.
+- In `PerformanceTest` the helper calls sit outside every `queriesDuring` block, so the query bounds are unchanged.
+
+**Tests**
+
+- `vendor/bin/pest` on all 17 listed files: 467 passed, 3211 assertions.
+- Pint `--dirty` is clean. PHPStan doesn't cover `tests/`.
+
+**Deviations**
+
+- The helpers are file-local with distinct names, not one shared helper in `tests/Pest.php` or `tests/Fixtures/Catalog.php`. Those files aren't in this group's list, and group 14 is editing tests at the same time. Pest loads every test file into one process, so the names must differ. A later cleanup could fold them into one shared helper.
+- Group 9 rewrites `tests/Feature/Impex/ImportExportTest.php` and `ProductWebhooksTest.php`. It should keep `importProductPath` and `webhookProductPath`, or address records by `id` some other way.
+
 ## Group 14
 
-Existing UI and MCP tests on id lookup (AC 8). The test changes are in commit dae1b39; this retry checked them and ran the files.
+Existing UI and MCP tests on id lookup (AC 8). Commit dae1b39 on `ring-master/2026-11-10-0256-bulk-import-readiness-sku-identifiers-pr--g14`. Only tests changed. No screen or source file changed, and no slug, identifier or code fallback was added.
 
-- **Files:**
-  - `tests/Feature/Ui/WorkflowPagesTest.php`, `AssociationPagesTest.php`, `WidgetsTest.php`, `ScreenIsolationTest.php`, `AssetPagesTest.php`, `CategoryPagesTest.php` and `ChannelPagesTest.php` now build product screen URLs and `/showroom/products/{product}` API calls from the record's `id`. The id comes from the factory model or from `data.id` in the create response.
-  - `tests/Feature/Ui/ScreenAuthorizationTest.php` (`screenRecordKey()`) and `tests/Feature/Ui/ScreenExtensionsTest.php` (`screenExtKey()`) each get a small helper. Their datasets still name records by identifier or code; the helper swaps the name for the record's `id` on `atrium.showroom.products.*` and `atrium.showroom.owners.*` routes and leaves other screens on their code.
-  - `tests/Feature/McpTest.php` passes the product and owner `id` as the `product` and `owner` arguments to the show, update, delete, transition, version and revert tools.
-- **14.1 findings:** every failure was a `404` or "Not found" on a product or owner screen URL, API URL or MCP argument that still used an identifier or code. None came from anything other than lookup, so no screen or source code changed. That includes the 15 `ScreenExtensionsTest` rows flagged in Group 10.
-- **Tests:** the ten listed files pass: 310 tests, 6727 assertions. Pint `--test` is clean on `tests/Feature/Ui` and `tests/Feature/McpTest.php`.
-- **Deviations:** none.
+**14.1: failures found**
+
+Running the ten listed files gave 51 failures out of 310 tests. Each one was a product or owner lookup by identifier or code. Under group 4's `id` binding these answer `404` on HTTP and Atrium, or `Not found.` on MCP:
+
+- `WorkflowPagesTest`: 3. The product screen, transition and revert by `TEE`, and `PATCH /showroom/products/TEE`.
+- `AssociationPagesTest`: 1. The product screen and `GET /showroom/products/TEE`.
+- `WidgetsTest`: 1. `POST /showroom/products/TEE-1/transitions`.
+- `ScreenAuthorizationTest`: the record-page and action dataset rows for `TEE-1`, `TEE-S` and `acme`, plus the product update in `screenWorld()`.
+- `ScreenExtensionsTest`: the 15 rows group 10 reported. The `product` and `owner` screens were opened by `TEE-1` and `acme`, and the `products` and `owners` list links were expected by identifier or code.
+- `ScreenIsolationTest`, `AssetPagesTest`, `CategoryPagesTest` and `ChannelPagesTest`: product screen URLs by `TEE-1`. In `CategoryPagesTest`, the array mismatch came from a `PATCH` that answered `404`.
+- `McpTest`: 3 tests. They cover show, update and delete for products; the transition, versions and revert tools; and show, update and delete for owners.
+
+Every failure came from lookup, so no test or screen needed a non-lookup fix (the second half of 14.2).
+
+**14.2: files changed (tests only)**
+
+- `WorkflowPagesTest`, `AssociationPagesTest`, `WidgetsTest`, `ScreenIsolationTest`, `AssetPagesTest`, `CategoryPagesTest` and `ChannelPagesTest` (all in `tests/Feature/Ui/`): each keeps the record it creates and builds URLs from it. That's either the model or the `id` from the create response.
+- `tests/Feature/Ui/ScreenAuthorizationTest.php` and `tests/Feature/Ui/ScreenExtensionsTest.php`: the datasets still name records by identifier or code, because they're built before the records exist. A file-local helper in each file (`screenRecordKey()` and `screenExtKey()`) swaps that name for the record's `id` on `atrium.showroom.products.*` and `atrium.showroom.owners.*` routes. Every other screen keeps its code.
+- `tests/Feature/McpTest.php`: the product and owner tools get the record's `id`. With the right key, `DeleteOwnerTool` on `acme` is refused by its child-owner guard again, rather than by a lookup miss.
+- Input references keep the identifier or code, as the design requires. These are association `source`/`target`, asset `target`, `parent`, the `owner` and `category` filters, and list search.
+
+**Tests**
+
+- 14.3: the ten listed files pass: 310 tests, 6727 assertions.
+- All of `tests/Feature/Ui` passes together (351 tests), so the new helper names don't clash with other test files. They also differ from group 13's helpers.
+- Pint is clean on the changed files.
+- I didn't run the full suite; the gate runs it.
+
+**Deviations**
+
+- None. Apart from `tasks.md` and this note, I touched only files on the group's list.

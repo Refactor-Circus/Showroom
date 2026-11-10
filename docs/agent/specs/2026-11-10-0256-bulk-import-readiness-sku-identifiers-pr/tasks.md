@@ -220,10 +220,10 @@ criteria: 8
 
 Group 4 made products and owners bind by ULID `id` by default (AC 8, D-001/D-010), so older tests that build URLs or MCP arguments from an identifier or code now get `404`. Update the tests, not the binding. Include the two Impex tests, so the suite is green before group 9. Group 9 rewrites them afterwards. Leave the UI and MCP tests to group 14.
 
-- [ ] 13.1 Run the files listed above and note every failure that is a `404` or "Not found" on a product or owner URL or MCP argument.
-- [ ] 13.2 Change those tests to address records by `id`, using the model's key or the `id` from the resource response. Don't add slug or identifier fallbacks to the code.
-- [ ] 13.3 In `RecordLookupTest`, limit the "lists every route that takes a product or an owner" dataset to Showroom's own routes (route names starting `showroom.`, plus the Atrium Showroom screens). Other packages, such as Impex's `runs/{run}/owners/{owner}`, define their own `{owner}` parameters.
-- [ ] 13.4 Run vendor/bin/pest on the listed files; all green
+- [x] 13.1 Run the files listed above and note every failure that is a `404` or "Not found" on a product or owner URL or MCP argument.
+- [x] 13.2 Change those tests to address records by `id`, using the model's key or the `id` from the resource response. Don't add slug or identifier fallbacks to the code.
+- [x] 13.3 In `RecordLookupTest`, limit the "lists every route that takes a product or an owner" dataset to Showroom's own routes (route names starting `showroom.`, plus the Atrium Showroom screens). Other packages, such as Impex's `runs/{run}/owners/{owner}`, define their own `{owner}` parameters.
+- [x] 13.4 Run vendor/bin/pest on the listed files; all green
 
 ## Group 14: Existing UI and MCP tests on id lookup
 depends on: 8, 10, 12
