@@ -1,1 +1,17 @@
-[]
+- id: Q-011
+  question: "AC 31 asks for a `--no-capture-changes` CLI option on showroom:upsert-products and showroom:import-products, but Impex's FlowArguments makes a `bool $captureChanges = true` parameter a VALUE_NONE flag. How should turning capture off be offered on the CLI?"
+  options:
+    - "Change Impex FlowArguments so a bool defaulting to true becomes VALUE_NEGATABLE (gives --no-capture-changes); a separate Impex spec this job waits on"
+    - "Keep Impex as is; declare `?bool $captureChanges = null` (null means true), giving `--capture-changes=0`, and reword AC 31"
+    - "Allow only the positional --argument to turn capture off; drop the --no-capture-changes wording from AC 31"
+  recommendation: "Keep Impex as is; declare `?bool $captureChanges = null` (null means true), giving `--capture-changes=0`, and reword AC 31"
+  evidence: "vendor/refactor-circus/impex/src/Domains/Flow/Support/FlowArguments.php:64-73,111-115; one package per spec, so changing Impex needs its own spec"
+  source: build
+- id: Q-012
+  question: "The AC 32 arch rule (core must not use Impex) fails on the existing Transfer domain and TransferUiController, which started Impex runs before this spec. Keep them as named exceptions?"
+  options:
+    - "Keep the rule with the Transfer domain and TransferUiController as named exceptions"
+    - "Move the Transfer domain's Impex-facing code and TransferUiController under src/Impex so the rule passes as written"
+  recommendation: "Keep the rule with the Transfer domain and TransferUiController as named exceptions"
+  evidence: "grep 'use RefactorCircus.Impex' src lists src/Domains/Transfer/* and src/Atrium/Http/Controllers/TransferUiController.php, all from before this spec"
+  source: build

@@ -1,6 +1,6 @@
 id: 2026-11-10-0256-bulk-import-readiness-sku-identifiers-pr
 title: 'Bulk import readiness: SKU identifiers, product slugs, external IDs, batch upsert'
-status: building
+status: needs-decision
 created: '2026-11-10 02:56'
 standards:
   refactor-circus/standards:
@@ -16,5 +16,10 @@ runs:
   - workflow: ring-master-factory
     run_id: wf_490ae2eb-1f5
     result: escalated
+    round: 0
+    date: '2026-11-10'
+  - workflow: ring-master-factory
+    run_id: wf_8276bd48-4cb
+    result: needs-decision
     round: 0
     date: '2026-11-10'

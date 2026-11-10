@@ -21,3 +21,10 @@
 ## Nits
 
 None; review never ran.
+
+## Run wf_8276bd48-4cb: needs-decision (build, group 9)
+
+Groups 13, 14 and 9 were built. Group 9 asks:
+
+- Q-011: how to turn capture off on the CLI, given Impex's bool flag handling
+- Q-012: Transfer domain exceptions to the AC 32 arch rule
