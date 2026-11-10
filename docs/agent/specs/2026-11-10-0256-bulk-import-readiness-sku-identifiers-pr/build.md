@@ -711,3 +711,48 @@ Applies build decisions D-011 (AC 31) and D-012 (AC 32).
 **Deviations**
 
 - None. Apart from `tasks.md` and this note, I touched only the files on the group's list.
+
+## Group 11
+
+Docs and changelog. The upgrade notes come from the spec's Design.
+
+**Files**
+
+- `tests/Feature/DocsTest.php` (11.1). New tests check that:
+  - every key in the shipped `config/showroom.php` (dot keys down to the leaves) is covered by a row in `docs/13-configuration.md`, and every documented row exists in the config
+  - the `products.identifier_pattern`, `lookup.products` and `lookup.owners` rows exist with their defaults, and the `tables.*` and `policies` rows name the new tables and `assign`
+  - `docs/14-flags.md` exists and covers `applies_to`, `effective_flags`, `assign`, `FlagPolicy`, `flags[]=`, the routes, the five tools and the actions
+  - the products, ownership, search, API and MCP pages link to it, and every `*.md` link in `docs/` resolves
+  - the products, ownership, API, MCP and search pages cover identifiers, slugs, `?by=`/`by` and external ids, and no longer say identifiers are path or MCP keys
+  - the Impex page covers the batch upsert, `unchanged` and `--capture-changes=0`
+  - the Unreleased changelog has the five upgrade notes
+- `docs/14-flags.md` (new): definitions and their guards, assigning, the `assign` ability, inheritance, search and reindexing, endpoints and tools, and the Atrium screen.
+- `docs/04-products.md`: Identifiers, Slugs, Looking up a product, External ids and Batch upsert sections. Delete cleanup. `UpsertProductsAction` in the actions table.
+- `docs/06-ownership.md`: a self-parenting owner type (AC 24), owner slugs, lookup, external ids, flags, the new list filters, and `owner_slugs` in the search document.
+- `docs/05-search.md`: the `external[{system}]` and `flags[]` filters, flag changes re-indexing an owner's products, the new document fields, and `ScoutEngine::indexSettings()` with a Meilisearch config example.
+- `docs/09-api.md`: flag routes, the new list filters, a "Product and owner keys" section (`id` default, `showroom.lookup.*`, `?by=`, 404/422), read-only keys, and `assign` under Authorization.
+- `docs/10-mcp.md`: the five flag tools, `by` and id/slug addressing for the product and owner tools, and the new fields.
+- `docs/12-impex.md`: per-chunk processing through `UpsertProductsAction`, `unchanged` and global row indexes in the result, `tries` per chunk, a "Keeping a sync out of product webhooks" section (`--capture-changes=0`, `capture_changes`), `slug` in exports, ERP external ids, the chunk events, and `{product}` instead of `{identifier}` in URLs.
+- `docs/13-configuration.md`: `products.identifier_pattern`, `lookup.products` and `lookup.owners`. The new tables and `assign` in the `tables.*` and `policies` rows. `impex.chunk` and `impex.tries` now say chunk.
+- `docs/03-families.md`: families stay addressed by `code` (no slug or lookup key), and the stale "Products (coming next)" line is gone.
+- `CHANGELOG.md` (Unreleased):
+  - Breaking: lookup by `id` with no fallback (`showroom.lookup.*`, `?by=`), read-only `slug`/`effective_flags`, `ImportProductRow` and `ProductRowImportedActionEvent` replaced by `UpsertProductChunk` and the chunk events (plus `unchanged`), the slug migration and its unique-index lock on large installs, Scout settings and a reindex, and the wider default identifier pattern.
+  - Added: one entry for each feature.
+
+**Tests**
+
+- `tests/Feature/DocsTest.php`: 47 passed, 112 assertions. Before the docs changed, 11 of the new tests failed. Pint is clean on the file.
+- I didn't run the full suite (11.4); the gate runs it.
+
+**Deviations**
+
+- None. Apart from `tasks.md` and this note, I touched only the files on the group's list.
+
+**Found while documenting (outside this group's files)**
+
+- `resources/boost/skills/showroom-development/SKILL.md` line 77 still names `ProductRowImportedActionEvent`, as group 9's notes said. That file isn't on this group's list.
+- JSONL round trip: `ExportRecord` writes `slug` into every JSONL record. `FileProductSource` passes JSONL records through unchanged, and `UpsertProductsAction` validates them against `CreateProductData`/`UpdateProductData`, where `slug` is `prohibited`. So a JSONL export imported back fails every row at `slug`. CSV is fine, because `ProductRows` skips `slug`. The existing round-trip test only covers CSV. The docs describe the current behaviour: remove `slug` before re-importing JSONL. The likely fix is to drop the read-only keys from JSONL records in `FileProductSource`, as `ProductRows` does for CSV.
+- MCP tool schemas don't advertise the new inputs. The tools accept them, because their requests validate with the Data rules:
+  - `create-product-tool`, `update-product-tool` and the owner create and update tools don't declare `external_ids` or `flags`.
+  - `list-products-tool` and `list-owners-tool` don't declare `external` or `flags`.
+  - `create-product-tool` still describes `identifier` as "letters, digits, dots, dashes and underscores".

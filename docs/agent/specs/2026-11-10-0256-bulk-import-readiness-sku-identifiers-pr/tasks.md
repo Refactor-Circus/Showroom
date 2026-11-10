@@ -185,18 +185,18 @@ depends on: 9, 10, 12, 13, 14, 15
 files: CHANGELOG.md, docs/03-families.md, docs/04-products.md, docs/05-search.md, docs/06-ownership.md, docs/09-api.md, docs/10-mcp.md, docs/12-impex.md, docs/13-configuration.md, docs/14-flags.md, tests/Feature/DocsTest.php
 criteria: none (upgrade notes from the spec's Design)
 
-- [ ] 11.1 Extend `DocsTest` for the new flags doc page and the documented config keys.
-- [ ] 11.2 Update the docs:
+- [x] 11.1 Extend `DocsTest` for the new flags doc page and the documented config keys.
+- [x] 11.2 Update the docs:
   - SKU identifiers, slugs, record lookup and `by`, external ids
   - flags: a new page, inheritance, `assign`
   - batch upsert and the webhook opt-out
-- [ ] 11.3 Add changelog upgrade notes:
+- [x] 11.3 Add changelog upgrade notes:
   - the breaking change to lookup keys
   - read-only keys on update
   - `ImportProductRow` and `ProductRowImportedActionEvent` replaced
   - unique-index lock time on large installs
   - Scout settings
-- [ ] 11.4 Run vendor/bin/pest; all green
+- [x] 11.4 Run vendor/bin/pest; all green
 
 ## Group 12: Flag search and owner reindex
 depends on: 7

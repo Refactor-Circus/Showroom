@@ -61,12 +61,15 @@ Routes are registered under `showroom.routes.prefix` (default `showroom`) with `
 | `GET` | `/showroom/owner-types/{ownerType}` | `ShowOwnerTypeAction` |
 | `PATCH` | `/showroom/owner-types/{ownerType}` | `UpdateOwnerTypeAction` |
 | `DELETE` | `/showroom/owner-types/{ownerType}` | `DeleteOwnerTypeAction` → `204` |
-| `GET` | `/showroom/owners` | `ListOwnersAction` — `type`, `parent`, `under`, `roots`, `search`, `cursor`, `per_page` |
+| `GET` | `/showroom/owners` | `ListOwnersAction` — `type`, `parent`, `under`, `roots`, `external[{system}]`, `flags[]`, `search`, `cursor`, `per_page` |
 | `POST` | `/showroom/owners` | `CreateOwnerAction` → `201` |
 | `GET` | `/showroom/owners/{owner}` | `ShowOwnerAction`, with its chain and children |
-| `PATCH` | `/showroom/owners/{owner}` | `UpdateOwnerAction` — labels, or move with `parent` |
+| `PATCH` | `/showroom/owners/{owner}` | `UpdateOwnerAction` — labels, external ids, flags, or move with `parent` |
 | `DELETE` | `/showroom/owners/{owner}` | `DeleteOwnerAction` → `204` |
-| `GET` | `/showroom/products` | `ListProductsAction` — search, `updated_since`; see [Search](05-search.md) |
+| `GET` | `/showroom/flags` | `ListFlagsAction` — `search`, `cursor`, `per_page`; see [Flags](14-flags.md) |
+| `POST` | `/showroom/flags` | `CreateFlagAction` → `201` |
+| `GET` / `PATCH` / `DELETE` | `/showroom/flags/{flag}` | Show / update labels, `applies_to`, sort order / delete an unassigned flag |
+| `GET` | `/showroom/products` | `ListProductsAction` — search, `external[{system}]`, `flags[]`, `updated_since`; see [Search](05-search.md) |
 | `POST` | `/showroom/products` | `CreateProductAction` → `201` |
 | `GET` | `/showroom/products/{product}` | `ShowProductAction`, with inherited values — `scope`, `locales[]`; `ETag`, `304` on `If-None-Match` |
 | `PATCH` | `/showroom/products/{product}` | `UpdateProductAction` |
@@ -78,7 +81,20 @@ Routes are registered under `showroom.routes.prefix` (default `showroom`) with `
 | `POST` | `/showroom/imports` | `StartImportAction` → `202` with the Impex run — `file`, `url` or `asset`, `format`, `mode`; see [Import, export and feeds](12-impex.md) |
 | `POST` | `/showroom/exports` | `StartExportAction` → `202` with the Impex run — search filters, `format`, `code`, `published` |
 
-Path parameters are codes — identifiers for products. An option is looked up within its attribute.
+Path parameters are codes, except for products and owners. An option is looked up within its attribute.
+
+## Product and owner keys
+
+`{product}` and `{owner}` take the record's ULID `id` by default. `showroom.lookup.products` and `showroom.lookup.owners` (`id` or `slug`) change the key, and `?by=id` or `?by=slug` picks it for one request, whatever the config says:
+
+```http
+GET /showroom/products/01JC5Y3Q8W2N4V6T9R7K1M3P5X
+GET /showroom/products/83al-ic-40-4-red-alum?by=slug
+```
+
+A product's identifier or an owner's code never binds: it answers `404`. A `by` that isn't `id` or `slug` answers `422` at `by`. Every product and owner resource returns `id` and `slug`, with the `identifier` or `code`, so a client can keep whichever key it needs. Request bodies and filters (`parent`, `owner`, associations, `?owner=`) still name records by identifier or code. See [Looking up a product](04-products.md#looking-up-a-product).
+
+`slug` and `effective_flags` are read-only: a create or update that sends them is refused at those keys. Strip them before sending a resource back.
 
 ## Example
 
@@ -129,13 +145,13 @@ Vendors who need every change, inherited ones included, subscribe to product web
 |---|---|
 | `401` | Unauthenticated, with authorization on |
 | `403` | Denied by a policy, with authorization on |
-| `404` | Unknown code: `{"message": "Not found."}` |
+| `404` | Unknown code, or a product or owner key that matches nothing: `{"message": "Not found."}` |
 | `409` | A catalog rule: deleting something still in use (a group with attributes, a family with products, a family variant with models, an attribute that labels a family or shapes a variant), options on a type that takes none. The body is `{"message": "..."}`. |
-| `422` | Validation — including changing a code, type or identifier, invalid values, taken unique values, missing or duplicate axes — and search filters the engine cannot run |
+| `422` | Validation — including changing a code, type or identifier, sending a read-only `slug` or `effective_flags`, an invalid `by`, invalid values, taken unique values or external ids, missing or duplicate axes, deleting an assigned flag — and search filters the engine cannot run |
 
 ## Authorization
 
-With `showroom.authorization` on, every request needs an authenticated user and is checked against the model's policy from `showroom.policies`: `viewAny`, `view`, `create`, `update` and `delete`. Option endpoints also check `view` or `update` on the parent attribute. The bundled policies allow any authenticated user; replace one to restrict the catalog:
+With `showroom.authorization` on, every request needs an authenticated user and is checked against the model's policy from `showroom.policies`: `viewAny`, `view`, `create`, `update` and `delete`. Option endpoints also check `view` or `update` on the parent attribute. A product or owner write that changes its `flags` also needs `FlagPolicy`'s `assign` ability ([Flags](14-flags.md#the-assign-ability)). The bundled policies allow any authenticated user; replace one to restrict the catalog:
 
 ```php
 'policies' => [

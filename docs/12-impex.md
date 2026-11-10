@@ -20,7 +20,7 @@ Every flow is an ordinary Impex run: its status, steps, failures and result are 
 
 ## Importing
 
-Rows go through `CreateProductAction` and `UpdateProductAction`, so validation, uniqueness, versions, completeness and indexing apply exactly as over the API.
+Rows are read `showroom.impex.chunk` (default 500) at a time, and each chunk is written by one call to `UpsertProductsAction` ([Batch upsert](04-products.md#batch-upsert)). Every record is validated with the same rules as over the API, and versions, uniqueness, completeness and indexing apply as they do there. A chunk costs a few queries, however many records it holds: records that match their stored product are counted `unchanged` and write nothing, new simple products are inserted in bulk, and the chunk queues one index sync.
 
 ```http
 POST /showroom/imports
@@ -47,12 +47,22 @@ The format comes from the extension, or send `format` (`csv` or `jsonl`). `mode`
 The answer is Impex's run, `202 Accepted`. When it completes, its result counts the rows:
 
 ```json
-{"total": 1200, "succeeded": 1188, "failed": 12}
+{"total": 1200, "succeeded": 1188, "failed": 12, "unchanged": 950}
 ```
 
-Each failed row keeps its reason on the run's batch items. By default any number of rows may fail and the run still completes; set `showroom.impex.allow_failures` to a share (`0.02` = 2%) to fail the run past it.
+`unchanged` counts the rows among the succeeded that matched their stored product, so a resync of an unchanged catalog writes nothing. Each failed row keeps its reason on its chunk's batch item, with its `index` (its row in the source, counted across chunks), its `identifier` and its `errors` by field. One bad row never stops the rest of its chunk. By default any number of rows may fail and the run still completes; set `showroom.impex.allow_failures` to a share (`0.02` = 2%) to fail the run past it.
 
-Rows are processed in chunks (`showroom.impex.chunk`) and remembered by position, so a retried or resumed run never imports a row twice.
+Chunks are remembered by position, so a retried or resumed run never imports a row twice. `showroom.impex.tries` is the attempts per chunk.
+
+### Keeping a sync out of product webhooks
+
+With [product webhooks](#product-webhooks) on, every product write is recorded for subscribers. A bulk resync that subscribers shouldn't hear about can turn that off with `capture_changes`. It is on by default:
+
+```bash
+php artisan impex:run showroom:import-products --asset=supplier-2026-09 --format=csv --capture-changes=0
+```
+
+Both `showroom:import-products` and `showroom:upsert-products` take it (`$captureChanges`, where `null` means on), and so does `UpsertProductsData` (`capture_changes`). While it's off, `RefactorCircus\Showroom\Domains\Product\Services\ProductChangeCapture::suppress()` is active, and `CaptureProductChanges` records nothing. Index syncs and `ProductsQueuedForSync` still fire.
 
 ### JSONL
 
@@ -69,6 +79,7 @@ A header row, then one product per row. Columns follow Akeneo's conventions:
 | Column | Holds |
 |---|---|
 | `identifier` | Required |
+| `slug` | Written by exports; skipped on import, since slugs are read-only |
 | `family`, `parent`, `owner` | Codes |
 | `enabled` | `1` or `0` |
 | `categories` | Comma-separated codes |
@@ -89,7 +100,7 @@ POST /showroom/exports
 ```
 
 - Every [search](05-search.md) filter applies: `search`, `family`, `category`, `owner`, `filters`, `complete`, … plus `scope` and `locales` to keep one channel's values.
-- `format`: `jsonl` (default) or `csv`, in the import format — an export imports back unchanged.
+- `format`: `jsonl` (default) or `csv`, in the import format. Each record carries the product's `slug`. A CSV export imports back unchanged, because the `slug` column is skipped on import. A JSONL record sent back with its `slug` is refused at `slug`, so remove the key first.
 - `published`: export the live versions instead of the working copies; unpublished products are left out.
 - `code`: the asset code of the file (default `export-{run id}`).
 
@@ -154,7 +165,7 @@ An ERP pushes products by posting to an Impex inbound channel bound to `showroom
 ],
 ```
 
-`POST /impex/channels/erp` with a list of products, or `{"products": [...]}`, in the JSONL shape. The request lands in the ledger, the signature is checked, and a run upserts the records. Storefronts read the live versions directly (`GET /showroom/products/{identifier}/versions/published`) or take a feed.
+`POST /impex/channels/erp` with a list of products, or `{"products": [...]}`, in the JSONL shape. The request lands in the ledger, the signature is checked, and a run upserts the records a chunk at a time through `UpsertProductsAction`. Records are matched to products by `identifier`. A record can carry the ERP's own ids in `external_ids` (`{"d365": "ITEM-000123"}`), so later syncs and searches can find the product by them (`?external[d365]=ITEM-000123`). Records that haven't changed since the last push write nothing. Storefronts read the live versions directly (`GET /showroom/products/{product}/versions/published`, by `id` or slug) or take a feed.
 
 ## Product webhooks
 
@@ -206,7 +217,9 @@ POST /impex/subscriber/subscriptions
   (`ProductsQueuedForSync`, which covers changes inherited from models,
   families, categories, owners and channels), product and model deletions, and
   asset links, unlinks and file replacements. Only identifiers are recorded in
-  the write; the comparison runs later, on Impex's queue.
+  the write; the comparison runs later, on Impex's queue. An import or upsert
+  run with `capture_changes` off records nothing; see
+  [Keeping a sync out of product webhooks](#keeping-a-sync-out-of-product-webhooks).
 - **Starting out.** `POST /impex/subscriber/subscriptions/{id}/export` writes
   every product the subscription covers to one file and moves its cursor past
   them, so a vendor starts from a download rather than millions of webhooks.
@@ -219,7 +232,7 @@ to send its file the channel's way (an SFTP drop, a signed HTTP upload); see
 
 `GET /showroom/products?updated_since=2026-10-01T00:00:00Z` lists products
 where anything they show changed since then, inherited changes included, and
-`GET /showroom/products/{identifier}` answers `304` to a matching
+`GET /showroom/products/{product}` answers `304` to a matching
 `If-None-Match`. Polling still costs a request per page per vendor; webhooks
 cost nothing until something changes.
 
@@ -237,6 +250,10 @@ $run = app(StartExportAction::class)->execute(StartExportData::from(['family' =>
 ```
 
 Both return the Impex `Run`. MCP agents use `start-import-tool` and `start-export-tool`, then Impex's tools to follow the run.
+
+To write records without a run, call `UpsertProductsAction` directly; see [Batch upsert](04-products.md#batch-upsert).
+
+Each chunk fires `ProductChunkUpsertingActionEvent` and `ProductChunkUpsertedActionEvent` (in `RefactorCircus\Showroom\Domains\Transfer\Events`), the finished one with the chunk's counts and failures. Inside it, `UpsertProductsAction` fires `ProductsUpsertingActionEvent` and `ProductsUpsertedActionEvent`, and the records it writes through `CreateProductAction` or `UpdateProductAction` fire those Actions' events.
 
 ## Dashboard
 

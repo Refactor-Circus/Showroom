@@ -62,10 +62,10 @@ The server lists two entry points, `search_tools` and `execute_tools`, and keeps
 | `create-product-model-tool` | Root model or sub-model |
 | `update-product-model-tool` | Values; variants follow |
 | `delete-product-model-tool` | With its sub-models and variants |
-| `list-products-tool` | Search: text, family, filters, facets, sort, `updated_since`. Page-numbered. |
+| `list-products-tool` | Search: text, family, filters, `external`, `flags`, facets, sort, `updated_since`. Page-numbered. |
 | `show-product-tool` | All values, inherited included |
 | `create-product-tool` | Simple or variant product |
-| `update-product-tool` | Family, enabled, values (patched) |
+| `update-product-tool` | Family, enabled, values (patched), external ids, flags |
 | `delete-product-tool` | Delete a product |
 | `transition-product-tool` | Submit, approve, reject, publish, unpublish, archive, restore |
 | `list-product-versions-tool` | History: actions, authors, changes |
@@ -94,12 +94,21 @@ The server lists two entry points, `search_tools` and `execute_tools`, and keeps
 | `list-owners-tool` | By type, parent, or everything under an owner |
 | `show-owner-tool` | Chain, children, product counts |
 | `create-owner-tool` | Create an owner under a parent |
-| `update-owner-tool` | Labels, or move with everything beneath |
+| `update-owner-tool` | Labels, external ids, flags, or move with everything beneath |
 | `delete-owner-tool` | Delete an owner nothing depends on |
+| `list-flags-tool` | Flag definitions in display order. Cursor paginated. |
+| `show-flag-tool` | One flag |
+| `create-flag-tool` | Define a flag and the kinds of record it applies to |
+| `update-flag-tool` | Labels, `applies_to`, sort order |
+| `delete-flag-tool` | Delete a flag no record carries |
 | `start-import-tool` | Import products from an asset or URL (with refactor-circus/impex) |
 | `start-export-tool` | Export products matching a search to a file asset (with refactor-circus/impex) |
 
-Records are addressed by code: `group`, `attribute`, `option`, `family`, `family_variant`, `product_model`, `owner_type`, `owner`, `category`, `asset`, `locale` and `channel` arguments take codes. `show-product-tool`, `show-product-model-tool` and `list-products-tool` take `scope` and `locales` to return one channel's values; `product` takes an identifier. Catalog rule violations come back as errors with a message an agent can act on.
+Records are addressed by code: `group`, `attribute`, `option`, `family`, `family_variant`, `product_model`, `owner_type`, `category`, `asset`, `locale`, `channel` and `flag` arguments take codes. `show-product-tool`, `show-product-model-tool` and `list-products-tool` take `scope` and `locales` to return one channel's values. Catalog rule violations come back as errors with a message an agent can act on.
+
+Products and owners are addressed by their lookup key: the `product` argument of the show, update, delete, transition, versions and revert tools, and the `owner` argument of the owner show, update and delete tools, take the record's ULID `id`, or its slug when `showroom.lookup.products` or `showroom.lookup.owners` is `slug`. Those tools also take an optional `by` (`id` or `slug`) that picks the key for one call; any other `by` is a validation error. An identifier or owner code is never a lookup key, so pass the `id` from a list or create result. Arguments that reference other records (`parent`, `owner` on a product, association targets, filters) still take identifiers and codes. See [Looking up a product](04-products.md#looking-up-a-product).
+
+The product and owner tools return `slug`, `external_ids` (a `{system: id}` map, `{}` when empty), `flags` and `effective_flags`. The create and update tools take `external_ids` and `flags`. A flag change needs the `assign` ability, and `slug` and `effective_flags` are refused as read-only. See [Flags](14-flags.md).
 
 The catalog is `ShowroomServer::TOOLS`.
 
