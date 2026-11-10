@@ -292,6 +292,6 @@ depends on: 17, 18
 files: CHANGELOG.md, docs/04-products.md, docs/05-search.md, docs/06-ownership.md, docs/09-api.md, docs/10-mcp.md, docs/12-impex.md, tests/Feature/DocsTest.php
 criteria: none (docs)
 
-- [ ] 19.1 Update `DocsTest` if it names the `system` key.
-- [ ] 19.2 Rename `system` to `source` in the docs and changelog, and document `synced_at`, `external_ids_synced_at` and the unique per (record, source).
-- [ ] 19.3 Run vendor/bin/pest; all green
+- [x] 19.1 Update `DocsTest` if it names the `system` key.
+- [x] 19.2 Rename `system` to `source` in the docs and changelog, and document `synced_at`, `external_ids_synced_at` and the unique per (record, source).
+- [x] 19.3 Run vendor/bin/pest; all green

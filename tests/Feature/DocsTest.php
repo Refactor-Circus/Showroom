@@ -224,8 +224,34 @@ it('documents SKU identifiers, slugs, lookup by id or slug, and external ids', f
         ->not->toContain('`product` takes an identifier');
 
     expect(showroomDoc('05-search.md'))
-        ->toContain('`external[{system}]=')
+        ->toContain('`external[{source}]=')
         ->toContain('ScoutEngine::indexSettings()');
+});
+
+it('documents external ids by source, with their sync stamp and one id per record and source', function (): void {
+    expect(showroomDoc('04-products.md'))
+        ->toContain('`{source: id}`')
+        ->toContain('`synced_at`')
+        ->toContain('`external_ids_synced_at`')
+        ->toContain('`(subject_type, subject_id, source)`');
+
+    expect(showroomDoc('10-mcp.md'))->toContain('`external_ids_synced_at`');
+
+    $unreleased = str(showroomChangelog())->after('## [Unreleased]')->before('## [v0.1.0]')->toString();
+
+    expect($unreleased)
+        ->toContain('`{source: id}`')
+        ->toContain('`synced_at`')
+        ->toContain('`external_ids_synced_at`');
+
+    $pages = ['04-products.md', '05-search.md', '06-ownership.md', '09-api.md', '10-mcp.md', '12-impex.md'];
+
+    foreach ([...array_map(showroomDoc(...), $pages), $unreleased] as $text) {
+        expect($text)
+            ->not->toContain('{system: id}')
+            ->not->toContain('external[{system}]')
+            ->not->toContain('{system}:{id}');
+    }
 });
 
 it('documents the batch upsert and the webhook opt-out', function (): void {

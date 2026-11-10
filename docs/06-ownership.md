@@ -36,7 +36,7 @@ An owner type may name itself as a parent, for chains such as `vendor → vendor
 - `code` is unique across all owners and never changes; neither does `type`.
 - Sending `parent` on update **moves** the owner with everything beneath it. Moving an owner under itself or its own descendant is refused.
 - `GET /showroom/owners/{owner}` returns its `chain` of codes, root first: `["globex", "acme", "classic"]`.
-- List by `type`, direct children of a `parent`, everything `under` an owner at any depth, or `roots`. Filter by `external[{system}]={id}` and by `flags[]=` (effective flags, inherited ones included).
+- List by `type`, direct children of a `parent`, everything `under` an owner at any depth, or `roots`. Filter by `external[{source}]={id}` and by `flags[]=` (effective flags, inherited ones included).
 - An owner with child owners, products or product models cannot be deleted. Deleting an owner deletes its external ids and flag assignments.
 
 Each owner stores a materialized path, so "everything beneath Acme" is a single prefix query however deep the chain.
@@ -51,7 +51,7 @@ API paths, Atrium links, MCP `owner` arguments and the show, update and delete a
 
 ### External ids and flags
 
-Owners take `external_ids` (a `{system: id}` map) as products do; see [External ids](04-products.md#external-ids). An id is unique per system among owners, and an owner may share one with a product.
+Owners take `external_ids` (a `{source: id}` map) as products do, and return `external_ids_synced_at` beside it; see [External ids](04-products.md#external-ids). An id is unique per source among owners, an owner holds one id per source, and an owner may share an id with a product.
 
 Owners take `flags` too, and pass them down. An owner's flags apply to every owner and product beneath it, and nothing beneath can drop them. Changing an owner's flags needs the `assign` ability and re-indexes every product beneath it. See [Flags](14-flags.md).
 

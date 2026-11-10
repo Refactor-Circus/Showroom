@@ -108,7 +108,7 @@ Records are addressed by code: `group`, `attribute`, `option`, `family`, `family
 
 Products and owners are addressed by their lookup key: the `product` argument of the show, update, delete, transition, versions and revert tools, and the `owner` argument of the owner show, update and delete tools, take the record's ULID `id`, or its slug when `showroom.lookup.products` or `showroom.lookup.owners` is `slug`. Those tools also take an optional `by` (`id` or `slug`) that picks the key for one call; any other `by` is a validation error. An identifier or owner code is never a lookup key, so pass the `id` from a list or create result. Arguments that reference other records (`parent`, `owner` on a product, association targets, filters) still take identifiers and codes. See [Looking up a product](04-products.md#looking-up-a-product).
 
-The product and owner tools return `slug`, `external_ids` (a `{system: id}` map, `{}` when empty), `flags` and `effective_flags`. The create and update tools take `external_ids` and `flags`. A flag change needs the `assign` ability, and `slug` and `effective_flags` are refused as read-only. See [Flags](14-flags.md).
+The product and owner tools return `slug`, `external_ids` (a `{source: id}` map, `{}` when empty), `external_ids_synced_at` (a `{source: ISO-8601 timestamp|null}` map of when each source last synced its id), `flags` and `effective_flags`. The create and update tools take `external_ids` and `flags`. A flag change needs the `assign` ability, and `slug`, `effective_flags` and `external_ids_synced_at` are refused as read-only. See [Flags](14-flags.md).
 
 The catalog is `ShowroomServer::TOOLS`.
 

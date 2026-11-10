@@ -892,3 +892,37 @@ Rework 3 (D-013, AC 41 and 44): the Atrium external ids editor says "source", an
 
 - None from standards. The three extra files are listed above.
 - Group 19 (docs) can describe the dashboard fields as "source" now that the form posts `external_ids_new[source]`.
+
+## Group 19
+
+Rework 4 (D-013): the docs and changelog say `source` instead of `system`, and document `synced_at`, `external_ids_synced_at` and the unique per (record, source).
+
+**Files**
+
+- `tests/Feature/DocsTest.php`:
+  - The search assertion now expects `external[{source}]=`.
+  - A new test, "documents external ids by source, with their sync stamp and one id per record and source". It checks that `04-products.md` names `{source: id}`, `synced_at`, `external_ids_synced_at` and `(subject_type, subject_id, source)`, and that `10-mcp.md` names `external_ids_synced_at`. It also checks the Unreleased changelog for `{source: id}`, `synced_at` and `external_ids_synced_at`. No listed page, nor the Unreleased changelog, may still say `{system: id}`, `external[{system}]` or `{system}:{id}`.
+- `docs/04-products.md`:
+  - External ids: `{source: id}`, source names, `external_ids.{source}` errors, one id per record and source (the `(subject_type, subject_id, source)` unique next to `(subject_type, source, external_id)`).
+  - `synced_at`: set on every create, update or upsert that sends the id. The upsert also stamps unchanged records in one bulk update.
+  - The read-only `external_ids_synced_at` map. A note that the table follows Roster's organization links.
+  - Batch upsert: `match` names a source. The `unchanged` bullet says the only write is the bulk `synced_at` stamp.
+- `docs/05-search.md`: `external[{source}]={id}`, and document values `"{source}:{id}"`.
+- `docs/06-ownership.md`: the `external[{source}]` filter. Owners return `external_ids_synced_at` and hold one id per source.
+- `docs/09-api.md`: the `external[{source}]` filters. `external_ids_synced_at` is added to the read-only keys in the `422` row.
+- `docs/10-mcp.md`: tools return `external_ids_synced_at`, and refuse it as read-only.
+- `docs/12-impex.md`: ERP ids are keyed by source. Unchanged pushes only stamp `synced_at`.
+- `CHANGELOG.md` (Unreleased):
+  - The External ids entry is rewritten for `source`, the per-record unique, `synced_at`, `external_ids_synced_at` and the Roster alignment.
+  - The read-only keys breaking note adds `external_ids_synced_at`.
+  - The batch upsert entry says `match` takes a source and describes the unchanged stamp.
+  - The Atrium entry mentions the per-source last sync time.
+  - External ids never shipped, so there's no upgrade note for the `system` → `source` rename.
+
+**Tests**
+
+- I ran `tests/Feature/DocsTest.php` with the worktree's `phpunit.xml.dist`: 48 passed. I didn't run the full suite, as the prompt says; the gate runs 19.3.
+
+**Deviations**
+
+- None.

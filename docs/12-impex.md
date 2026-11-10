@@ -165,7 +165,7 @@ An ERP pushes products by posting to an Impex inbound channel bound to `showroom
 ],
 ```
 
-`POST /impex/channels/erp` with a list of products, or `{"products": [...]}`, in the JSONL shape. The request lands in the ledger, the signature is checked, and a run upserts the records a chunk at a time through `UpsertProductsAction`. Records are matched to products by `identifier`. A record can carry the ERP's own ids in `external_ids` (`{"d365": "ITEM-000123"}`), so later syncs and searches can find the product by them (`?external[d365]=ITEM-000123`). Records that haven't changed since the last push write nothing. Storefronts read the live versions directly (`GET /showroom/products/{product}/versions/published`, by `id` or slug) or take a feed.
+`POST /impex/channels/erp` with a list of products, or `{"products": [...]}`, in the JSONL shape. The request lands in the ledger, the signature is checked, and a run upserts the records a chunk at a time through `UpsertProductsAction`. Records are matched to products by `identifier`. A record can carry the ERP's own ids in `external_ids`, keyed by source (`{"d365": "ITEM-000123"}`), so later syncs and searches can find the product by them (`?external[d365]=ITEM-000123`). Records that haven't changed since the last push write nothing but the `synced_at` stamp on their external ids, so `external_ids_synced_at` shows when the ERP last confirmed each product. Storefronts read the live versions directly (`GET /showroom/products/{product}/versions/published`, by `id` or slug) or take a feed.
 
 ## Product webhooks
 

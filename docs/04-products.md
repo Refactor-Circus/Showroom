@@ -75,18 +75,22 @@ Set `showroom.lookup.products` to `slug` to use slugs instead (`GET /showroom/pr
 
 ## External ids
 
-`external_ids` holds a product's ids in other systems, as a `{system: id}` map:
+`external_ids` holds a product's ids in other systems, as a `{source: id}` map. A source is the system that owns the id, such as an ERP or a shop:
 
 ```json
 {"identifier": "83AL-IC/40 4 RED ALUM", "external_ids": {"d365": "ITEM-000123", "shopify": "8812345"}}
 ```
 
-- A system name is 1 to 50 lowercase letters, digits, dashes or underscores. An id is a string of at most 191 characters.
-- On update, only the systems you send change, and `null` removes one.
-- An id is unique per system among products: assigning one another product holds fails at `external_ids.{system}`, and nothing is written. A product and an owner may hold the same id.
+- A source name is 1 to 50 lowercase letters, digits, dashes or underscores. An id is a string of at most 191 characters.
+- On update, only the sources you send change, and `null` removes one.
+- An id is unique per source among products: assigning one that another product holds fails at `external_ids.{source}`, and nothing is written. A product and an owner may hold the same id.
+- A product holds one id per source. The `showroom_external_ids` table enforces this with a unique index on `(subject_type, subject_id, source)`, beside the unique index on `(subject_type, source, external_id)` behind the previous rule.
 - Ids compare without regard to case or accents, as identifiers do.
-- Resources and MCP tools return the map, with an empty one as `{}`.
+- Each id keeps `synced_at`, the last time its source wrote or confirmed it. Every create, update or upsert that sends an id sets it to now, even when the id hasn't changed. The batch upsert also stamps the ids of every `unchanged` record, in one bulk update per batch.
+- Resources and MCP tools return the map, with an empty one as `{}`. They also return `external_ids_synced_at`, a `{source: ISO-8601 timestamp|null}` map. It is read-only: sending it on create or update is refused (`422`).
 - `GET /showroom/products?external[d365]=ITEM-000123` finds a product by one of them; see [Search](05-search.md).
+
+The table follows the shape of Roster's organization links (`source`, `external_id`, `synced_at`, one id per record and source), so an app running both packages uses one vocabulary for ids in other systems.
 
 ## Batch upsert
 
@@ -104,9 +108,9 @@ $result = app(UpsertProductsAction::class)->execute(UpsertProductsData::from([
 ]));
 ```
 
-- `match` pairs records with stored products by `identifier`, or by `external_ids[match]` when it names a system.
+- `match` pairs records with stored products by `identifier`, or by `external_ids[match]` when it names a source.
 - Each record is validated with `CreateProductData` or `UpdateProductData` rules. A record that fails, or that a catalog rule refuses, is reported and never stops the others.
-- A record whose sent fields (values, family, parent, owner, categories, associations, `enabled`, `external_ids`, `flags`) match the stored product is `unchanged`: no write, no version, no index sync and no events.
+- A record whose sent fields (values, family, parent, owner, categories, associations, `enabled`, `external_ids`, `flags`) match the stored product is `unchanged`: no version, no index sync and no events. The only write is the `synced_at` stamp on its external ids, done in one bulk update for all the batch's unchanged records.
 - New simple products are inserted in bulk. Everything else goes through `CreateProductAction` or `UpdateProductAction`, so versions, unique values, completeness and the approved → draft rule apply as they do one product at a time.
 - The batch queues one index sync for every product it wrote.
 - Records whose `flags` change need `assign`; see [Flags](14-flags.md#the-assign-ability).

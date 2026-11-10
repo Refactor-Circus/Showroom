@@ -61,7 +61,7 @@ Routes are registered under `showroom.routes.prefix` (default `showroom`) with `
 | `GET` | `/showroom/owner-types/{ownerType}` | `ShowOwnerTypeAction` |
 | `PATCH` | `/showroom/owner-types/{ownerType}` | `UpdateOwnerTypeAction` |
 | `DELETE` | `/showroom/owner-types/{ownerType}` | `DeleteOwnerTypeAction` → `204` |
-| `GET` | `/showroom/owners` | `ListOwnersAction` — `type`, `parent`, `under`, `roots`, `external[{system}]`, `flags[]`, `search`, `cursor`, `per_page` |
+| `GET` | `/showroom/owners` | `ListOwnersAction` — `type`, `parent`, `under`, `roots`, `external[{source}]`, `flags[]`, `search`, `cursor`, `per_page` |
 | `POST` | `/showroom/owners` | `CreateOwnerAction` → `201` |
 | `GET` | `/showroom/owners/{owner}` | `ShowOwnerAction`, with its chain and children |
 | `PATCH` | `/showroom/owners/{owner}` | `UpdateOwnerAction` — labels, external ids, flags, or move with `parent` |
@@ -69,7 +69,7 @@ Routes are registered under `showroom.routes.prefix` (default `showroom`) with `
 | `GET` | `/showroom/flags` | `ListFlagsAction` — `search`, `cursor`, `per_page`; see [Flags](14-flags.md) |
 | `POST` | `/showroom/flags` | `CreateFlagAction` → `201` |
 | `GET` / `PATCH` / `DELETE` | `/showroom/flags/{flag}` | Show / update labels, `applies_to`, sort order / delete an unassigned flag |
-| `GET` | `/showroom/products` | `ListProductsAction` — search, `external[{system}]`, `flags[]`, `updated_since`; see [Search](05-search.md) |
+| `GET` | `/showroom/products` | `ListProductsAction` — search, `external[{source}]`, `flags[]`, `updated_since`; see [Search](05-search.md) |
 | `POST` | `/showroom/products` | `CreateProductAction` → `201` |
 | `GET` | `/showroom/products/{product}` | `ShowProductAction`, with inherited values — `scope`, `locales[]`; `ETag`, `304` on `If-None-Match` |
 | `PATCH` | `/showroom/products/{product}` | `UpdateProductAction` |
@@ -147,7 +147,7 @@ Vendors who need every change, inherited ones included, subscribe to product web
 | `403` | Denied by a policy, with authorization on |
 | `404` | Unknown code, or a product or owner key that matches nothing: `{"message": "Not found."}` |
 | `409` | A catalog rule: deleting something still in use (a group with attributes, a family with products, a family variant with models, an attribute that labels a family or shapes a variant), options on a type that takes none. The body is `{"message": "..."}`. |
-| `422` | Validation — including changing a code, type or identifier, sending a read-only `slug` or `effective_flags`, an invalid `by`, invalid values, taken unique values or external ids, missing or duplicate axes, deleting an assigned flag — and search filters the engine cannot run |
+| `422` | Validation — including changing a code, type or identifier, sending a read-only `slug`, `effective_flags` or `external_ids_synced_at`, an invalid `by`, invalid values, taken unique values or external ids, missing or duplicate axes, deleting an assigned flag — and search filters the engine cannot run |
 
 ## Authorization
 

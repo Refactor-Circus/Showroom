@@ -23,7 +23,7 @@ GET /showroom/products?search=tee&family=shirts&enabled=1
 - `search`: full text over the identifier and text, textarea and select values (inherited ones included).
 - `owner`: products owned by this owner code or anything beneath it.
 - `category`: products filed in this category code or any category beneath it.
-- `external[{system}]={id}`: products holding this external id, such as `external[d365]=ITEM-000123`; several pairs must all hold. See [External ids](04-products.md#external-ids).
+- `external[{source}]={id}`: products holding this external id, such as `external[d365]=ITEM-000123`; several pairs must all hold. See [External ids](04-products.md#external-ids).
 - `flags[]=`: products whose effective flags (their own plus their owner chain's) include every flag named. See [Flags](14-flags.md).
 - `status`: `draft`, `in_review`, `approved` or `archived`; `published`: with or without a live version.
 - `complete`: `{scope, locale?, min}` — see [Workflow](11-workflow.md).
@@ -75,7 +75,7 @@ Rebuild the whole index at any time:
 php artisan showroom:search:reindex
 ```
 
-The indexed document holds the identifier, `slug`, family, parent model, owner and owner chain (`owners` by code, `owner_slugs` by slug), categories and their ancestors, `external_ids` (as `"{system}:{id}"` strings), `flags` (the effective flags), status, published flag, completeness per channel and locale, enabled flag, dates, a `text` field for full text, and `values` in storage shape — `values.color.<all_channels>.<all_locales>` — with all inherited values merged.
+The indexed document holds the identifier, `slug`, family, parent model, owner and owner chain (`owners` by code, `owner_slugs` by slug), categories and their ancestors, `external_ids` (as `"{source}:{id}"` strings), `flags` (the effective flags), status, published flag, completeness per channel and locale, enabled flag, dates, a `text` field for full text, and `values` in storage shape — `values.color.<all_channels>.<all_locales>` — with all inherited values merged.
 
 ## Scout
 
