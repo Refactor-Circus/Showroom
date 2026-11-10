@@ -13,8 +13,9 @@ Host apps that sync owners from another system (the `secret` app's catalog impor
    - `mode`: `upsert` (default), `create` or `update`, as `UpsertMode` does for products;
    - `match`: `code` (default), or an external-id source whose ids match records to stored owners.
 
-   It returns `UpsertOwnersResult` with `created`, `updated`, `unchanged`, `skipped` and `failures` (each `{index, code, errors}`, in batch order). In `create` mode a matched record is skipped; in `update` mode an unmatched one is.
-2. A record that is not an object fails with `record`. Every other record is validated with `CreateOwnerData`'s rules when it creates, and `UpdateOwnerData`'s when it updates. A matched record that sends a different `code` or `type` from the stored owner's fails, because those never change.
+   It returns `UpsertOwnersResult` with `created`, `updated`, `unchanged`, `skipped` and `failures` (each `{index, code, errors}`, in batch order). In `create` mode a matched record is skipped; in `update` mode an unmatched one is. `skipped` is a count only (D-006).
+2. A record that is not an object fails with `record`. Every other record is validated with `CreateOwnerData`'s rules when it creates, and `UpdateOwnerData`'s when it updates. A matched record that sends a different `code` or `type` from the stored owner's fails, because those never change. On an update, a field the record leaves out keeps its stored value, and an explicit `parent: null` moves the owner to the root (D-002).
+2a. **Duplicates.** A record whose code, or whose matched external id, an earlier record in the batch already used fails with `code` as a duplicate, and the earlier record is written (D-003).
 3. A record's `parent` may name an owner stored before the batch, or one created by an earlier record in the same batch. A record whose parent comes later in the batch fails as if the parent did not exist.
 4. Placement follows the single actions:
    - a root must have a type with `can_be_root`;
@@ -39,7 +40,7 @@ Host apps that sync owners from another system (the `secret` app's catalog impor
 12a. **Path safety.** After a record moves an owner, later records in the batch see the new `path` of the moved owner and its descendants, never the old one. Tests: two records that would swap two owners under each other (the second is refused as a move under a descendant), and a child created under a parent that moved earlier in the batch gets the parent's new path.
 12b. **Size.** The action expects at most `showroom.impex.chunk` records per call and chunks its `whereIn` lookups; a caller with more records chunks them. The query-bound tests run at 10 and 100 records.
 13. `showroom:upsert-owners` takes the owner records with the run: a list, or `{"owners": [...]}` as a webhook body. It writes them `showroom.impex.chunk` at a time, each chunk through one `UpsertOwnersAction` call, and accepts `mode` and `match`.
-    - Its run result counts rows: `total`, `succeeded`, `failed` and `unchanged`. How `skipped` rows are counted is an open question below.
+    - Its run result counts rows: `total`, `succeeded`, `failed` and `unchanged`. Skipped rows count as succeeded, as for products (D-006).
     - Each failed row's reason is kept on its chunk's batch item, by its global position in the records sent: the chunk-relative index from the action is offset by the chunk's start. A test with more than one chunk asserts this.
     - A payload that is not a list or `{"owners": [...]}` with an array fails the run before any chunk is written. A chunk that throws as a whole reports its rows as failed and the run continues with the next chunk.
     - Running the same records twice reports every row `unchanged` the second time.
@@ -49,6 +50,8 @@ Host apps that sync owners from another system (the `secret` app's catalog impor
 ## Design
 
 ### Core (`src/Domains/Owner`)
+
+The shared write logic lives in an `@internal` `Owner/Services/OwnerWriter` (D-001).
 
 - **`Data/UpsertOwnersData`:** `records` (list), `mode` (`UpsertMode`), `match` (`code` or a source, validated with `ExternalIds::SOURCE_PATTERN`).
 - **`Data/UpsertOwnersResult`:** shaped like `UpsertProductsResult`, with failures keyed by `code` instead of `identifier`.
@@ -86,4 +89,5 @@ New `OwnersUpsertingActionEvent` and `OwnersUpsertedActionEvent`, as for product
 - **Refactoring the single actions into `OwnerWriter`** touches create and update paths that are already tested. Their existing tests must pass unchanged. `OwnerWriter` is `@internal`, not public API, and the actions stay `final` with unchanged constructor signatures.
 - **In-batch parents** depend on record order. A caller must send umbrellas before their children; `secret`'s vendor sync already does this, roots first.
 - **Query bound.** The per-owner 6 and the constant `C` are measured on the first working build and fixed in criterion 12 before the test is merged.
-- **Left to the open questions** (not decided here): what an absent field means on update, duplicate codes or matched owners inside one batch, per-record create/update policy, concurrency between preload and write, and how `skipped` records are reported and counted.
+- **Authorization (D-004).** The action checks only the flags `assign` ability per record. Callers authorize create and update, as for `UpsertProductsAction` and the single owner actions. The Impex flow runs under the channel's own authorization.
+- **Concurrency (D-005).** A change between the batch's preload and its write is not detected: last write wins, as for products.
