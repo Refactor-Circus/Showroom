@@ -1,17 +1,24 @@
-VERDICT: CHANGES
+VERDICT: PASS
 
-## Gate results
+Gate results (run in the job checkout):
+- composer test: passed (phpstan 0 errors, pint passed, pest 1268/1268 with 12564 assertions, coverage 100%, second pest suite 6/6).
+- composer lint:check: pint passed.
+- composer exec ringside check: passed.
 
-- `composer test`: FAILED at the phpstan step (4 errors). The Pest step did not run, so no test result exists.
-  - src/Domains/Owner/Data/CreateOwnerTypeData.php:64 - anonymous DataAwareRule property `$data` has no value type for the iterable (missingType.iterableValue).
-  - src/Domains/Owner/Data/CreateOwnerTypeData.php:69 - `setData()` parameter `$data` has no value type for the iterable (missingType.iterableValue).
-  - src/Impex/Actions/UpsertProductChunk.php:46 - `array_values` on a value that is already a list (arrayValues.list).
-  - src/Support/RecordLookup.php:143 - `find()` return type does not match TModel (return.type).
-- `composer lint:check`: passed (pint).
-- `composer exec ringside check`: passed.
-- A direct `composer exec pest -- --compact` run hit the 512MB memory limit and was inconclusive.
-
-## Acceptance criteria
-
-Not fully mapped. The gate failed, and the Pest suite was not verified.
-Test files present for the criteria: ProductIdentifierTest, SlugsTest, SlugBackfillTest, RecordLookupTest, ExternalIdsTest, FlagApiTest, FlagActionsTest, FlagSearchTest, UpsertProductsActionTest, UpsertProductsParityTest, UpsertProductsPerformanceTest, UpsertChunkTest, ProductWebhooksTest, ProductChangeCaptureTest, KeyNormalizerTest, ScoutEngineTest, FlagPagesTest, OwnerTypeSelfParentTest, ArchTest.
+Acceptance criteria map (file-level):
+- AC 1, 2: tests/Feature/Api/ProductIdentifierTest.php
+- AC 3, 4, 7: tests/Unit/SlugsTest.php, tests/Feature/SlugsTest.php
+- AC 5, 12: tests/Feature/Api/ProductApiTest.php, tests/Feature/Api/OwnershipApiTest.php, tests/Feature/McpTest.php
+- AC 6: tests/Feature/SlugBackfillTest.php
+- AC 8-11: tests/Feature/RecordLookupTest.php
+- AC 13-16, 42-44: tests/Feature/ExternalIdsTest.php
+- AC 17-21, 33: tests/Feature/Api/FlagApiTest.php, tests/Feature/FlagActionsTest.php, tests/Feature/FlagAssignmentTest.php
+- AC 22, 34: tests/Feature/Search/FlagSearchTest.php, tests/Feature/Search/ScoutEngineTest.php
+- AC 23: tests/Feature/FlagAssignmentTest.php, tests/Feature/Search/FlagSearchTest.php
+- AC 24: tests/Feature/Api/OwnerTypeSelfParentTest.php
+- AC 25-29, 36, 38, 39: tests/Feature/UpsertProductsActionTest.php, tests/Feature/UpsertProductsParityTest.php, tests/Feature/UpsertProductsPerformanceTest.php, tests/Unit/KeyNormalizerTest.php
+- AC 30, 35: tests/Feature/Impex/ProductWebhooksTest.php, tests/Unit/ProductChangeCaptureTest.php
+- AC 31: tests/Feature/Impex/UpsertChunkTest.php, tests/Feature/Impex/ImportExportTest.php
+- AC 32: tests/ArchTest.php
+- AC 37: tests/Feature/PolicyTest.php (with tests/Fixtures/ReadOnlyFlagPolicy.php)
+- AC 40, 41: tests/Feature/Ui/FlagPagesTest.php, tests/Feature/Ui/ProductPagesTest.php, tests/Feature/Ui/OwnerPagesTest.php

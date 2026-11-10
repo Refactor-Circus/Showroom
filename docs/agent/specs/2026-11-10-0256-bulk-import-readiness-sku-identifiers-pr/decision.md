@@ -35,3 +35,8 @@ Groups 13, 14 and 9 were built. Group 9 asks:
 - Reasons: gate green; only nits left.
 - Nits: none. Findings left: none. Broken consumers: none.
 - Brief risk: high (breaking lookup change, three migrations, bulk path).
+
+## Run wf_d05d7b3f-871: approved (rework D-013)
+
+- Status: approved after 2 review rounds; the gate was green throughout.
+- Nit: the class docblock in `src/Domains/Product/Actions/UpsertProductsAction.php` wraps awkwardly ("or by the database — is" sits on its own line). Reflow the paragraph.

@@ -1,3 +1,3 @@
 VERDICT: PASS
 
-Round 2 changes are internal static-analysis fixes: private closure rule in CreateOwnerTypeData, private find() signature in RecordLookup (public resolve/product/owner unchanged), and UpsertProductChunk array_values removal. No public API, config, route, event or schema change.
+Round 2 compat review: no public-contract break. The ExternalIdServiceProvider move keeps the scoped ExternalIds binding and the showroom_external_id morph alias. The new unique-key and database failure shapes only add a record error key. Config keys unchanged.

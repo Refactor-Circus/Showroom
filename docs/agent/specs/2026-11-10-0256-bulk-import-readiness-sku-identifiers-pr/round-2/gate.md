@@ -4,7 +4,7 @@ VERDICT: PASS
 
 ## Commands
 
-- `composer test`: phpstan passed (0 errors), pint passed, pest 1254/1254 passed (12420 assertions), plus 6/6 in the second suite; coverage 100.0 %.
+- `composer test`: phpstan passed (0 errors), pint passed, pest 1273/1273 passed (12597 assertions), plus 6/6 in the second suite; coverage 100.0 %.
 - `composer lint:check`: pint passed.
 - `composer exec ringside check`: "ringside: check passed."
 
@@ -53,6 +53,7 @@ VERDICT: PASS
 | 39 | UpsertProductsParityTest "persists every good record of a mixed chunk", "falls back to per-record writes when the bulk write fails, with the same result and rows" |
 | 40 | tests/Feature/Ui/FlagPagesTest.php "lists, creates, edits and deletes flag definitions", "shows the refusal message when a flag still assigned cannot be deleted" |
 | 41 | tests/Feature/Ui/ProductPagesTest.php and OwnerPagesTest.php "shows the slug read-only", "edits the external ids as a map", "offers as own flags only ...", "shows the effective flags read-only, marking the inherited ones", "hides the own-flags field without assign" |
+| 42-44 | tests/Feature/ExternalIdsTest.php, tests/Feature/UpsertProductsActionTest.php (source column, constraints, synced_at stamping, read-only external_ids_synced_at); mapped by file |
 
 ## Findings
 
