@@ -56,12 +56,6 @@ const PARITY_EXCEPTIONS = [
     'ListFamilyVariantsAction' => ['ui'],
     'UpdateFamilyVariantAction' => ['ui'],
     'ShowProductVersionAction' => ['ui'],
-    // The flag-definitions screen ships with the Atrium screens (spec group 10).
-    'ListFlagsAction' => ['ui'],
-    'ShowFlagAction' => ['ui'],
-    'CreateFlagAction' => ['ui'],
-    'UpdateFlagAction' => ['ui'],
-    'DeleteFlagAction' => ['ui'],
 ];
 
 /**

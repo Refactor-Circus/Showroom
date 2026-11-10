@@ -8,6 +8,10 @@
                 <x-atrium::icon-button icon="identification" :label="__('showroom::showroom.owner_types')" variant="outline" :href="route('atrium.showroom.owner-types.index')" data-testid="owner-types" />
             @endshowroomCan
 
+            @showroomCan('viewAny', \RefactorCircus\Showroom\Domains\Flag\Models\FlagModel::class)
+                <x-atrium::icon-button icon="flag" :label="__('showroom::showroom.flag_definitions')" variant="outline" :href="route('atrium.showroom.flags.index')" data-testid="flag-definitions" />
+            @endshowroomCan
+
             <x-atrium::screen-sections :screen="$resolved" slot="header.actions" />
         </x-slot:actions>
     </x-atrium::page-header>

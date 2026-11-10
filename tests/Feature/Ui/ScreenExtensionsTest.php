@@ -29,6 +29,7 @@ use RefactorCircus\Showroom\Domains\Attribute\Models\AttributeModel;
 use RefactorCircus\Showroom\Domains\Category\Models\CategoryModel;
 use RefactorCircus\Showroom\Domains\Channel\Models\ChannelModel;
 use RefactorCircus\Showroom\Domains\Family\Models\FamilyModel;
+use RefactorCircus\Showroom\Domains\Flag\Models\FlagModel;
 use RefactorCircus\Showroom\Domains\Owner\Models\OwnerModel;
 use RefactorCircus\Showroom\Domains\Owner\Models\OwnerTypeModel;
 use RefactorCircus\Showroom\Domains\Product\Models\ProductModel;
@@ -168,6 +169,10 @@ function screenExtWorld(): void
         $test->post(route('atrium.showroom.owners.store'), ['code' => $code, 'type' => 'vendor'])->assertRedirect();
     }
 
+    foreach (['clearance', 'restricted'] as $code) {
+        $test->post(route('atrium.showroom.flags.store'), ['code' => $code, 'applies_to' => ['product', 'owner']])->assertRedirect();
+    }
+
     foreach (['basics', 'extras'] as $code) {
         $test->post(route('atrium.showroom.attribute-groups.store'), ['code' => $code])->assertRedirect();
     }
@@ -252,6 +257,8 @@ dataset('showroom screens', [
     'owner type' => ['showroom.owner-type', 'atrium.showroom.owner-types.show', 'vendor', null, fn (): string => screenExtTestid('owner-type-details-card')],
     'owners' => ['showroom.owners', 'atrium.showroom.owners.index', null, OwnerModel::class, fn (): string => screenExtLink('owners', 'acme')],
     'owner' => ['showroom.owner', 'atrium.showroom.owners.show', 'acme', null, fn (): string => screenExtTestid('owner-details-card')],
+    'flags' => ['showroom.flags', 'atrium.showroom.flags.index', null, FlagModel::class, fn (): string => screenExtLink('flags', 'clearance')],
+    'flag' => ['showroom.flag', 'atrium.showroom.flags.show', 'clearance', null, fn (): string => screenExtTestid('flag-details-card')],
     'families' => ['showroom.families', 'atrium.showroom.families.index', null, FamilyModel::class, fn (): string => screenExtLink('families', 'shirts')],
     'family' => ['showroom.family', 'atrium.showroom.families.show', 'shirts', null, fn (): string => screenExtTestid('save-family')],
     'family variant' => ['showroom.family-variant', 'atrium.showroom.family-variants.show', 'shirts_by_size', null, fn (): string => screenExtLink('product-models', 'tee')],
@@ -426,6 +433,7 @@ it('puts row.actions in a trailing cell under an empty heading on every table li
     'categories' => ['showroom.categories', 'atrium.showroom.categories.index'],
     'owner types' => ['showroom.owner-types', 'atrium.showroom.owner-types.index'],
     'owners' => ['showroom.owners', 'atrium.showroom.owners.index'],
+    'flags' => ['showroom.flags', 'atrium.showroom.flags.index'],
     'families' => ['showroom.families', 'atrium.showroom.families.index'],
     'attributes' => ['showroom.attributes', 'atrium.showroom.attributes.index'],
     'attribute groups' => ['showroom.attribute-groups', 'atrium.showroom.attribute-groups.index'],
