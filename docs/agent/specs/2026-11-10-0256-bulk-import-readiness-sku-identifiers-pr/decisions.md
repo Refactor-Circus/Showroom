@@ -53,3 +53,9 @@
 - Rationale: Accepted the recommendation.
 - Date: 2026-11-10
 - Raised by: spec review (testability)
+
+## D-010: When a host sets the product lookup to `identifier`, how should HTTP routes handle SKUs containing `/`?
+- Choice: Identifier (and owner code) are not lookup keys at all; lookup is only by ULID `id` (default) or `slug`, for products and owners
+- Rationale: "identifier shouldnt be used! just ulid or slug"
+- Date: 2026-11-10
+- Raised by: spec review (recheck)

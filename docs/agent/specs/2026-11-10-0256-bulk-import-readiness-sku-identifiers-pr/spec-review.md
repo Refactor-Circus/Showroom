@@ -20,3 +20,18 @@ Changed:
 - Impex change and route change recorded as upgrade notes; Out of scope gained slug redirects/editing, file-format fields, webhook payload changes.
 
 Why: closes gaps that are not architectural decisions (data integrity, idempotency, testability, injection, observability) while leaving the user-facing design questions open.
+
+### Round 1, revision for recheck findings
+
+Left alone: the open question on HTTP lookup of identifiers containing `/` and spaces. AC 1 now has a lookup test that holds whichever way it is resolved, and Risks keeps the question open.
+
+Changed (ACs renumbered; AC 1-6 keep their numbers, old 7-31 are now 8-35 with new ACs inserted and 36-41 added):
+- D-001: AC 8 now asserts ULID `id` binding by default (route:list dataset incl. Workflow and Atrium). New AC 9 (configured lookup keys), AC 10 (`?by=` and MCP `by`, invalid `by` gives 422), AC 11 (boot-time failure on invalid config). New Design > Record lookup (single `RecordLookup` resolver, `LookupKey` enum, binders reading `?by=`, which actions accept `by`, flags keep `code` binding). Config lists both lookup keys. Routes bullet and Atrium links follow the configured key. Upgrade notes say clients break unless the host sets identifier/code. Open Risk bullet on the fallback replaced by the remaining slash question. Why: body and ACs contradicted the settled decision.
+- D-006: new AC 7 (empty base `product`/`owner`, owner order label, code, `owner`, `Slugs::RESERVED` derived from route segments, 191-char case); AC 4 and 6 and the Slugs design use the same rules, backfill tested over empty-slug rows.
+- D-005: new AC 36 (one normalization, case and accent folding; collision, upsert match, in-batch duplicate and Scout filter cases; tests do not depend on DB collation).
+- D-004: new AC 37 (`assign` on create, update and upsert, per-record check before preview and bulk path, refusal at `flags`, tests for HTTP/MCP/Atrium/mixed chunk, owners too). AC 19, FlagPolicy design and Batch upsert flow and Authorization updated.
+- D-003/D-002: Goal, AC 40 and 41, new Design > Atrium (registered in `Atrium/ShowroomPlugin.php`).
+- D-007: AC 27 and 29 run two batch sizes (10 and 100) against one fixed constant; AC 29 also asserts count at 100 is below 100.
+- D-008: new AC 38 (bulk vs `CreateProductAction` parity incl. slug) and AC 39 (mixed chunk and forced bulk failure fallback).
+- D-009: AC 30 now requires the Impex-layer `CaptureProductChanges` test and cross-references AC 35 (core) and AC 32 (arch rule).
+- Addendum replaced by a short change log mapping D-001 to D-009 to the body. Cross-references (AC 30, 34) updated for the renumbering.
