@@ -2,12 +2,16 @@
 
 declare(strict_types=1);
 
+use Illuminate\Support\Facades\Queue;
 use Laravel\Scout\Builder;
 use Laravel\Scout\EngineManager;
 use Laravel\Scout\Engines\MeilisearchEngine;
 use RefactorCircus\Showroom\Domains\Flag\Models\FlagModel;
 use RefactorCircus\Showroom\Domains\Owner\Models\OwnerModel;
+use RefactorCircus\Showroom\Domains\Search\Enums\SyncScope;
+use RefactorCircus\Showroom\Domains\Search\Services\ProductIndex;
 use RefactorCircus\Showroom\Domains\Search\Services\ScoutEngine;
+use RefactorCircus\Showroom\Jobs\QueueProductSyncs;
 use RefactorCircus\Showroom\Tests\Fixtures\Catalog;
 use RefactorCircus\Showroom\Tests\Fixtures\RecordingScoutEngine;
 
@@ -131,6 +135,51 @@ it('follows an owner\'s flag change and move once the sync has run', function (s
     expect(productsFlagged(['pricing_only']))->toBe([])
         ->and(productsFlagged(['restricted']))->toBe(['BOTH', 'GRANDCHILD', 'VARIANT']);
 })->with('engines');
+
+it('queues one owner sync on a flag change or a move, none for the same flags, and the index follows once it runs', function (): void {
+    searchFlagsOn('scout');
+    seedFlaggedCatalog();
+
+    Queue::fake([QueueProductSyncs::class]);
+
+    $acme = idOfFlaggedOwner('acme');
+    $series = idOfFlaggedOwner('acme-tools');
+    $runQueued = function (): void {
+        foreach (Queue::pushed(QueueProductSyncs::class) as $job) {
+            $job->handle(app(ProductIndex::class));
+        }
+    };
+
+    test()->patchJson(route('showroom.owners.update', ['owner' => $acme]), ['flags' => ['pricing_only', 'restricted']])->assertOk();
+
+    Queue::assertPushed(QueueProductSyncs::class, 1);
+    Queue::assertPushed(QueueProductSyncs::class, fn (QueueProductSyncs $job): bool => $job->scope === SyncScope::Owner && $job->id === $acme);
+
+    // The index still holds the old effective flags until the sync runs.
+    expect(productsFlagged(['restricted']))->toBe(['BOTH', 'GRANDCHILD', 'VARIANT']);
+
+    $runQueued();
+
+    expect(productsFlagged(['restricted']))->toBe(['BOTH', 'GRANDCHILD', 'INHERITED', 'VARIANT']);
+
+    // The same set, in another order, changes nothing and queues nothing.
+    test()->patchJson(route('showroom.owners.update', ['owner' => $acme]), ['flags' => ['restricted', 'pricing_only']])->assertOk();
+
+    Queue::assertPushed(QueueProductSyncs::class, 1);
+
+    test()->patchJson(route('showroom.owners.update', ['owner' => $series]), ['parent' => 'globex'])->assertOk();
+
+    Queue::assertPushed(QueueProductSyncs::class, 2);
+    Queue::assertPushed(QueueProductSyncs::class, fn (QueueProductSyncs $job): bool => $job->scope === SyncScope::Owner && $job->id === $series);
+
+    expect(productsFlagged(['pricing_only']))->toBe(['GRANDCHILD', 'INHERITED', 'VARIANT']);
+
+    $runQueued();
+
+    // The grandchild owner's products and the variant follow the move too.
+    expect(productsFlagged(['pricing_only']))->toBe([])
+        ->and(productsFlagged(['restricted']))->toBe(['BOTH', 'GRANDCHILD', 'VARIANT']);
+});
 
 it('filters owners on their effective flags', function (): void {
     seedFlaggedCatalog();
