@@ -1,5 +1,8 @@
 id: 2026-11-10-0256-bulk-import-readiness-sku-identifiers-pr
 title: 'Bulk import readiness: SKU identifiers, product slugs, external IDs, batch upsert'
-status: shaping
+status: written
 created: '2026-11-10 02:56'
-standards: {}
+standards:
+  refactor-circus/standards:
+    version: dev-main
+    reference: a5b675396232
