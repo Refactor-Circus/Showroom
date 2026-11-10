@@ -2,8 +2,10 @@
 
 declare(strict_types=1);
 
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\DB;
+use RefactorCircus\Showroom\Domains\ExternalId\Models\ExternalIdModel;
 use RefactorCircus\Showroom\Domains\Flag\Models\FlagModel;
 use RefactorCircus\Showroom\Domains\Owner\Actions\CreateOwnerAction;
 use RefactorCircus\Showroom\Domains\Owner\Data\CreateOwnerData;
@@ -94,10 +96,15 @@ it('re-upserts an unchanged batch in a number of queries that does not grow with
     $few = performanceRecords('A', 10);
     $many = performanceRecords('B', 100);
 
+    $this->travelTo(Carbon::parse('2026-11-10 09:00:00'));
+
     performanceUpsert($few);
     performanceUpsert($many);
 
     Bus::fake([SyncProductIndex::class]);
+
+    // The resync stamps every unchanged record's external ids, within the bound.
+    $this->travelTo(Carbon::parse('2026-11-10 10:00:00'));
 
     [$fewResult, $fewQueries] = performanceUpsert($few);
     [$manyResult, $manyQueries] = performanceUpsert($many);
@@ -105,7 +112,10 @@ it('re-upserts an unchanged batch in a number of queries that does not grow with
     expect($fewResult->unchanged)->toBe(10)
         ->and($manyResult->unchanged)->toBe(100)
         ->and($fewQueries)->toBeLessThanOrEqual(UPSERT_UNCHANGED_QUERY_BOUND)
-        ->and($manyQueries)->toBeLessThanOrEqual(UPSERT_UNCHANGED_QUERY_BOUND);
+        ->and($manyQueries)->toBeLessThanOrEqual(UPSERT_UNCHANGED_QUERY_BOUND)
+        ->and(ExternalIdModel::query()->count())->toBe(110)
+        ->and(ExternalIdModel::query()->get()->map(fn (ExternalIdModel $row): ?string => $row->synced_at?->toIso8601String())->unique()->values()->all())
+        ->toBe(['2026-11-10T10:00:00+00:00']);
 
     Bus::assertNotDispatched(SyncProductIndex::class);
 });

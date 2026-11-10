@@ -38,12 +38,14 @@ use Throwable;
  * Creates and updates a batch of products from records in API shape, as an
  * ERP sync or an import sends them, at little cost when most are unchanged.
  *
- * 1. Each record is matched to a stored product, by identifier or by an
- *    external system's id, and the matched products are loaded together.
+ * 1. Each record is matched to a stored product, by identifier or by its
+ *    external id in a source, and the matched products are loaded together.
  * 2. Each record is validated against CreateProductData's rules or
  *    UpdateProductData's, and a change to its flags must pass `assign`.
  * 3. A matched record whose sent fields equal the stored product's is
- *    unchanged: nothing is written, versioned, queued or announced for it.
+ *    unchanged: nothing is written, versioned, queued or announced for it,
+ *    but its external ids are stamped synced, every unchanged record's in
+ *    one update for the batch (ExternalIds::touch()).
  * 4. The rest are written, with one index sync for the whole batch: new
  *    simple products in bulk (BulkProductWriter), every other record through
  *    CreateProductAction or UpdateProductAction, each on its own.
@@ -112,9 +114,10 @@ final class UpsertProductsAction
     }
 
     /**
-     * Writes nothing itself: BulkProductWriter and the create and update
-     * actions each write inside their own transaction, so one record's
-     * failure never rolls back its neighbours.
+     * Writes no record itself, only the unchanged records' sync stamp:
+     * BulkProductWriter and the create and update actions each write inside
+     * their own transaction, so one record's failure never rolls back its
+     * neighbours.
      */
     private function writeBatch(UpsertProductsData $data): UpsertProductsResult
     {
@@ -132,8 +135,9 @@ final class UpsertProductsAction
         }
 
         $matched = $this->match($data, $records);
-        [$creates, $updates] = $this->validate($data, $records, $matched);
+        [$creates, $updates, $unchanged] = $this->validate($data, $records, $matched);
 
+        $this->externalIds->touch($unchanged, ProductModel::class);
         $this->createAll($creates, $records);
         $this->updateAll($updates, $records);
 
@@ -212,11 +216,12 @@ final class UpsertProductsAction
 
     /**
      * Validate each record the mode writes, check `assign` where its flags
-     * change, and set aside the matched records that change nothing.
+     * change, and set aside the matched records that change nothing: the
+     * creates, the updates, and the ids of the unchanged products.
      *
      * @param  array<int, array<string, mixed>>  $records
      * @param  array<int, ProductModel>  $matched
-     * @return array{0: array<int, CreateProductData>, 1: array<int, array{0: ProductModel, 1: UpdateProductData}>}
+     * @return array{0: array<int, CreateProductData>, 1: array<int, array{0: ProductModel, 1: UpdateProductData}>, 2: list<string>}
      */
     private function validate(UpsertProductsData $data, array $records, array $matched): array
     {
@@ -228,6 +233,7 @@ final class UpsertProductsAction
 
         $creates = [];
         $updates = [];
+        $unchanged = [];
         $newIdentifiers = [];
         $matchedProducts = [];
 
@@ -268,6 +274,7 @@ final class UpsertProductsAction
 
                 if ($this->unchanged($product, $update, $values)) {
                     $this->counts['unchanged']++;
+                    $unchanged[] = $product->id;
                 } else {
                     $updates[$index] = [$product, $update];
                 }
@@ -276,7 +283,7 @@ final class UpsertProductsAction
             }
         }
 
-        return [$creates, $updates];
+        return [$creates, $updates, $unchanged];
     }
 
     /**
@@ -376,8 +383,8 @@ final class UpsertProductsAction
         if (! $data->externalIds instanceof Missing) {
             $stored = ExternalIds::present($product->externalIds);
 
-            foreach ($data->externalIds as $system => $externalId) {
-                if (($stored[(string) $system] ?? null) !== $externalId) {
+            foreach ($data->externalIds as $source => $externalId) {
+                if (($stored[(string) $source] ?? null) !== $externalId) {
                     return false;
                 }
             }

@@ -835,3 +835,31 @@ Rework 1 (D-013, AC 42 to 44): `showroom_external_ids` follows Roster's `organiz
 - The source-name rule stays `^[a-z0-9_-]{1,50}$`, as in AC 13, with the D-013 word change. The column is 64, as in AC 42 and Roster, so validation is stricter than the column.
 - Until group 17, `src/Domains/Product/Services/BulkProductWriter.php` still inserts a `system` column, so the bulk upsert path and its tests (`UpsertProducts*Test`) fail against the new schema. Group 17 owns that file, and also stamps `synced_at` there and calls `ExternalIds::touch()` for unchanged records.
 - Groups 18 and 19 still have to rename `system` in the Atrium form and partial (`external_ids_new.system`), and in `tests/Feature/Ui/*PagesTest.php` and `DocsTest`. Those fields never touch the column, so they keep working until then.
+
+## Group 17
+
+Rework 2 (D-013, AC 25, 27, 38, 43): the batch upsert matches by a source and stamps `synced_at`, following Roster's `SyncOrganizationsAction::touch()`.
+
+**Files**
+
+- `src/Domains/Product/Data/UpsertProductsData.php`: `match` is documented as a source name, and `matchesExternalIds()` as matching by a source's external ids. The rule was already on `ExternalIds::SOURCE_PATTERN` (group 16).
+- `src/Domains/Product/Actions/UpsertProductsAction.php`:
+  - `validate()` also returns the ids of the unchanged products.
+  - `writeBatch()` calls `ExternalIds::touch($unchanged, ProductModel::class)` once per batch, before the writes. That is one base update of `synced_at` for every external id of every unchanged record, and no query at all when none are unchanged. Ids and `updated_at` don't change, and no model events fire. It runs inside the deferral and the capture suppression like the rest of the batch, but it queues and records nothing.
+  - Changed records get their stamp from `ExternalIds::write()` through `UpdateProductAction`, as group 16 set up, and only for the sources they send.
+  - Renamed `$system` to `$source` in the preview, and updated the docblocks.
+- `src/Domains/Product/Services/BulkProductWriter.php`: external id rows are inserted with `source` (the column group 16 renamed) instead of `system`. They also carry `synced_at`, one timestamp per product, as `ExternalIds::write()` uses one per call. Renamed `$system` to `$source` throughout.
+- `tests/Feature/UpsertProductsActionTest.php`:
+  - `source` naming in the matching tests.
+  - New: an unchanged re-upsert runs exactly one write, an `update` on the external ids table. It moves `synced_at` on every id of each unchanged record, including a record matched by identifier that sent no ids. It leaves `updated_at` and the product rows alone, and doesn't stamp a product the batch did not send.
+  - New: an updated record stamps only the sources it sends, through the update.
+- `tests/Feature/UpsertProductsParityTest.php`: time is frozen and external id rows are ordered by `source`, so the parity comparison now covers `synced_at`. New: the bulk path (no `ProductCreatingActionEvent`) stamps its external ids at now.
+- `tests/Feature/UpsertProductsPerformanceTest.php`: the unchanged re-upsert travels an hour first, then asserts every one of the 110 external id rows carries the new stamp. The query bound stays at 40: the stamp adds one query per batch, whatever its size.
+
+**Tests**
+
+- I didn't run the test suite, as the prompt says; the gate runs 17.3. Pint passed with the worktree's `pint.json`. PHPStan with `phpstan.neon.dist` reported 0 errors on the three changed source files.
+
+**Deviations**
+
+- None. Note: following AC 43 and `ExternalIds::touch()`, an unchanged record's stamp covers all of its sources, including ones the record didn't send. Roster stamps only the link it matched, because a Roster record has one source.

@@ -3,11 +3,13 @@
 declare(strict_types=1);
 
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\ValidationException;
+use RefactorCircus\Showroom\Domains\ExternalId\Models\ExternalIdModel;
 use RefactorCircus\Showroom\Domains\Family\Actions\CreateFamilyAction;
 use RefactorCircus\Showroom\Domains\Family\Data\CreateFamilyData;
 use RefactorCircus\Showroom\Domains\Flag\Models\FlagModel;
@@ -40,9 +42,10 @@ use Workbench\App\Models\User;
 
 /*
  * UpsertProductsAction loads a batch of product records in API shape: it
- * matches each to a stored product, by identifier or by an external system's
- * id, creates or updates it, and leaves alone what has not changed. A record
- * that fails is reported; its neighbours are still written.
+ * matches each to a stored product, by identifier or by its id in a source
+ * (an ERP, a shop), creates or updates it, and leaves alone what has not
+ * changed, only stamping its external ids synced. A record that fails is
+ * reported; its neighbours are still written.
  */
 
 beforeEach(function (): void {
@@ -156,6 +159,44 @@ function upsertProduct(string $identifier): ProductModel
     return ProductModel::query()->where('identifier', $identifier)->sole();
 }
 
+/**
+ * A product's external id rows, as {source: [synced_at, updated_at]} in ISO-8601.
+ *
+ * @return array<string, array{0: string|null, 1: string|null}>
+ */
+function upsertExternalIdStamps(string $identifier): array
+{
+    return ExternalIdModel::query()
+        ->where('subject_type', upsertProduct($identifier)->getMorphClass())
+        ->where('subject_id', upsertProduct($identifier)->id)
+        ->orderBy('source')
+        ->get()
+        ->mapWithKeys(fn (ExternalIdModel $row): array => [$row->source => [$row->synced_at?->toIso8601String(), $row->updated_at?->toIso8601String()]])
+        ->all();
+}
+
+/**
+ * The statements that wrote (insert, update, delete) while running a callback.
+ *
+ * @return list<string>
+ */
+function upsertWritesDuring(Closure $callback): array
+{
+    DB::flushQueryLog();
+    DB::enableQueryLog();
+
+    $callback();
+
+    $writes = array_values(array_filter(
+        array_column(DB::getQueryLog(), 'query'),
+        fn (string $sql): bool => preg_match('/^\s*(insert|update|delete)\b/i', $sql) === 1,
+    ));
+
+    DB::disableQueryLog();
+
+    return $writes;
+}
+
 describe('modes and matching', function (): void {
     it('creates new records and updates matched ones by identifier', function (): void {
         upsertProducts([upsertRecord('TEE')]);
@@ -186,7 +227,7 @@ describe('modes and matching', function (): void {
             ->and(upsertProduct('TEE')->enabled)->toBeFalse();
     });
 
-    it('matches by an external system\'s id', function (): void {
+    it('matches by a source\'s external id', function (): void {
         upsertProducts([upsertRecord('OLD', ['external_ids' => ['erp' => 'E-1']])]);
 
         $result = upsertProducts([
@@ -215,14 +256,14 @@ describe('modes and matching', function (): void {
         upsertProducts([upsertRecord('TEE', ['external_ids' => ['erp' => 'ABC-1']])]);
 
         $byIdentifier = upsertProducts([upsertRecord('tee', ['external_ids' => ['erp' => 'ABC-1'], 'enabled' => false])]);
-        $bySystem = upsertProducts([upsertRecord('Tee', ['external_ids' => ['erp' => 'abc-1']])], ['match' => 'erp']);
+        $bySource = upsertProducts([upsertRecord('Tee', ['external_ids' => ['erp' => 'abc-1']])], ['match' => 'erp']);
 
         expect([$byIdentifier->created, $byIdentifier->updated, $byIdentifier->failed()])->toBe([0, 1, 0])
-            ->and([$bySystem->created, $bySystem->updated, $bySystem->failed()])->toBe([0, 1, 0])
+            ->and([$bySource->created, $bySource->updated, $bySource->failed()])->toBe([0, 1, 0])
             ->and(ProductModel::query()->pluck('identifier')->all())->toBe(['TEE']);
     });
 
-    it('keeps the first of two records sharing a (system, id) that differs only by case', function (): void {
+    it('keeps the first of two records sharing a (source, id) that differs only by case', function (): void {
         upsertCaseInsensitiveColumn('external_ids', 'external_id');
 
         $result = upsertProducts([
@@ -242,7 +283,7 @@ describe('modes and matching', function (): void {
             ->and(upsertFailures($result))->toBe([1 => ['TEE', ['identifier']]]);
     });
 
-    it('refuses an unknown mode or a match that is not a system name', function (array $options, string $key): void {
+    it('refuses an unknown mode or a match that is not a source name', function (array $options, string $key): void {
         expect(fn () => upsertProducts([upsertRecord('TEE')], $options))
             ->toThrow(fn (ValidationException $exception) => expect($exception->errors())->toHaveKey($key));
     })->with([
@@ -325,6 +366,55 @@ describe('unchanged records', function (): void {
         Event::assertNotDispatched(ProductCreatingActionEvent::class);
         Event::assertNotDispatched(ProductUpdatingActionEvent::class);
         Event::assertNotDispatched(ProductSavedEvent::class);
+    });
+
+    it('stamps the external ids of unchanged records synced, in one update and no other write', function (): void {
+        $this->travelTo(Carbon::parse('2026-11-10 09:00:00'));
+        $nine = '2026-11-10T09:00:00+00:00';
+
+        upsertProducts([
+            upsertRecord('TEE', ['external_ids' => ['erp' => 'E-TEE', 'shop' => 'S-TEE']]),
+            upsertRecord('CAP'),
+            upsertRecord('KEEP'),
+        ]);
+
+        $products = DB::table(Tables::name('products'))->orderBy('identifier')->get()->map(fn (object $row): array => (array) $row)->all();
+
+        $this->travelTo(Carbon::parse('2026-11-10 10:00:00'));
+        $ten = '2026-11-10T10:00:00+00:00';
+
+        $result = null;
+        $writes = upsertWritesDuring(function () use (&$result): void {
+            $result = upsertProducts([
+                upsertRecord('TEE', ['external_ids' => ['erp' => 'E-TEE', 'shop' => 'S-TEE']]),
+                // Matched by identifier, its ids not sent: still confirmed by the sync.
+                upsertRecord('CAP', ['external_ids' => []]),
+            ]);
+        });
+
+        expect([$result->unchanged, $result->updated, $result->created, $result->failed()])->toBe([2, 0, 0, 0])
+            ->and($writes)->toHaveCount(1)
+            ->and($writes[0])->toStartWith('update "'.Tables::name('external_ids').'"')
+            // Only the stamp moves: the ids keep their updated_at.
+            ->and(upsertExternalIdStamps('TEE'))->toBe(['erp' => [$ten, $nine], 'shop' => [$ten, $nine]])
+            ->and(upsertExternalIdStamps('CAP'))->toBe(['erp' => [$ten, $nine]])
+            // A product the batch did not send keeps its stamp.
+            ->and(upsertExternalIdStamps('KEEP'))->toBe(['erp' => [$nine, $nine]])
+            ->and(DB::table(Tables::name('products'))->orderBy('identifier')->get()->map(fn (object $row): array => (array) $row)->all())->toBe($products);
+    });
+
+    it('stamps the external ids an updated record sends, through the update', function (): void {
+        $this->travelTo(Carbon::parse('2026-11-10 09:00:00'));
+        upsertProducts([upsertRecord('TEE', ['external_ids' => ['erp' => 'E-TEE', 'shop' => 'S-TEE']])]);
+
+        $this->travelTo(Carbon::parse('2026-11-10 10:00:00'));
+        $result = upsertProducts([upsertRecord('TEE', ['external_ids' => ['erp' => 'E-TEE'], 'enabled' => false])]);
+
+        expect($result->updated)->toBe(1)
+            ->and(upsertExternalIdStamps('TEE'))->toBe([
+                'erp' => ['2026-11-10T10:00:00+00:00', '2026-11-10T09:00:00+00:00'],
+                'shop' => ['2026-11-10T09:00:00+00:00', '2026-11-10T09:00:00+00:00'],
+            ]);
     });
 
     it('updates a record when one sent field changes', function (Closure $change): void {

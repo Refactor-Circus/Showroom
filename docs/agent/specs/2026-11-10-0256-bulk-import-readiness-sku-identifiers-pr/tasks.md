@@ -271,12 +271,12 @@ depends on: 16
 files: src/Domains/Product/Actions/UpsertProductsAction.php, src/Domains/Product/Data/UpsertProductsData.php, src/Domains/Product/Services/BulkProductWriter.php, tests/Feature/UpsertProductsActionTest.php, tests/Feature/UpsertProductsParityTest.php, tests/Feature/UpsertProductsPerformanceTest.php
 criteria: 25, 27, 38, 43
 
-- [ ] 17.1 Update the upsert tests:
+- [x] 17.1 Update the upsert tests:
   - `match` names a source
   - an unchanged re-upsert moves `synced_at` forward on its external-id rows, in one bulk update, with no other writes; the query bounds still hold
   - the bulk path sets `synced_at` the same way the action path does (parity)
-- [ ] 17.2 Rename `system` to `source` in the upsert Data and action, stamp unchanged records with `ExternalIds::touch()` once per batch, and set `synced_at` in `BulkProductWriter`.
-- [ ] 17.3 Run vendor/bin/pest tests/Feature/UpsertProductsActionTest.php tests/Feature/UpsertProductsParityTest.php tests/Feature/UpsertProductsPerformanceTest.php; all green
+- [x] 17.2 Rename `system` to `source` in the upsert Data and action, stamp unchanged records with `ExternalIds::touch()` once per batch, and set `synced_at` in `BulkProductWriter`.
+- [x] 17.3 Run vendor/bin/pest tests/Feature/UpsertProductsActionTest.php tests/Feature/UpsertProductsParityTest.php tests/Feature/UpsertProductsPerformanceTest.php; all green
 
 ## Group 18: Rework 3, Atrium external ids by source
 depends on: 16
