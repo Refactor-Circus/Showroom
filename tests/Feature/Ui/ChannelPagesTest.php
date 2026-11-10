@@ -46,22 +46,22 @@ it('manages locales and channels on one page', function (): void {
 it('edits values per locale and channel', function (): void {
     Catalog::apparel();
     $this->postJson('/showroom/attributes', ['code' => 'copy', 'type' => 'text', 'is_localizable' => true, 'is_scopable' => true]);
-    ProductModel::factory()->create(['identifier' => 'TEE-1']);
+    $tee = ProductModel::factory()->create(['identifier' => 'TEE-1']);
 
-    $this->get(route('atrium.showroom.products.show', ['product' => 'TEE-1', 'add' => 'copy', 'locale' => 'fr', 'channel' => 'ecommerce']))
+    $this->get(route('atrium.showroom.products.show', ['product' => $tee, 'add' => 'copy', 'locale' => 'fr', 'channel' => 'ecommerce']))
         ->assertOk()
         ->assertSee('data-testid="slot-picker"', false)
         ->assertSee('data-attribute="copy"', false);
 
-    $this->patch(route('atrium.showroom.products.update', 'TEE-1'), ['add' => 'copy', 'locale' => 'fr', 'channel' => 'ecommerce', 'v' => ['copy' => 'Texte web']])
-        ->assertRedirect(route('atrium.showroom.products.show', ['product' => 'TEE-1', 'locale' => 'fr', 'channel' => 'ecommerce']));
+    $this->patch(route('atrium.showroom.products.update', $tee), ['add' => 'copy', 'locale' => 'fr', 'channel' => 'ecommerce', 'v' => ['copy' => 'Texte web']])
+        ->assertRedirect(route('atrium.showroom.products.show', ['product' => $tee, 'locale' => 'fr', 'channel' => 'ecommerce']));
 
-    $this->patch(route('atrium.showroom.products.update', 'TEE-1'), ['add' => 'copy', 'locale' => 'en', 'channel' => 'print', 'v' => ['copy' => 'Print copy']]);
+    $this->patch(route('atrium.showroom.products.update', $tee), ['add' => 'copy', 'locale' => 'en', 'channel' => 'print', 'v' => ['copy' => 'Print copy']]);
 
     $product = ProductModel::query()->firstOrFail();
 
     expect($product->value('copy', 'ecommerce', 'fr'))->toBe('Texte web')
         ->and($product->value('copy', 'print', 'en'))->toBe('Print copy');
 
-    $this->get(route('atrium.showroom.products.show', ['product' => 'TEE-1', 'locale' => 'fr', 'channel' => 'ecommerce']))->assertOk()->assertSee('Texte web');
+    $this->get(route('atrium.showroom.products.show', ['product' => $tee, 'locale' => 'fr', 'channel' => 'ecommerce']))->assertOk()->assertSee('Texte web');
 });

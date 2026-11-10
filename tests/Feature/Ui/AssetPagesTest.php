@@ -36,13 +36,13 @@ it('uploads, browses and edits assets', function (): void {
 });
 
 it('links and unlinks an asset from its page', function (): void {
-    ProductModel::factory()->create(['identifier' => 'TEE-1']);
+    $tee = ProductModel::factory()->create(['identifier' => 'TEE-1']);
     $this->post(route('atrium.showroom.assets.store'), ['code' => 'hero', 'file' => UploadedFile::fake()->image('hero.jpg')]);
 
     $this->post(route('atrium.showroom.assets.attach', 'hero'), ['type' => 'product', 'target' => 'TEE-1', 'role' => 'image'])->assertSessionHasNoErrors();
 
     $this->get(route('atrium.showroom.assets.show', 'hero'))->assertOk()->assertSee('TEE-1');
-    $this->get(route('atrium.showroom.products.show', 'TEE-1'))->assertOk()->assertSee('data-asset="hero"', false);
+    $this->get(route('atrium.showroom.products.show', $tee))->assertOk()->assertSee('data-asset="hero"', false);
 
     $this->delete(route('atrium.showroom.assets.detach', 'hero'), ['type' => 'product', 'target' => 'TEE-1', 'role' => 'image'])->assertSessionHasNoErrors();
 
@@ -52,11 +52,11 @@ it('links and unlinks an asset from its page', function (): void {
 });
 
 it('uploads and links a file from a product page in one step', function (): void {
-    ProductModel::factory()->create(['identifier' => 'TEE-1']);
+    $tee = ProductModel::factory()->create(['identifier' => 'TEE-1']);
 
-    $this->from(route('atrium.showroom.products.show', 'TEE-1'))
+    $this->from(route('atrium.showroom.products.show', $tee))
         ->post(route('atrium.showroom.assets.upload'), ['type' => 'product', 'target' => 'TEE-1', 'role' => 'image', 'file' => UploadedFile::fake()->image('front.jpg')])
-        ->assertRedirect(route('atrium.showroom.products.show', 'TEE-1'))
+        ->assertRedirect(route('atrium.showroom.products.show', $tee))
         ->assertSessionHasNoErrors();
 
     $product = ProductModel::query()->firstOrFail();
