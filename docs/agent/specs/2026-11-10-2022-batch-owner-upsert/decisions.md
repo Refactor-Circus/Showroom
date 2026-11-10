@@ -35,3 +35,15 @@
 - Rationale: Accepted the recommendation.
 - Date: 2026-11-10
 - Raised by: spec review (testability)
+
+## D-007: Criterion 12 caps a written owner at C + 6 queries; the build measures C = 9, 10 per created owner and 13 per updated owner. What should happen?
+- Choice: Amend criterion 12 to the measured bound (C = 9, 10 per created owner, 13 per updated owner), already pinned in UpsertOwnersPerformanceTest
+- Rationale: Accepted the recommendation. Written owners are rare after the first load, and the rest of the cost is in the shared Flags, ExternalIds and Slugs services.
+- Date: 2026-11-10
+- Raised by: build (group 2)
+
+## D-008: Criterion 9 asked for one queued sync per batch; the batch queues the products under moved or flag-changed owners through ProductIndex::deferring(), one SyncProductIndex per 500 products. Accept?
+- Choice: Accept the current shape, on the existing ProductIndex API
+- Rationale: Accepted the recommendation.
+- Date: 2026-11-10
+- Raised by: build (group 2)

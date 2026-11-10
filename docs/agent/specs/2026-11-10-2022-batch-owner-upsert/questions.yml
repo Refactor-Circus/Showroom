@@ -1,16 +1,1 @@
-- id: Q-001
-  question: "Criterion 12 caps a written owner at C + 6 queries; the build measures C = 9, 10 per created owner and 13 per updated owner, most of it in OwnerWriter and the shared Flags, ExternalIds and Slugs services. What should happen?"
-  options:
-    - "Amend criterion 12 to the measured bound (C = 9, 10 per created, 13 per updated), already pinned in the test"
-    - "Add a task group that batches the Flags, ExternalIds and Slugs writes and OwnerWriter's reads to reach 6 per owner"
-  recommendation: "Amend criterion 12 to the measured bound (C = 9, 10 per created, 13 per updated), already pinned in the test"
-  evidence: "tests/Feature/UpsertOwnersPerformanceTest.php:32-48; build.md Group 2 Deviations (108/1008 creates, 139/1309 updates at 10/100)"
-  source: build
-- id: Q-002
-  question: "Criterion 9 asks for one queued sync per batch; the batch instead lists the products under each moved or flag-changed owner (one query per such owner) and queues their ids through ProductIndex::deferring(), one SyncProductIndex per 500 products. Accept, or extend ProductIndex with an owner-scoped batch API?"
-  options:
-    - "Accept: one SyncProductIndex per 500 product ids through deferring()"
-    - "Extend ProductIndex so deferring() buffers owner scopes and pushes one QueueProductSyncs"
-  recommendation: "Accept: one SyncProductIndex per 500 product ids through deferring()"
-  evidence: "src/Domains/Owner/Actions/UpsertOwnersAction.php:164 and :637"
-  source: build
+[]
