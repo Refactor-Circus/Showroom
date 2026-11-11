@@ -259,7 +259,7 @@ final class UpsertOwnersAction
 
             foreach ($holders as $externalId => $holder) {
                 if (isset($owners[$holder])) {
-                    $found[KeyNormalizer::normalize($externalId)] = $owners[$holder];
+                    $found[KeyNormalizer::normalize((string) $externalId)] = $owners[$holder];
                 }
             }
         } else {

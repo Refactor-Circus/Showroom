@@ -317,6 +317,19 @@ describe('modes and matching', function (): void {
             ->and(ownersUpsertCodes())->toBe(['acme', 'globex', 'initech']);
     });
 
+    it('matches by numeric external ids, which PHP keys as integers', function (): void {
+        ownersUpsert([ownersUpsertRecord('acme', ['external_ids' => ['erp' => '17']])]);
+
+        $result = ownersUpsert([
+            ['external_ids' => ['erp' => '17'], 'labels' => ['en' => 'Acme Inc']],
+            ownersUpsertRecord('globex', ['external_ids' => ['erp' => '18']]),
+        ], ['match' => 'erp']);
+
+        expect([$result->created, $result->updated, $result->failed()])->toBe([1, 1, 0])
+            ->and(ownersUpsertOwner('acme')->labels)->toBe(['en' => 'Acme Inc'])
+            ->and(ownersUpsertCodes())->toBe(['acme', 'globex']);
+    });
+
     it('refuses to change the code or type of a matched owner, and writes nothing for it', function (array $record, string $key): void {
         ownersUpsert([ownersUpsertRecord('acme', ['external_ids' => ['erp' => 'V-1']])]);
         $before = ownersUpsertRows();
