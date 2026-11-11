@@ -83,18 +83,60 @@ it('checks locale and scope against the attribute', function (): void {
     ])->assertUnprocessable()->assertJsonValidationErrors(['values.description.0.locale', 'values.name.0.locale']);
 });
 
-it('refuses unknown attributes and attributes outside the family', function (): void {
+it('refuses unknown attributes, and lets a product with a family set any other', function (): void {
     $this->postJson('/showroom/products', ['identifier' => 'X-1', 'values' => ['nope' => Catalog::value('x')]])
-        ->assertUnprocessable()->assertJsonValidationErrors('values.nope');
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors(['values.nope' => 'Attribute "nope" does not exist.']);
 
     $this->postJson('/showroom/families', ['code' => 'mugs', 'attributes' => [['attribute' => 'name']]])->assertCreated();
 
-    $this->postJson('/showroom/products', ['identifier' => 'MUG-1', 'family' => 'mugs', 'values' => ['color' => Catalog::value('red')]])
-        ->assertUnprocessable()
-        ->assertJsonPath('errors', fn (array $errors): bool => str_contains($errors['values.color'][0], 'is not in family "mugs"'));
+    $this->postJson('/showroom/products', ['identifier' => 'MUG-1', 'family' => 'mugs', 'values' => ['nope' => Catalog::value('x')]])
+        ->assertUnprocessable()->assertJsonValidationErrors('values.nope');
 
-    // Without a family, any attribute may be set.
+    // The family sets the completeness standard, not which attributes a product holds.
+    $this->postJson('/showroom/products', ['identifier' => 'MUG-1', 'family' => 'mugs', 'values' => ['color' => Catalog::value('red')]])
+        ->assertCreated()
+        ->assertJsonPath('data.values.color.0.data', 'red');
+
+    $this->patchJson(productApiPath('MUG-1'), ['values' => ['organic' => Catalog::value(true)]])
+        ->assertOk()
+        ->assertJsonPath('data.values.color.0.data', 'red')
+        ->assertJsonPath('data.values.organic.0.data', true);
+
+    $this->getJson(productApiPath('MUG-1'))
+        ->assertOk()
+        ->assertJsonPath('data.family', 'mugs')
+        ->assertJsonPath('data.values.color.0.data', 'red')
+        ->assertJsonPath('data.values.organic.0.data', true);
+
+    // Without a family, any attribute may be set too.
     $this->postJson('/showroom/products', ['identifier' => 'LOOSE-1', 'values' => ['color' => Catalog::value('red')]])->assertCreated();
+});
+
+it('hides no value when the family changes', function (): void {
+    $this->postJson('/showroom/families', ['code' => 'mugs', 'attributes' => [['attribute' => 'name']]])->assertCreated();
+
+    $this->postJson('/showroom/products', [
+        'identifier' => 'TEE-1',
+        'family' => 'shirts',
+        'values' => ['name' => Catalog::value('Tee'), 'color' => Catalog::value('red')],
+    ])->assertCreated();
+
+    $this->patchJson(productApiPath('TEE-1'), ['family' => 'mugs'])
+        ->assertOk()
+        ->assertJsonPath('data.family', 'mugs')
+        ->assertJsonPath('data.values.name.0.data', 'Tee')
+        ->assertJsonPath('data.values.color.0.data', 'red');
+
+    $this->getJson('/showroom/products?family=mugs')
+        ->assertOk()
+        ->assertJsonPath('data.0.identifier', 'TEE-1')
+        ->assertJsonPath('data.0.values.color.0.data', 'red');
+
+    // And it still edits them under the new family.
+    $this->patchJson(productApiPath('TEE-1'), ['values' => ['color' => Catalog::value('blue')]])
+        ->assertOk()
+        ->assertJsonPath('data.values.color.0.data', 'blue');
 });
 
 it('patches only the slots sent, and clears a slot with null', function (): void {
@@ -194,6 +236,36 @@ it('limits each level to its own attributes', function (): void {
         'parent' => 'tee-red',
         'values' => ['size' => Catalog::value('m'), 'name' => Catalog::value('Mine')],
     ])->assertUnprocessable()->assertJsonValidationErrors('values.name');
+});
+
+it('keeps the level rules for attributes outside the family', function (): void {
+    // Outside the family, an attribute has no level of the family variant.
+    $this->postJson('/showroom/attributes', ['code' => 'fabric', 'type' => 'text'])->assertCreated();
+
+    $this->postJson('/showroom/product-models', ['code' => 'tee', 'family_variant' => 'shirts_by_color_size', 'values' => ['fabric' => Catalog::value('Cotton')]])
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors(['values.fabric' => 'Attribute "fabric" is not set at level 0 of family variant "shirts_by_color_size".']);
+
+    $this->postJson('/showroom/product-models', ['code' => 'tee', 'family_variant' => 'shirts_by_color_size'])->assertCreated();
+
+    $this->postJson('/showroom/product-models', ['code' => 'tee-red', 'parent' => 'tee', 'values' => ['color' => Catalog::value('red'), 'fabric' => Catalog::value('Cotton')]])
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors(['values.fabric' => 'Attribute "fabric" is not set at level 1 of family variant "shirts_by_color_size".']);
+
+    $this->postJson('/showroom/product-models', ['code' => 'tee-red', 'parent' => 'tee', 'values' => ['color' => Catalog::value('red')]])->assertCreated();
+
+    $this->postJson('/showroom/products', [
+        'identifier' => 'TEE-RED-M',
+        'parent' => 'tee-red',
+        'values' => ['size' => Catalog::value('m'), 'fabric' => Catalog::value('Cotton')],
+    ])
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors(['values.fabric' => 'Attribute "fabric" is not set on variant products of family variant "shirts_by_color_size".']);
+
+    // A simple product of the same family may hold it.
+    $this->postJson('/showroom/products', ['identifier' => 'TEE-1', 'family' => 'shirts', 'values' => ['fabric' => Catalog::value('Cotton')]])
+        ->assertCreated()
+        ->assertJsonPath('data.values.fabric.0.data', 'Cotton');
 });
 
 it('requires every axis and a distinct combination', function (): void {

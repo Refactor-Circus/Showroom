@@ -84,7 +84,7 @@ final class BulkProductWriter
             return [[], []];
         }
 
-        $families = self::byCode(FamilyModel::query()->with('familyAttributes'), array_map(fn (CreateProductData $data): ?string => $data->family, $records));
+        $families = self::byCode(FamilyModel::query(), array_map(fn (CreateProductData $data): ?string => $data->family, $records));
         $owners = self::byCode(OwnerModel::query()->with('type'), array_map(fn (CreateProductData $data): ?string => $data->owner, $records));
         $categories = self::byCode(CategoryModel::query(), array_merge(...array_values(array_map(fn (CreateProductData $data): array => $data->categories ?? [], $records))));
         $flags = self::byCode(FlagModel::query(), array_merge(...array_values(array_map(fn (CreateProductData $data): array => $data->flags ?? [], $records))));
@@ -223,12 +223,9 @@ final class BulkProductWriter
             ]);
         }
 
-        // As WritesProducts::settable() reads it for a product with no parent.
-        $values = Values::apply([], $validator->validate(
-            $data->values,
-            $family?->familyAttributes,
-            $family === null ? '' : sprintf('is not in family "%s".', $family->code),
-        ));
+        // As WritesProducts::settable() reads it for a product with no
+        // parent: any attribute, whatever the family.
+        $values = Values::apply([], $validator->validate($data->values, null));
 
         $product = new ProductModel([
             'identifier' => $data->identifier,

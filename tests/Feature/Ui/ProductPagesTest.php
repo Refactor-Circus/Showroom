@@ -134,6 +134,32 @@ it('adds attributes one at a time to a product without a family', function (): v
     expect(uiProduct('LOOSE')->value('color'))->toBe('blue');
 });
 
+it('shows the family\'s attributes first, then the product\'s others, and adds any attribute', function (): void {
+    $this->postJson(route('showroom.families.store'), ['code' => 'mugs', 'attributes' => [['attribute' => 'pack_size'], ['attribute' => 'name']]])->assertCreated();
+
+    app(CreateProductAction::class)->execute(CreateProductData::from([
+        'identifier' => 'MUG-1',
+        'family' => 'mugs',
+        'values' => ['color' => Catalog::value('red')],
+    ]));
+
+    $this->get(route('atrium.showroom.products.show', ['product' => uiProduct('MUG-1'), 'add' => 'organic']))
+        ->assertOk()
+        ->assertSeeInOrder(['data-attribute="pack_size"', 'data-attribute="name"', 'data-attribute="color"', 'data-attribute="organic"'], false)
+        ->assertDontSee('data-attribute="size"', false)
+        ->assertSee('<option value="size"', false)
+        ->assertDontSee('<option value="color"', false);
+
+    $this->patch(route('atrium.showroom.products.update', uiProduct('MUG-1')), ['add' => 'organic', 'v' => ['name' => 'Mug', 'color' => 'blue', 'organic' => '1']])
+        ->assertSessionHasNoErrors();
+
+    $mug = uiProduct('MUG-1');
+
+    expect($mug->value('name'))->toBe('Mug')
+        ->and($mug->value('color'))->toBe('blue')
+        ->and($mug->value('organic'))->toBeTrue();
+});
+
 it('builds a variant tree from the dashboard', function (): void {
     $this->get(route('atrium.showroom.product-models.index'))->assertOk()->assertSee('shirts_by_color_size');
 

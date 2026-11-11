@@ -74,8 +74,8 @@ final class UpdateProductAction
                     ]);
                 }
 
-                // Values outside the new family stay stored, as in any PIM,
-                // and reappear if the product moves back.
+                // Every stored value stays, and stays visible: the family
+                // only sets which attributes completeness requires.
                 $product->family()->associate($data->family !== null
                     ? FamilyModel::query()->where('code', $data->family)->firstOrFail()
                     : null);
@@ -94,7 +94,7 @@ final class UpdateProductAction
             }
 
             if (! $data->values instanceof Missing) {
-                [$settable, $why] = $this->settable($product->family, $parent);
+                [$settable, $why] = $this->settable($parent);
 
                 $values = $this->patchValues($product->ownValues(), $data->values, $settable, $why);
 
