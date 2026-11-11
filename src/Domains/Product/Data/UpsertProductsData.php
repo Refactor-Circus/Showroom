@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace RefactorCircus\Showroom\Domains\Product\Data;
 
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use RefactorCircus\Keystone\Data\Data;
 use RefactorCircus\Showroom\Domains\ExternalId\Services\ExternalIds;
 use RefactorCircus\Showroom\Domains\Product\Enums\UpsertMode;
@@ -46,6 +48,32 @@ final readonly class UpsertProductsData extends Data
             'match' => ['sometimes', 'string', 'regex:'.ExternalIds::SOURCE_PATTERN],
             'capture_changes' => ['sometimes', 'boolean'],
         ];
+    }
+
+    /**
+     * The same as from(['records' => $records, ...$options]), without
+     * passing the records through the validator, which copies every nested
+     * array it is given: tens of megabytes for a thousand records with their
+     * values. The records are only checked to be a list, as `records` asks;
+     * the action validates each one.
+     *
+     * @param  array<array-key, mixed>  $records
+     * @param  array<string, mixed>  $options  `mode`, `match`, `capture_changes`, validated as from() does.
+     *
+     * @throws ValidationException
+     */
+    public static function fromRecords(array $records, array $options = []): self
+    {
+        if (! array_is_list($records)) {
+            // Refused with from()'s own error.
+            return self::from([...$options, 'records' => $records]);
+        }
+
+        /** @var array<string, mixed> $validated */
+        $validated = Validator::make([...$options, 'records' => []], self::rules())->validate();
+        $validated['records'] = $records;
+
+        return self::fromValidated($validated);
     }
 
     /**

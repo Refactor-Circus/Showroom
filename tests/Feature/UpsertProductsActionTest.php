@@ -350,6 +350,20 @@ describe('modes and matching', function (): void {
     ]);
 });
 
+describe('the batch input', function (): void {
+    it('builds the same data from records and options as from one array, refusing what from() refuses', function (): void {
+        $records = [upsertRecord('TEE'), 'not an object'];
+        $options = ['mode' => 'create', 'match' => 'erp', 'capture_changes' => false];
+
+        expect(UpsertProductsData::fromRecords($records, $options))->toEqual(UpsertProductsData::from(['records' => $records, ...$options]))
+            ->and(UpsertProductsData::fromRecords([])->mode)->toBe(UpsertMode::Upsert)
+            ->and(fn () => UpsertProductsData::fromRecords($records, ['mode' => 'replace']))
+            ->toThrow(fn (ValidationException $exception) => expect($exception->errors())->toHaveKey('mode'))
+            ->and(fn () => UpsertProductsData::fromRecords(['first' => upsertRecord('TEE')]))
+            ->toThrow(fn (ValidationException $exception) => expect($exception->errors())->toHaveKey('records'));
+    });
+});
+
 describe('validation', function (): void {
     it('reports each failing record by index, identifier and errors, and writes the rest', function (): void {
         $result = upsertProducts([
@@ -400,6 +414,30 @@ describe('validation', function (): void {
             ->and([$result->created, $result->failed()])->toBe([1, 2])
             ->and(upsertProduct('GOOD')->values['size'])->toBe([Values::ALL_CHANNELS => [Values::ALL_LOCALES => 'm']]);
     });
+
+    it('leaves every value the plain check cannot vouch for to the full rules, with their keys and messages', function (array $values): void {
+        $single = $this->postJson('/showroom/products', ['identifier' => 'SINGLE', 'values' => $values])->assertUnprocessable();
+
+        upsertProducts([upsertRecord('TEE')]);
+
+        $result = upsertProducts([upsertRecord('NEW', ['values' => $values]), upsertRecord('TEE', ['values' => $values])]);
+
+        expect($single->json('errors'))->not->toBe([])
+            ->and($result->failures[0]['errors'])->toBe($single->json('errors'))
+            ->and($result->failures[1]['errors'])->toBe($single->json('errors'));
+    })->with([
+        'a select code that is not a string' => [['color' => Catalog::value(1)]],
+        'a repeated multiselect code' => [['tags' => Catalog::value(['summer', 'summer'])]],
+        'a multiselect that is not a list' => [['tags' => Catalog::value(['a' => 'summer'])]],
+        'text over its length' => [['name' => Catalog::value(str_repeat('x', 256))]],
+        'a number under its minimum' => [['pack_size' => Catalog::value(0)]],
+        'a number that is a string' => [['pack_size' => Catalog::value('two')]],
+        'a boolean that is not one' => [['organic' => Catalog::value('maybe')]],
+        'a locale on an attribute that has none' => [['color' => [['locale' => 'en', 'scope' => null, 'data' => 'red']]]],
+        'no slots' => [['color' => []]],
+        'slots keyed, not listed' => [['color' => ['first' => ['locale' => null, 'scope' => null, 'data' => 'red']]]],
+        'a slot without data' => [['color' => [['locale' => null, 'scope' => null]]]],
+    ]);
 
     it('refuses read-only keys sent with a record', function (): void {
         upsertProducts([upsertRecord('TEE')]);

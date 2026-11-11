@@ -431,10 +431,7 @@ final class UpsertProductsAction
      */
     private function validateNew(array $record, array $rules, BatchPresenceVerifier $presence): CreateProductData
     {
-        $validator = Validator::make($record, $rules);
-        $validator->setPresenceVerifier($presence);
-
-        $data = CreateProductData::fromValidated($validator->validate());
+        $data = CreateProductData::fromValidated(self::validatedRecord($record, $rules, $presence));
 
         if (($data->flags ?? []) !== []) {
             $this->flags->authorizeAssign(new ProductModel(['identifier' => $data->identifier]));
@@ -473,16 +470,47 @@ final class UpsertProductsAction
             unset($record['family'], $record['owner']);
         }
 
-        $validator = Validator::make($record, $rules);
-        $validator->setPresenceVerifier($presence);
-
-        $data = UpdateProductData::fromValidated($validator->validate());
+        $data = UpdateProductData::fromValidated(self::validatedRecord($record, $rules, $presence));
 
         if (is_array($data->flags) && self::codes($data->flags) !== self::codes($product->flags->pluck('code')->all())) {
             $this->flags->authorizeAssign($product);
         }
 
         return $data;
+    }
+
+    /**
+     * A record validated against its Data's rules. Those only ask `values`
+     * to be an array, and ValueValidator checks what is in it, so an array
+     * of values is set aside rather than copied through the validator, slot
+     * by slot, and put back as sent.
+     *
+     * @param  array<string, mixed>  $record
+     * @param  array<string, mixed>  $rules
+     * @return array<string, mixed>
+     *
+     * @throws ValidationException
+     */
+    private static function validatedRecord(array $record, array $rules, BatchPresenceVerifier $presence): array
+    {
+        $values = $record['values'] ?? null;
+        $setAside = is_array($values);
+
+        if ($setAside) {
+            $record['values'] = [];
+        }
+
+        $validator = Validator::make($record, $rules);
+        $validator->setPresenceVerifier($presence);
+
+        /** @var array<string, mixed> $validated */
+        $validated = $validator->validate();
+
+        if ($setAside) {
+            $validated['values'] = $values;
+        }
+
+        return $validated;
     }
 
     /**

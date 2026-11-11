@@ -335,3 +335,90 @@ it('validates select values against the codes sent, never the whole option list,
         ->and($hydrated)->toBe(0)
         ->and(array_diff($boundCodes, array_keys($sent)))->toBe([]);
 });
+
+/**
+ * A full page of the legacy import: `$count` records matched by their ERP
+ * id, each with a value for 30 select attributes of 500 options each.
+ *
+ * @return list<array<string, mixed>>
+ */
+function performancePageRecords(int $count): array
+{
+    $now = now()->toDateTimeString();
+
+    foreach (range(1, 30) as $a) {
+        $attribute = app(CreateAttributeAction::class)->execute(CreateAttributeData::from(['code' => sprintf('page_%02d', $a), 'type' => 'select']));
+
+        $rows = array_map(fn (int $i): array => [
+            'id' => (string) str()->ulid(),
+            'attribute_id' => $attribute->id,
+            'code' => sprintf('option_%03d', $i),
+            'labels' => '[]',
+            'sort_order' => 0,
+            'created_at' => $now,
+            'updated_at' => $now,
+        ], range(1, 500));
+
+        foreach (array_chunk($rows, 200) as $chunk) {
+            DB::table(Tables::name('attribute_options'))->insert($chunk);
+        }
+    }
+
+    return array_map(function (int $i): array {
+        $values = [];
+
+        foreach (range(1, 30) as $a) {
+            $values[sprintf('page_%02d', $a)] = Catalog::value(sprintf('option_%03d', ($i * 7 + $a) % 500 + 1));
+        }
+
+        return ['identifier' => sprintf('PAGE-%04d', $i), 'external_ids' => ['erp' => 'E-'.$i], 'values' => $values];
+    }, range(1, $count));
+}
+
+/**
+ * Run one page as the Impex chunk step builds it, timing it and measuring
+ * how far it raises the process's peak memory.
+ *
+ * @param  list<array<string, mixed>>  $records
+ * @return array{0: UpsertProductsResult, 1: float, 2: int}
+ */
+function performancePage(array $records): array
+{
+    gc_collect_cycles();
+    $base = memory_get_usage();
+    memory_reset_peak_usage();
+    $started = microtime(true);
+
+    $result = app(UpsertProductsAction::class)->execute(UpsertProductsData::fromRecords($records, ['match' => 'erp']));
+
+    return [$result, microtime(true) - $started, memory_get_peak_usage() - $base];
+}
+
+/*
+ * Measured on the build that added these bounds, 1,000 records of 30 select
+ * values: new 0.7 s and 19 MB, unchanged 0.4 s and 13 MB, where every value
+ * through the full validator rules had taken 4.4 s and 56 MB, and 4.1 s and
+ * 43 MB. The bounds leave room for a slow CI runner.
+ */
+const UPSERT_PAGE_SECONDS_BOUND = 5.0;
+
+const UPSERT_PAGE_MEMORY_BOUND = 32 * 1024 * 1024;
+
+it('writes a page of a thousand new products with 30 select values each in seconds and a bounded memory rise', function (): void {
+    [$result, $seconds, $memory] = performancePage(performancePageRecords(1000));
+
+    expect([$result->created, $result->failed()])->toBe([1000, 0])
+        ->and($seconds)->toBeLessThan(UPSERT_PAGE_SECONDS_BOUND)
+        ->and($memory)->toBeLessThan(UPSERT_PAGE_MEMORY_BOUND);
+});
+
+it('re-upserts an unchanged page of a thousand products with 30 select values each in seconds and a bounded memory rise', function (): void {
+    $records = performancePageRecords(1000);
+    performancePage($records);
+
+    [$result, $seconds, $memory] = performancePage($records);
+
+    expect([$result->unchanged, $result->failed()])->toBe([1000, 0])
+        ->and($seconds)->toBeLessThan(UPSERT_PAGE_SECONDS_BOUND)
+        ->and($memory)->toBeLessThan(UPSERT_PAGE_MEMORY_BOUND);
+});

@@ -56,6 +56,15 @@ final class ValueValidator
     private array $attributes = [];
 
     /**
+     * What the plain-value checks read of each attribute read so far, by
+     * code: read off the model once, as each cast attribute is decoded
+     * again on every read.
+     *
+     * @var array<string, array{id: string, type: AttributeType, localizable: bool, scopable: bool, settings: array<string, mixed>}>
+     */
+    private array $profiles = [];
+
+    /**
      * The option codes looked up so far that are stored, as stored, by
      * attribute id.
      *
@@ -98,7 +107,18 @@ final class ValueValidator
         }
 
         $attributes = $this->attributes(array_values($codes));
-        $this->loadOptionCodes(array_map(fn (array $values): array => $this->sentOptionCodes($attributes, $values), $maps));
+        // Gathered into one map, not one per record: a batch sends tens of thousands.
+        $sent = [];
+
+        foreach ($maps as $values) {
+            foreach ($this->sentOptionCodes($attributes, $values) as $attributeId => $optionCodes) {
+                foreach ($optionCodes as $optionCode) {
+                    $sent[$attributeId][$optionCode] = $optionCode;
+                }
+            }
+        }
+
+        $this->loadOptionCodes([array_map(array_values(...), $sent)]);
     }
 
     /**
@@ -126,17 +146,24 @@ final class ValueValidator
         $this->loadOptionCodes([$sentOptions]);
 
         $errors = [];
+        $settableCodes = $settable === null ? null : array_flip(array_map(strval(...), $settable->pluck('code')->all()));
 
         foreach ($codes as $code) {
             if (! $attributes->has($code)) {
                 $errors['values.'.$code] = sprintf('Attribute "%s" does not exist.', $code);
-            } elseif ($settable !== null && ! $settable->contains('code', $code)) {
+            } elseif ($settableCodes !== null && ! isset($settableCodes[$code])) {
                 $errors['values.'.$code] = sprintf('Attribute "%s" %s', $code, $why);
             }
         }
 
         if ($errors !== []) {
             throw ValidationException::withMessages($errors);
+        }
+
+        $patch = $this->quickPatch($attributes, $values);
+
+        if ($patch !== null) {
+            return $patch;
         }
 
         $this->loadScopes($attributes);
@@ -173,6 +200,83 @@ final class ValueValidator
     }
 
     /**
+     * The patch of a value map whose every value is plainly valid, checked
+     * without the validator; null when any value needs the full rules.
+     *
+     * Building and running the rules costs far more than the values: a batch
+     * of a thousand records with thirty values each spent seconds there. So
+     * the common values — no locale, no scope, of a type whose rules are
+     * simple — are checked here, and accepted only when the rules surely
+     * accept them. Anything else, an invalid value included, goes through the
+     * rules, so every error keeps its key and message.
+     *
+     * @param  Collection<string, AttributeModel>  $attributes  By code, every code of $values.
+     * @param  array<array-key, mixed>  $values
+     * @return array<string, array<string, array<string, mixed>>>|null
+     */
+    private function quickPatch(Collection $attributes, array $values): ?array
+    {
+        $patch = [];
+
+        foreach ($values as $code => $slots) {
+            $profile = $attributes->has((string) $code) ? ($this->profiles[(string) $code] ?? null) : null;
+
+            // As `array`, `list` and `min:1` take the slots.
+            if ($profile === null || $profile['localizable'] || $profile['scopable']
+                || ! is_array($slots) || $slots === [] || ! array_is_list($slots)) {
+                return null;
+            }
+
+            foreach ($slots as $slot) {
+                // A locale or scope, even an empty one, is left to the rules.
+                if (! is_array($slot) || array_key_exists('locale', $slot) && $slot['locale'] !== null
+                    || array_key_exists('scope', $slot) && $slot['scope'] !== null
+                    || ! array_key_exists('data', $slot) || ! $this->plainlyValid($profile, $slot['data'])) {
+                    return null;
+                }
+
+                $patch[(string) $code][Values::ALL_CHANNELS][Values::ALL_LOCALES] = $this->normalize($profile['type'], $slot['data']);
+            }
+        }
+
+        return $patch;
+    }
+
+    /**
+     * Whether rulesFor() surely accepts this data for the attribute. False
+     * means only that the full rules must decide.
+     *
+     * @param  array{id: string, type: AttributeType, localizable: bool, scopable: bool, settings: array<string, mixed>}  $profile
+     */
+    private function plainlyValid(array $profile, mixed $data): bool
+    {
+        // Every type's data is `nullable`.
+        if ($data === null) {
+            return true;
+        }
+
+        $settings = $profile['settings'];
+        $known = $this->optionCodes[$profile['id']] ?? [];
+
+        return match ($profile['type']) {
+            // `in` compares strictly, against the stored codes.
+            AttributeType::Select => is_string($data) && isset($known[$data]),
+            AttributeType::Multiselect => is_array($data) && array_is_list($data)
+                && array_all($data, fn (mixed $code): bool => is_string($code) && isset($known[$code]))
+                // `distinct` compares loosely.
+                && count(array_unique($data, SORT_REGULAR)) === count($data),
+            AttributeType::Text => is_string($data) && ! is_string($settings['regex'] ?? null)
+                && mb_strlen($data) <= (int) ($settings['max_length'] ?? 255),
+            AttributeType::Textarea => is_string($data) && mb_strlen($data) <= (int) ($settings['max_length'] ?? 65535),
+            AttributeType::Boolean => is_bool($data),
+            AttributeType::Number => is_int($data)
+                && (! is_numeric($settings['min'] ?? null) || $data >= $settings['min'])
+                && (! is_numeric($settings['max'] ?? null) || $data <= $settings['max']),
+            default => false,
+        };
+    }
+
+    /**
      * The attributes with these codes, by code: read once per code for the
      * life of this validator.
      *
@@ -186,6 +290,13 @@ final class ValueValidator
         if ($unread !== []) {
             foreach (AttributeModel::query()->whereIn('code', $unread)->get() as $attribute) {
                 $this->attributes[$attribute->code] = $attribute;
+                $this->profiles[$attribute->code] = [
+                    'id' => $attribute->id,
+                    'type' => $attribute->type,
+                    'localizable' => $attribute->is_localizable,
+                    'scopable' => $attribute->is_scopable,
+                    'settings' => $attribute->settings ?? [],
+                ];
             }
 
             foreach ($unread as $code) {
@@ -215,9 +326,9 @@ final class ValueValidator
         $sent = [];
 
         foreach ($values as $code => $slots) {
-            $attribute = $attributes->get((string) $code);
+            $profile = $attributes->has((string) $code) ? ($this->profiles[(string) $code] ?? null) : null;
 
-            if (! $attribute instanceof AttributeModel || ! $attribute->type->hasOptions() || ! is_array($slots)) {
+            if ($profile === null || ! $profile['type']->hasOptions() || ! is_array($slots)) {
                 continue;
             }
 
@@ -226,7 +337,7 @@ final class ValueValidator
 
                 foreach (is_array($data) ? $data : [$data] as $option) {
                     if (is_string($option)) {
-                        $sent[$attribute->id][$option] = $option;
+                        $sent[$profile['id']][$option] = $option;
                     }
                 }
             }
@@ -268,7 +379,9 @@ final class ValueValidator
             $stored = AttributeOptionModel::query()->toBase()
                 ->whereIn('attribute_id', $attributeIds)
                 ->whereIn('code', $chunk)
-                ->get(['attribute_id', 'code']);
+                ->select(['attribute_id', 'code'])
+                // Streamed: codes sent for one attribute can match many rows of the others.
+                ->cursor();
 
             foreach ($stored as $option) {
                 $this->optionCodes[(string) $option->attribute_id][(string) $option->code] = true;
