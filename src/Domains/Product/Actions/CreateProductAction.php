@@ -90,7 +90,7 @@ final class CreateProductAction
 
             $owner = $parent === null ? $this->ownerFor($data->owner) : null;
 
-            [$settable, $why] = $this->settable($family, $parent);
+            [$settable, $why] = $this->settable($parent);
 
             $values = $this->patchValues([], $data->values, $settable, $why);
 

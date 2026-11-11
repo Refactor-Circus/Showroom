@@ -38,10 +38,13 @@ Values are stored as JSON on the product row, keyed by attribute, channel and lo
 
 A product has an `identifier` (its SKU), an optional `family`, an optional `owner` (see [Ownership](06-ownership.md)), `categories` (see [Taxonomy](07-taxonomy.md)), `associations` and `quantified_associations` (see [Associations](10-associations.md)), `external_ids`, `flags` (see [Flags](14-flags.md)), an `enabled` flag and its values. Showroom gives it a ULID `id` and a `slug`. Resources also return the read-only `effective_enabled`: whether the product and every owner of its chain are enabled (see [Enabled](06-ownership.md#enabled)).
 
-- With a family, only the family's attributes can be set.
-- Without one, any attribute can.
-- Changing the family keeps stored values, as in any PIM; values outside the new family stay hidden in the data until the product moves back.
+- A simple product may hold values for any existing attribute, with or without a family. An unknown attribute code is refused at `values.{code}`.
+- The family sets the completeness standard, not a limit: its required attributes (`is_required`, `required_channels`) drive [completeness](11-workflow.md), and values outside the family count neither towards nor against it.
+- Nothing is hidden by the family. The API, MCP tools, the search document, exports and the Atrium screens return every value the product holds.
+- Changing the family keeps every stored value, and they all stay visible; only completeness follows the new family.
 - Completeness (required attributes) is not enforced on save.
+- In Atrium, the product's value form shows the family's attributes first, in the family's order, then the product's other values. **Add attribute** offers every other attribute.
+- Variant products and product models keep their family variant's level rules; see [Variants](#variants).
 
 ## Identifiers
 
@@ -149,6 +152,8 @@ Then build the tree:
 | Root product model | common values | `family_variant` |
 | Sub-model (two-level variants only) | level-1 axes and attributes | `parent` = root model |
 | Variant product | last-level axes and attributes | `parent` = the model at the last model level |
+
+Each record holds only the attributes of its own level: the root model the common ones, a sub-model its level's, a variant product the last level's. An attribute outside the family has no level, so product models and variant products refuse it, as they refuse an attribute of another level (`values.{code}`). This keeps every attribute on exactly one level of the tree, so inherited and own values never overlap. To give a variant tree an attribute, add it to the family and place it on a level.
 
 Every axis of a level must be filled, and siblings must differ on their axes. A variant product takes its family from the family variant, and its API `values` include everything inherited from its models. Changing a model re-indexes every variant beneath it.
 

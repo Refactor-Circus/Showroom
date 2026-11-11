@@ -85,6 +85,7 @@ To follow every product whose presentation may have changed (own edits, transiti
 - Only `select` and `multiselect` take options. `is_unique` only for text, number, decimal, date.
 - A group holding attributes cannot be deleted (`AttributeGroupNotEmptyException`, HTTP 409).
 - A family's `attributes` is its whole membership (`[['attribute' => 'size', 'is_required' => true]]`), replaced on update; `label_attribute` must be a text attribute in the family, and such an attribute cannot be deleted.
+- A family sets the completeness standard, not a limit: a simple product may hold values for any existing attribute, in its family or not, and every value is returned. Product models and variant products hold only their family variant level's attributes.
 - Values are lists of slots per attribute: `['name' => [['locale' => null, 'scope' => null, 'data' => 'Tee']]]`. Updates patch only the slots sent; `data => null` clears one. Decimal and amounts come back as strings.
 - Product `identifier`s never change. Unique attributes are not localizable or scopable.
 - Variants: a family variant has 1–2 levels of axes (select, boolean, metric); root models hold common values, variant products (`parent` = last-level model) hold last-level values and must fill every axis with a distinct combination.

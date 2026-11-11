@@ -385,6 +385,29 @@ describe('validation', function (): void {
             ->and(ProductModel::query()->orderBy('identifier')->pluck('identifier')->all())->toBe(['CAP', 'TEE']);
     });
 
+    it('sets attributes outside the record\'s family, on create and on update, and still refuses unknown ones', function (): void {
+        $outside = ['name' => Catalog::value('Basic'), 'color' => Catalog::value('red')];
+
+        // Bulk-inserted new products, and one written through CreateProductAction.
+        $result = upsertProducts([
+            upsertRecord('NEW', ['family' => 'basics', 'values' => $outside]),
+            upsertRecord('ASSOCIATED', ['family' => 'basics', 'values' => $outside, 'associations' => [['type' => 'x_sell', 'target' => 'NEW']]]),
+            upsertRecord('UNKNOWN', ['family' => 'basics', 'values' => ['nope' => Catalog::value('x')]]),
+        ]);
+
+        expect([$result->created, $result->failed()])->toBe([2, 1])
+            ->and(upsertFailures($result))->toBe([2 => ['UNKNOWN', ['values.nope']]])
+            ->and(upsertProduct('NEW')->value('color'))->toBe('red')
+            ->and(upsertProduct('ASSOCIATED')->value('color'))->toBe('red');
+
+        // Matched: written through UpdateProductAction.
+        $result = upsertProducts([upsertRecord('NEW', ['family' => 'basics', 'values' => ['organic' => Catalog::value(true)]])]);
+
+        expect($result->updated)->toBe(1)
+            ->and(upsertProduct('NEW')->value('organic'))->toBeTrue()
+            ->and(upsertProduct('NEW')->value('color'))->toBe('red');
+    });
+
     it('refuses an option the attribute does not have with the key and message of a single write', function (): void {
         $unknown = [
             'color' => Catalog::value('purple'),

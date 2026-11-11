@@ -228,6 +228,27 @@ it('manages family variants, product models and products', function (): void {
     expect(ProductModel::query()->count())->toBe(0);
 });
 
+it('sets and returns attributes outside a product\'s family', function (): void {
+    Catalog::apparel();
+
+    mcpTool(CreateFamilyTool::class, ['code' => 'mugs', 'attributes' => [['attribute' => 'name']]])->assertOk();
+
+    mcpTool(CreateProductTool::class, [
+        'identifier' => 'MUG-1',
+        'family' => 'mugs',
+        'values' => ['name' => Catalog::value('Mug'), 'color' => Catalog::value('red')],
+    ])->assertOk()->assertSee('"family":"mugs"')->assertSee('"color":[{"locale":null,"scope":null,"data":"red"}]');
+
+    $mug = ProductModel::query()->where('identifier', 'MUG-1')->firstOrFail()->id;
+
+    mcpTool(UpdateProductTool::class, ['product' => $mug, 'values' => ['organic' => Catalog::value(true)]])->assertOk();
+
+    mcpTool(ShowProductTool::class, ['product' => $mug])
+        ->assertOk()
+        ->assertSee('"color":[{"locale":null,"scope":null,"data":"red"}]')
+        ->assertSee('"organic":[{"locale":null,"scope":null,"data":true}]');
+});
+
 it('manages ownership', function (): void {
     mcpTool(CreateOwnerTypeTool::class, ['code' => 'vendor'])->assertOk()->assertSee('"parent_types":null');
     mcpTool(CreateOwnerTypeTool::class, ['code' => 'series', 'parent_types' => ['vendor'], 'can_be_root' => false])->assertOk();
