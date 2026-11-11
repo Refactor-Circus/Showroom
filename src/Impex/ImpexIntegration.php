@@ -18,6 +18,7 @@ use RefactorCircus\Showroom\Domains\Transfer\Exceptions\ImpexMissingException;
 use RefactorCircus\Showroom\Impex\Flows\ExportProductsFlow;
 use RefactorCircus\Showroom\Impex\Flows\FeedFlow;
 use RefactorCircus\Showroom\Impex\Flows\ImportProductsFlow;
+use RefactorCircus\Showroom\Impex\Flows\UpsertAttributeOptionsFlow;
 use RefactorCircus\Showroom\Impex\Flows\UpsertOwnersFlow;
 use RefactorCircus\Showroom\Impex\Flows\UpsertProductsFlow;
 use RefactorCircus\Showroom\Impex\Webhooks\CaptureProductChanges;
@@ -40,6 +41,8 @@ final class ImpexIntegration
     public const string UPSERT = 'showroom:upsert-products';
 
     public const string UPSERT_OWNERS = 'showroom:upsert-owners';
+
+    public const string UPSERT_ATTRIBUTE_OPTIONS = 'showroom:upsert-attribute-options';
 
     public const string EXPORT = 'showroom:export-products';
 
@@ -120,6 +123,7 @@ final class ImpexIntegration
             self::IMPORT => ImportProductsFlow::class,
             self::UPSERT => UpsertProductsFlow::class,
             self::UPSERT_OWNERS => UpsertOwnersFlow::class,
+            self::UPSERT_ATTRIBUTE_OPTIONS => UpsertAttributeOptionsFlow::class,
             self::EXPORT => ExportProductsFlow::class,
         ];
 

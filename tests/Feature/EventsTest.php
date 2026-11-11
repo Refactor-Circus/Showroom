@@ -17,6 +17,8 @@ use RefactorCircus\Showroom\Domains\Attribute\Events\AttributeGroupCreatedAction
 use RefactorCircus\Showroom\Domains\Attribute\Events\AttributeGroupCreatedEvent;
 use RefactorCircus\Showroom\Domains\Attribute\Events\AttributeGroupDeletedActionEvent;
 use RefactorCircus\Showroom\Domains\Attribute\Events\AttributeGroupDeletingActionEvent;
+use RefactorCircus\Showroom\Domains\Attribute\Events\AttributeOptionsUpsertedActionEvent;
+use RefactorCircus\Showroom\Domains\Attribute\Events\AttributeOptionsUpsertingActionEvent;
 use RefactorCircus\Showroom\Domains\Attribute\Exceptions\AttributeGroupNotEmptyException;
 use RefactorCircus\Showroom\Domains\Attribute\Models\AttributeGroupModel;
 use RefactorCircus\Showroom\Domains\Attribute\Models\AttributeModel;
@@ -67,6 +69,7 @@ it('fires one starting and one finished event for every Action', function (): vo
     // pair of the single Action that record stands for.
     $onBehalf = [
         'UpsertOwnersAction.php' => ['OwnerCreatingActionEvent', 'OwnerCreatedActionEvent', 'OwnerUpdatingActionEvent', 'OwnerUpdatedActionEvent'],
+        'UpsertAttributeOptionsAction.php' => ['AttributeOptionCreatingActionEvent', 'AttributeOptionCreatedActionEvent', 'AttributeOptionUpdatingActionEvent', 'AttributeOptionUpdatedActionEvent'],
     ];
 
     foreach ($actions as $path) {
@@ -85,7 +88,7 @@ it('fires one starting and one finished event for every Action', function (): vo
             ->and(is_subclass_of($finished, ActionFinishedEvent::class))->toBeTrue(basename($path).' finishes with '.$finished);
     }
 
-    expect($actions)->toHaveCount(84);
+    expect($actions)->toHaveCount(85);
 });
 
 it('fires the owner batch\'s own pair around the batch, and each written owner\'s pair as the single Actions do', function (): void {
@@ -103,6 +106,23 @@ it('fires the owner batch\'s own pair around the batch, and each written owner\'
     ])
         ->and(is_subclass_of(OwnersUpsertingActionEvent::class, ActionStartingEvent::class))->toBeTrue()
         ->and(is_subclass_of(OwnersUpsertedActionEvent::class, ActionFinishedEvent::class))->toBeTrue();
+});
+
+it('fires the option batch\'s own pair around the batch, and each written option\'s pair as the single Actions do', function (): void {
+    $source = (string) file_get_contents(dirname(__DIR__, 2).'/src/Domains/Attribute/Actions/UpsertAttributeOptionsAction.php');
+
+    preg_match_all('/(\w+ActionEvent)::dispatch/', $source, $matches);
+
+    expect($matches[1])->toBe([
+        'AttributeOptionsUpsertingActionEvent',
+        'AttributeOptionsUpsertedActionEvent',
+        'AttributeOptionCreatingActionEvent',
+        'AttributeOptionCreatedActionEvent',
+        'AttributeOptionUpdatingActionEvent',
+        'AttributeOptionUpdatedActionEvent',
+    ])
+        ->and(is_subclass_of(AttributeOptionsUpsertingActionEvent::class, ActionStartingEvent::class))->toBeTrue()
+        ->and(is_subclass_of(AttributeOptionsUpsertedActionEvent::class, ActionFinishedEvent::class))->toBeTrue();
 });
 
 it('fires the starting and finished events around an action', function (): void {
