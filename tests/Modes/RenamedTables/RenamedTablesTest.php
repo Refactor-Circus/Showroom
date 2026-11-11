@@ -108,7 +108,14 @@ it('searches, scores and versions products on renamed tables', function (): void
         ->and($identifiers(['owner' => 'acme']))->toBe(['POLO-M'])
         ->and($identifiers(['parent' => 'polo']))->toBe(['POLO-M'])
         ->and($identifiers(['enabled' => 0]))->toBe(['MUG'])
+        ->and($identifiers(['effective_enabled' => 1]))->toBe(['POLO-M'])
         ->and($identifiers(['complete' => ['scope' => 'ecommerce', 'locale' => 'en', 'min' => 0]]))->toBe(['POLO-M']);
+
+    // Disabling the root owner switches off the variant beneath its series.
+    $this->patchJson('/showroom/owners/'.DB::table('crm_owners')->where('code', 'acme')->value('id'), ['enabled' => false])->assertOk();
+
+    expect($identifiers(['effective_enabled' => 1]))->toBe([])
+        ->and($identifiers(['effective_enabled' => 0]))->toBe(['MUG', 'POLO-M']);
 
     $this->postJson(renamedProductPath('MUG').'/transitions', ['transition' => 'submit'])->assertOk();
     $this->postJson(renamedProductPath('MUG').'/transitions', ['transition' => 'approve'])->assertOk();

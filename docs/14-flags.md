@@ -43,6 +43,20 @@ The bundled policy allows any authenticated user. Flags such as `restricted` car
 ],
 ```
 
+### Trusted system syncs
+
+A queued import or an ERP sync runs with no signed-in user, so with `showroom.authorization` on, `assign` refuses every flag it sends. Wrap such a sync in `Flags::trusted()`, and every flag assignment inside it is allowed:
+
+```php
+use RefactorCircus\Showroom\Domains\Flag\Services\Flags;
+
+$result = Flags::trusted(fn () => app(UpsertOwnersAction::class)->execute($data));
+```
+
+It returns what the callback returns. The mode ends when the callback returns or throws, so nothing carries over to the next job or Octane request, and calls nest. Only `assign` is skipped: the sync's caller still decides whether it may create and update records.
+
+Use it only for code that vouches for the flags it writes, such as imports and ERP syncs. Never call it while handling a request, since anyone reaching that code could set any record's flags.
+
 ## Inheritance
 
 A record has its own flags (`flags`) and its effective flags (`effective_flags`):

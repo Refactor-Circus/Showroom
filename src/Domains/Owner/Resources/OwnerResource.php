@@ -31,6 +31,7 @@ final class OwnerResource extends JsonResource
             'labels' => $schema->object()->description('Labels keyed by locale.')->required(),
             'parent' => $schema->string()->nullable()->description('Parent owner code, when loaded.'),
             'depth' => $schema->integer()->required(),
+            'enabled' => $schema->boolean()->description('Whether the owner is enabled. Its products are effectively enabled only while it and every owner above it are.')->required(),
             'assets' => $schema->array()->items($schema->object([
                 'code' => $schema->string()->required(),
                 'role' => $schema->string()->nullable()->required(),
@@ -69,6 +70,7 @@ final class OwnerResource extends JsonResource
             'labels' => $this->labels ?? [],
             'parent' => $this->whenLoaded('parent', fn (): ?string => $this->parent?->code),
             'depth' => $this->depth,
+            'enabled' => $this->enabled,
             'assets' => $this->when($this->relationLoaded('assets'), fn (): array => LinkedAssets::present($this->assets)),
             // Root first, this owner last.
             'chain' => $this->whenLoaded('chain', fn (): array => $this->resource->getRelation('chain')->pluck('code')->all()),

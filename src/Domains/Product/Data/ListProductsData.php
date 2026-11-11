@@ -31,6 +31,7 @@ final readonly class ListProductsData extends Data
      * @param  list<string>|null  $locales
      * @param  array<string, string>  $external  Products holding these ids, {source: id}; every pair must match.
      * @param  list<string>  $flags  Products carrying every one of these flags, own or inherited.
+     * @param  bool|null  $effectiveEnabled  Products enabled, or not, together with every owner of their chain.
      */
     public function __construct(
         public ?string $search = null,
@@ -53,6 +54,7 @@ final readonly class ListProductsData extends Data
         public ?int $perPage = null,
         public array $external = [],
         public array $flags = [],
+        public ?bool $effectiveEnabled = null,
     ) {}
 
     /**
@@ -80,6 +82,8 @@ final readonly class ListProductsData extends Data
             'search' => ['sometimes', 'nullable', 'string', 'max:255'],
             'family' => ['sometimes', 'nullable', 'string', 'max:100'],
             'enabled' => ['sometimes', 'nullable', 'boolean'],
+            // Enabled, and every owner of the product's chain enabled too.
+            'effective_enabled' => ['sometimes', 'nullable', 'boolean'],
             'parent' => ['sometimes', 'nullable', 'string', 'max:191'],
             // Owned by this owner or anything beneath it.
             'owner' => ['sometimes', 'nullable', 'string', 'max:191'],
@@ -145,6 +149,7 @@ final readonly class ListProductsData extends Data
             updatedSince: self::filled($this->updatedSince) === null ? null : CarbonImmutable::parse($this->updatedSince),
             external: $this->external,
             flags: $this->flags,
+            effectiveEnabled: $this->effectiveEnabled,
         );
     }
 

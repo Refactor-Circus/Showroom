@@ -186,6 +186,13 @@ describe('creating', function (): void {
             ->and(writerFlags($stored))->toBe(['pricing_only', 'restricted']);
     });
 
+    it('creates an owner enabled unless the data says otherwise', function (): void {
+        expect(writerCreate(['code' => 'acme'])->enabled)->toBeTrue()
+            ->and(writerOwner('acme')->enabled)->toBeTrue()
+            ->and(writerCreate(['code' => 'globex', 'enabled' => false])->enabled)->toBeFalse()
+            ->and(writerOwner('globex')->enabled)->toBeFalse();
+    });
+
     it('places an owner under its parent, below the parent\'s path', function (): void {
         $acme = writerCreate(['code' => 'acme']);
         $series = writerCreate(['code' => 'classic', 'type' => 'series', 'parent' => 'acme']);
@@ -343,6 +350,17 @@ describe('updating', function (): void {
             ->and(writerFlags(writerOwner('acme')))->toBe(['restricted'])
             ->and(writerUpdate('acme', ['flags' => []]))->toBeTrue()
             ->and(writerFlags(writerOwner('acme')))->toBe([]);
+    });
+
+    it('writes enabled when sent and asks for a reindex when it changes; the same value or none changes nothing', function (): void {
+        expect(writerUpdate('acme', ['enabled' => true]))->toBeFalse()
+            ->and(writerUpdate('acme', ['enabled' => false]))->toBeTrue()
+            ->and(writerOwner('acme')->enabled)->toBeFalse()
+            ->and(writerUpdate('acme', ['enabled' => false, 'labels' => ['en' => 'Acme']]))->toBeFalse()
+            ->and(writerUpdate('acme', ['labels' => ['en' => 'Acme Inc']]))->toBeFalse()
+            ->and(writerOwner('acme')->enabled)->toBeFalse()
+            ->and(writerUpdate('acme', ['enabled' => true]))->toBeTrue()
+            ->and(writerOwner('acme')->enabled)->toBeTrue();
     });
 
     it('reads no owner type and no parent when it is given them', function (): void {

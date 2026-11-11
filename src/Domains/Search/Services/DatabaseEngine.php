@@ -145,6 +145,10 @@ final class DatabaseEngine implements SearchEngine
             $builder->where(Tables::name('products').'.enabled', $query->enabled);
         }
 
+        if ($query->effectiveEnabled !== null) {
+            $this->whereEffectivelyEnabled($builder, $query->effectiveEnabled);
+        }
+
         if ($query->parent !== null) {
             $builder->where(fn (Builder $builder): Builder => $builder
                 ->whereIn('showroom_level1.code', [$query->parent])
@@ -241,6 +245,50 @@ final class DatabaseEngine implements SearchEngine
     }
 
     /**
+     * Products enabled together with every owner of their chain, or (false)
+     * the rest: disabled themselves, or beneath a disabled owner. In SQL,
+     * as EffectiveEnabled resolves it: the effective owner is a variant's
+     * root model's owner (the top level present), else the product's own,
+     * and it is switched off when its path starts with a disabled owner's.
+     *
+     * @param  Builder<ProductModel>  $builder
+     */
+    private function whereEffectivelyEnabled(Builder $builder, bool $enabled): void
+    {
+        $grammar = $this->grammar();
+        $products = Tables::name('products');
+        $owners = Tables::name('owners');
+
+        $effectiveOwner = new SqlFragment(sprintf(
+            'COALESCE(CASE WHEN %s IS NOT NULL THEN %s ELSE %s END, %s)',
+            $grammar->wrap('showroom_level2.id'),
+            $grammar->wrap('showroom_level2.owner_id'),
+            $grammar->wrap('showroom_level1.owner_id'),
+            $grammar->wrap($products.'.owner_id'),
+        ));
+
+        // Every owner that is disabled or sits beneath a disabled one.
+        $switchedOff = (new OwnerModel)->getConnection()->table($owners.' as showroom_chain')
+            ->select('showroom_chain.id')
+            ->whereExists(fn (QueryBuilder $sub) => $sub->from($owners.' as showroom_disabled')
+                ->where('showroom_disabled.enabled', false)
+                ->whereRaw(new SqlFragment($grammar->wrap('showroom_chain.path').' like '.$this->concat($grammar->wrap('showroom_disabled.path'), "'%'"))));
+
+        if ($enabled) {
+            $builder->where($products.'.enabled', true)
+                ->where(fn (Builder $chain): Builder => $chain
+                    ->whereNull($effectiveOwner)
+                    ->orWhereNotIn($effectiveOwner, $switchedOff));
+
+            return;
+        }
+
+        $builder->where(fn (Builder $off): Builder => $off
+            ->where($products.'.enabled', false)
+            ->orWhereIn($effectiveOwner, $switchedOff));
+    }
+
+    /**
      * @param  Builder<ProductModel>  $builder
      */
     private function applyFilter(Builder $builder, Filter $filter, AttributeType $type): void
@@ -331,6 +379,17 @@ final class DatabaseEngine implements SearchEngine
             'pgsql' => 'CAST('.$wrapped.' AS NUMERIC)',
             default => 'CAST('.$wrapped.' AS DECIMAL(30,10))',
         };
+    }
+
+    /**
+     * Two SQL expressions joined as one string. SQLite has no CONCAT()
+     * before 3.44; the other drivers all have it.
+     */
+    private function concat(string $left, string $right): string
+    {
+        return $this->driver() === 'sqlite'
+            ? $left.' || '.$right
+            : 'CONCAT('.$left.', '.$right.')';
     }
 
     private function grammar(): Grammar

@@ -14,7 +14,7 @@ use RefactorCircus\Showroom\Domains\Owner\Models\OwnerTypeModel;
 
 /**
  * Input for CreateOwnerAction: the owner's code and type, where it sits,
- * and its labels.
+ * its labels and whether it is enabled.
  */
 final readonly class CreateOwnerData extends Data
 {
@@ -22,6 +22,7 @@ final readonly class CreateOwnerData extends Data
      * @param  array<string, string|null>|null  $labels
      * @param  array<string, string|null>|null  $externalIds  The owner's ids in other systems, {source: id}.
      * @param  list<string>|null  $flags  Codes of the owner's own flags.
+     * @param  bool  $enabled  False switches off every product beneath it.
      */
     public function __construct(
         public string $code,
@@ -30,6 +31,7 @@ final readonly class CreateOwnerData extends Data
         public ?array $labels = null,
         public ?array $externalIds = null,
         public ?array $flags = null,
+        public bool $enabled = true,
     ) {}
 
     /**
@@ -49,6 +51,7 @@ final readonly class CreateOwnerData extends Data
             'parent' => ['sometimes', 'nullable', 'string', Rule::exists(OwnerModel::class, 'code')],
             'labels' => ['sometimes', 'nullable', 'array'],
             'labels.*' => ['nullable', 'string', 'max:255'],
+            'enabled' => ['sometimes', 'boolean'],
         ] + ExternalIds::rules() + Flags::rules(FlagSubject::Owner);
     }
 }

@@ -37,6 +37,7 @@ final class ProductResource extends JsonResource
             'categories' => $schema->array()->items($schema->string())->required(),
             'assets' => self::assetsSchema($schema)->description('When loaded.'),
             'enabled' => $schema->boolean()->required(),
+            'effective_enabled' => $schema->boolean()->description('Whether the product and every owner of its chain (a variant\'s root model\'s owner and its ancestors) are enabled, when loaded. Read-only.'),
             'status' => $schema->string()->enum(array_column(ProductStatus::cases(), 'value'))->required(),
             'published_version' => $schema->integer()->nullable()->required(),
             'published_at' => $schema->string()->nullable()->required(),
@@ -102,6 +103,8 @@ final class ProductResource extends JsonResource
                 $this->resource->parent?->allAssets() ?? [],
             )),
             'enabled' => $this->enabled,
+            // Set by EffectiveEnabled::load(); absent when it has not run.
+            'effective_enabled' => $this->when($this->resource->loadedEffectiveEnabled() !== null, fn (): ?bool => $this->resource->loadedEffectiveEnabled()),
             'status' => $this->status->value,
             // The version storefronts read, or null when unpublished.
             'published_version' => $this->published_version,

@@ -20,6 +20,7 @@ final readonly class ProductQuery
      * @param  list<string>  $facets  Attribute codes to count values of.
      * @param  array<string, string>  $external  Products holding these external ids, {source: id}; every pair must match.
      * @param  list<string>  $flags  Products carrying every one of these flag codes, own or inherited from their owner chain.
+     * @param  bool|null  $effectiveEnabled  Only products that are (true), or are not (false), enabled together with every owner of their chain.
      */
     public function __construct(
         public ?string $search = null,
@@ -40,6 +41,7 @@ final readonly class ProductQuery
         public ?CarbonImmutable $updatedSince = null,
         public array $external = [],
         public array $flags = [],
+        public ?bool $effectiveEnabled = null,
     ) {}
 
     public function offset(): int

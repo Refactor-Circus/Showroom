@@ -27,6 +27,7 @@ final class CreateOwnerTool extends Tool
             'type' => $schema->string()->description('The owner type code. Never changes once created.')->required(),
             'parent' => $schema->string()->description('Code of the parent owner, or null for a root owner. On update, moves the owner with everything beneath it.'),
             'labels' => $schema->object()->description('Labels keyed by locale. Replaces all labels when given.'),
+            'enabled' => $schema->boolean()->description('Whether the owner is enabled. A disabled owner switches off every product beneath it (their effective_enabled).'),
         ];
     }
 

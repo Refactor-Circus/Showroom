@@ -31,10 +31,17 @@ use RefactorCircus\Showroom\Support\Tables;
  * The assignment rows are polymorphic, so no foreign key removes them with
  * their record; the Actions that delete products and owners call forget().
  * Who may change a record's flags is the flag policy's `assign` ability,
- * asked only when the set changes.
+ * asked only when the set changes, except inside trusted().
  */
 final class Flags
 {
+    /**
+     * How many trusted() calls are running. Above zero, authorizeAssign()
+     * allows every assignment. Every call restores it as it ends, so nothing
+     * outlives the callback, under Octane or a queue worker either.
+     */
+    private static int $trustedDepth = 0;
+
     public function __construct(
         private readonly Auth $auth,
         private readonly PackageRegistry $packages,
@@ -131,14 +138,44 @@ final class Flags
     }
 
     /**
+     * Run a trusted system sync, such as an import or an ERP sync, with
+     * every flag assignment allowed: authorizeAssign() asks no policy until
+     * the callback returns or throws. A queued import has no signed-in user
+     * for the `assign` ability to allow.
+     *
+     * Only for code that vouches for the flags it writes, never for request
+     * handling: inside it, any caller may set any record's flags. Calls nest;
+     * the mode ends with the outermost one.
+     *
+     * @template TResult
+     *
+     * @param  Closure(): TResult  $callback
+     * @return TResult
+     */
+    public static function trusted(Closure $callback): mixed
+    {
+        self::$trustedDepth++;
+
+        try {
+            return $callback();
+        } finally {
+            self::$trustedDepth--;
+        }
+    }
+
+    /**
      * Refuse, unless the caller may change this record's flags: the flag
-     * policy's `assign` ability, asked with the record. Call it only when
-     * the set changes, and before writing it.
+     * policy's `assign` ability, asked with the record, or a trusted() sync.
+     * Call it only when the set changes, and before writing it.
      *
      * @throws AuthorizationException
      */
     public function authorizeAssign(ProductModel|OwnerModel $subject): void
     {
+        if (self::$trustedDepth > 0) {
+            return;
+        }
+
         $allowed = Authorizer::for($this->packages->get('showroom'))
             ->can($this->auth->guard()->user(), 'assign', FlagModel::class, [$subject]);
 

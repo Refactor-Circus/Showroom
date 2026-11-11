@@ -62,7 +62,7 @@ The server lists two entry points, `search_tools` and `execute_tools`, and keeps
 | `create-product-model-tool` | Root model or sub-model |
 | `update-product-model-tool` | Values; variants follow |
 | `delete-product-model-tool` | With its sub-models and variants |
-| `list-products-tool` | Search: text, family, filters, `external`, `flags`, facets, sort, `updated_since`. Page-numbered. |
+| `list-products-tool` | Search: text, family, `enabled`, `effective_enabled`, filters, `external`, `flags`, facets, sort, `updated_since`. Page-numbered. |
 | `show-product-tool` | All values, inherited included |
 | `create-product-tool` | Simple or variant product |
 | `update-product-tool` | Family, enabled, values (patched), external ids, flags |
@@ -93,8 +93,8 @@ The server lists two entry points, `search_tools` and `execute_tools`, and keeps
 | `delete-owner-type-tool` | Delete an unused owner type |
 | `list-owners-tool` | By type, parent, or everything under an owner |
 | `show-owner-tool` | Chain, children, product counts |
-| `create-owner-tool` | Create an owner under a parent |
-| `update-owner-tool` | Labels, external ids, flags, or move with everything beneath |
+| `create-owner-tool` | Create an owner under a parent, enabled or not |
+| `update-owner-tool` | Labels, enabled, external ids, flags, or move with everything beneath |
 | `delete-owner-tool` | Delete an owner nothing depends on |
 | `list-flags-tool` | Flag definitions in display order. Cursor paginated. |
 | `show-flag-tool` | One flag |

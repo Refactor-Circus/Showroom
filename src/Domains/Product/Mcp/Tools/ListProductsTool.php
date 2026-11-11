@@ -28,6 +28,7 @@ final class ListProductsTool extends Tool
             'search' => $schema->string()->description('Full-text search over the identifier and text values.'),
             'family' => $schema->string()->description('Only this family.'),
             'enabled' => $schema->boolean()->description('Only enabled, or only disabled, products.'),
+            'effective_enabled' => $schema->boolean()->description('Only products enabled together with every owner of their chain (true), or products disabled themselves or beneath a disabled owner (false).'),
             'parent' => $schema->string()->description('Only variant products under this product model code.'),
             'owner' => $schema->string()->description('Only products owned by this owner code or anything beneath it.'),
             'category' => $schema->string()->description('Only products filed in this category code or any category beneath it.'),

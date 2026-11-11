@@ -21,6 +21,8 @@ GET /showroom/products?search=tee&family=shirts&enabled=1
 ```
 
 - `search`: full text over the identifier and text, textarea and select values (inherited ones included).
+- `enabled`: products enabled (`1`) or disabled (`0`) themselves, whatever their owners.
+- `effective_enabled`: products enabled together with every owner of their chain (`1`), or the rest (`0`): disabled themselves, or beneath a disabled owner. A variant follows its root model's owner. See [Enabled](06-ownership.md#enabled).
 - `owner`: products owned by this owner code or anything beneath it.
 - `category`: products filed in this category code or any category beneath it.
 - `external[{source}]={id}`: products holding this external id, such as `external[d365]=ITEM-000123`; several pairs must all hold. See [External ids](04-products.md#external-ids).
@@ -47,9 +49,9 @@ Because `changed_at` is stamped when the sync job runs, a change is never missed
 
 Engines with an index (`scout`, or your own) are fed by a queued job, `SyncProductIndex`, dispatched after each write commits. It carries product ids only. Changing a product model re-indexes its variants. Before the jobs are dispatched, `ProductIndex::queue()` fires `RefactorCircus\Showroom\Domains\Search\Events\ProductsQueuedForSync` with the product ids, inside the write's transaction, so a listener can follow every product whose presentation may have changed — its own edits, a transition, or a change it inherits from a model, family, category, owner or channel. Product webhooks are built on it.
 
-A change that reaches many products — a channel's code, locales, currencies or category tree (its labels alone change no product), a family's attributes, an owner or category moving in its tree, an owner's flags changing — does not list them inside its own request: it queues one `QueueProductSyncs` job after it commits, which walks the products in chunks of 500 and queues their syncs. Deleting a category lists its products a chunk at a time before the assignments go.
+A change that reaches many products — a channel's code, locales, currencies or category tree (its labels alone change no product), a family's attributes, an owner or category moving in its tree, an owner's flags or `enabled` changing — does not list them inside its own request: it queues one `QueueProductSyncs` job after it commits, which walks the products in chunks of 500 and queues their syncs. Deleting a category lists its products a chunk at a time before the assignments go.
 
-A flag change on an owner near the top of a large tree re-indexes every product beneath it, which can be millions; plan such changes as you would a reindex.
+A flag or `enabled` change on an owner near the top of a large tree re-indexes every product beneath it, which can be millions; plan such changes as you would a reindex.
 
 `UpsertProductsAction` (see [Batch upsert](04-products.md#batch-upsert)) already queues one sync per batch. Other code that writes many products in one process can hold their syncs back and send them together, one job per 500 products instead of one per write:
 
@@ -75,7 +77,7 @@ Rebuild the whole index at any time:
 php artisan showroom:search:reindex
 ```
 
-The indexed document holds the identifier, `slug`, family, parent model, owner and owner chain (`owners` by code, `owner_slugs` by slug), categories and their ancestors, `external_ids` (as `"{source}:{id}"` strings), `flags` (the effective flags), status, published flag, completeness per channel and locale, enabled flag, dates, a `text` field for full text, and `values` in storage shape — `values.color.<all_channels>.<all_locales>` — with all inherited values merged.
+The indexed document holds the identifier, `slug`, family, parent model, owner and owner chain (`owners` by code, `owner_slugs` by slug), categories and their ancestors, `external_ids` (as `"{source}:{id}"` strings), `flags` (the effective flags), status, published flag, completeness per channel and locale, `enabled` and `effective_enabled` (enabled together with its whole owner chain), dates, a `text` field for full text, and `values` in storage shape — `values.color.<all_channels>.<all_locales>` — with all inherited values merged.
 
 ## Scout
 
@@ -90,7 +92,7 @@ composer require laravel/scout meilisearch/meilisearch-php
 ],
 ```
 
-Scout's own `scout.driver` picks the engine. Declare the fields you filter on as filterable in the engine's index settings, as Scout expects. `ScoutEngine::indexSettings()` returns the document's own fields in Meilisearch's shape: `filterableAttributes` (`slug`, `family`, `enabled`, `parent`, `owner`, `owners`, `owner_slugs`, `categories`, `category_tree`, `external_ids`, `flags`, `status`, `published`, `changed_at`) and `sortableAttributes`. Add each `values.<code>.<all_channels>.<all_locales>` and `completeness.<channel>.<locale>` you filter by:
+Scout's own `scout.driver` picks the engine. Declare the fields you filter on as filterable in the engine's index settings, as Scout expects. `ScoutEngine::indexSettings()` returns the document's own fields in Meilisearch's shape: `filterableAttributes` (`slug`, `family`, `enabled`, `effective_enabled`, `parent`, `owner`, `owners`, `owner_slugs`, `categories`, `category_tree`, `external_ids`, `flags`, `status`, `published`, `changed_at`) and `sortableAttributes`. Add each `values.<code>.<all_channels>.<all_locales>` and `completeness.<channel>.<locale>` you filter by:
 
 ```php
 // config/scout.php

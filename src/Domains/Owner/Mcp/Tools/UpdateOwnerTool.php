@@ -13,7 +13,7 @@ use RefactorCircus\Showroom\Domains\Owner\Mcp\Requests\UpdateOwnerMcpRequest;
 use RefactorCircus\Showroom\Domains\Owner\Resources\OwnerResource;
 use RefactorCircus\Showroom\Support\LookupKey;
 
-#[Description('Update an owner\'s labels, or move it under another parent with everything beneath it. The code and type cannot change.')]
+#[Description('Update an owner\'s labels or enabled flag, or move it under another parent with everything beneath it. The code and type cannot change.')]
 final class UpdateOwnerTool extends Tool
 {
     public function handle(UpdateOwnerMcpRequest $request): Response|ResponseFactory
@@ -28,6 +28,7 @@ final class UpdateOwnerTool extends Tool
             'by' => $schema->string()->enum(array_column(LookupKey::cases(), 'value'))->description('Find the owner by this key instead of the configured one: id or slug.'),
             'parent' => $schema->string()->description('Code of the parent owner, or null for a root owner. On update, moves the owner with everything beneath it.'),
             'labels' => $schema->object()->description('Labels keyed by locale. Replaces all labels when given.'),
+            'enabled' => $schema->boolean()->description('Whether the owner is enabled. A disabled owner switches off every product beneath it (their effective_enabled).'),
         ];
     }
 

@@ -65,6 +65,8 @@ final readonly class CreateProductData extends Data
             'slug' => ['prohibited'],
             // Own flags plus the owner chain's; read-only.
             'effective_flags' => ['missing'],
+            // Its own enabled and its owner chain's; read-only.
+            'effective_enabled' => ['missing'],
             // When each source last synced its id; read-only.
             'external_ids_synced_at' => ['missing'],
             'family' => ['sometimes', 'nullable', 'string', Rule::exists(FamilyModel::class, 'code')],

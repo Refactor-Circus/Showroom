@@ -71,6 +71,13 @@ final class ProductModel extends Model
     use HasUlids;
     use HasValues;
 
+    /**
+     * Whether the product and its owner chain are enabled, once
+     * EffectiveEnabled::load() set it. Not a column, so kept outside the
+     * attributes.
+     */
+    private ?bool $resolvedEffectiveEnabled = null;
+
     public function getTable(): string
     {
         return Tables::name('products');
@@ -169,6 +176,26 @@ final class ProductModel extends Model
     public function effectiveOwner(): ?OwnerModel
     {
         return $this->parent?->rootModel()->owner ?? $this->owner;
+    }
+
+    /**
+     * Keep whether the product is effectively enabled, as
+     * EffectiveEnabled::load() resolved it.
+     */
+    public function setEffectiveEnabled(bool $enabled): static
+    {
+        $this->resolvedEffectiveEnabled = $enabled;
+
+        return $this;
+    }
+
+    /**
+     * Whether the product and every owner of its chain are enabled, or null
+     * when EffectiveEnabled::load() has not run.
+     */
+    public function loadedEffectiveEnabled(): ?bool
+    {
+        return $this->resolvedEffectiveEnabled;
     }
 
     /**

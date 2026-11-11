@@ -12,6 +12,7 @@ use Illuminate\Validation\ValidationException;
 use RefactorCircus\Showroom\Domains\ExternalId\Models\ExternalIdModel;
 use RefactorCircus\Showroom\Domains\Flag\Models\FlagModel;
 use RefactorCircus\Showroom\Domains\Flag\Policies\FlagPolicy;
+use RefactorCircus\Showroom\Domains\Flag\Services\Flags;
 use RefactorCircus\Showroom\Domains\Owner\Actions\UpsertOwnersAction;
 use RefactorCircus\Showroom\Domains\Owner\Data\UpsertOwnersData;
 use RefactorCircus\Showroom\Domains\Owner\Data\UpsertOwnersResult;
@@ -688,7 +689,46 @@ describe('unchanged records', function (): void {
         'an external id' => [fn (array $record): array => [...$record, 'external_ids' => ['erp' => 'V-initech', 'shop' => 'S-1']]],
         'an external id removed' => [fn (array $record): array => [...$record, 'external_ids' => ['erp' => null]]],
         'the flags' => [fn (array $record): array => [...$record, 'flags' => ['restricted', 'pricing_only']]],
+        'enabled' => [fn (array $record): array => [...$record, 'enabled' => false]],
     ]);
+
+    it('compares enabled only when it is sent', function (): void {
+        ownersUpsert([ownersUpsertRecord('acme', ['enabled' => false]), ownersUpsertRecord('globex')]);
+
+        $result = ownersUpsert([
+            // The same as stored.
+            ownersUpsertRecord('acme', ['enabled' => false]),
+            ownersUpsertRecord('globex', ['enabled' => true]),
+        ]);
+
+        expect([$result->unchanged, $result->updated])->toBe([2, 0]);
+
+        // Left out: kept, whatever is stored.
+        $result = ownersUpsert([array_diff_key(ownersUpsertRecord('acme'), ['enabled' => true])]);
+
+        expect([$result->unchanged, $result->updated])->toBe([1, 0])
+            ->and(ownersUpsertOwner('acme')->enabled)->toBeFalse();
+
+        $result = ownersUpsert([ownersUpsertRecord('acme', ['enabled' => true])]);
+
+        expect([$result->unchanged, $result->updated])->toBe([0, 1])
+            ->and(ownersUpsertOwner('acme')->enabled)->toBeTrue();
+    });
+});
+
+describe('enabled', function (): void {
+    it('creates owners enabled unless a record says otherwise, and refuses a value that is not a boolean', function (): void {
+        $result = ownersUpsert([
+            ownersUpsertRecord('acme'),
+            ownersUpsertRecord('globex', ['enabled' => false]),
+            ownersUpsertRecord('initech', ['enabled' => 'sometimes']),
+        ]);
+
+        expect($result->created)->toBe(2)
+            ->and(ownersUpsertFailures($result))->toBe([2 => ['initech', ['enabled']]])
+            ->and(ownersUpsertOwner('acme')->enabled)->toBeTrue()
+            ->and(ownersUpsertOwner('globex')->enabled)->toBeFalse();
+    });
 });
 
 describe('slugs', function (): void {
@@ -732,6 +772,28 @@ describe('the assign ability', function (): void {
             ->and(ownersUpsertCodes())->toBe(['acme', 'initech', 'kept'])
             ->and(ownersUpsertFlags('acme'))->toBe(['restricted'])
             ->and(ownersUpsertOwner('kept')->labels)->toBe(['en' => 'Kept Inc']);
+    });
+
+    it('writes a batch\'s flags inside Flags::trusted() with authorization on and no user signed in', function (): void {
+        config()->set('showroom.authorization', true);
+
+        $records = [ownersUpsertRecord('acme'), ownersUpsertRecord('globex', ['flags' => ['pricing_only', 'restricted']])];
+
+        // A queued import has no user for `assign` to allow.
+        expect(ownersUpsertFailures(ownersUpsert($records)))->toBe([0 => ['acme', ['flags']], 1 => ['globex', ['flags']]]);
+
+        $result = Flags::trusted(fn (): UpsertOwnersResult => ownersUpsert($records));
+
+        expect([$result->created, $result->failed()])->toBe([2, 0])
+            ->and(ownersUpsertFlags('acme'))->toBe(['restricted'])
+            ->and(ownersUpsertFlags('globex'))->toBe(['pricing_only', 'restricted']);
+
+        // A flag change on update too.
+        $result = Flags::trusted(fn (): UpsertOwnersResult => ownersUpsert([ownersUpsertRecord('acme', ['flags' => []])]));
+
+        expect($result->updated)->toBe(1)
+            ->and(ownersUpsertFlags('acme'))->toBe([])
+            ->and(ownersUpsertFailures(ownersUpsert([ownersUpsertRecord('acme', ['flags' => ['pricing_only']])])))->toBe([0 => ['acme', ['flags']]]);
     });
 
     it('lets a user the policy allows set flags in a batch', function (): void {
@@ -813,6 +875,22 @@ describe('the index', function (): void {
         Queue::assertPushed(SyncProductIndex::class, 1);
         Queue::assertPushed(SyncProductIndex::class, fn (SyncProductIndex $job): bool => collect($job->ids)->sort()->values()->all() === $expected);
         Queue::assertNotPushed(QueueProductSyncs::class);
+    });
+
+    it('queues one sync covering the products beneath an owner disabled or enabled again, none when enabled is sent unchanged', function (): void {
+        ownersUpsert([
+            ['code' => 'globex', 'enabled' => false],
+            ['code' => 'tools', 'enabled' => true],
+        ]);
+
+        $expected = ownersUpsertProductIds(['Q-1', 'W-1']);
+
+        Queue::assertPushed(SyncProductIndex::class, 1);
+        Queue::assertPushed(SyncProductIndex::class, fn (SyncProductIndex $job): bool => collect($job->ids)->sort()->values()->all() === $expected);
+
+        ownersUpsert([['code' => 'globex', 'enabled' => true]]);
+
+        Queue::assertPushed(SyncProductIndex::class, 2);
     });
 
     it('queues no sync when no owner moved or changed its flags', function (): void {

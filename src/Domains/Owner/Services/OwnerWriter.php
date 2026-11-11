@@ -17,9 +17,10 @@ use RefactorCircus\Showroom\Domains\Owner\Models\OwnerTypeModel;
 use RefactorCircus\Showroom\Support\Slugs;
 
 /**
- * Writes one owner: where it sits in its chain, its slug, its external ids
- * and its own flags. CreateOwnerAction, UpdateOwnerAction and the batch
- * upsert all write through it, so they hold owners to the same rules.
+ * Writes one owner: where it sits in its chain, its slug, whether it is
+ * enabled, its external ids and its own flags. CreateOwnerAction,
+ * UpdateOwnerAction and the batch upsert all write through it, so they hold
+ * owners to the same rules.
  *
  * The caller resolves the owner's type and parent (a batch loads them once
  * for every record), opens the transaction, fires the events, queues any
@@ -61,6 +62,7 @@ final class OwnerWriter
             'code' => $data->code,
             'labels' => $data->labels ?? [],
             'path' => '',
+            'enabled' => $data->enabled,
         ]);
         $owner->type()->associate($type);
 
@@ -88,13 +90,13 @@ final class OwnerWriter
     }
 
     /**
-     * Change what the data sends of an owner: its labels, parent, external
-     * ids and flags. Fields left out are kept; a null parent makes it a root.
-     * Call it inside the caller's transaction.
+     * Change what the data sends of an owner: its labels, parent, enabled,
+     * external ids and flags. Fields left out are kept; a null parent makes
+     * it a root. Call it inside the caller's transaction.
      *
      * @param  OwnerModel|null  $parent  The owner the data names as parent, with its `type`; read here when the data names one and none is given.
      * @param  OwnerTypeModel|null  $type  The owner's type, with its `parentTypes`; read here when a move needs it and none is given.
-     * @return bool Whether every product beneath shows something new: the owner moved, or its flags changed.
+     * @return bool Whether every product beneath shows something new: the owner moved, was enabled or disabled, or its flags changed.
      *
      * @throws ValidationException When the move breaks a placement rule.
      * @throws AuthorizationException When the flags change and the caller may not assign them.
@@ -120,11 +122,24 @@ final class OwnerWriter
             $this->flags->authorizeAssign($owner);
         }
 
-        // Set when every product beneath shows something new: a move or a flag change.
+        // Set when every product beneath shows something new: a move, an
+        // enabled change or a flag change.
         $reindex = false;
+
+        $enabledChanges = is_bool($data->enabled) && $data->enabled !== $owner->enabled;
 
         if ($data->has('labels')) {
             $owner->labels = is_array($data->labels) ? $data->labels : [];
+        }
+
+        if ($enabledChanges) {
+            $owner->enabled = (bool) $data->enabled;
+
+            // Every product beneath is effectively enabled only while its whole chain is.
+            $reindex = true;
+        }
+
+        if ($data->has('labels') || $enabledChanges) {
             $owner->save();
         }
 

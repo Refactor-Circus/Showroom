@@ -22,7 +22,7 @@ use RefactorCircus\Showroom\Support\Slugs;
 final class UpdateOwnerAction
 {
     /**
-     * Moves the owner and writes its labels, external ids and flags.
+     * Moves the owner and writes its labels, enabled, external ids and flags.
      */
     private readonly OwnerWriter $writer;
 
@@ -52,8 +52,9 @@ final class UpdateOwnerAction
     private function perform(OwnerModel $owner, UpdateOwnerData $data): OwnerModel
     {
         return DB::transaction(function () use ($owner, $data): OwnerModel {
-            // A move or a flag change: one queued job lists the products
-            // beneath once this commits, however many of them there are.
+            // A move, an enabled change or a flag change: one queued job
+            // lists the products beneath once this commits, however many
+            // of them there are.
             if ($this->writer->update($owner, $data)) {
                 $this->index->queueWithin(SyncScope::Owner, $owner->id);
             }
