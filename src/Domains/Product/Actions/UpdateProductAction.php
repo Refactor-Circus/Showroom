@@ -22,6 +22,7 @@ use RefactorCircus\Showroom\Domains\Product\Enums\ProductStatus;
 use RefactorCircus\Showroom\Domains\Product\Events\ProductUpdatedActionEvent;
 use RefactorCircus\Showroom\Domains\Product\Events\ProductUpdatingActionEvent;
 use RefactorCircus\Showroom\Domains\Product\Models\ProductModel;
+use RefactorCircus\Showroom\Domains\Product\Services\EffectiveEnabled;
 use RefactorCircus\Showroom\Domains\Search\Services\ProductIndex;
 use RefactorCircus\Showroom\Domains\Workflow\Services\Versions;
 
@@ -138,6 +139,7 @@ final class UpdateProductAction
 
             $product->load(['family', 'owner', 'categories', 'parent.parent', 'completeness.channel', 'completeness.locale', 'externalIds', ...Associations::eagerLoads()]);
             $this->flags->load(new Collection([$product]));
+            EffectiveEnabled::load(new Collection([$product]));
 
             return $product;
         });

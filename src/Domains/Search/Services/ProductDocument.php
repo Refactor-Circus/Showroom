@@ -13,6 +13,7 @@ use RefactorCircus\Showroom\Domains\ExternalId\Services\ExternalIds;
 use RefactorCircus\Showroom\Domains\Flag\Services\Flags;
 use RefactorCircus\Showroom\Domains\Owner\Models\OwnerModel;
 use RefactorCircus\Showroom\Domains\Product\Models\ProductModel;
+use RefactorCircus\Showroom\Domains\Product\Services\EffectiveEnabled;
 use RefactorCircus\Showroom\Domains\Workflow\Models\CompletenessModel;
 use RefactorCircus\Showroom\Support\KeyNormalizer;
 
@@ -36,7 +37,8 @@ final class ProductDocument
     /**
      * The documents of a batch of products, in order, with what they share
      * looked up once: the attribute types of every value, the owner and
-     * category chains, read by the ids in their paths, and the effective flags.
+     * category chains, read by the ids in their paths (with whether each
+     * owner is enabled), and the effective flags.
      *
      * @param  iterable<int, ProductModel>  $products
      * @return list<array<string, mixed>>
@@ -83,16 +85,18 @@ final class ProductDocument
             ->mapWithKeys(fn (AttributeModel $attribute): array => [$attribute->code => $attribute->type])
             ->all();
 
-        $chain = $owners === [] ? new Collection : OwnerModel::query()->whereKey(array_keys($owners))->get(['id', 'code', 'slug']);
+        $chain = $owners === [] ? new Collection : OwnerModel::query()->whereKey(array_keys($owners))->get(['id', 'code', 'slug', 'enabled']);
         /** @var array<string, string> $ownerCodes */
         $ownerCodes = $chain->pluck('code', 'id')->all();
         /** @var array<string, string> $ownerSlugs */
         $ownerSlugs = $chain->pluck('slug', 'id')->all();
+        /** @var array<string, bool> $ownersEnabled */
+        $ownersEnabled = $chain->mapWithKeys(fn (OwnerModel $owner): array => [$owner->id => $owner->enabled])->all();
         /** @var array<string, string> $categoryCodes */
         $categoryCodes = $categories === [] ? [] : CategoryModel::query()->whereKey(array_keys($categories))->pluck('code', 'id')->all();
 
         return array_map(
-            fn (array $item): array => self::document($item[0], $item[1], $item[2], $item[3], $types, $ownerCodes, $ownerSlugs, $categoryCodes, $flags[$item[0]->id] ?? []),
+            fn (array $item): array => self::document($item[0], $item[1], $item[2], $item[3], $types, $ownerCodes, $ownerSlugs, $ownersEnabled, $categoryCodes, $flags[$item[0]->id] ?? []),
             $batch,
         );
     }
@@ -103,11 +107,12 @@ final class ProductDocument
      * @param  array<string, AttributeType>  $types
      * @param  array<string, string>  $ownerCodes  By id.
      * @param  array<string, string>  $ownerSlugs  By id.
+     * @param  array<string, bool>  $ownersEnabled  By id.
      * @param  array<string, string>  $categoryCodes  By id.
      * @param  list<string>  $flags  The product's effective flag codes.
      * @return array<string, mixed>
      */
-    private static function document(ProductModel $product, array $values, ?OwnerModel $owner, Collection $assigned, array $types, array $ownerCodes, array $ownerSlugs, array $categoryCodes, array $flags): array
+    private static function document(ProductModel $product, array $values, ?OwnerModel $owner, Collection $assigned, array $types, array $ownerCodes, array $ownerSlugs, array $ownersEnabled, array $categoryCodes, array $flags): array
     {
         $text = [$product->identifier];
 
@@ -151,6 +156,9 @@ final class ProductDocument
             // owner's — normalized, so a filter matches whatever its case.
             'flags' => array_map(self::flag(...), $flags),
             'enabled' => $product->enabled,
+            // Enabled, and so is every owner of its chain: a disabled vendor
+            // switches off everything beneath it.
+            'effective_enabled' => EffectiveEnabled::resolve($product->enabled, EffectiveEnabled::chainOf($owner), $ownersEnabled),
             'status' => $product->status->value,
             'published' => $product->published_version !== null,
             // {channel: {locale: ratio}}, so ranges filter on completeness.

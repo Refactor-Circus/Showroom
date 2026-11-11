@@ -110,14 +110,19 @@ final class OwnerUiController
     }
 
     /**
-     * The external ids arrive as a map plus one new source, and the own flags
-     * only when the page showed their field.
+     * The external ids arrive as a map plus one new source, `enabled` as the
+     * checkbox's 0 or 1, and the own flags only when the page showed their
+     * field.
      *
      * @return array<string, mixed>
      */
     private function fromForm(Request $request): array
     {
-        $input = $request->except(['_token', '_method', 'external_ids', 'external_ids_new', 'flags', FlagScreen::SENT]);
+        $input = $request->except(['_token', '_method', 'enabled', 'external_ids', 'external_ids_new', 'flags', FlagScreen::SENT]);
+
+        if ($request->has('enabled')) {
+            $input['enabled'] = $request->boolean('enabled');
+        }
 
         $externalIds = ExternalIdForm::fromForm($request);
 

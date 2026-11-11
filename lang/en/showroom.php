@@ -175,6 +175,7 @@ return [
     'no_owners' => 'No owners match these filters.',
     'parent_owner_hint' => 'Code of the parent owner, if any.',
     'move_hint' => 'Change to move this owner, with everything beneath it. Empty for none.',
+    'owner_enabled_hint' => 'Off switches off every product beneath this owner.',
     'children' => 'Children',
     'add_child' => 'Add child',
     'chain' => 'Ownership chain',

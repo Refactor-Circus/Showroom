@@ -135,6 +135,33 @@ it('assigns a product to an owner from its page', function (): void {
     $this->get(route('atrium.showroom.owners.show', uiOwner('acme')))->assertOk()->assertSee('1 product(s)', false);
 });
 
+it('shows whether an owner is enabled, and switches it from the edit form', function (): void {
+    OwnerTypeModel::factory()->create(['code' => 'vendor']);
+    $this->post(route('atrium.showroom.owners.store'), ['code' => 'acme', 'type' => 'vendor'])->assertRedirect();
+
+    $this->get(route('atrium.showroom.owners.show', uiOwner('acme')))
+        ->assertOk()
+        ->assertSee('data-testid="owner-enabled"', false)
+        ->assertSee('data-status="enabled"', false)
+        ->assertSee('name="enabled"', false);
+
+    // An unticked checkbox sends the hidden 0.
+    $this->patch(route('atrium.showroom.owners.update', uiOwner('acme')), ['enabled' => '0'])->assertSessionHasNoErrors();
+
+    expect(uiOwner('acme')->enabled)->toBeFalse();
+
+    $this->get(route('atrium.showroom.owners.show', uiOwner('acme')))->assertOk()->assertSee('data-status="disabled"', false);
+
+    $this->patch(route('atrium.showroom.owners.update', uiOwner('acme')), ['enabled' => '1'])->assertSessionHasNoErrors();
+
+    expect(uiOwner('acme')->enabled)->toBeTrue();
+
+    // A form without the field keeps it.
+    $this->patch(route('atrium.showroom.owners.update', uiOwner('acme')), ['labels' => ['en' => 'Acme']])->assertSessionHasNoErrors();
+
+    expect(uiOwner('acme')->enabled)->toBeTrue();
+});
+
 describe('slug, external ids and flags', function (): void {
     it('shows the slug read-only', function (): void {
         $series = uiFlaggedSeries();

@@ -94,7 +94,7 @@ GET /showroom/products/83al-ic-40-4-red-alum?by=slug
 
 A product's identifier or an owner's code never binds: it answers `404`. A `by` that isn't `id` or `slug` answers `422` at `by`. Every product and owner resource returns `id` and `slug`, with the `identifier` or `code`, so a client can keep whichever key it needs. Request bodies and filters (`parent`, `owner`, associations, `?owner=`) still name records by identifier or code. See [Looking up a product](04-products.md#looking-up-a-product).
 
-`slug` and `effective_flags` are read-only: a create or update that sends them is refused at those keys. Strip them before sending a resource back.
+`slug`, `effective_flags` and a product's `effective_enabled` are read-only: a create or update that sends them is refused at those keys. Strip them before sending a resource back.
 
 ## Example
 
@@ -147,7 +147,7 @@ Vendors who need every change, inherited ones included, subscribe to product web
 | `403` | Denied by a policy, with authorization on |
 | `404` | Unknown code, or a product or owner key that matches nothing: `{"message": "Not found."}` |
 | `409` | A catalog rule: deleting something still in use (a group with attributes, a family with products, a family variant with models, an attribute that labels a family or shapes a variant), options on a type that takes none. The body is `{"message": "..."}`. |
-| `422` | Validation — including changing a code, type or identifier, sending a read-only `slug`, `effective_flags` or `external_ids_synced_at`, an invalid `by`, invalid values, taken unique values or external ids, missing or duplicate axes, deleting an assigned flag — and search filters the engine cannot run |
+| `422` | Validation — including changing a code, type or identifier, sending a read-only `slug`, `effective_flags`, `effective_enabled` or `external_ids_synced_at`, an invalid `by`, invalid values, taken unique values or external ids, missing or duplicate axes, deleting an assigned flag — and search filters the engine cannot run |
 
 ## Authorization
 

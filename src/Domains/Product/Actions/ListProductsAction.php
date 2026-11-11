@@ -9,6 +9,7 @@ use RefactorCircus\Showroom\Domains\Product\Data\ListProductsData;
 use RefactorCircus\Showroom\Domains\Product\Events\ProductsListedActionEvent;
 use RefactorCircus\Showroom\Domains\Product\Events\ProductsListingActionEvent;
 use RefactorCircus\Showroom\Domains\Product\Models\ProductModel;
+use RefactorCircus\Showroom\Domains\Product\Services\EffectiveEnabled;
 use RefactorCircus\Showroom\Domains\Search\Contracts\SearchEngine;
 use RefactorCircus\Showroom\Domains\Search\Support\ProductPage;
 
@@ -69,6 +70,8 @@ final class ListProductsAction
 
         // One query for the whole page's own and effective flags.
         $this->flags->load($products);
+        // And one for whether each product's owner chain is enabled.
+        EffectiveEnabled::load($products);
 
         $page = new ProductPage($products, $results->total, $query->perPage, $query->page, [
             'path' => request()->url(),

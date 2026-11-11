@@ -38,6 +38,7 @@ use RefactorCircus\Showroom\Support\Tables;
  * @property array<string, string>|null $labels
  * @property string $path
  * @property int $depth
+ * @property bool $enabled Its products are effectively enabled only while it and every owner above it are.
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property-read OwnerTypeModel $type
@@ -72,6 +73,15 @@ final class OwnerModel extends Model
         return app(RecordLookup::class)->key('owners')->value;
     }
 
+    /**
+     * The column defaults, so a new owner reads them before it is refreshed.
+     *
+     * @var array<string, mixed>
+     */
+    protected $attributes = [
+        'enabled' => true,
+    ];
+
     protected $fillable = [
         'owner_type_id',
         'parent_id',
@@ -79,6 +89,7 @@ final class OwnerModel extends Model
         'labels',
         'path',
         'depth',
+        'enabled',
     ];
 
     /**
@@ -155,6 +166,7 @@ final class OwnerModel extends Model
         return [
             'labels' => 'array',
             'depth' => 'integer',
+            'enabled' => 'boolean',
         ];
     }
 

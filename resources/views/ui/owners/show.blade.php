@@ -1,8 +1,12 @@
+@use(RefactorCircus\Showroom\Atrium\Badges)
+
 @php($locale = app()->getLocale())
 
 <x-atrium::layout :title="$owner->label()">
     <x-atrium::page-header :title="$owner->label()" :description="$owner->code.' · '.$owner->type->code">
         <x-slot:actions>
+            <x-atrium::status-dot :variant="Badges::forEnabled($owner->enabled)" :label="$owner->enabled ? __('showroom::showroom.enabled') : __('showroom::showroom.disabled')" data-status="{{ $owner->enabled ? 'enabled' : 'disabled' }}" data-testid="owner-enabled" />
+
             @showroomCan('viewAny', \RefactorCircus\Showroom\Domains\Product\Models\ProductModel::class)
                 <x-atrium::icon-button icon="cube" :label="__('showroom::showroom.products')" variant="outline" :href="route('atrium.showroom.products.index', ['owner' => $owner->code])" data-testid="owner-products" />
             @endshowroomCan
@@ -59,6 +63,10 @@
                     <div class="flex flex-wrap items-start gap-3">
                         <x-atrium::form.input :name="'labels['.$locale.']'" :label="__('showroom::showroom.label_field', ['locale' => $locale])" :value="$owner->labels[$locale] ?? null" wrapper="w-64" />
                         <x-atrium::form.input name="parent" :label="__('showroom::showroom.parent')" :hint="__('showroom::showroom.move_hint')" :value="$owner->parent?->code" wrapper="w-56" />
+                        <x-atrium::form.actions>
+                            <input type="hidden" name="enabled" value="0">
+                            <x-atrium::form.checkbox name="enabled" :label="__('showroom::showroom.enabled')" :hint="__('showroom::showroom.owner_enabled_hint')" :checked="$owner->enabled" wrapper="h-9 w-auto justify-center" />
+                        </x-atrium::form.actions>
                     </div>
 
                     @include('showroom::ui.partials.external-ids', ['externalIds' => $owner->externalIds])

@@ -51,6 +51,7 @@ final readonly class UpdateProductData extends Data
             'identifier' => ['prohibited'],
             'slug' => ['prohibited'],
             'effective_flags' => ['missing'],
+            'effective_enabled' => ['missing'],
             'external_ids_synced_at' => ['missing'],
             'parent' => ['prohibited'],
             'family' => ['sometimes', 'nullable', 'string', Rule::exists(FamilyModel::class, 'code')],

@@ -47,6 +47,7 @@ final class ScoutEngine implements SearchEngine
                 'slug',
                 'family',
                 'enabled',
+                'effective_enabled',
                 'parent',
                 'owner',
                 'owners',
@@ -105,7 +106,7 @@ final class ScoutEngine implements SearchEngine
         $builder = new Builder(new SearchableProductModel, $query->search ?? '');
 
         // `owners` holds the whole chain; engines match a value in a list.
-        foreach (['family' => $query->family, 'enabled' => $query->enabled, 'parent' => $query->parent, 'owners' => $query->owner, 'category_tree' => $query->category, 'status' => $query->status, 'published' => $query->published] as $field => $value) {
+        foreach (['family' => $query->family, 'enabled' => $query->enabled, 'effective_enabled' => $query->effectiveEnabled, 'parent' => $query->parent, 'owners' => $query->owner, 'category_tree' => $query->category, 'status' => $query->status, 'published' => $query->published] as $field => $value) {
             if ($value !== null) {
                 $builder->where($field, $value);
             }

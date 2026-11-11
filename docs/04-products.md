@@ -36,7 +36,7 @@ Values are stored as JSON on the product row, keyed by attribute, channel and lo
 
 ## Simple products
 
-A product has an `identifier` (its SKU), an optional `family`, an optional `owner` (see [Ownership](06-ownership.md)), `categories` (see [Taxonomy](07-taxonomy.md)), `associations` and `quantified_associations` (see [Associations](10-associations.md)), `external_ids`, `flags` (see [Flags](14-flags.md)), an `enabled` flag and its values. Showroom gives it a ULID `id` and a `slug`.
+A product has an `identifier` (its SKU), an optional `family`, an optional `owner` (see [Ownership](06-ownership.md)), `categories` (see [Taxonomy](07-taxonomy.md)), `associations` and `quantified_associations` (see [Associations](10-associations.md)), `external_ids`, `flags` (see [Flags](14-flags.md)), an `enabled` flag and its values. Showroom gives it a ULID `id` and a `slug`. Resources also return the read-only `effective_enabled`: whether the product and every owner of its chain are enabled (see [Enabled](06-ownership.md#enabled)).
 
 - With a family, only the family's attributes can be set.
 - Without one, any attribute can.
@@ -61,7 +61,7 @@ Every product gets a `slug` when it's created: `Str::slug` of its identifier, wi
 - An identifier that slugifies to nothing (`///`) gets `product`, then `product-2`.
 - A slug that would read as a route segment (`Slugs::RESERVED`: `create`, `revert`, `transitions`, `versions`) is suffixed: `versions` becomes `versions-2`.
 
-`slug` is read-only: sending it on create or update is refused. Clients that send a whole resource back on update must strip `slug` and `effective_flags`.
+`slug` is read-only: sending it on create or update is refused. Clients that send a whole resource back on update must strip `slug`, `effective_flags` and `effective_enabled`.
 
 ## Looking up a product
 

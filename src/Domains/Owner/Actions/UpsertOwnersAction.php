@@ -55,8 +55,9 @@ use Throwable;
  *    UpdateOwnerAction fire. A record may name as its parent an owner an
  *    earlier record created; a move is seen by every later record, with the
  *    new path of the moved owner and everything beneath it.
- * 5. The products beneath every owner that moved or changed its flags get
- *    one index sync for the whole batch (ProductIndex::deferring()).
+ * 5. The products beneath every owner that moved, was enabled or disabled,
+ *    or changed its flags get one index sync for the whole batch
+ *    (ProductIndex::deferring()).
  *
  * A record that fails — invalid, refused by a placement rule or `assign`,
  * or by the database — is reported with its index, its code and its errors;
@@ -112,8 +113,8 @@ final class UpsertOwnersAction
     private array $types = [];
 
     /**
-     * The owners whose products show something new once written: they moved
-     * or their flags changed. By id.
+     * The owners whose products show something new once written: they
+     * moved, were enabled or disabled, or their flags changed. By id.
      *
      * @var array<string, OwnerModel>
      */
@@ -482,6 +483,10 @@ final class UpsertOwnersAction
             return false;
         }
 
+        if (is_bool($data->enabled) && $data->enabled !== $owner->enabled) {
+            return false;
+        }
+
         if (! $data->parent instanceof Missing) {
             // A parent not stored yet, which an earlier record creates, is never the current one.
             $parentId = $data->parent === null ? null : ($this->byCode[KeyNormalizer::normalize($data->parent)]->id ?? '');
@@ -524,6 +529,7 @@ final class UpsertOwnersAction
                 labels: $data->labels,
                 externalIds: $data->externalIds,
                 flags: $data->flags,
+                enabled: $data->enabled,
             );
 
             OwnerCreatingActionEvent::dispatch($data);
@@ -563,7 +569,7 @@ final class UpsertOwnersAction
                 $parent = $this->byCode[KeyNormalizer::normalize($data->parent)] ?? throw self::unknown('parent');
 
                 // Named as stored, as the writer checks it.
-                $data = new UpdateOwnerData(parent: $parent->code, labels: $data->labels, externalIds: $data->externalIds, flags: $data->flags);
+                $data = new UpdateOwnerData(parent: $parent->code, labels: $data->labels, externalIds: $data->externalIds, flags: $data->flags, enabled: $data->enabled);
             }
 
             OwnerUpdatingActionEvent::dispatch($owner, $data);
@@ -618,8 +624,8 @@ final class UpsertOwnersAction
     }
 
     /**
-     * Queue the products beneath every owner that moved or changed its
-     * flags, into the batch's one deferred sync. An owner beneath another
+     * Queue the products beneath every owner that moved, was enabled or
+     * disabled, or changed its flags, into the batch's one deferred sync. An owner beneath another
      * one listed is covered by it.
      */
     private function queueReindex(): void
