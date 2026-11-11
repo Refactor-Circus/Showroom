@@ -1,0 +1,21 @@
+id: 2026-11-10-2022-batch-owner-upsert
+title: 'Batch owner upsert'
+status: in-review
+created: '2026-11-10 20:22'
+standards:
+  refactor-circus/standards:
+    version: dev-main
+    reference: a5b675396232
+review_passes: 1
+runs:
+  - workflow: ring-master-factory
+    run_id: wf_302ebcfd-a63
+    result: needs-decision
+    round: 0
+    date: 2026-11-10
+  - workflow: ring-master-factory
+    run_id: wf_bcec08ff-0dd
+    result: approved
+    round: 1
+    date: 2026-11-10
+pr: https://github.com/Refactor-Circus/Showroom/pull/13

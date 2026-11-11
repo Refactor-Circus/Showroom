@@ -20,6 +20,8 @@ use RefactorCircus\Showroom\Domains\Attribute\Events\AttributeGroupDeletingActio
 use RefactorCircus\Showroom\Domains\Attribute\Exceptions\AttributeGroupNotEmptyException;
 use RefactorCircus\Showroom\Domains\Attribute\Models\AttributeGroupModel;
 use RefactorCircus\Showroom\Domains\Attribute\Models\AttributeModel;
+use RefactorCircus\Showroom\Domains\Owner\Events\OwnersUpsertedActionEvent;
+use RefactorCircus\Showroom\Domains\Owner\Events\OwnersUpsertingActionEvent;
 
 /**
  * Record every event of a kind, in order.
@@ -61,10 +63,17 @@ it('maps every Eloquent hook of every model to its own event', function (): void
 it('fires one starting and one finished event for every Action', function (): void {
     $actions = glob(dirname(__DIR__, 2).'/src/Domains/*/Actions/*.php') ?: [];
 
+    // A batch writing each record itself fires, beside its own pair, the
+    // pair of the single Action that record stands for.
+    $onBehalf = [
+        'UpsertOwnersAction.php' => ['OwnerCreatingActionEvent', 'OwnerCreatedActionEvent', 'OwnerUpdatingActionEvent', 'OwnerUpdatedActionEvent'],
+    ];
+
     foreach ($actions as $path) {
         $source = (string) file_get_contents($path);
 
         preg_match_all('/(\w+ActionEvent)::dispatch/', $source, $matches);
+        $matches[1] = array_values(array_diff($matches[1], $onBehalf[basename($path)] ?? []));
 
         expect($matches[1])->toHaveCount(2, basename($path).' should dispatch exactly two action events');
 
@@ -76,7 +85,24 @@ it('fires one starting and one finished event for every Action', function (): vo
             ->and(is_subclass_of($finished, ActionFinishedEvent::class))->toBeTrue(basename($path).' finishes with '.$finished);
     }
 
-    expect($actions)->toHaveCount(83);
+    expect($actions)->toHaveCount(84);
+});
+
+it('fires the owner batch\'s own pair around the batch, and each written owner\'s pair as the single Actions do', function (): void {
+    $source = (string) file_get_contents(dirname(__DIR__, 2).'/src/Domains/Owner/Actions/UpsertOwnersAction.php');
+
+    preg_match_all('/(\w+ActionEvent)::dispatch/', $source, $matches);
+
+    expect($matches[1])->toBe([
+        'OwnersUpsertingActionEvent',
+        'OwnersUpsertedActionEvent',
+        'OwnerCreatingActionEvent',
+        'OwnerCreatedActionEvent',
+        'OwnerUpdatingActionEvent',
+        'OwnerUpdatedActionEvent',
+    ])
+        ->and(is_subclass_of(OwnersUpsertingActionEvent::class, ActionStartingEvent::class))->toBeTrue()
+        ->and(is_subclass_of(OwnersUpsertedActionEvent::class, ActionFinishedEvent::class))->toBeTrue();
 });
 
 it('fires the starting and finished events around an action', function (): void {
