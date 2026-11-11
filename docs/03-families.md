@@ -2,6 +2,8 @@
 
 A family — an attribute set — is a kind of product: the attributes it has and which of them are required. "Shoes" has size and color; "Laptops" has memory and screen size. Each product belongs to at most one family; see [Products and variants](04-products.md).
 
+A family sets the completeness standard for its products. It doesn't limit which attributes they hold: a simple product of the family may also hold values for attributes outside it, and every value is returned and shown. Only the family's required attributes count towards [completeness](11-workflow.md). Family variants are the exception: their levels place the family's attributes, and product models and variant products hold only their own level's (see [Variants](04-products.md#variants)).
+
 Families are addressed by `code`, in API paths, MCP arguments and a product's `family`. They have no slug and no `showroom.lookup` key: those are for products and owners only.
 
 ## Membership
@@ -25,6 +27,7 @@ Families are addressed by `code`, in API paths, MCP arguments and a product's `f
 - Entries are shown in the order given, unless an entry sets its own `sort_order`.
 - An attribute may appear in any number of families, and at most once in each.
 - `is_required` makes an attribute required on every channel; add `required_channels` to narrow it to some. Requirements drive [completeness](11-workflow.md).
+- The order of `attributes` also orders a product's value form in Atrium: the family's attributes come first, then the product's other values.
 
 ## Label attribute
 

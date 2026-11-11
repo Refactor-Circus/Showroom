@@ -86,6 +86,24 @@ it('counts inherited values and follows family and channel changes', function ()
     expect(ratios('POLO-M'))->toHaveKey('wholesale/de');
 });
 
+it('counts only the family\'s required attributes, whatever else the product holds', function (): void {
+    $this->postJson('/showroom/attributes', ['code' => 'fabric', 'type' => 'text'])->assertCreated();
+
+    $this->postJson('/showroom/products', ['identifier' => 'TEE', 'family' => 'shirts', 'values' => [
+        'copy' => [['locale' => 'en', 'scope' => 'ecommerce', 'data' => 'Web copy']],
+    ]])->assertCreated();
+
+    $before = ratios('TEE');
+
+    // A value outside the family counts neither towards nor against completeness.
+    $this->patchJson(completenessProductPath('TEE'), ['values' => ['fabric' => Catalog::value('Cotton')]])
+        ->assertOk()
+        ->assertJsonPath('data.values.fabric.0.data', 'Cotton')
+        ->assertJsonPath('data.completeness.1.missing_attributes', ['name', 'copy']);
+
+    expect(ratios('TEE'))->toBe($before)->toBe(['ecommerce/en' => 50, 'ecommerce/fr' => 0, 'print/en' => 0]);
+});
+
 it('has no completeness without a family', function (): void {
     $this->postJson('/showroom/products', ['identifier' => 'LOOSE'])->assertCreated()->assertJsonPath('data.completeness', []);
 });

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace RefactorCircus\Showroom\Atrium\Http\Controllers;
 
 use Illuminate\Contracts\View\View;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -104,16 +105,18 @@ final class ProductUiController
         /** @var view-string $view */
         $view = 'showroom::ui.products.show';
 
+        $attributes = $this->formAttributes($product, $request->query('add'));
+
         return view($view, [
             'resolved' => app(ScreenExtensions::class)->resolve(Screens::detail('showroom.product', $product, ProductModel::class), $request),
             'product' => $product,
             'mayAssign' => $mayAssign,
             'flagOptions' => $mayAssign ? FlagScreen::options(FlagSubject::Product) : collect(),
-            'attributes' => $this->formAttributes($product, $request->query('add')),
+            'attributes' => $attributes,
             'slot' => EditingSlot::fromRequest($request),
             'inherited' => $product->inheritedValues(),
             'addable' => $product->settableAttributes() === null
-                ? AttributeModel::query()->whereNotIn('code', array_keys($product->ownValues()))->orderBy('code')->pluck('code', 'code')->all()
+                ? AttributeModel::query()->whereNotIn('code', $attributes->pluck('code')->all())->orderBy('code')->pluck('code', 'code')->all()
                 : [],
             'families' => $this->families(),
             'history' => app(ListProductVersionsAction::class)->execute($product, new ListProductVersionsData(perPage: 10)),
@@ -209,8 +212,9 @@ final class ProductUiController
     }
 
     /**
-     * The attributes the value form shows: the settable ones, or — for a
-     * product without a family — those it has values for plus one to add.
+     * The attributes the value form shows: a variant's settable ones, or —
+     * for a simple product — its family's attributes in the family's order,
+     * then the others it has values for, plus one to add, by code.
      *
      * @return Collection<int, AttributeModel>
      */
@@ -222,13 +226,22 @@ final class ProductUiController
             return $settable->load('options');
         }
 
+        $family = $product->family?->familyAttributes()->with('options')->get() ?? new EloquentCollection;
+
         $codes = array_keys($product->ownValues());
 
         if (is_string($add) && $add !== '') {
             $codes[] = $add;
         }
 
-        return AttributeModel::query()->with('options')->whereIn('code', $codes)->orderBy('code')->get();
+        $others = AttributeModel::query()
+            ->with('options')
+            ->whereIn('code', $codes)
+            ->whereKeyNot($family->modelKeys())
+            ->orderBy('code')
+            ->get();
+
+        return $family->concat($others);
     }
 
     /**

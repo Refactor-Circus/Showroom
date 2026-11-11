@@ -199,8 +199,9 @@ final class ProductModel extends Model
     }
 
     /**
-     * The attributes this product may set: a variant's last level, its
-     * family's attributes, or any attribute (null) without a family.
+     * The attributes this product may set: a variant's last level, or any
+     * attribute (null) for a simple product, family or not. A family sets
+     * the completeness standard, not a limit.
      *
      * @return EloquentCollection<int, AttributeModel>|null
      */
@@ -212,7 +213,7 @@ final class ProductModel extends Model
             return $variant->attributesAt($variant->levels);
         }
 
-        return $this->family?->familyAttributes;
+        return null;
     }
 
     /**
