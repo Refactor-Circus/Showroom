@@ -108,6 +108,8 @@ $result = app(UpsertProductsAction::class)->execute(UpsertProductsData::from([
 ]));
 ```
 
+For large pages, `UpsertProductsData::fromRecords($records, ['mode' => 'upsert', 'match' => 'd365'])` builds the same input. It validates the options as `from()` does, but only checks that the records are a list, so they aren't copied through the validator. The action validates each record either way.
+
 - `match` pairs records with stored products by `identifier`, or by `external_ids[match]` when it names a source.
 - Each record is validated with `CreateProductData` or `UpdateProductData` rules. A record that fails, or that a catalog rule refuses, is reported and never stops the others.
 - A record whose sent fields (values, family, parent, owner, categories, associations, `enabled`, `external_ids`, `flags`) match the stored product is `unchanged`: no version, no index sync and no events. The only write is the `synced_at` stamp on its external ids, done in one bulk update for all the batch's unchanged records.

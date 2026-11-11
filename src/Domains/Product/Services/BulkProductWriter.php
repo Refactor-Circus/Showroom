@@ -75,9 +75,10 @@ final class BulkProductWriter
      * index.
      *
      * @param  array<int, CreateProductData>  $records  By index in the batch.
+     * @param  ValueValidator|null  $validator  One the caller already primed for the batch; else one is made and primed here.
      * @return array{0: array<int, array{product: array<string, mixed>, categories: list<array<string, mixed>>, external_ids: list<array<string, mixed>>, flags: list<array<string, mixed>>, unique_values: list<array<string, mixed>>, version: array<string, mixed>}>, 1: array<int, array<string, list<string>>>}
      */
-    public function prepare(array $records): array
+    public function prepare(array $records, ?ValueValidator $validator = null): array
     {
         if ($records === []) {
             return [[], []];
@@ -89,8 +90,12 @@ final class BulkProductWriter
         $flags = self::byCode(FlagModel::query(), array_merge(...array_values(array_map(fn (CreateProductData $data): array => $data->flags ?? [], $records))));
         $uniqueAttributes = AttributeModel::query()->where('is_unique', true)->get(['id', 'code']);
 
-        // One validator for the batch reads each attribute once.
-        $validator = app(ValueValidator::class);
+        // One validator for the batch reads each attribute, and each option
+        // code sent, once.
+        if ($validator === null) {
+            $validator = app(ValueValidator::class);
+            $validator->prime(array_map(fn (CreateProductData $data): mixed => $data->values, $records));
+        }
 
         $failures = [];
         $products = [];

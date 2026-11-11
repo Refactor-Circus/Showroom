@@ -51,6 +51,8 @@ const PARITY_EXCEPTIONS = [
     'UpsertProductsAction' => ['http', 'mcp', 'ui'],
     // The same for owners (batch owner upsert spec).
     'UpsertOwnersAction' => ['http', 'mcp', 'ui'],
+    // The same for attribute options (batch attribute option upsert).
+    'UpsertAttributeOptionsAction' => ['http', 'mcp', 'ui'],
     // Not on the dashboard yet; reachable over the API and MCP.
     'ShowAssociationTypeAction' => ['ui'],
     'UpdateAssociationTypeAction' => ['ui'],

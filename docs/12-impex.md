@@ -13,6 +13,7 @@ With it installed (and `showroom.impex.enabled` on), Showroom registers these fl
 |---|---|
 | `showroom:import-products` | A `.csv` or `.jsonl` file → products |
 | `showroom:upsert-products` | Records passed inline (an ERP push) → products |
+| `showroom:upsert-attribute-options` | Option records passed inline (a list, or `{"options": [...]}`) → attribute options, through [`UpsertAttributeOptionsAction`](02-attributes.md#batch-upsert) a chunk at a time, in `$mode` |
 | `showroom:export-products` | Products matching a search → a `.jsonl` or `.csv` file |
 | `showroom:feed:{name}` | One per configured feed: a channel's published products → a file, optionally pushed to a URL |
 

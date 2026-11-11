@@ -47,8 +47,7 @@ final class UpsertProductChunk
         $start = (int) ($chunk['start'] ?? 0);
 
         // Read back from a queued payload: validated as untrusted input.
-        $result = app(UpsertProductsAction::class)->execute(UpsertProductsData::from([
-            'records' => $records,
+        $result = app(UpsertProductsAction::class)->execute(UpsertProductsData::fromRecords($records, [
             'mode' => $chunk['mode'] ?? 'upsert',
             'capture_changes' => $chunk['capture_changes'] ?? true,
         ]));
