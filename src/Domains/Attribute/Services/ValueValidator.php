@@ -21,9 +21,15 @@ use RefactorCircus\Showroom\Domains\Channel\Models\LocaleModel;
  * Every error is reported at the path the caller sent, such as
  * `values.weight.0.data.unit`.
  *
- * What it reads — attributes, locales, channels — it keeps, so one instance
- * reused across a batch of records reads each once. Resolve a fresh one per
- * write; the container does not share it.
+ * What it reads — attributes, locales, channels, option codes — it keeps,
+ * so one instance reused across a batch of records reads each once. Resolve
+ * a fresh one per write; the container does not share it.
+ *
+ * Options are never loaded whole: an attribute may hold thousands. Only the
+ * codes a select or multiselect value sends are looked up, those of one
+ * validate() call in one query, or those of a whole batch at once through
+ * prime(). A value is checked against the stored codes it sends, so a check
+ * costs the same however many options its attribute has.
  */
 final class ValueValidator
 {
@@ -42,12 +48,58 @@ final class ValueValidator
     private ?array $channels = null;
 
     /**
-     * The attributes asked for so far, with their options, by code; null for
-     * a code no attribute has.
+     * The attributes asked for so far, by code; null for a code no attribute
+     * has.
      *
      * @var array<string, AttributeModel|null>
      */
     private array $attributes = [];
+
+    /**
+     * The option codes looked up so far that are stored, as stored, by
+     * attribute id.
+     *
+     * @var array<string, array<string, true>>
+     */
+    private array $optionCodes = [];
+
+    /**
+     * The option codes looked up so far, as sent, by attribute id: stored or
+     * not, they are not read again.
+     *
+     * @var array<string, array<string, true>>
+     */
+    private array $checkedCodes = [];
+
+    /**
+     * Read up front the attributes and the option codes a batch of value maps
+     * sends, so validating each map reads nothing more: one query for the
+     * attributes and one for the option codes, a thousand codes per query.
+     * Anything that is not a value map is passed over; validate() refuses it.
+     *
+     * @param  iterable<mixed>  $valueMaps  Values in standard shape, one map per record.
+     */
+    public function prime(iterable $valueMaps): void
+    {
+        $maps = [];
+
+        foreach ($valueMaps as $values) {
+            if (is_array($values) && ($values === [] || ! array_is_list($values))) {
+                $maps[] = $values;
+            }
+        }
+
+        $codes = [];
+
+        foreach ($maps as $values) {
+            foreach (array_keys($values) as $code) {
+                $codes[(string) $code] = (string) $code;
+            }
+        }
+
+        $attributes = $this->attributes(array_values($codes));
+        $this->loadOptionCodes(array_map(fn (array $values): array => $this->sentOptionCodes($attributes, $values), $maps));
+    }
 
     /**
      * @param  Collection<int, AttributeModel>|null  $settable  The attributes this record may set, or null for any.
@@ -70,6 +122,8 @@ final class ValueValidator
         $codes = array_map('strval', array_keys($values));
 
         $attributes = $this->attributes($codes);
+        $sentOptions = $this->sentOptionCodes($attributes, $values);
+        $this->loadOptionCodes([$sentOptions]);
 
         $errors = [];
 
@@ -90,7 +144,7 @@ final class ValueValidator
         $rules = ['values' => ['array']];
 
         foreach ($attributes as $code => $attribute) {
-            $rules += $this->rulesFor($attribute, 'values.'.$code);
+            $rules += $this->rulesFor($attribute, 'values.'.$code, $sentOptions[$attribute->id] ?? []);
         }
 
         /** @var array{values: array<string, array<int, array{locale?: string|null, scope?: string|null, data: mixed}>>} $validated */
@@ -119,8 +173,8 @@ final class ValueValidator
     }
 
     /**
-     * The attributes with these codes, with their options, by code: read
-     * once per code for the life of this validator.
+     * The attributes with these codes, by code: read once per code for the
+     * life of this validator.
      *
      * @param  array<int, string>  $codes
      * @return Collection<string, AttributeModel>
@@ -130,7 +184,7 @@ final class ValueValidator
         $unread = array_values(array_diff($codes, array_keys($this->attributes)));
 
         if ($unread !== []) {
-            foreach (AttributeModel::query()->with('options')->whereIn('code', $unread)->get() as $attribute) {
+            foreach (AttributeModel::query()->whereIn('code', $unread)->get() as $attribute) {
                 $this->attributes[$attribute->code] = $attribute;
             }
 
@@ -148,9 +202,99 @@ final class ValueValidator
     }
 
     /**
+     * The option codes a value map sends for its select and multiselect
+     * attributes, by attribute id. Only strings: anything else fails the
+     * value's `string` rule.
+     *
+     * @param  Collection<string, AttributeModel>  $attributes  By code.
+     * @param  array<array-key, mixed>  $values
+     * @return array<string, list<string>>
+     */
+    private function sentOptionCodes(Collection $attributes, array $values): array
+    {
+        $sent = [];
+
+        foreach ($values as $code => $slots) {
+            $attribute = $attributes->get((string) $code);
+
+            if (! $attribute instanceof AttributeModel || ! $attribute->type->hasOptions() || ! is_array($slots)) {
+                continue;
+            }
+
+            foreach ($slots as $slot) {
+                $data = is_array($slot) ? ($slot['data'] ?? null) : null;
+
+                foreach (is_array($data) ? $data : [$data] as $option) {
+                    if (is_string($option)) {
+                        $sent[$attribute->id][$option] = $option;
+                    }
+                }
+            }
+        }
+
+        return array_map(array_values(...), $sent);
+    }
+
+    /**
+     * Look up which of the sent option codes are stored, skipping those
+     * looked up before: one query per thousand codes for all the maps.
+     *
+     * @param  iterable<array<string, list<string>>>  $sentPerMap  Option codes by attribute id, per value map.
+     */
+    private function loadOptionCodes(iterable $sentPerMap): void
+    {
+        $unread = [];
+
+        foreach ($sentPerMap as $sent) {
+            foreach ($sent as $attributeId => $codes) {
+                foreach ($codes as $code) {
+                    if (! isset($this->checkedCodes[$attributeId][$code])) {
+                        $unread[$attributeId][$code] = $code;
+                        $this->checkedCodes[$attributeId][$code] = true;
+                    }
+                }
+            }
+        }
+
+        if ($unread === []) {
+            return;
+        }
+
+        $attributeIds = array_map('strval', array_keys($unread));
+        $codes = array_values(array_unique(array_merge(...array_map(array_values(...), array_values($unread)))));
+
+        foreach (array_chunk($codes, 1000) as $chunk) {
+            // Plain rows: an option model is never built here.
+            $stored = AttributeOptionModel::query()->toBase()
+                ->whereIn('attribute_id', $attributeIds)
+                ->whereIn('code', $chunk)
+                ->get(['attribute_id', 'code']);
+
+            foreach ($stored as $option) {
+                $this->optionCodes[(string) $option->attribute_id][(string) $option->code] = true;
+            }
+        }
+    }
+
+    /**
+     * The sent codes that are stored options of the attribute, compared
+     * exactly, as `in` compares them.
+     *
+     * @param  list<string>  $sent
+     * @return list<string>
+     */
+    private function knownOptionCodes(AttributeModel $attribute, array $sent): array
+    {
+        $known = $this->optionCodes[$attribute->id] ?? [];
+
+        return array_values(array_filter($sent, fn (string $code): bool => isset($known[$code])));
+    }
+
+    /**
+     * @param  list<string>  $sentOptions  The option codes this value sends, for a select or multiselect attribute.
      * @return array<string, array<int, mixed>>
      */
-    private function rulesFor(AttributeModel $attribute, string $path): array
+    private function rulesFor(AttributeModel $attribute, string $path, array $sentOptions = []): array
     {
         $settings = $attribute->settings ?? [];
 
@@ -166,7 +310,9 @@ final class ValueValidator
         ];
 
         $data = $path.'.*.data';
-        $options = $attribute->options->map(fn (AttributeOptionModel $option): string => $option->code)->all();
+        // Only the sent codes found stored: `in` over them is the same check
+        // as over every option, at the cost of the value, not the attribute.
+        $options = $attribute->type->hasOptions() ? $this->knownOptionCodes($attribute, $sentOptions) : [];
 
         return $rules + match ($attribute->type) {
             AttributeType::Text => [$data => array_filter([

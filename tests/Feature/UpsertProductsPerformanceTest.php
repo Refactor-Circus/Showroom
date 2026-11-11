@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\DB;
@@ -9,6 +10,7 @@ use RefactorCircus\Showroom\Domains\Attribute\Actions\CreateAttributeAction;
 use RefactorCircus\Showroom\Domains\Attribute\Actions\UpsertAttributeOptionsAction;
 use RefactorCircus\Showroom\Domains\Attribute\Data\CreateAttributeData;
 use RefactorCircus\Showroom\Domains\Attribute\Data\UpsertAttributeOptionsData;
+use RefactorCircus\Showroom\Domains\Attribute\Models\AttributeOptionModel;
 use RefactorCircus\Showroom\Domains\ExternalId\Models\ExternalIdModel;
 use RefactorCircus\Showroom\Domains\Family\Actions\CreateFamilyAction;
 use RefactorCircus\Showroom\Domains\Family\Data\CreateFamilyData;
@@ -21,6 +23,7 @@ use RefactorCircus\Showroom\Domains\Product\Data\UpsertProductsData;
 use RefactorCircus\Showroom\Domains\Product\Data\UpsertProductsResult;
 use RefactorCircus\Showroom\Domains\Product\Models\ProductModel;
 use RefactorCircus\Showroom\Jobs\SyncProductIndex;
+use RefactorCircus\Showroom\Support\Tables;
 use RefactorCircus\Showroom\Tests\Fixtures\Catalog;
 
 /*
@@ -46,6 +49,12 @@ const UPSERT_CREATED_QUERY_BOUND = 60;
  * Measured: 11 for new products, 10 for unchanged ones.
  */
 const UPSERT_SELECT_VALUES_QUERY_BOUND = 11;
+
+/**
+ * The same for 19 select attributes of 2,000 options each: the option codes
+ * sent are looked up once per batch, whatever the size of the option lists.
+ */
+const UPSERT_LARGE_SELECT_QUERY_BOUND = 11;
 
 beforeEach(function (): void {
     Catalog::apparel();
@@ -228,4 +237,101 @@ it('re-upserts unchanged products with many select values in the same number of 
         ->and($manyResult->unchanged)->toBe(100)
         ->and($manyQueries)->toBe($fewQueries)
         ->and($manyQueries)->toBeLessThanOrEqual(UPSERT_SELECT_VALUES_QUERY_BOUND);
+});
+
+/**
+ * 19 select attributes in one family with 2,000 options each, inserted
+ * directly: a legacy catalog's long option lists.
+ */
+function performanceLargeSelectCatalog(): void
+{
+    $attributes = array_map(fn (int $i): string => sprintf('large_%02d', $i), range(1, 19));
+    $now = now()->toDateTimeString();
+
+    foreach ($attributes as $code) {
+        $attribute = app(CreateAttributeAction::class)->execute(CreateAttributeData::from(['code' => $code, 'type' => 'select']));
+
+        $rows = array_map(fn (int $i): array => [
+            'id' => (string) str()->ulid(),
+            'attribute_id' => $attribute->id,
+            'code' => sprintf('option_%04d', $i),
+            'labels' => '[]',
+            'sort_order' => 0,
+            'created_at' => $now,
+            'updated_at' => $now,
+        ], range(1, 2000));
+
+        foreach (array_chunk($rows, 200) as $chunk) {
+            DB::table(Tables::name('attribute_options'))->insert($chunk);
+        }
+    }
+
+    app(CreateFamilyAction::class)->execute(CreateFamilyData::from([
+        'code' => 'large',
+        'attributes' => array_map(fn (string $code): array => ['attribute' => $code], $attributes),
+    ]));
+}
+
+/**
+ * `$count` product records of the large family, each with a value for every
+ * one of its 19 select attributes, drawn from the first 200 options.
+ *
+ * @return list<array<string, mixed>>
+ */
+function performanceLargeSelectRecords(string $prefix, int $count): array
+{
+    return array_map(function (int $i) use ($prefix): array {
+        $values = [];
+
+        foreach (range(1, 19) as $attribute) {
+            $values[sprintf('large_%02d', $attribute)] = Catalog::value(sprintf('option_%04d', ($i * 7 + $attribute) % 200 + 1));
+        }
+
+        return ['identifier' => sprintf('%s-%03d', $prefix, $i), 'family' => 'large', 'values' => $values];
+    }, range(1, $count));
+}
+
+it('validates select values against the codes sent, never the whole option list, in the same queries at 10 records as at 100', function (): void {
+    performanceLargeSelectCatalog();
+
+    $hydrated = 0;
+    AttributeOptionModel::retrieved(function () use (&$hydrated): void {
+        $hydrated++;
+    });
+
+    /** @var list<QueryExecuted> $optionQueries */
+    $optionQueries = [];
+    DB::listen(function (QueryExecuted $query) use (&$optionQueries): void {
+        if (str_contains($query->sql, Tables::name('attribute_options'))) {
+            $optionQueries[] = $query;
+        }
+    });
+
+    $few = performanceLargeSelectRecords('A', 10);
+    $many = performanceLargeSelectRecords('B', 100);
+
+    [$fewResult, $fewQueries] = performanceUpsert($few);
+    [$manyResult, $manyQueries] = performanceUpsert($many);
+
+    $sent = [];
+
+    foreach ([...$few, ...$many] as $record) {
+        foreach ($record['values'] as $slots) {
+            $sent[$slots[0]['data']] = true;
+        }
+    }
+
+    $boundCodes = array_filter(
+        array_merge(...array_map(fn (QueryExecuted $query): array => $query->bindings, $optionQueries)),
+        fn (mixed $binding): bool => is_string($binding) && str_starts_with($binding, 'option_'),
+    );
+
+    expect($fewResult->created)->toBe(10)
+        ->and($manyResult->created)->toBe(100)
+        ->and($manyQueries)->toBe($fewQueries)
+        ->and($manyQueries)->toBeLessThanOrEqual(UPSERT_LARGE_SELECT_QUERY_BOUND)
+        // One lookup of the sent codes per batch, and no option model built.
+        ->and($optionQueries)->toHaveCount(2)
+        ->and($hydrated)->toBe(0)
+        ->and(array_diff($boundCodes, array_keys($sent)))->toBe([]);
 });

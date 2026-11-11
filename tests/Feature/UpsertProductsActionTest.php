@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\ValidationException;
+use RefactorCircus\Showroom\Domains\Attribute\Services\Values;
 use RefactorCircus\Showroom\Domains\ExternalId\Models\ExternalIdModel;
 use RefactorCircus\Showroom\Domains\Family\Actions\CreateFamilyAction;
 use RefactorCircus\Showroom\Domains\Family\Data\CreateFamilyData;
@@ -368,6 +369,36 @@ describe('validation', function (): void {
             ])
             ->and($result->failures[0]['errors']['family'][0])->toBeString()
             ->and(ProductModel::query()->orderBy('identifier')->pluck('identifier')->all())->toBe(['CAP', 'TEE']);
+    });
+
+    it('refuses an option the attribute does not have with the key and message of a single write', function (): void {
+        $unknown = [
+            'color' => Catalog::value('purple'),
+            'size' => Catalog::value('M'),
+            'tags' => Catalog::value(['summer', 'winter']),
+        ];
+        $messages = [
+            'values.color.0.data' => ['The selected values.color.0.data is invalid.'],
+            'values.size.0.data' => ['The selected values.size.0.data is invalid.'],
+            'values.tags.0.data.1' => ['The selected values.tags.0.data.1 is invalid.'],
+        ];
+
+        $single = $this->postJson('/showroom/products', ['identifier' => 'SINGLE', 'values' => $unknown])->assertUnprocessable();
+
+        upsertProducts([upsertRecord('TEE')]);
+
+        $result = upsertProducts([
+            // New, and matched: both checked against the stored option codes only.
+            upsertRecord('NEW', ['values' => $unknown]),
+            upsertRecord('TEE', ['values' => $unknown]),
+            upsertRecord('GOOD', ['values' => ['color' => Catalog::value('red'), 'size' => Catalog::value('m'), 'tags' => Catalog::value(['summer', 'new'])]]),
+        ]);
+
+        expect($single->json('errors'))->toBe($messages)
+            ->and($result->failures[0]['errors'])->toBe($messages)
+            ->and($result->failures[1]['errors'])->toBe($messages)
+            ->and([$result->created, $result->failed()])->toBe([1, 2])
+            ->and(upsertProduct('GOOD')->values['size'])->toBe([Values::ALL_CHANNELS => [Values::ALL_LOCALES => 'm']]);
     });
 
     it('refuses read-only keys sent with a record', function (): void {

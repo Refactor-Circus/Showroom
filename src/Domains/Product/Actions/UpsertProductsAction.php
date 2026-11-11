@@ -142,10 +142,16 @@ final class UpsertProductsAction
         }
 
         $matched = $this->match($data, $records);
-        [$creates, $updates, $unchanged, $afterUpdates] = $this->validate($data, $records, $matched);
+
+        // One value validator for the batch: the attributes and option codes
+        // every record's values send are read once, up front.
+        $values = app(ValueValidator::class);
+        $values->prime(array_map(fn (array $record): mixed => $record['values'] ?? null, $records));
+
+        [$creates, $updates, $unchanged, $afterUpdates] = $this->validate($data, $records, $matched, $values);
 
         $this->externalIds->touch($unchanged, ProductModel::class);
-        $this->createAll(array_diff_key($creates, $afterUpdates), $records);
+        $this->createAll(array_diff_key($creates, $afterUpdates), $records, $values);
         $this->updateAll($updates, $records);
 
         foreach (array_intersect_key($creates, $afterUpdates) as $index => $create) {
@@ -241,13 +247,12 @@ final class UpsertProductsAction
      * @param  array<int, ProductModel>  $matched
      * @return array{0: array<int, CreateProductData>, 1: array<int, array{0: ProductModel, 1: UpdateProductData}>, 2: list<string>, 3: array<int, true>}
      */
-    private function validate(UpsertProductsData $data, array $records, array $matched): array
+    private function validate(UpsertProductsData $data, array $records, array $matched, ValueValidator $values): array
     {
         $presence = $this->presence($records, $matched);
-        // One set of rules, and one value validator, read what they need once for the batch.
+        // One set of rules reads what it needs once for the batch.
         $createRules = CreateProductData::rules();
         $updateRules = UpdateProductData::rules();
-        $values = app(ValueValidator::class);
 
         $creates = [];
         $updates = [];
@@ -570,11 +575,11 @@ final class UpsertProductsAction
      * @param  array<int, CreateProductData>  $creates
      * @param  array<int, array<string, mixed>>  $records
      */
-    private function createAll(array $creates, array $records): void
+    private function createAll(array $creates, array $records, ValueValidator $values): void
     {
         $simple = array_filter($creates, BulkProductWriter::takes(...));
 
-        [$prepared, $refused] = $this->writer->prepare($simple);
+        [$prepared, $refused] = $this->writer->prepare($simple, $values);
 
         foreach ($refused as $index => $errors) {
             $this->fail($index, $creates[$index]->identifier, $errors);
