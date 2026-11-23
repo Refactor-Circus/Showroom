@@ -63,6 +63,9 @@ const PARITY_EXCEPTIONS = [
     'ListFamilyVariantsAction' => ['ui'],
     'UpdateFamilyVariantAction' => ['ui'],
     'ShowProductVersionAction' => ['ui'],
+    // The figures the dashboard widgets showed, now served to Atrium v2
+    // over the API; the screens that would reach it are being removed.
+    'ShowCatalogStatsAction' => ['ui'],
 ];
 
 /**
