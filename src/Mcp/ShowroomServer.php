@@ -37,6 +37,7 @@ use RefactorCircus\Showroom\Domains\Attribute\Mcp\Tools\ShowAttributeTool;
 use RefactorCircus\Showroom\Domains\Attribute\Mcp\Tools\UpdateAttributeGroupTool;
 use RefactorCircus\Showroom\Domains\Attribute\Mcp\Tools\UpdateAttributeOptionTool;
 use RefactorCircus\Showroom\Domains\Attribute\Mcp\Tools\UpdateAttributeTool;
+use RefactorCircus\Showroom\Domains\Catalog\Mcp\Tools\SearchCatalogTool;
 use RefactorCircus\Showroom\Domains\Catalog\Mcp\Tools\ShowCatalogStatsTool;
 use RefactorCircus\Showroom\Domains\Category\Mcp\Tools\CreateCategoryTool;
 use RefactorCircus\Showroom\Domains\Category\Mcp\Tools\DeleteCategoryTool;
@@ -121,7 +122,7 @@ use RefactorCircus\Showroom\Mcp\Tools\ListShowroomHistoryTool;
     'kit components with quantities. Products carry completeness per channel and locale, move draft → in_review → '.
     'approved through transition-product-tool, and publish snapshots a version for storefronts; every write is '.
     'versioned and can be reverted. show-catalog-stats-tool sums the catalog up: status counts, completeness, '.
-    'the review queue and the newest versions. With Impex installed, start-import-tool and start-export-tool run bulk '.
+    'the review queue and the newest versions; search-catalog-tool finds records of every kind by a term. With Impex installed, start-import-tool and start-export-tool run bulk '.
     'imports and exports as Impex runs; with refactor-circus/keen installed, list-showroom-history-tool lists who changed what. Labels are keyed by locale. Product search is page-numbered and returns a total; other '.
     'listings are cursor paginated: pass meta.next_cursor back as cursor for the next page.',
 )]
@@ -242,6 +243,7 @@ final class ShowroomServer extends Server
 
         // Catalog overview
         ShowCatalogStatsTool::class,
+        SearchCatalogTool::class,
 
         // Import and export (with refactor-circus/impex)
         StartImportTool::class,

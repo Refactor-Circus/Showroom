@@ -22,9 +22,16 @@ use RefactorCircus\Showroom\Domains\Attribute\Events\AttributeOptionsUpsertingAc
 use RefactorCircus\Showroom\Domains\Attribute\Exceptions\AttributeGroupNotEmptyException;
 use RefactorCircus\Showroom\Domains\Attribute\Models\AttributeGroupModel;
 use RefactorCircus\Showroom\Domains\Attribute\Models\AttributeModel;
+use RefactorCircus\Showroom\Domains\Catalog\Actions\SearchCatalogAction;
 use RefactorCircus\Showroom\Domains\Catalog\Actions\ShowCatalogStatsAction;
+use RefactorCircus\Showroom\Domains\Catalog\Actions\ShowSettingsSummaryAction;
+use RefactorCircus\Showroom\Domains\Catalog\Data\SearchCatalogData;
+use RefactorCircus\Showroom\Domains\Catalog\Events\CatalogSearchedActionEvent;
+use RefactorCircus\Showroom\Domains\Catalog\Events\CatalogSearchingActionEvent;
 use RefactorCircus\Showroom\Domains\Catalog\Events\CatalogStatsShowingActionEvent;
 use RefactorCircus\Showroom\Domains\Catalog\Events\CatalogStatsShownActionEvent;
+use RefactorCircus\Showroom\Domains\Catalog\Events\SettingsSummaryShowingActionEvent;
+use RefactorCircus\Showroom\Domains\Catalog\Events\SettingsSummaryShownActionEvent;
 use RefactorCircus\Showroom\Domains\Owner\Events\OwnersUpsertedActionEvent;
 use RefactorCircus\Showroom\Domains\Owner\Events\OwnersUpsertingActionEvent;
 
@@ -91,7 +98,35 @@ it('fires one starting and one finished event for every Action', function (): vo
             ->and(is_subclass_of($finished, ActionFinishedEvent::class))->toBeTrue(basename($path).' finishes with '.$finished);
     }
 
-    expect($actions)->toHaveCount(86);
+    expect($actions)->toHaveCount(88);
+});
+
+it('fires the catalog search pair around the search', function (): void {
+    $starting = recordShowroomEvents(ActionStartingEvent::class);
+    $finished = recordShowroomEvents(ActionFinishedEvent::class);
+
+    $data = new SearchCatalogData(q: 'oak');
+    $hits = app(SearchCatalogAction::class)->execute($data, null);
+
+    expect($starting->getArrayCopy())->toHaveCount(1)
+        ->and($starting[0])->toBeInstanceOf(CatalogSearchingActionEvent::class)
+        ->and($starting[0]->data)->toBe($data)
+        ->and($finished->getArrayCopy())->toHaveCount(1)
+        ->and($finished[0])->toBeInstanceOf(CatalogSearchedActionEvent::class)
+        ->and($finished[0]->hits)->toBe($hits);
+});
+
+it('fires the settings summary pair around reading the summary', function (): void {
+    $starting = recordShowroomEvents(ActionStartingEvent::class);
+    $finished = recordShowroomEvents(ActionFinishedEvent::class);
+
+    $summary = app(ShowSettingsSummaryAction::class)->execute();
+
+    expect($starting->getArrayCopy())->toHaveCount(1)
+        ->and($starting[0])->toBeInstanceOf(SettingsSummaryShowingActionEvent::class)
+        ->and($finished->getArrayCopy())->toHaveCount(1)
+        ->and($finished[0])->toBeInstanceOf(SettingsSummaryShownActionEvent::class)
+        ->and($finished[0]->summary)->toBe($summary);
 });
 
 it('fires the catalog stats pair around reading the figures', function (): void {

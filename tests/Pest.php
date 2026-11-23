@@ -66,6 +66,12 @@ const PARITY_EXCEPTIONS = [
     // The figures the dashboard widgets showed, now served to Atrium v2
     // over the API; the screens that would reach it are being removed.
     'ShowCatalogStatsAction' => ['ui'],
+    // The same for the search the dashboard's command palette ran.
+    'SearchCatalogAction' => ['ui'],
+    // The settings summary describes host configuration for an admin panel
+    // and adds nothing for an MCP client (D-006); the dashboard's settings
+    // panel that showed it is being removed.
+    'ShowSettingsSummaryAction' => ['mcp', 'ui'],
 ];
 
 /**
