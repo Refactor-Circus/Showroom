@@ -33,6 +33,12 @@ it('merges the package config', function (): void {
         ->and(config('showroom.pagination.per_page'))->toBe(25);
 });
 
+it('ships no ui or atrium config and caches stats for 60 seconds', function (): void {
+    expect(config('showroom'))->not->toHaveKey('ui')
+        ->and(config('showroom'))->not->toHaveKey('atrium')
+        ->and(config('showroom.stats.cache_seconds'))->toBe(60);
+});
+
 it('registers the API routes', function (): void {
     expect(Route::has('showroom.attributes.index'))->toBeTrue()
         ->and(route('showroom.attributes.index'))->toEndWith('/showroom/attributes');

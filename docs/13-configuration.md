@@ -18,9 +18,7 @@ Publish with `php artisan vendor:publish --tag="showroom-config"`.
 | `cortex.enabled` | `true` | Register with Cortex when it is installed |
 | `cortex.server` | `showroom` | Server name in Cortex |
 | `cortex.tools` | `null` | Tool names to offer Cortex, or `null` for all |
-| `ui.enabled` | `true` | Register the Atrium plugin |
-| `atrium.features` | `[ShowroomSupportFeature::class]` | Features that must all be on for Showroom to appear in Atrium; classes that cannot be loaded (without refactor-circus/pennantplus) are skipped |
-| `atrium.widget_cache_seconds` | `60` | How long the dashboard's completeness widget keeps its figures; `0` reads them fresh on every render |
+| `stats.cache_seconds` | `60` | How long `GET showroom/stats` keeps its completeness figures; `0` reads them fresh on every call |
 | `workflow.require_approval` | `true` | Publish only approved products |
 | `workflow.require_complete` | `false` | Submit only products 100% complete on every channel and locale |
 | `products.identifier_pattern` | `/^[^\s\p{C}](?:[^\p{C}]{0,189}[^\s\p{C}])?$/uD` | The regular expression a new product's `identifier` must match, on top of unique and at most 191 characters. The default takes any SKU, spaces and `/` included, and refuses an empty one, leading or trailing whitespace and control characters. A stricter pattern fails non-matching products at `identifier`; one that doesn't compile throws |

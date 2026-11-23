@@ -28,9 +28,6 @@
         <testsuite name="Cortex">
             <directory>tests/Cortex</directory>
         </testsuite>
-        <testsuite name="PennantPlus">
-            <directory>tests/PennantPlus</directory>
-        </testsuite>
         <testsuite name="Keen">
             <directory>tests/Keen</directory>
         </testsuite>

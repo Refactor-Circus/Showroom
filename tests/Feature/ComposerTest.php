@@ -13,36 +13,82 @@ function showroomComposer(): array
     return $composer;
 }
 
+/**
+ * The packages listed under one composer.json section.
+ *
+ * @return list<string>
+ */
+function showroomComposerPackages(string $section): array
+{
+    /** @var array<string, string> $packages */
+    $packages = showroomComposer()[$section] ?? [];
+
+    return array_map('strval', array_keys($packages));
+}
+
 it('requires Keystone as its only suite package', function (): void {
     $suite = array_values(array_filter(
-        array_keys(showroomComposer()['require']),
+        showroomComposerPackages('require'),
         fn (string $package): bool => str_starts_with($package, 'refactor-circus/'),
     ));
 
     expect($suite)->toBe(['refactor-circus/keystone']);
 });
 
-it('keeps Atrium optional: a dev dependency it suggests', function (): void {
-    $composer = showroomComposer();
+it('requires only PHP, Laravel packages and Keystone', function (): void {
+    $other = array_values(array_filter(
+        showroomComposerPackages('require'),
+        fn (string $package): bool => $package !== 'php'
+            && $package !== 'refactor-circus/keystone'
+            && ! str_starts_with($package, 'laravel/')
+            && ! str_starts_with($package, 'illuminate/'),
+    ));
 
-    expect($composer['require'])->not->toHaveKey('refactor-circus/atrium')
-        ->and($composer['require-dev'])->toHaveKey('refactor-circus/atrium', '^0.1')
-        ->and($composer['suggest'])->toHaveKey('refactor-circus/atrium', 'Browse and manage the catalog from the Atrium dashboard (dev-main).');
+    expect($other)->toBe([]);
 });
 
-it('refuses an Atrium older than the screen extensions registry', function (): void {
-    expect(showroomComposer()['conflict'] ?? [])->toHaveKey('refactor-circus/atrium')
-        ->and(showroomComposer()['conflict']['refactor-circus/atrium'])->toStartWith('<');
+it('has no Atrium dependency, suggestion or conflict', function (string $section): void {
+    expect(showroomComposerPackages($section))->not->toContain('refactor-circus/atrium');
+})->with(['require', 'require-dev', 'suggest', 'conflict']);
+
+it('registers no Atrium plugin', function (): void {
+    expect(showroomComposer()['extra'] ?? [])->not->toHaveKey('atrium');
 });
 
-it('runs the without-Atrium suite in composer test, after the unit suite', function (): void {
+it('declares no Atrium repository', function (): void {
+    /** @var list<array{type?: string, url?: string}> $repositories */
+    $repositories = showroomComposer()['repositories'] ?? [];
+
+    $urls = array_map(fn (array $repository): string => strtolower($repository['url'] ?? ''), $repositories);
+
+    expect(array_filter($urls, fn (string $url): bool => str_contains($url, 'atrium')))->toBe([]);
+});
+
+it('drops PennantPlus: no dependency, suggestion or repository', function (string $section): void {
+    expect(showroomComposerPackages($section))->not->toContain('refactor-circus/pennantplus');
+})->with(['require', 'require-dev', 'suggest']);
+
+it('declares no PennantPlus repository', function (): void {
+    /** @var list<array{type?: string, url?: string}> $repositories */
+    $repositories = showroomComposer()['repositories'] ?? [];
+
+    $urls = array_map(fn (array $repository): string => strtolower($repository['url'] ?? ''), $repositories);
+
+    expect(array_filter($urls, fn (string $url): bool => str_contains($url, 'pennantplus')))->toBe([]);
+});
+
+it('has no without-Atrium script, and composer test does not call one', function (): void {
+    /** @var array<string, string|list<string>> $scripts */
     $scripts = showroomComposer()['scripts'];
 
-    expect($scripts)->toHaveKey('test:without-atrium')
-        ->and(implode(' ', (array) $scripts['test:without-atrium']))->toContain('phpunit.without-atrium.xml');
+    expect($scripts)->not->toHaveKey('test:without-atrium')
+        ->and(array_values((array) $scripts['test']))->toBe(['@analyse', '@lint:check', '@test:types', '@test:unit']);
+});
 
-    $test = array_values((array) $scripts['test']);
+it('suggests Keen without mentioning Atrium', function (): void {
+    /** @var array<string, string> $suggest */
+    $suggest = showroomComposer()['suggest'];
 
-    expect($test)->toContain('@test:unit', '@test:without-atrium')
-        ->and(array_search('@test:without-atrium', $test, true))->toBeGreaterThan(array_search('@test:unit', $test, true));
+    expect($suggest)->toHaveKey('refactor-circus/keen')
+        ->and(strtolower($suggest['refactor-circus/keen']))->not->toContain('atrium');
 });

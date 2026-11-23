@@ -32,24 +32,17 @@
         "pestphp/pest-plugin-laravel": "^5.0.1",
         "pestphp/pest-plugin-type-coverage": "^5.0.3",
         "phpstan/extension-installer": "^1.4.3",
-        "refactor-circus/atrium": "^0.1",
         "refactor-circus/cortex": "^0.1",
         "refactor-circus/impex": "^0.1",
         "refactor-circus/keen": "^0.1",
-        "refactor-circus/pennantplus": "^0.1",
         "refactor-circus/ringside": "dev-main",
         "refactor-circus/standards": "dev-main"
     },
     "suggest": {
-        "refactor-circus/atrium": "Browse and manage the catalog from the Atrium dashboard (dev-main).",
         "refactor-circus/cortex": "Let Cortex agents use the Showroom tools and manage the MCP instructions and tool descriptions (dev-main).",
         "refactor-circus/impex": "Import, export and syndicate products as Impex flows: file imports, feeds, ERP and storefront connectors (dev-main).",
-        "refactor-circus/keen": "Record Showroom's changes in a tamper-evident audit log and show each record's history in Atrium (dev-main).",
-        "refactor-circus/pennantplus": "Switch Showroom in Atrium on and off with the ShowroomSupportFeature Pennant feature (dev-main).",
+        "refactor-circus/keen": "Record Showroom's changes in a tamper-evident audit log and serve each record's history over the API and MCP (dev-main).",
         "laravel/scout": "Search products with any Laravel Scout engine: Meilisearch, Typesense, Algolia (^11.0)."
-    },
-    "conflict": {
-        "refactor-circus/atrium": "<0.1.0"
     },
     "autoload": {
         "psr-4": {
@@ -97,15 +90,11 @@
         "test:unit": [
             "vendor/bin/pest --parallel"
         ],
-        "test:without-atrium": [
-            "vendor/bin/pest --configuration=phpunit.without-atrium.xml"
-        ],
         "test": [
             "@analyse",
             "@lint:check",
             "@test:types",
-            "@test:unit",
-            "@test:without-atrium"
+            "@test:unit"
         ],
         "clear": [
             "@php vendor/bin/testbench package:purge-skeleton --ansi"
@@ -129,11 +118,6 @@
             "aliases": {
                 "Showroom": "RefactorCircus\\Showroom\\Facades\\Showroom"
             }
-        },
-        "atrium": {
-            "plugins": [
-                "RefactorCircus\\Showroom\\Atrium\\ShowroomPlugin"
-            ]
         }
     },
     "config": {
@@ -150,19 +134,11 @@
     "repositories": [
         {
             "type": "vcs",
-            "url": "https://github.com/Refactor-Circus/Atrium.git"
-        },
-        {
-            "type": "vcs",
             "url": "https://github.com/Refactor-Circus/Cortex.git"
         },
         {
             "type": "vcs",
             "url": "https://github.com/Refactor-Circus/Impex.git"
-        },
-        {
-            "type": "vcs",
-            "url": "https://github.com/Refactor-Circus/PennantPlus.git"
         },
         {
             "type": "vcs",
