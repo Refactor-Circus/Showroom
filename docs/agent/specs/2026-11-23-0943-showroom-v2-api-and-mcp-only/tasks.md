@@ -12,7 +12,7 @@ criteria: 1, 2, 3, 7, 8, 9
 - [x] 1.3 Create the Catalog domain (D-004): CatalogServiceProvider (listed in DomainServiceProvider, loads routes.php via loadApiRoutesFrom()), routes.php with `stats` → `stats.show`, CatalogController::stats(), and ShowCatalogStatsRequest (`parent::authorize() && allows('viewAny', ProductModel::class)`, persist()).
 - [x] 1.4 Implement ShowCatalogStatsAction (move ShowroomPlugin's statusCounts(), completenessRows(), review queue and recent versions queries, eager-loading versionable and author; Cache::remember('showroom:stats:completeness', …) when seconds > 0), the CatalogStats result, the event pair and the final CatalogStatsResource with schema() (payload in spec Design, D-003). Leave ShowroomPlugin as it is; group 3 deletes it.
 - [x] 1.5 Add ShowCatalogStatsMcpRequest and ShowCatalogStatsTool (`show-catalog-stats-tool`, outputSchema from CatalogStatsResource::structuredSchema()), register it in ShowroomServer, and check that OutputSchemaTest and the Cortex tool tests still pass.
-- [ ] 1.6 Run vendor/bin/pest; all green
+- [x] 1.6 Run vendor/bin/pest; all green
 
 ## Group 2: GET showroom/search and GET showroom/settings-summary
 depends on: 1

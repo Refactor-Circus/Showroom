@@ -99,3 +99,9 @@
 - Rationale: The user asked for the spec and tasks to be written and approved without a review round or questions.
 - Date: 2026-11-23
 - Raised by: write-spec; default chosen because the user asked to proceed without stopping
+
+## D-016: Where are group 1's four out-of-list test edits committed?
+- Choice: Committed as a follow-up to group 1 (tool count 83 to 84 in McpTest, OutputSchemaTest and CortexTest; `ShowCatalogStatsAction => ['ui']` parity exception in tests/Pest.php, which group 3 removes with the ui surface).
+- Rationale: The group's own tests need them; recommended option.
+- Date: 2026-11-23
+- Raised by: factory build (group 1); default chosen because the user asked to proceed without stopping
