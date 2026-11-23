@@ -111,3 +111,9 @@
 - Rationale: Recommended option.
 - Date: 2026-11-23
 - Raised by: factory build; default chosen because the user asked to proceed without stopping
+
+## D-018: How is the phpunit.xml.dist OpenApi testsuite committed?
+- Choice: Committed as a group 5 follow-up, as D-016 and D-017 did, so vendor/bin/pest runs tests/OpenApi.
+- Rationale: Recommended option.
+- Date: 2026-11-23
+- Raised by: factory build; default chosen because the user asked to proceed without stopping

@@ -56,7 +56,7 @@ criteria: 19, 20, 21, 22, 23
 - [x] 5.2 Add dedoc/scramble to require-dev and configure it in the workbench only (`api_path` showroom, fixed `info.version`, relative server URL). Add a workbench extension in workbench/app/OpenApi/ only where Scramble cannot infer a persist() response from the resource schema(). Add the composer scripts `openapi:export` and `client:generate`.
 - [x] 5.3 Create client/: package.json (openapi-fetch; dev openapi-typescript, typescript; `generate` script = openapi-typescript ../openapi.json -o src/schema.d.ts, node scripts/stamp.mjs, tsc), tsconfig.json emitting dist/, scripts/stamp.mjs, src/index.ts (`createShowroomClient({ baseUrl, headers?, fetch?, credentials? })` returning `Client<paths>`, re-exporting paths/components/operations), README.md (D-009). Add `client/node_modules` to .gitignore and `/client/node_modules export-ignore` to .gitattributes.
 - [x] 5.4 Run `composer client:generate` and commit openapi.json, client/src/schema.d.ts, client/package-lock.json and client/dist/**; a second run leaves git status clean. Add a `client` job (Node LTS) to .github/workflows/tests.yml running `composer client:generate` and `git diff --exit-code`.
-- [ ] 5.5 Run vendor/bin/pest; all green
+- [x] 5.5 Run vendor/bin/pest; all green
 
 ## Group 6: Docs, CHANGELOG, Boost skill and CLAUDE.md for v2.0.0
 depends on: 5
