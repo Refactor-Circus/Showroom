@@ -34,6 +34,9 @@
         <testsuite name="RenamedTables">
             <directory>tests/Modes/RenamedTables</directory>
         </testsuite>
+        <testsuite name="OpenApi">
+            <directory>tests/OpenApi</directory>
+        </testsuite>
     </testsuites>
     <source>
         <include>
