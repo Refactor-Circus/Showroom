@@ -22,6 +22,9 @@ use RefactorCircus\Showroom\Domains\Attribute\Events\AttributeOptionsUpsertingAc
 use RefactorCircus\Showroom\Domains\Attribute\Exceptions\AttributeGroupNotEmptyException;
 use RefactorCircus\Showroom\Domains\Attribute\Models\AttributeGroupModel;
 use RefactorCircus\Showroom\Domains\Attribute\Models\AttributeModel;
+use RefactorCircus\Showroom\Domains\Catalog\Actions\ShowCatalogStatsAction;
+use RefactorCircus\Showroom\Domains\Catalog\Events\CatalogStatsShowingActionEvent;
+use RefactorCircus\Showroom\Domains\Catalog\Events\CatalogStatsShownActionEvent;
 use RefactorCircus\Showroom\Domains\Owner\Events\OwnersUpsertedActionEvent;
 use RefactorCircus\Showroom\Domains\Owner\Events\OwnersUpsertingActionEvent;
 
@@ -88,7 +91,20 @@ it('fires one starting and one finished event for every Action', function (): vo
             ->and(is_subclass_of($finished, ActionFinishedEvent::class))->toBeTrue(basename($path).' finishes with '.$finished);
     }
 
-    expect($actions)->toHaveCount(85);
+    expect($actions)->toHaveCount(86);
+});
+
+it('fires the catalog stats pair around reading the figures', function (): void {
+    $starting = recordShowroomEvents(ActionStartingEvent::class);
+    $finished = recordShowroomEvents(ActionFinishedEvent::class);
+
+    $stats = app(ShowCatalogStatsAction::class)->execute();
+
+    expect($starting->getArrayCopy())->toHaveCount(1)
+        ->and($starting[0])->toBeInstanceOf(CatalogStatsShowingActionEvent::class)
+        ->and($finished->getArrayCopy())->toHaveCount(1)
+        ->and($finished[0])->toBeInstanceOf(CatalogStatsShownActionEvent::class)
+        ->and($finished[0]->stats)->toBe($stats);
 });
 
 it('fires the owner batch\'s own pair around the batch, and each written owner\'s pair as the single Actions do', function (): void {

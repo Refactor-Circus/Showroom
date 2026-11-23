@@ -8,6 +8,7 @@ use Illuminate\Support\ServiceProvider;
 use RefactorCircus\Showroom\Domains\Asset\AssetServiceProvider;
 use RefactorCircus\Showroom\Domains\Association\AssociationServiceProvider;
 use RefactorCircus\Showroom\Domains\Attribute\AttributeServiceProvider;
+use RefactorCircus\Showroom\Domains\Catalog\CatalogServiceProvider;
 use RefactorCircus\Showroom\Domains\Category\CategoryServiceProvider;
 use RefactorCircus\Showroom\Domains\Channel\ChannelServiceProvider;
 use RefactorCircus\Showroom\Domains\ExternalId\ExternalIdServiceProvider;
@@ -31,6 +32,7 @@ class DomainServiceProvider extends ServiceProvider
         AssetServiceProvider::class,
         AssociationServiceProvider::class,
         AttributeServiceProvider::class,
+        CatalogServiceProvider::class,
         CategoryServiceProvider::class,
         ChannelServiceProvider::class,
         ExternalIdServiceProvider::class,

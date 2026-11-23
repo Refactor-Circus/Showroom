@@ -16,11 +16,13 @@ use RefactorCircus\Showroom\Domains\Asset\Models\AssetModel;
 use RefactorCircus\Showroom\Domains\Association\Models\AssociationTypeModel;
 use RefactorCircus\Showroom\Domains\Attribute\Models\AttributeGroupModel;
 use RefactorCircus\Showroom\Domains\Attribute\Models\AttributeModel;
+use RefactorCircus\Showroom\Domains\Catalog\Actions\ShowCatalogStatsAction;
 use RefactorCircus\Showroom\Domains\Category\Models\CategoryModel;
 use RefactorCircus\Showroom\Domains\Channel\Models\ChannelModel;
 use RefactorCircus\Showroom\Domains\Family\Models\FamilyModel;
 use RefactorCircus\Showroom\Domains\Owner\Models\OwnerModel;
 use RefactorCircus\Showroom\Domains\Owner\Models\OwnerTypeModel;
+use RefactorCircus\Showroom\Domains\Product\Enums\ProductStatus;
 use RefactorCircus\Showroom\Domains\Product\Mcp\Tools\ListProductsTool;
 use RefactorCircus\Showroom\Domains\Product\Models\ProductModel;
 use RefactorCircus\Showroom\Domains\ProductModel\Mcp\Tools\ListProductModelsTool;
@@ -29,6 +31,7 @@ use RefactorCircus\Showroom\Domains\Search\Enums\SyncScope;
 use RefactorCircus\Showroom\Domains\Search\Services\ProductDocument;
 use RefactorCircus\Showroom\Domains\Search\Services\ProductIndex;
 use RefactorCircus\Showroom\Domains\Workflow\Services\CompletenessCalculator;
+use RefactorCircus\Showroom\Domains\Workflow\Services\Versions;
 use RefactorCircus\Showroom\Impex\Actions\ExportProductPages;
 use RefactorCircus\Showroom\Jobs\QueueProductSyncs;
 use RefactorCircus\Showroom\Jobs\SyncProductIndex;
@@ -390,6 +393,44 @@ it('lists the products of an owner or category subtree that moved in a queued jo
     expect($identifiers(SyncScope::Owner, $owner))->toBe(['V-001', 'V-002'])
         ->and($identifiers(SyncScope::Category, $category))->toBe(['S-001', 'S-002', 'V-001', 'V-002'])
         ->and($index->productsWithin(SyncScope::Owner, 'missing'))->toBeNull();
+});
+
+it('reads the catalog stats in a fixed number of queries, whatever the catalog holds', function (): void {
+    // Read the completeness rows every time, so each call counts them.
+    config()->set('showroom.stats.cache_seconds', 0);
+
+    seedCatalog(5);
+    $this->postJson(performanceProductPath('S-001').'/transitions', ['transition' => 'submit'])->assertOk();
+
+    expect(ProductModel::query()->count())->toBe(10);
+
+    $stats = fn () => app(ShowCatalogStatsAction::class)->execute();
+    $api = fn () => test()->getJson(route('showroom.stats.show'))->assertOk();
+
+    // Status counts, completeness, the review queue, the versions and their products.
+    $few = queriesDuring($stats);
+    $fewApi = queriesDuring($api);
+
+    $family = FamilyModel::query()->where('code', 'shirts')->value('id');
+    $products = ProductModel::factory()->count(190)->create(['family_id' => $family, 'status' => ProductStatus::InReview]);
+    app(CompletenessCalculator::class)->refresh(ProductModel::query()->with(['family', 'parent.parent'])->whereKey($products->modelKeys())->get());
+
+    foreach ($products as $product) {
+        app(Versions::class)->record($product, 'created');
+    }
+
+    expect(ProductModel::query()->count())->toBe(200);
+
+    $result = null;
+    $many = queriesDuring(function () use ($stats, &$result): void {
+        $result = $stats();
+    });
+
+    expect($many)->toBe($few)->toBe(5)
+        ->and(queriesDuring($api))->toBe($fewApi)
+        ->and($result->reviewTotal)->toBe(191)
+        ->and($result->reviewQueue)->toHaveCount(5)
+        ->and($result->recentVersions)->toHaveCount(8);
 });
 
 it('adds no query to a list screen while nothing is registered on it', function (string $key, string $subject, string $row): void {
