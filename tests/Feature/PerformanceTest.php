@@ -2,31 +2,18 @@
 
 declare(strict_types=1);
 
-use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
-use RefactorCircus\Atrium\Domains\Screens\Services\ScreenExtensions;
-use RefactorCircus\Atrium\Domains\Widgets\Services\WidgetRegistry;
 use RefactorCircus\Impex\Domains\Run\Data\Resume;
 use RefactorCircus\Impex\Domains\Run\Data\StepDeadline;
-use RefactorCircus\Impex\Domains\Run\Models\RunModel;
-use RefactorCircus\Showroom\Atrium\Support\Screens;
-use RefactorCircus\Showroom\Domains\Asset\Models\AssetModel;
-use RefactorCircus\Showroom\Domains\Association\Models\AssociationTypeModel;
-use RefactorCircus\Showroom\Domains\Attribute\Models\AttributeGroupModel;
-use RefactorCircus\Showroom\Domains\Attribute\Models\AttributeModel;
 use RefactorCircus\Showroom\Domains\Catalog\Actions\ShowCatalogStatsAction;
-use RefactorCircus\Showroom\Domains\Category\Models\CategoryModel;
-use RefactorCircus\Showroom\Domains\Channel\Models\ChannelModel;
 use RefactorCircus\Showroom\Domains\Family\Models\FamilyModel;
 use RefactorCircus\Showroom\Domains\Owner\Models\OwnerModel;
-use RefactorCircus\Showroom\Domains\Owner\Models\OwnerTypeModel;
 use RefactorCircus\Showroom\Domains\Product\Enums\ProductStatus;
 use RefactorCircus\Showroom\Domains\Product\Mcp\Tools\ListProductsTool;
 use RefactorCircus\Showroom\Domains\Product\Models\ProductModel;
 use RefactorCircus\Showroom\Domains\ProductModel\Mcp\Tools\ListProductModelsTool;
-use RefactorCircus\Showroom\Domains\ProductModel\Models\ProductModelModel;
 use RefactorCircus\Showroom\Domains\Search\Enums\SyncScope;
 use RefactorCircus\Showroom\Domains\Search\Services\ProductDocument;
 use RefactorCircus\Showroom\Domains\Search\Services\ProductIndex;
@@ -431,64 +418,4 @@ it('reads the catalog stats in a fixed number of queries, whatever the catalog h
         ->and($result->reviewTotal)->toBe(191)
         ->and($result->reviewQueue)->toHaveCount(5)
         ->and($result->recentVersions)->toHaveCount(8);
-});
-
-it('adds no query to a list screen while nothing is registered on it', function (string $key, string $subject, string $row): void {
-    $html = '';
-
-    // Everything a list view does with its screen: resolve it, then render
-    // the tab bar, the panel and every slot, row.actions once per row.
-    $queries = queriesDuring(function () use ($key, $subject, $row, &$html): void {
-        $resolved = app(ScreenExtensions::class)->resolve(Screens::list($key, $subject), request());
-
-        $html = Blade::render(<<<'BLADE'
-            <x-atrium::screen-sections :screen="$resolved" slot="header.actions" />
-            <x-atrium::screen-tabs :screen="$resolved" />
-            <x-atrium::screen-tab-panel :screen="$resolved" />
-            <x-atrium::screen-sections :screen="$resolved" slot="before" />
-            @foreach ($rows as $row)
-                <x-atrium::screen-sections :screen="$resolved" slot="row.actions" :row="$row" />
-            @endforeach
-            <x-atrium::screen-sections :screen="$resolved" slot="after" />
-            BLADE, ['resolved' => $resolved, 'rows' => [new $row, new $row]]);
-    });
-
-    expect($queries)->toBe(0)
-        ->and(trim($html))->toBe('');
-})->with([
-    'products' => ['showroom.products', ProductModel::class, ProductModel::class],
-    'product models' => ['showroom.product-models', ProductModelModel::class, ProductModelModel::class],
-    'channels' => ['showroom.channels', ChannelModel::class, ChannelModel::class],
-    'assets' => ['showroom.assets', AssetModel::class, AssetModel::class],
-    'categories' => ['showroom.categories', CategoryModel::class, CategoryModel::class],
-    'owner types' => ['showroom.owner-types', OwnerTypeModel::class, OwnerTypeModel::class],
-    'owners' => ['showroom.owners', OwnerModel::class, OwnerModel::class],
-    'families' => ['showroom.families', FamilyModel::class, FamilyModel::class],
-    'attributes' => ['showroom.attributes', AttributeModel::class, AttributeModel::class],
-    'attribute groups' => ['showroom.attribute-groups', AttributeGroupModel::class, AttributeGroupModel::class],
-    'association types' => ['showroom.association-types', AssociationTypeModel::class, AssociationTypeModel::class],
-    'transfers' => ['showroom.transfers', ProductModel::class, RunModel::class],
-]);
-
-it('counts products per status in one query, and keeps completeness figures briefly', function (): void {
-    seedCatalog(2);
-    $this->postJson(performanceProductPath('S-001').'/transitions', ['transition' => 'submit'])->assertOk();
-
-    $resolve = fn (string $key): array => app(WidgetRegistry::class)->get($key)?->resolveData() ?? [];
-    $status = [];
-
-    expect(queriesDuring(function () use ($resolve, &$status): void {
-        $status = $resolve('showroom.product-status');
-    }))->toBe(1)
-        ->and($status['counts'])->toMatchArray(['draft' => 3, 'in_review' => 1])
-        ->and($status['published'])->toBe(0);
-
-    $first = $resolve('showroom.completeness');
-
-    expect(queriesDuring(fn () => $resolve('showroom.completeness')))->toBe(0)
-        ->and($resolve('showroom.completeness'))->toBe($first);
-
-    config()->set('showroom.atrium.widget_cache_seconds', 0);
-
-    expect(queriesDuring(fn () => $resolve('showroom.completeness')))->toBe(1);
 });

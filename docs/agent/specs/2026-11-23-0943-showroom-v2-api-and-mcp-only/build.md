@@ -52,3 +52,21 @@ Left uncommitted, outside the group's list, which the committed code and tests n
 They are left in the worktree for a decision on where they get committed.
 
 Left: 2.5 (full `vendor/bin/pest`), which the gate runs.
+
+## Group 3
+
+Files:
+
+- Tests first: `tests/ArchTest.php` (the Atrium rule is now "no Showroom class uses an Atrium class" with no ignore list, `TransferUiController` is off the Impex rule's ignore list, the parity test is "every use case is reachable from the HTTP API and MCP"); `tests/Pest.php` (`parityGaps()` checks `http` and `mcp` only; every `ui` entry is gone from `PARITY_EXCEPTIONS`, and the entries that held only `ui` are dropped); `tests/Feature/ServiceProviderTest.php` (no `showroom-views` tag in the publish list or `publishableGroups()`, no `showroom` view hint, no `showroomCan`/`endshowroomCan` directive, no `ProductStatus::badge()`); `tests/Feature/PerformanceTest.php` (screen and widget cases and their imports removed; group 1's stats case stays); `tests/Feature/RecordLookupTest.php` (the `atrium.showroom.*` rows and route filter removed; the dashboard-link case keeps only its API half, renamed "links records by the configured key"; the `beforeEach` that set CSRF and the local environment for Atrium's screens is gone).
+- Deleted: `tests/Feature/Ui/**`, `tests/Feature/NavigationSectionTest.php`, `src/Atrium/**` except `src/Atrium/Features/ShowroomSupportFeature.php`, `resources/views/**`, `docs/agent/standards/showroom/atrium-screens.md`.
+- `src/ShowroomServiceProvider.php`: no `registerAtriumPlugin()`, `loadViewsFrom()`, `Blade::if('showroomCan')` or views publish entry, and their imports. Translations, the other publish tags, `loadHistoryRoutes()` and the Impex integration stay.
+- `src/Domains/Product/Enums/ProductStatus.php`: no `badge()` and no `Badges` import.
+
+Tests: Pint passes on every changed PHP file. Run here as spot checks, not the full suite: `tests/ArchTest.php` with `tests/Feature/PerformanceTest.php` (33 passed), `tests/Feature/RecordLookupTest.php --parallel` (173 passed), `tests/Feature/ServiceProviderTest.php` (25 passed) and `tests/PennantPlus/ShowroomSupportFeatureTest.php` (1 passed). Task 3.5, the full `vendor/bin/pest`, is left to the gate. Running ArchTest, RecordLookupTest and PerformanceTest together in one serial process ran out of memory (512 MB) while loading routes. The project's `test:unit` runs `--parallel`, and each file passes alone.
+
+Deviations:
+
+- `tests/PennantPlus/ShowroomSupportFeatureTest.php` is outside the group's list. Its cases tested `ShowroomPlugin::features()` and the Atrium navigation and `atrium.showroom.*` routes, which this group deletes, and the `PennantPlus` suite in `phpunit.xml.dist` would fail without it. It now holds one case for the feature alone (on until its global value is turned off). Group 4 deletes the file with `tests/PennantPlus/**`.
+- `docs/agent/standards.index.yml` still listed `showroom/atrium-screens`. It is generated and git-ignored, so `vendor/bin/ringside sync` rebuilt it locally and nothing is committed for it.
+- Left for later groups (their lists own them): `README.md` still documents `--tag="showroom-views"`, which `DocsTest` asserts (group 6). The `trait_exists(ResetsScreenExtensions)` guard in `tests/Pest.php` stays until group 4. Group 4 deletes `tests/PennantPlus/**` but does not list `phpunit.xml.dist`, which still declares the `PennantPlus` testsuite directory.
+

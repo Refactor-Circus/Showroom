@@ -2,7 +2,9 @@
 
 declare(strict_types=1);
 
+use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 use RefactorCircus\Showroom\Domains\Asset\AssetServiceProvider;
 use RefactorCircus\Showroom\Domains\Association\AssociationServiceProvider;
@@ -12,6 +14,7 @@ use RefactorCircus\Showroom\Domains\Channel\ChannelServiceProvider;
 use RefactorCircus\Showroom\Domains\DomainServiceProvider;
 use RefactorCircus\Showroom\Domains\Family\FamilyServiceProvider;
 use RefactorCircus\Showroom\Domains\Owner\OwnerServiceProvider;
+use RefactorCircus\Showroom\Domains\Product\Enums\ProductStatus;
 use RefactorCircus\Showroom\Domains\Product\ProductServiceProvider;
 use RefactorCircus\Showroom\Domains\ProductModel\ProductModelServiceProvider;
 use RefactorCircus\Showroom\Domains\Search\SearchServiceProvider;
@@ -154,4 +157,16 @@ it('loads the package translations', function (): void {
 
 it('publishes every resource group under its own tag', function (string $tag): void {
     expect(ServiceProvider::pathsToPublish(ShowroomServiceProvider::class, $tag))->not->toBeEmpty();
-})->with(['showroom', 'showroom-config', 'showroom-views', 'showroom-lang', 'showroom-migrations']);
+})->with(['showroom', 'showroom-config', 'showroom-lang', 'showroom-migrations']);
+
+it('ships no views: no views publish tag, view namespace or Blade directive', function (): void {
+    expect(ServiceProvider::publishableGroups())->not->toContain('showroom-views')
+        ->and(ServiceProvider::pathsToPublish(ShowroomServiceProvider::class, 'showroom-views'))->toBeEmpty()
+        ->and(View::getFinder()->getHints())->not->toHaveKey('showroom')
+        ->and(Blade::getCustomDirectives())->not->toHaveKey('showroomCan')
+        ->and(Blade::getCustomDirectives())->not->toHaveKey('endshowroomCan');
+});
+
+it('gives ProductStatus no badge()', function (): void {
+    expect(method_exists(ProductStatus::class, 'badge'))->toBeFalse();
+});

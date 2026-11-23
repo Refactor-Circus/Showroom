@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
-use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Testing\TestResponse;
 use Laravel\Mcp\Server\Tool;
@@ -38,13 +37,6 @@ use Symfony\Component\HttpFoundation\Response;
  * code is never a lookup key (D-001, D-010).
  */
 
-beforeEach(function (): void {
-    ValidateCsrfToken::except(['*']);
-
-    // Atrium denies access outside local until a gate is defined.
-    app()->detectEnvironment(fn (): string => 'local');
-});
-
 /**
  * Every route that takes a `{product}` or `{owner}`, with the method and a
  * body that lets the call succeed once the record is bound.
@@ -61,17 +53,9 @@ function lookupRoutes(): array
         'showroom.products.versions.index' => ['GET', 'product', [], []],
         'showroom.products.versions.show' => ['GET', 'product', ['version' => 'latest'], []],
         'showroom.products.revert' => ['POST', 'product', [], ['version' => 1]],
-        'atrium.showroom.products.show' => ['GET', 'product', [], []],
-        'atrium.showroom.products.update' => ['PATCH', 'product', [], ['enabled' => '0']],
-        'atrium.showroom.products.destroy' => ['DELETE', 'product', [], []],
-        'atrium.showroom.products.transition' => ['POST', 'product', [], ['transition' => 'submit']],
-        'atrium.showroom.products.revert' => ['POST', 'product', [], ['version' => 1]],
         'showroom.owners.show' => ['GET', 'owner', [], []],
         'showroom.owners.update' => ['PATCH', 'owner', [], ['labels' => ['en' => 'Acme EU']]],
         'showroom.owners.destroy' => ['DELETE', 'owner', [], []],
-        'atrium.showroom.owners.show' => ['GET', 'owner', [], []],
-        'atrium.showroom.owners.update' => ['PATCH', 'owner', [], []],
-        'atrium.showroom.owners.destroy' => ['DELETE', 'owner', [], []],
     ];
 }
 
@@ -159,10 +143,10 @@ function expectBound(TestResponse $response, string $parameter, Model $record): 
 }
 
 it('lists every route that takes a product or an owner', function (): void {
-    // Only Showroom's own routes and Atrium screens: other packages, such as
-    // Impex's `runs/{run}/owners/{owner}`, define their own `{owner}`.
+    // Only Showroom's own routes: other packages, such as Impex's
+    // `runs/{run}/owners/{owner}`, define their own `{owner}`.
     $routes = collect(Route::getRoutes()->getRoutes())
-        ->filter(fn (Illuminate\Routing\Route $route): bool => str_starts_with((string) $route->getName(), 'showroom.') || str_starts_with((string) $route->getName(), 'atrium.showroom.'))
+        ->filter(fn (Illuminate\Routing\Route $route): bool => str_starts_with((string) $route->getName(), 'showroom.'))
         ->filter(fn (Illuminate\Routing\Route $route): bool => array_intersect($route->parameterNames(), ['product', 'owner']) !== [])
         ->map(fn (Illuminate\Routing\Route $route): string => (string) $route->getName())
         ->sort()
@@ -208,17 +192,14 @@ describe('by the configured key', function (): void {
             ->assertJsonPath('data.id', $id);
     });
 
-    it('links the dashboard by the configured key', function (string $key): void {
+    it('links records by the configured key', function (string $key): void {
         config()->set('showroom.lookup.products', $key);
         config()->set('showroom.lookup.owners', $key);
         $product = lookupProduct();
         $owner = lookupOwner();
 
-        expect(route('atrium.showroom.products.show', $product))->toEndWith('/showroom/products/'.$product->getAttribute($key))
+        expect(route('showroom.products.show', $product))->toEndWith('/showroom/products/'.$product->getAttribute($key))
             ->and(route('showroom.owners.show', $owner))->toEndWith('/showroom/owners/'.$owner->getAttribute($key));
-
-        $this->post(route('atrium.showroom.products.store'), ['identifier' => 'CAP'])
-            ->assertRedirect(route('atrium.showroom.products.show', ProductModel::query()->where('identifier', 'CAP')->value($key)));
     })->with(['id', 'slug']);
 
     it('keeps flags bound by code', function (): void {

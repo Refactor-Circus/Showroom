@@ -7,11 +7,8 @@ namespace RefactorCircus\Showroom;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Route;
 use Illuminate\Routing\Router;
-use Illuminate\Support\Facades\Blade;
 use RefactorCircus\Keystone\Packages\Package;
 use RefactorCircus\Keystone\Support\PackageServiceProvider;
-use RefactorCircus\Showroom\Atrium\ScreenAccess;
-use RefactorCircus\Showroom\Atrium\ShowroomPlugin;
 use RefactorCircus\Showroom\Domains\DomainServiceProvider;
 use RefactorCircus\Showroom\Impex\ImpexIntegration;
 use RefactorCircus\Showroom\Mcp\ShowroomServer;
@@ -67,18 +64,10 @@ class ShowroomServiceProvider extends PackageServiceProvider
         // Missing records on Showroom's routes answer a plain "Not found.", as its tools do.
         $this->registerNotFoundResponses();
 
-        $this->registerAtriumPlugin(ShowroomPlugin::class);
-
         $this->registerMcpServer();
 
         // GET {prefix}/history: Showroom's audit entries, with refactor-circus/keen.
         $this->loadHistoryRoutes();
-
-        $this->loadViewsFrom(__DIR__.'/../resources/views', 'showroom');
-
-        // @showroomCan('update', $product) ... @endshowroomCan: the screens'
-        // own check, so a control shows only when its action is allowed.
-        Blade::if('showroomCan', ScreenAccess::allows(...));
 
         $this->loadTranslationsFrom(__DIR__.'/../lang', 'showroom');
 
@@ -91,10 +80,6 @@ class ShowroomServiceProvider extends PackageServiceProvider
         ], ['showroom', 'showroom-config']);
 
         $this->publishes([
-            __DIR__.'/../resources/views' => resource_path('views/vendor/showroom'),
-        ], ['showroom', 'showroom-views']);
-
-        $this->publishes([
             __DIR__.'/../lang' => $this->app->langPath('vendor/showroom'),
         ], ['showroom', 'showroom-lang']);
 
@@ -104,7 +89,7 @@ class ShowroomServiceProvider extends PackageServiceProvider
     }
 
     /**
-     * Bind `{product}` and `{owner}` on Showroom's routes (API and dashboard)
+     * Bind `{product}` and `{owner}` on Showroom's API routes
      * through RecordLookup: by the configured key, or the key the request
      * asks for with `?by=`. The binding runs before the request is
      * validated, so an invalid `by` answers 422 here, before the action.

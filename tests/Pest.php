@@ -39,39 +39,23 @@ function mcpTool(string $tool, array $arguments = []): TestResponse
 /**
  * Actions deliberately missing from a surface, and why.
  *
- * Every use case must be reachable from the HTTP API, MCP and the Atrium
- * dashboard. An Action counts as reachable when its class name appears in
- * that surface's request or controller classes.
+ * Every use case must be reachable from the HTTP API and MCP. An Action
+ * counts as reachable when its class name appears in that surface's request
+ * classes.
  *
  * @var array<string, array<int, string>>
  */
 const PARITY_EXCEPTIONS = [
     // Batch upserts run through the Impex import flows; their own HTTP and
     // MCP endpoints are out of scope (bulk import readiness spec).
-    'UpsertProductsAction' => ['http', 'mcp', 'ui'],
+    'UpsertProductsAction' => ['http', 'mcp'],
     // The same for owners (batch owner upsert spec).
-    'UpsertOwnersAction' => ['http', 'mcp', 'ui'],
+    'UpsertOwnersAction' => ['http', 'mcp'],
     // The same for attribute options (batch attribute option upsert).
-    'UpsertAttributeOptionsAction' => ['http', 'mcp', 'ui'],
-    // Not on the dashboard yet; reachable over the API and MCP.
-    'ShowAssociationTypeAction' => ['ui'],
-    'UpdateAssociationTypeAction' => ['ui'],
-    'ListAttributeOptionsAction' => ['ui'],
-    'UpdateAttributeOptionAction' => ['ui'],
-    'ShowLocaleAction' => ['ui'],
-    'UpdateLocaleAction' => ['ui'],
-    'ListFamilyVariantsAction' => ['ui'],
-    'UpdateFamilyVariantAction' => ['ui'],
-    'ShowProductVersionAction' => ['ui'],
-    // The figures the dashboard widgets showed, now served to Atrium v2
-    // over the API; the screens that would reach it are being removed.
-    'ShowCatalogStatsAction' => ['ui'],
-    // The same for the search the dashboard's command palette ran.
-    'SearchCatalogAction' => ['ui'],
+    'UpsertAttributeOptionsAction' => ['http', 'mcp'],
     // The settings summary describes host configuration for an admin panel
-    // and adds nothing for an MCP client (D-006); the dashboard's settings
-    // panel that showed it is being removed.
-    'ShowSettingsSummaryAction' => ['mcp', 'ui'],
+    // and adds nothing for an MCP client (D-006).
+    'ShowSettingsSummaryAction' => ['mcp'],
 ];
 
 /**
@@ -86,6 +70,5 @@ function parityGaps(): array
     return Parity::gaps($root.'/Domains/*/Actions/*.php', [
         'http' => $root.'/Domains/*/Http/Requests/*.php',
         'mcp' => $root.'/Domains/*/Mcp/Requests/*.php',
-        'ui' => $root.'/Atrium/Http/Controllers/*.php',
     ], PARITY_EXCEPTIONS);
 }
