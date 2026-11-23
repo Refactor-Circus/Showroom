@@ -80,6 +80,9 @@ Routes are registered under `showroom.routes.prefix` (default `showroom`) with `
 | `POST` | `/showroom/products/{product}/revert` | `RevertProductAction` — `version`, `comment` |
 | `POST` | `/showroom/imports` | `StartImportAction` → `202` with the Impex run — `file`, `url` or `asset`, `format`, `mode`; see [Import, export and feeds](12-impex.md) |
 | `POST` | `/showroom/exports` | `StartExportAction` → `202` with the Impex run — search filters, `format`, `code`, `published` |
+| `GET` | `/showroom/stats` | `ShowCatalogStatsAction` — status counts, completeness, review queue, newest versions; see [Catalog stats](#catalog-stats) |
+| `GET` | `/showroom/search` | `SearchCatalogAction` — `q`, `type`, `limit`; see [Catalog search](#catalog-search) |
+| `GET` | `/showroom/settings-summary` | `ShowSettingsSummaryAction`; see [Settings summary](#settings-summary) |
 
 Path parameters are codes, except for products and owners. An option is looked up within its attribute.
 
@@ -138,6 +141,67 @@ Clients that poll the catalog have two helpers:
 - `GET /showroom/products/{product}` carries an `ETag` of its body. Send it back as `If-None-Match` and an unchanged product answers `304 Not Modified` with no body. The tag covers the response as asked for, so the same product read with other `scope` or `locales[]` has another tag.
 
 Vendors who need every change, inherited ones included, subscribe to product webhooks instead of polling; see [Import, export and feeds](12-impex.md#product-webhooks).
+
+## Catalog stats
+
+`GET /showroom/stats` (`showroom.stats.show`) is the catalog at a glance, for a front end's overview page. It needs `viewAny` on products.
+
+```json
+{"data": {
+  "status": {"counts": {"draft": 3, "in_review": 1, "approved": 4, "archived": 0}, "published": 2},
+  "completeness": [{"channel": "web", "locale": "en_GB", "products": 8, "complete": 5, "average": 81}],
+  "review_queue": {"products": [{"id": "01J...", "identifier": "SKU-1", "slug": "sku-1", "status": "in_review", "updated_at": "..."}], "total": 1},
+  "recent_versions": [{"version": 3, "action": "updated", "comment": null, "author": {"type": "user", "id": 1}, "changes": {}, "created_at": "...", "subject": {"type": "product", "id": "01J...", "key": "SKU-1"}}]
+}}
+```
+
+- `status`: `counts` has every status, `0` for one no product holds; `published` counts products with a published version.
+- `completeness`: one row per channel and locale with stored scores, ordered by channel code then locale code. `complete` counts products at 100%, and `average` is the rounded mean. These rows read every stored score, so they are cached for `showroom.stats.cache_seconds` (default `60`); `0` reads them fresh on every call. The other sections are never cached.
+- `review_queue`: the 5 `in_review` products waiting longest (oldest `updated_at` first), and `total`, every product in review.
+- `recent_versions`: the 8 newest versions, each with the product or product model it belongs to as `subject` (`type` is `product` or `product_model`; `key` is the identifier or code).
+
+The call costs the same number of queries however large the catalog. `show-catalog-stats-tool` answers the same payload over MCP.
+
+## Catalog search
+
+`GET /showroom/search?q=tee` (`showroom.search.index`) searches every kind of record at once, for a front end's quick search. It answers a flat list of hits, by type in this order:
+
+| `type` | Matches | Order |
+|---|---|---|
+| `products` | identifier prefix | identifier |
+| `assets` | code, label or filename | newest first |
+| `categories`, `owners`, `families`, `attributes`, `attribute_groups` | code or label | code |
+
+```json
+{"data": [{"type": "owners", "id": "01J...", "code": "acme", "label": "Acme", "subtitle": "acme · vendor"}]}
+```
+
+For products, `code` and `label` are the identifier and `subtitle` is `null`. Showroom returns no links: build them from `type` and `id`.
+
+- `q` is required, at most 191 characters.
+- `type` limits the search to one of the types above.
+- `limit` caps the hits per type: 1 to 20, default 5.
+
+Anything else answers `422`. With `showroom.authorization` on, only the types the caller may list (`viewAny` on their model in `showroom.policies`) are searched; a type they may not list adds no hits, and a caller who may list none of the requested types gets `403`. With it off, every type is searched. `search-catalog-tool` takes the same arguments over MCP.
+
+## Settings summary
+
+`GET /showroom/settings-summary` (`showroom.settings-summary.show`) reports how the API and MCP server are set up, for a front end's settings panel. It needs `viewAny` on products. Each value is read from the config and cast:
+
+```json
+{"data": {
+  "authorization": true,
+  "routes": {"enabled": true, "prefix": "showroom", "middleware": ["api"]},
+  "mcp": {"web": {"enabled": false, "route": "mcp/showroom", "middleware": []}, "local": {"enabled": false, "handle": "showroom"}},
+  "pagination": {"per_page": 25, "max_per_page": 100}
+}}
+```
+
+It describes host configuration, so it has no MCP tool.
+
+## OpenAPI document
+
+Every endpoint above is described in the package's `openapi.json`, from which the typed `@refactor-circus/showroom-client` in `client/` is generated. After changing a route, request rules or a resource, run `composer client:generate` and commit both; `tests/OpenApi/OpenApiTest.php` fails while either is stale. See the README's "OpenAPI and TypeScript client".
 
 ## Errors
 

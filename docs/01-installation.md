@@ -7,7 +7,7 @@ php artisan vendor:publish --tag="showroom-migrations"
 php artisan migrate
 ```
 
-Showroom requires PHP 8.5 and Laravel 13. It depends on `refactor-circus/atrium` for the dashboard and `laravel/mcp` for the MCP server. For product search beyond the database, add `laravel/scout` with a Scout engine (picked automatically once installed) — see [Search](05-search.md). For bulk imports, exports and feeds, add `refactor-circus/impex` — see [Import, export and feeds](12-impex.md).
+Showroom requires PHP 8.5 and Laravel 13. It ships a JSON API and an MCP server (on `laravel/mcp`), and no UI; see the README for the TypeScript client and an admin panel. For product search beyond the database, add `laravel/scout` with a Scout engine (picked automatically once installed) — see [Search](05-search.md). For bulk imports, exports and feeds, add `refactor-circus/impex` — see [Import, export and feeds](12-impex.md).
 
 Asset files go to `showroom.media.disk` — use S3 or another object store on Vapor and Lambda. See [Media](08-media.md).
 
@@ -20,14 +20,12 @@ Run a queue worker: completeness scores and the search index are refreshed by qu
 | `showroom` | Everything below |
 | `showroom-config` | `config/showroom.php` |
 | `showroom-migrations` | The catalog migrations |
-| `showroom-views` | Dashboard views, to `resources/views/vendor/showroom` |
 | `showroom-lang` | Translations, to `lang/vendor/showroom` |
 
 ## Securing the surfaces
 
 - **HTTP API:** add authentication middleware to `showroom.routes.middleware` (for example `['api', 'auth:sanctum']`). With `showroom.authorization` on — the default — every call also needs an authenticated user and passes the policies in `showroom.policies`.
 - **MCP:** both transports ship disabled. Add auth middleware to `showroom.mcp.web.middleware` before enabling the web transport.
-- **Dashboard:** Atrium owns the path, middleware and `viewAtrium` gate.
 
 ## Tables
 

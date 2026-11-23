@@ -2,7 +2,8 @@
 name: showroom-development
 description: >
   Install and use the Showroom PIM package (refactor-circus/showroom) in Laravel applications: define attribute groups, typed
-  attributes, options, families, family variants, product models, products, owners, categories, assets, locales, channels and associations through Actions; run the review and publishing workflow and read version history, import, export and syndicate products through Impex flows, the JSON API under /showroom, or MCP tools; configure authorization,
+  attributes, options, families, family variants, product models, products, owners, categories, assets, locales, channels and associations through Actions; run the review and publishing workflow and read version history, import, export and syndicate products through Impex flows, the JSON API under /showroom, or MCP tools; read catalog stats,
+  cross-record search and the settings summary; call the API from TypeScript with the generated client; configure authorization,
   policies, MCP transports and Cortex.
 license: MIT
 metadata:
@@ -12,6 +13,8 @@ metadata:
 # Showroom
 
 Use this skill when a Laravel application needs product information management (PIM) with Showroom: managing the attributes products are described with, over PHP, HTTP or MCP.
+
+Showroom is a JSON API and MCP package: it ships no screens, views or Blade components. A front end calls the JSON API, typed by the committed `openapi.json` and the `@refactor-circus/showroom-client` TypeScript client; the suite's admin panel is a separate package that does the same.
 
 ## Primary Goal
 
@@ -52,20 +55,28 @@ Call Actions from each domain's `Actions` namespace (`RefactorCircus\Showroom\Do
 - Associations: `List/Show/Create/Update/DeleteAssociationTypeAction`; associations go through the product and product model Actions
 - Workflow: `TransitionProductAction`, `ListProductVersionsAction`, `ShowProductVersionAction`, `RevertProductAction`
 - Import/export (needs `refactor-circus/impex`): `StartImportAction`, `StartExportAction` — both return the Impex `Run`
+- Catalog (read-only views across the other domains, `RefactorCircus\Showroom\Domains\Catalog\Actions`): `ShowCatalogStatsAction` (returns `CatalogStats`), `SearchCatalogAction` (`SearchCatalogData` `q`, `type`, `limit`, plus the user whose `viewAny` decides the types searched), `ShowSettingsSummaryAction`
 
 ### 4. Or use the HTTP API / MCP tools
 
 - HTTP: `/showroom/attribute-groups`, `/showroom/attributes`, `/showroom/attributes/{code}/options`, `/showroom/families`, `/showroom/family-variants`, `/showroom/product-models`, `/showroom/products`, `/showroom/owner-types`, `/showroom/owners`, `/showroom/categories`, `/showroom/assets`, `/showroom/locales`, `/showroom/channels`, `/showroom/association-types`, `POST /showroom/imports`, `POST /showroom/exports` — records addressed by code, cursor pagination (`cursor`, `per_page`).
+- Catalog: `GET /showroom/stats` (status counts and published, completeness per channel and locale cached for `showroom.stats.cache_seconds`, the review queue, the 8 newest versions), `GET /showroom/search?q=&type=&limit=` (`{type, id, code, label, subtitle}` hits across products, assets, categories, owners, families, attributes and attribute groups, only types the caller may `viewAny`; `403` when none), `GET /showroom/settings-summary` (authorization, routes, MCP transports, pagination). Stats and the summary need `viewAny` on products. MCP: `show-catalog-stats-tool`, `search-catalog-tool`.
+- Import and export runs belong to Impex: list them through Impex's runs API filtered by `flow`, start them with `POST /showroom/imports` and `POST /showroom/exports`. Showroom has no transfers-list endpoint.
 - MCP: tools such as `create-attribute-tool` behind `search_tools` / `execute_tools`; catalog in `RefactorCircus\Showroom\Mcp\ShowroomServer::TOOLS`.
 - History (needs `refactor-circus/keen`, and `showroom.audit.enabled` on): `GET /showroom/history` (route `showroom.history.index`) and `list-showroom-history-tool`. Without it the route answers 404 and the tool is not offered.
 - MCP tools answer with the API resources under `data` and declare output schemas; lists carry their page under `meta` (`meta.next_cursor`, or `meta.total`/`meta.last_page` for `list-products-tool`).
 
-### 5. Choose a search engine
+### 5. Call the API from TypeScript
+
+- `openapi.json` (package root) describes every default route; `client/` is `@refactor-circus/showroom-client`, installed as a git dependency at a release tag (`pnpm add "github:Refactor-Circus/Showroom#v2.0.0&path:client"`; npm cannot install a subfolder). `createShowroomClient({ baseUrl, headers?, fetch?, credentials? })` returns openapi-fetch's typed `Client<paths>`: `showroom.GET('/search', { params: { query: { q: 'tee' } } })`.
+- Working on Showroom itself: after changing a route, request rules, a Data's `rules()` or a resource, run `composer client:generate` (Scramble export from the workbench, then `npm --prefix client ci` and `npm --prefix client run generate`) and commit `openapi.json` and `client/`. `tests/OpenApi/OpenApiTest.php` fails while either is stale.
+
+### 6. Choose a search engine
 
 - `showroom.search.engine`: `null` (default: `scout` when `laravel/scout` is installed, `database` otherwise), `database`, `scout`, or a class implementing `RefactorCircus\Showroom\Domains\Search\Contracts\SearchEngine`.
 - Run a queue worker: index syncs (`SyncProductIndex`, and `QueueProductSyncs` for changes that reach many products) and value purges are queued. Rebuild with `php artisan showroom:search:reindex`. Wrap bulk product writes in `app(ProductIndex::class)->deferring(fn () => ...)` to send their syncs together. The database engine suits up to tens of thousands of products; free-text `search` scans JSON values, so use Scout beyond that.
 
-### 6. React to changes
+### 7. React to changes
 
 Listen to action events (`RefactorCircus\Showroom\Domains\Attribute\Events\AttributeCreatedActionEvent`, or the `RefactorCircus\Keystone\Contracts\ActionFinishedEvent` family) or model events (`RefactorCircus\Keystone\Contracts\ModelLifecycleEvent`). Every Action writes inside a database transaction, and its finished event fires only once that commits. The Impex flow steps fire the same pairs (`RefactorCircus\Showroom\Domains\Transfer\Events\ProductRowImportedActionEvent`, `ProductPagesExportedActionEvent`, `ProductExportJoinedActionEvent`, `FeedDeliveredActionEvent` and their starting events).
 

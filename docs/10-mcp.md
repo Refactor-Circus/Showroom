@@ -1,6 +1,6 @@
 # MCP
 
-The same operations over MCP as over HTTP. Both surfaces call one Action, so they cannot drift — an arch test fails if an Action has no MCP tool.
+The same operations over MCP as over HTTP. Both surfaces call one Action, so they cannot drift — an arch test fails if an Action has no MCP tool. The one declared exception is `ShowSettingsSummaryAction` (`GET /showroom/settings-summary`): it describes host configuration for an admin panel, which an agent has no use for.
 
 ```php
 // config/showroom.php — both transports ship disabled
@@ -103,6 +103,8 @@ The server lists two entry points, `search_tools` and `execute_tools`, and keeps
 | `delete-flag-tool` | Delete a flag no record carries |
 | `start-import-tool` | Import products from an asset or URL (with refactor-circus/impex) |
 | `start-export-tool` | Export products matching a search to a file asset (with refactor-circus/impex) |
+| `show-catalog-stats-tool` | The catalog at a glance: products per status and published, completeness per channel and locale, the review queue, the 8 newest versions; the payload of `GET /showroom/stats` |
+| `search-catalog-tool` | Search products, assets, categories, owners, families, attributes and attribute groups at once (`q`, `type`, `limit`), only the types the caller may list; the payload of `GET /showroom/search` |
 
 Records are addressed by code: `group`, `attribute`, `option`, `family`, `family_variant`, `product_model`, `owner_type`, `category`, `asset`, `locale`, `channel` and `flag` arguments take codes. `show-product-tool`, `show-product-model-tool` and `list-products-tool` take `scope` and `locales` to return one channel's values. Catalog rule violations come back as errors with a message an agent can act on.
 

@@ -14,9 +14,8 @@
 | [Associations](10-associations.md) | Cross-sell, compatible parts, bundles and kits |
 | [Workflow](11-workflow.md) | Completeness, review and publishing, versions and revert |
 | [Import, export and feeds](12-impex.md) | Bulk imports and exports, syndication feeds, ERP connectors, product webhooks for vendors (with Impex) |
-| [HTTP API](09-api.md) | Endpoints, pagination, errors |
+| [HTTP API](09-api.md) | Endpoints, catalog stats and search, pagination, errors |
 | [MCP](10-mcp.md) | Tools for agents, Cortex |
-| [Dashboard](11-dashboard.md) | The Atrium plugin |
 | [Configuration](13-configuration.md) | Every config key |
 
 ## One page

@@ -40,10 +40,9 @@ A product has an `identifier` (its SKU), an optional `family`, an optional `owne
 
 - A simple product may hold values for any existing attribute, with or without a family. An unknown attribute code is refused at `values.{code}`.
 - The family sets the completeness standard, not a limit: its required attributes (`is_required`, `required_channels`) drive [completeness](11-workflow.md), and values outside the family count neither towards nor against it.
-- Nothing is hidden by the family. The API, MCP tools, the search document, exports and the Atrium screens return every value the product holds.
+- Nothing is hidden by the family. The API, MCP tools, the search document and exports return every value the product holds.
 - Changing the family keeps every stored value, and they all stay visible; only completeness follows the new family.
 - Completeness (required attributes) is not enforced on save.
-- In Atrium, the product's value form shows the family's attributes first, in the family's order, then the product's other values. **Add attribute** offers every other attribute.
 - Variant products and product models keep their family variant's level rules; see [Variants](#variants).
 
 ## Identifiers
@@ -68,7 +67,7 @@ Every product gets a `slug` when it's created: `Str::slug` of its identifier, wi
 
 ## Looking up a product
 
-API paths, Atrium links, MCP `product` arguments and the show, update, delete, transition, versions and revert actions find a product by its ULID `id`:
+API paths, MCP `product` arguments and the show, update, delete, transition, versions and revert actions find a product by its ULID `id`:
 
 ```http
 GET /showroom/products/01JC5Y3Q8W2N4V6T9R7K1M3P5X
