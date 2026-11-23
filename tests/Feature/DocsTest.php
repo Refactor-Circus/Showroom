@@ -284,7 +284,6 @@ it('mentions no removed audit trail, History nav item or Impex run link', functi
     $files = iterator_to_array(Finder::create()->files()->in([
         $root.'/src',
         $root.'/resources',
-        $root.'/docs/agent/standards',
     ]), false);
 
     $paths = [

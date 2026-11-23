@@ -97,3 +97,13 @@ Deviations (files outside the group's list):
 
 Known failure not caused by this group: `DocsTest` "mentions no removed audit trail, History nav item or Impex run link" errors because `docs/agent/standards` no longer exists (group 3 deleted its only file, `showroom/atrium-screens.md`), and the test passes that directory to `Finder::in()`. `tests/Feature/DocsTest.php` is group 6's file (6.1), so it is left for that group or a fix round: drop the directory from the list, or skip it when missing.
 
+## Group 4 (retry)
+
+Found: tasks 4.1 to 4.5 were already done and committed (`9be04e5`), with a clean worktree. Checked again: no file under `src/`, `config/`, `resources/`, `workbench/` or `composer.json` mentions "atrium". No harness file, workflow, `phpunit.xml.dist` or `composer.json` mentions PennantPlus, `ShowroomSupportFeature`, `ResetsScreenExtensions` or the without-Atrium suite. `src/Atrium`, `tests/PennantPlus`, `tests/WithoutAtrium`, `tests/PennantPlusTestCase.php`, `tests/Fixtures/OrphanSupportFeature.php` and `phpunit.without-atrium.xml` are gone.
+
+Fixed: the one known failure. `tests/Feature/DocsTest.php` "mentions no removed audit trail, History nav item or Impex run link" no longer passes the deleted `docs/agent/standards` directory to `Finder::in()`.
+
+Tests: `ComposerTest`, `NoAtriumReferencesTest`, `ServiceProviderTest` and `DocsTest` pass (90 tests). Pint passes on `DocsTest`. The gate runs the full suite (task 4.5).
+
+Deviations: `tests/Feature/DocsTest.php` is outside the group's list (group 6 owns it). The one-line fix is here so the suite is green after this group.
+
