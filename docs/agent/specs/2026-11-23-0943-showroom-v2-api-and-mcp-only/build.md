@@ -142,3 +142,9 @@ Tests: `vendor/bin/pest tests/Feature/DocsTest.php tests/Feature/NoAtriumReferen
 Deviations: `docs/02-attributes.md`, `docs/05-search.md`, `docs/08-media.md` and `docs/12-impex.md` are outside the group's list. Criterion 24 says the other `docs/*.md` lose their Atrium screen references, and these four named the removed dashboard: 02, 05 and 08 lose "the dashboard" from a list of surfaces, 12 says Impex's API and MCP tools instead of "dashboard", and its "Dashboard" section (the removed Catalog → Import & export page) becomes "Listing runs" (Impex's runs API by `flow`, D-001).
 
 `CLAUDE.md` is a symlink to `AGENTS.md`, so the CLAUDE.md changes are committed as `AGENTS.md`.
+
+## Group 6 (retry)
+
+Found: tasks 6.1 to 6.5 were already done and committed (`965d506`), with a clean worktree. Checked again: `docs/11-dashboard.md` is gone. In the group's files, Atrium is named only in the README's "Front end: Atrium v2" section and its links, and in CLAUDE.md's intro, "No UI and no Atrium" rule and D-014 config note. No owned file names `showroom-views`, `showroomCan`, `widget_cache_seconds` (outside the upgrade note), `ShowroomSupportFeature` (outside the upgrade note), `AuthorizesScreens` or `registerAtriumPlugin()`. The CHANGELOG's v2.0.0 upgrade note lists every removed item, `showroom.stats.cache_seconds`, Atrium v2 and pennantplus, and its Added section names the endpoints, tools, `openapi.json` and `client/`. No code changed.
+
+Tests: `vendor/bin/pest tests/Feature/DocsTest.php tests/Feature/NoAtriumReferencesTest.php` passed (28 tests, 216 assertions). Pint passes on `DocsTest`. `composer analyse` covers only `src`, `config` and `database`, so `DocsTest` is outside it. The gate runs the full `composer test` (task 6.5).
