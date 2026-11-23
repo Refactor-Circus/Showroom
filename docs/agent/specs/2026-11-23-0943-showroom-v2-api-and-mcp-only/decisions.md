@@ -105,3 +105,9 @@
 - Rationale: The group's own tests need them; recommended option.
 - Date: 2026-11-23
 - Raised by: factory build (group 1); default chosen because the user asked to proceed without stopping
+
+## D-017: Where do group 2's four out-of-list files get committed?
+- Choice: Committed as a group 2 follow-up, as D-016 did for group 1 (SearchHit.php and the 84 to 85 tool counts).
+- Rationale: Recommended option.
+- Date: 2026-11-23
+- Raised by: factory build; default chosen because the user asked to proceed without stopping

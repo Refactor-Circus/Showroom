@@ -23,7 +23,7 @@ criteria: 4, 5, 6, 7, 8, 9
 - [x] 2.2 Implement SearchType (7 values in result order, model()), SearchCatalogData (`q` required string max 191, `type` nullable enum, `limit` 1..20 default 5, rules()), SearchCatalogAction::execute(SearchCatalogData, ?Authenticatable) filtering types through Authorizer::for(package)->can(), the event pair and CatalogSearchResultResource; SearchCatalogRequest authorizes `viewAny` on at least one requested type (D-005, D-007).
 - [x] 2.3 Implement ShowSettingsSummaryAction, its event pair, SettingsSummaryResource and ShowSettingsSummaryRequest (`viewAny` on products); add the `search` → `search.index` and `settings-summary` → `settings-summary.show` routes and CatalogController methods.
 - [x] 2.4 Add SearchCatalogMcpRequest and SearchCatalogTool (`search-catalog-tool`), register it in ShowroomServer, and add `'ShowSettingsSummaryAction' => ['mcp', 'ui']` to PARITY_EXCEPTIONS with its reason (D-006; `ui` is dropped in group 3).
-- [ ] 2.5 Run vendor/bin/pest; all green
+- [x] 2.5 Run vendor/bin/pest; all green
 
 ## Group 3: Delete the Atrium screens and their wiring
 depends on: 2
