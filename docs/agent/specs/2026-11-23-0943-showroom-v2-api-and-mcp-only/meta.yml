@@ -1,0 +1,7 @@
+id: 2026-11-23-0943-showroom-v2-api-and-mcp-only
+title: 'Showroom v2: API and MCP only'
+status: shaping
+created: '2026-11-23 09:43'
+release: v2.0.0
+waits_for: [Keystone/2026-11-23-0943-drop-the-atrium-plugin-hook]
+blocks: [Atrium/2026-11-22-1823-atrium-v2-headless]
