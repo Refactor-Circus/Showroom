@@ -16,3 +16,4 @@
 /AGENTS.md          export-ignore
 /AGENTS_PACKAGE.md  export-ignore
 /art                export-ignore
+/client/node_modules export-ignore

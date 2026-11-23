@@ -9,6 +9,7 @@ use RefactorCircus\Keystone\Testing\Parity;
 use RefactorCircus\Showroom\Mcp\ShowroomServer;
 use RefactorCircus\Showroom\Tests\CortexTestCase;
 use RefactorCircus\Showroom\Tests\KeenTestCase;
+use RefactorCircus\Showroom\Tests\OpenApiTestCase;
 use RefactorCircus\Showroom\Tests\RenamedTablesTestCase;
 use RefactorCircus\Showroom\Tests\TestCase;
 
@@ -16,6 +17,7 @@ uses(TestCase::class)->in('Feature', 'Unit');
 uses(CortexTestCase::class)->in('Cortex');
 uses(KeenTestCase::class)->in('Keen');
 uses(RenamedTablesTestCase::class)->in('Modes/RenamedTables');
+uses(OpenApiTestCase::class)->in('OpenApi');
 
 /**
  * Call a catalog tool as an MCP client does, through tool search, with its

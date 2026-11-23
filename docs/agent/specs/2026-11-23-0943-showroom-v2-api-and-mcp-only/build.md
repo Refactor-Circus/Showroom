@@ -107,3 +107,22 @@ Tests: `ComposerTest`, `NoAtriumReferencesTest`, `ServiceProviderTest` and `Docs
 
 Deviations: `tests/Feature/DocsTest.php` is outside the group's list (group 6 owns it). The one-line fix is here so the suite is green after this group.
 
+## Group 5 (salvaged)
+
+Found: no index lock and no merge or rebase in progress. The build agent had written all of tasks 5.1 to 5.4 but committed none of them. Its uncommitted work:
+
+- `tests/OpenApi/OpenApiTest.php` (14 cases): a fresh in-process `scramble:export` equals the committed `openapi.json`; the document is OpenAPI 3.1, `Showroom` 2.0.0, with the relative server `/showroom`; every default `showroom.*` API route's method and path is documented, and nothing else is; operation ids are route names; the stats, search and settings-summary 200 responses carry their resource `schema()`'s required keys; search answers a list and lists `q` (required), `type` and `limit`; line 1 of `client/src/schema.d.ts` stamps the sha256 of `openapi.json`; `client/dist/schema.d.ts` equals the source; `dist/index.{js,d.ts}` exist; `client/package.json` has the name, version, dependencies, `main`/`types`/`exports` in `dist` and the `generate` script; `.gitignore`/`.gitattributes` keep `client/node_modules` out. `tests/OpenApiTestCase.php` boots the workbench with package discovery and `ScrambleServiceProvider`; `tests/Pest.php` binds it to `OpenApi`.
+- `composer.json`: `dedoc/scramble` in `require-dev`; `openapi:export` and `client:generate` scripts.
+- `workbench/config/scramble.php` (`api_path` showroom, `info.version` 2.0.0, fixed values only). `WorkbenchServiceProvider` loads it, sets operation ids to route names, sets the relative `/showroom` server and makes `scramble:export` read an in-memory database so the export never depends on a migrated workbench. `workbench/app/OpenApi/ResourceResponses.php` writes the 200 response of the three `persist()` endpoints from their resources' `schema()`.
+- `client/`: `package.json`, `package-lock.json`, `tsconfig.json`, `scripts/stamp.mjs`, `src/index.ts` (`createShowroomClient({ baseUrl, headers?, fetch?, credentials? })` returning `Client<paths>`, re-exporting `paths`/`components`/`operations`), the generated `src/schema.d.ts`, `dist/**` and `README.md`. `.gitignore` and `.gitattributes` exclude `client/node_modules`. `.github/workflows/tests.yml` has a `client` job (Node `lts/*`) running `composer client:generate` and `git diff --exit-code`.
+
+Checked: `composer client:generate` ran again and changed nothing: `openapi.json` has the same sha256, `src/schema.d.ts` still carries the matching stamp and equals `dist/schema.d.ts`. The export's 19 warnings ("Cannot read database schema", one "Cannot infer the resource model") come from the deliberately empty database and are expected. `vendor/bin/pest tests/OpenApi` passed: 14 tests, 81 assertions.
+
+Committed: every path above, all from the group's list.
+
+Left:
+
+- Task 5.5 (the full `vendor/bin/pest`) is for the gate.
+- `phpunit.xml.dist` is not in the group's list, so it stays uncommitted in the worktree. The build agent added an `OpenApi` testsuite (`tests/OpenApi`) to it. Without that suite, `vendor/bin/pest` never runs `OpenApiTest`, so the staleness checks for criteria 19 to 23 do not run in the suite. This is returned as a decision (commit it as a group 5 follow-up, as D-016 and D-017 did).
+- Nit: `actions/setup-node@v7` in the `client` job is pinned by tag, while the other actions are pinned by SHA.
+

@@ -76,3 +76,40 @@ jobs:
       - name: Test Suite (Windows)
         if: runner.os == 'Windows'
         run: vendor/bin/pest
+
+  # Regenerates openapi.json and client/ and fails when anything differs from
+  # what is committed. This is the authoritative check of the generated
+  # TypeScript; tests/OpenApi/OpenApiTest.php only compares the stamp.
+  client:
+    runs-on: ubuntu-latest
+
+    name: OpenAPI and TypeScript client
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # v2
+        with:
+          php-version: 8.5
+          extensions: dom, curl, libxml, mbstring, zip, fileinfo, sqlite, pdo_sqlite, bcmath, intl, gd
+          ini-values: error_reporting=E_ALL
+          tools: composer:v2
+          coverage: none
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: lts/*
+
+      - name: Install dependencies
+        run: composer update --prefer-dist --no-interaction --no-progress
+
+      - name: Generate the OpenAPI document and the client
+        run: composer client:generate
+
+      - name: Fail on a stale openapi.json or client
+        run: |
+          git diff --exit-code
+          test -z "$(git status --porcelain -- openapi.json client)"
