@@ -91,7 +91,7 @@ use RefactorCircus\Showroom\Mcp\Tools\ListShowroomHistoryTool;
 use RefactorCircus\Showroom\Tests\Fixtures\Catalog;
 
 it('offers one tool per use case', function (): void {
-    expect(ShowroomServer::TOOLS)->toHaveCount(84);
+    expect(ShowroomServer::TOOLS)->toHaveCount(85);
 });
 
 it('declares its history tool, but offers it only while Showroom audits', function (): void {
