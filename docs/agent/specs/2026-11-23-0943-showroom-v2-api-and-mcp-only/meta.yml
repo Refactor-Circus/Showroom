@@ -1,6 +1,6 @@
 id: 2026-11-23-0943-showroom-v2-api-and-mcp-only
 title: 'Showroom v2: API and MCP only'
-status: building
+status: approved
 created: '2026-11-23 09:43'
 release: v2.0.0
 waits_for: [Keystone/2026-11-23-0943-drop-the-atrium-plugin-hook]
@@ -24,4 +24,9 @@ runs:
     run_id: wf_0c6109ea-541
     result: needs-decision
     round: 0
+    date: 2026-11-23
+  - workflow: ring-master-factory
+    run_id: wf_4855108d-a7b
+    result: approved
+    round: 1
     date: 2026-11-23
