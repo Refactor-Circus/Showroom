@@ -70,3 +70,9 @@ Deviations:
 - `docs/agent/standards.index.yml` still listed `showroom/atrium-screens`. It is generated and git-ignored, so `vendor/bin/ringside sync` rebuilt it locally and nothing is committed for it.
 - Left for later groups (their lists own them): `README.md` still documents `--tag="showroom-views"`, which `DocsTest` asserts (group 6). The `trait_exists(ResetsScreenExtensions)` guard in `tests/Pest.php` stays until group 4. Group 4 deletes `tests/PennantPlus/**` but does not list `phpunit.xml.dist`, which still declares the `PennantPlus` testsuite directory.
 
+## Group 3 (retry)
+
+Found: tasks 3.1 to 3.5 were already done and committed (`bf382e6`), with a clean worktree. Checked again: no file under `src/`, `tests/`, `workbench/` or `config/` names a deleted class, the `showroom::` views, `@showroomCan`, `badge()` or an `atrium.showroom.*` route. `tests/ArchTest.php` and `tests/Feature/ServiceProviderTest.php` pass (45 tests). No code changed.
+
+Still left for group 4, which owns the files: `composer.json` still declares `extra.atrium.plugins` → `RefactorCircus\Showroom\Atrium\ShowroomPlugin`, a class that no longer exists. Tests are unaffected, because Atrium's discovery reads only `vendor/composer/installed.json`, which leaves out the root package. A host app that installs this branch with Atrium v1 would fail to discover the plugin until group 4 removes the entry. `testbench.yaml`'s `start: '/atrium/showroom/products'` (used by `composer serve` only) is also group 4's.
+
