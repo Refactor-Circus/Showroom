@@ -83,7 +83,7 @@ var B = {
 			}, 8, ["title"]), O(z, { "screen-key": "showroom.attributes" }, {
 				default: F(() => [E("div", V, [O(k, null, {
 					default: F(() => [E("form", {
-						class: "flex flex-wrap items-end gap-3",
+						class: "flex flex-wrap items-start gap-3",
 						"data-testid": "showroom-attributes-filters",
 						onSubmit: I(ue, ["prevent"])
 					}, [
@@ -131,6 +131,7 @@ var B = {
 						O(i, {
 							type: "submit",
 							icon: "i-lucide-filter",
+							class: "mt-field-label",
 							"data-testid": "showroom-attributes-filter"
 						}, {
 							default: F(() => [D(M(N(K)("showroom.catalog.filters.filter")), 1)]),
@@ -139,6 +140,7 @@ var B = {
 						O(i, {
 							variant: "ghost",
 							icon: "i-lucide-x",
+							class: "mt-field-label",
 							"data-testid": "showroom-attributes-clear",
 							onClick: de
 						}, {

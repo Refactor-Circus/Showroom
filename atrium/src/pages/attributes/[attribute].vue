@@ -211,7 +211,7 @@ const optionColumns = computed<TableColumn<ShowroomAttributeOption>[]>(() => [
 
               <CatalogActionError :action="optionAction" />
 
-              <form class="flex flex-wrap items-end gap-3" data-testid="showroom-option-create-form" @submit.prevent="addOption">
+              <form class="flex flex-wrap items-start gap-3" data-testid="showroom-option-create-form" @submit.prevent="addOption">
                 <UFormField :label="t('showroom.catalog.fields.code')" :error="optionAction.error('code')" required>
                   <UInput v-model="draft.code" required class="w-48" data-testid="showroom-option-create-code" />
                 </UFormField>
@@ -221,7 +221,7 @@ const optionColumns = computed<TableColumn<ShowroomAttributeOption>[]>(() => [
                 <UFormField :label="t('showroom.catalog.fields.sort_order')" :error="optionAction.error('sort_order')">
                   <UInput v-model="draft.sort_order" type="number" min="0" class="w-28" data-testid="showroom-option-create-sort" />
                 </UFormField>
-                <UButton type="submit" icon="i-lucide-plus" :loading="optionAction.busy.value" data-testid="showroom-option-create">{{ t('showroom.structure.attributes.add_option') }}</UButton>
+                <UButton type="submit" icon="i-lucide-plus" :loading="optionAction.busy.value" class="mt-field-label" data-testid="showroom-option-create">{{ t('showroom.structure.attributes.add_option') }}</UButton>
               </form>
             </div>
           </UCard>

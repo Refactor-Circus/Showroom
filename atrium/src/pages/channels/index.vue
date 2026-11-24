@@ -140,14 +140,14 @@ function localeLabel(entry: ShowroomLocale): string {
                 </li>
               </ul>
 
-              <form class="flex flex-wrap items-end gap-3" data-testid="showroom-locale-create-form" @submit.prevent="addLocale">
+              <form class="flex flex-wrap items-start gap-3" data-testid="showroom-locale-create-form" @submit.prevent="addLocale">
                 <UFormField :label="t('showroom.catalog.fields.code')" :hint="t('showroom.structure.channels.locale_code_hint')" :error="localeAction.error('code')" required>
                   <UInput v-model="localeDraft.code" required class="w-44" data-testid="showroom-locale-create-code" />
                 </UFormField>
                 <UFormField :label="t('showroom.catalog.fields.label_in', { locale })" :error="localeAction.error('labels')">
                   <UInput v-model="localeDraft.label" class="w-56" data-testid="showroom-locale-create-label" />
                 </UFormField>
-                <UButton type="submit" icon="i-lucide-plus" :loading="localeAction.busy.value" data-testid="showroom-locale-create-submit">{{ t('showroom.structure.channels.add_locale') }}</UButton>
+                <UButton type="submit" icon="i-lucide-plus" :loading="localeAction.busy.value" class="mt-field-label" data-testid="showroom-locale-create-submit">{{ t('showroom.structure.channels.add_locale') }}</UButton>
               </form>
             </div>
           </CatalogState>
@@ -159,7 +159,7 @@ function localeLabel(entry: ShowroomLocale): string {
             <h2 class="font-semibold">{{ t('showroom.structure.channels.new') }}</h2>
           </template>
           <form class="flex flex-col gap-4" data-testid="showroom-channel-create-form" @submit.prevent="create">
-            <div class="flex flex-wrap items-end gap-3">
+            <div class="flex flex-wrap items-start gap-3">
               <UFormField :label="t('showroom.catalog.fields.code')" :hint="t('showroom.structure.code_hint')" :error="action.error('code')" required>
                 <UInput v-model="draft.code" required class="w-56" data-testid="showroom-channel-create-code" />
               </UFormField>

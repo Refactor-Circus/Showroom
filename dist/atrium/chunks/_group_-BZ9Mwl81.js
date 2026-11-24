@@ -86,7 +86,7 @@ var I = {
 						T(p, null, {
 							header: M(() => [C("h2", R, k(A(V)("showroom.structure.details")), 1)]),
 							default: M(() => [C("form", {
-								class: "flex flex-wrap items-end gap-3",
+								class: "flex flex-wrap items-start gap-3",
 								"data-testid": "showroom-group-form",
 								onSubmit: N(re, ["prevent"])
 							}, [
@@ -120,6 +120,7 @@ var I = {
 									type: "submit",
 									icon: "i-lucide-check",
 									loading: A(W).busy.value,
+									class: "mt-field-label",
 									"data-testid": "showroom-group-save"
 								}, {
 									default: M(() => [w(k(A(V)("showroom.catalog.save")), 1)]),

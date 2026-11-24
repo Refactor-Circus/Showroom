@@ -265,7 +265,7 @@ var N = {
 								}, 8, ["data", "columns"]),
 								S(e, { action: O(U) }, null, 8, ["action"]),
 								b("form", {
-									class: "flex flex-wrap items-end gap-3",
+									class: "flex flex-wrap items-start gap-3",
 									"data-testid": "showroom-option-create-form",
 									onSubmit: A(be, ["prevent"])
 								}, [
@@ -313,6 +313,7 @@ var N = {
 										type: "submit",
 										icon: "i-lucide-plus",
 										loading: O(U).busy.value,
+										class: "mt-field-label",
 										"data-testid": "showroom-option-create"
 									}, {
 										default: k(() => [x(D(O(B)("showroom.structure.attributes.add_option")), 1)]),

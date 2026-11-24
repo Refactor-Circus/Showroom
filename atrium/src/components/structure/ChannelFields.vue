@@ -46,7 +46,7 @@ function toggle(code: string, checked: boolean | 'indeterminate'): void {
       <small v-if="action.error('locales')" class="text-xs text-error">{{ action.error('locales') }}</small>
     </div>
 
-    <div class="flex flex-wrap items-end gap-3">
+    <div class="flex flex-wrap items-start gap-3">
       <UFormField :label="t('showroom.structure.channels.currencies')" :hint="t('showroom.structure.channels.currencies_hint')" :error="action.error('currencies')">
         <UInput v-model="form.currencies" class="w-56" :data-testid="`${testid}-currencies`" />
       </UFormField>

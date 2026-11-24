@@ -1,5 +1,5 @@
 import { t as e } from "./CatalogActionError-BRUgojP9.js";
-import { a as t, i as n, n as r, r as i, t as a } from "./ValueEditor-DaEpiyWK.js";
+import { a as t, i as n, n as r, r as i, t as a } from "./ValueEditor-DLdUXpYp.js";
 import { t as o } from "./CatalogState-Bkly-MlG.js";
 import { t as s } from "./ExternalIds-ATlFXCLK.js";
 import { A as c, C as l, D as u, E as d, O as f, T as p, _ as m, a as h, c as g, d as _, f as v, g as ee, h as y, i as b, j as te, k as ne, m as re, n as x, o as ie, s as ae, v as oe } from "./catalog-DCoO3A8a.js";
@@ -103,7 +103,7 @@ var z = { class: "space-y-5" }, ke = { class: "font-semibold" }, Ae = { class: "
 						A(e, { action: L(s) }, null, 8, ["action"]),
 						L(u).length > 0 ? (N(), D("form", {
 							key: 0,
-							class: "flex flex-wrap items-end gap-3",
+							class: "flex flex-wrap items-start gap-3",
 							"data-testid": "showroom-transition-form",
 							onSubmit: n[1] ||= Ee(() => {}, ["prevent"])
 						}, [A(l, {
@@ -122,6 +122,7 @@ var z = { class: "space-y-5" }, ke = { class: "font-semibold" }, Ae = { class: "
 							icon: h(e),
 							variant: e === "reject" || e === "archive" ? "outline" : "solid",
 							loading: L(s).busy.value,
+							class: "mt-field-label",
 							"data-testid": `showroom-transition-${e}`,
 							onClick: (t) => v(e)
 						}, {
@@ -214,11 +215,11 @@ var z = { class: "space-y-5" }, ke = { class: "font-semibold" }, Ae = { class: "
 }, Ue = {
 	class: "font-mono",
 	"data-testid": "showroom-product-title"
-}, We = { class: "font-semibold" }, Ge = { class: "flex flex-wrap items-end gap-4" }, Ke = {
+}, We = { class: "font-semibold" }, Ge = { class: "flex flex-wrap items-start gap-4" }, Ke = {
 	key: 1,
 	class: "text-sm",
 	"data-testid": "showroom-product-inherited-owner"
-}, qe = { class: "font-medium" }, Je = { class: "font-mono text-xs" }, Ye = { class: "font-semibold" }, Xe = { class: "flex flex-col gap-4" }, Ze = { class: "text-sm" }, Qe = { class: "text-muted" }, $e = {
+}, qe = { class: "font-medium" }, Je = { class: "font-mono text-xs" }, Ye = { class: "font-semibold" }, Xe = { class: "flex flex-col gap-4" }, Ze = { class: "flex flex-wrap items-baseline gap-1 text-sm" }, Qe = { class: "text-muted" }, $e = {
 	class: "font-mono",
 	"data-testid": "showroom-product-slug"
 }, et = {
@@ -441,7 +442,7 @@ var z = { class: "space-y-5" }, ke = { class: "font-semibold" }, Ae = { class: "
 										modelValue: L(Z).enabled,
 										"onUpdate:modelValue": l[2] ||= (e) => L(Z).enabled = e,
 										label: L(_)("showroom.catalog.enabled"),
-										class: "h-9 items-center",
+										class: "mt-field-label h-field items-center",
 										"data-testid": "showroom-product-enabled-input"
 									}, null, 8, ["modelValue", "label"])
 								])]),
@@ -548,7 +549,7 @@ var z = { class: "space-y-5" }, ke = { class: "font-semibold" }, Ae = { class: "
 						], 32),
 						L(Re).length > 0 ? (N(), T(y, { key: 0 }, {
 							default: R(() => [O("form", {
-								class: "flex flex-wrap items-end gap-3",
+								class: "flex flex-wrap items-start gap-3",
 								"data-testid": "showroom-add-attribute",
 								onSubmit: Ee(bt, ["prevent"])
 							}, [A(m, { label: L(_)("showroom.catalog.values.add_attribute") }, {
@@ -569,6 +570,7 @@ var z = { class: "space-y-5" }, ke = { class: "font-semibold" }, Ae = { class: "
 								type: "submit",
 								variant: "outline",
 								icon: "i-lucide-plus",
+								class: "mt-field-label",
 								"data-testid": "showroom-add-attribute-submit"
 							}, {
 								default: R(() => [k(I(L(_)("showroom.catalog.add")), 1)]),

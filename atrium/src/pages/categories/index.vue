@@ -65,14 +65,14 @@ async function create(): Promise<void> {
           <template #header>
             <h2 class="font-semibold">{{ t('showroom.structure.categories.new_tree') }}</h2>
           </template>
-          <form class="flex flex-wrap items-end gap-3" data-testid="showroom-tree-create-form" @submit.prevent="create">
+          <form class="flex flex-wrap items-start gap-3" data-testid="showroom-tree-create-form" @submit.prevent="create">
             <UFormField :label="t('showroom.catalog.fields.code')" :hint="t('showroom.structure.code_hint')" :error="action.error('code')" required>
               <UInput v-model="draft.code" required class="w-56" data-testid="showroom-tree-create-code" />
             </UFormField>
             <UFormField :label="t('showroom.catalog.fields.label_in', { locale })" :error="action.error('labels')">
               <UInput v-model="draft.label" class="w-56" data-testid="showroom-tree-create-label" />
             </UFormField>
-            <UButton type="submit" icon="i-lucide-plus" :loading="action.busy.value" data-testid="showroom-tree-create-submit">{{ t('showroom.catalog.create') }}</UButton>
+            <UButton type="submit" icon="i-lucide-plus" :loading="action.busy.value" class="mt-field-label" data-testid="showroom-tree-create-submit">{{ t('showroom.catalog.create') }}</UButton>
           </form>
           <CatalogActionError :action="action" class="mt-3" />
         </UCard>

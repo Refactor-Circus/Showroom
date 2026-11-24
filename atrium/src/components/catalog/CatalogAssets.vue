@@ -90,14 +90,14 @@ async function upload(): Promise<void> {
 
       <CatalogActionError :action="action" />
 
-      <form class="flex flex-wrap items-end gap-3" data-testid="showroom-asset-upload" @submit.prevent="upload">
+      <form class="flex flex-wrap items-start gap-3" data-testid="showroom-asset-upload" @submit.prevent="upload">
         <UFormField :label="t('showroom.catalog.assets.upload_and_link')" :error="action.error('file')">
           <UInput ref="fileInput" type="file" required data-testid="showroom-asset-file" @change="choose" />
         </UFormField>
         <UFormField :label="t('showroom.catalog.assets.role')" :error="action.error('role')">
           <UInput v-model="role" class="w-32" data-testid="showroom-asset-role" />
         </UFormField>
-        <UButton type="submit" icon="i-lucide-upload" :loading="action.busy.value" data-testid="showroom-asset-upload-submit">{{ t('showroom.catalog.assets.upload') }}</UButton>
+        <UButton type="submit" icon="i-lucide-upload" :loading="action.busy.value" class="mt-field-label" data-testid="showroom-asset-upload-submit">{{ t('showroom.catalog.assets.upload') }}</UButton>
       </form>
     </div>
   </UCard>

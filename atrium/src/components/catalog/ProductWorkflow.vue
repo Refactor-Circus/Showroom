@@ -98,7 +98,7 @@ async function revert(version: ShowroomVersion): Promise<void> {
 
         <CatalogActionError :action="action" />
 
-        <form v-if="transitions.length > 0" class="flex flex-wrap items-end gap-3" data-testid="showroom-transition-form" @submit.prevent>
+        <form v-if="transitions.length > 0" class="flex flex-wrap items-start gap-3" data-testid="showroom-transition-form" @submit.prevent>
           <UFormField :label="t('showroom.catalog.workflow.comment')" :error="action.error('comment')">
             <UInput v-model="comment" class="w-72" data-testid="showroom-transition-comment" />
           </UFormField>
@@ -108,6 +108,7 @@ async function revert(version: ShowroomVersion): Promise<void> {
             :icon="iconOf(name)"
             :variant="name === 'reject' || name === 'archive' ? 'outline' : 'solid'"
             :loading="action.busy.value"
+            class="mt-field-label"
             :data-testid="`showroom-transition-${name}`"
             @click="transition(name)"
           >

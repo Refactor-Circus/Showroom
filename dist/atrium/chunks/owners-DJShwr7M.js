@@ -17,7 +17,7 @@ var M = {
 	key: 0,
 	class: "text-sm text-muted",
 	"data-testid": "showroom-owners-no-types"
-}, I = { class: "flex flex-wrap items-end gap-3" }, L = { class: "space-y-4" }, R = ["data-testid"], z = ["title"], B = { class: "font-mono text-xs" }, V = { class: "tabular-nums" }, H = /* @__PURE__ */ x({
+}, I = { class: "flex flex-wrap items-start gap-3" }, L = { class: "space-y-4" }, R = ["data-testid"], z = ["title"], B = { class: "font-mono text-xs" }, V = { class: "tabular-nums" }, H = /* @__PURE__ */ x({
 	__name: "index",
 	setup(x) {
 		let { t: H, locale: U } = k(), W = A(), G = j(), K = a(), q = g(() => {
@@ -205,6 +205,7 @@ var M = {
 								type: "submit",
 								icon: "i-lucide-plus",
 								loading: T(K).busy.value,
+								class: "mt-field-label",
 								"data-testid": "showroom-owner-create-submit"
 							}, {
 								default: D(() => [y(w(T(H)("showroom.catalog.create")), 1)]),
@@ -215,7 +216,7 @@ var M = {
 					}),
 					b(u, null, {
 						default: D(() => [v("form", {
-							class: "flex flex-wrap items-end gap-3",
+							class: "flex flex-wrap items-start gap-3",
 							"data-testid": "showroom-owners-filters",
 							onSubmit: O(he, ["prevent"])
 						}, [
@@ -246,7 +247,8 @@ var M = {
 							}, 8, ["label"]),
 							b(i, {
 								type: "submit",
-								icon: "i-lucide-filter"
+								icon: "i-lucide-filter",
+								class: "mt-field-label"
 							}, {
 								default: D(() => [y(w(T(H)("showroom.catalog.filters.filter")), 1)]),
 								_: 1
@@ -255,6 +257,7 @@ var M = {
 								variant: "ghost",
 								color: "neutral",
 								icon: "i-lucide-x",
+								class: "mt-field-label",
 								onClick: ge
 							}, {
 								default: D(() => [y(w(T(H)("showroom.catalog.filters.clear")), 1)]),

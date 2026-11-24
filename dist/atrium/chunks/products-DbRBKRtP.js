@@ -132,7 +132,7 @@ var I = {
 			}, 8, ["title"]), w(A, { "screen-key": "showroom.products" }, {
 				default: j(() => [S("div", L, [w(l, null, {
 					default: j(() => [S("form", {
-						class: "flex flex-wrap items-end gap-3",
+						class: "flex flex-wrap items-start gap-3",
 						"data-testid": "showroom-products-filters",
 						onSubmit: M(_e, ["prevent"])
 					}, [
@@ -217,6 +217,7 @@ var I = {
 						w(i, {
 							type: "submit",
 							icon: "i-lucide-filter",
+							class: "mt-field-label",
 							"data-testid": "showroom-products-filter"
 						}, {
 							default: j(() => [C(O(k(H)("showroom.catalog.filters.filter")), 1)]),
@@ -225,6 +226,7 @@ var I = {
 						w(i, {
 							variant: "ghost",
 							icon: "i-lucide-x",
+							class: "mt-field-label",
 							"data-testid": "showroom-products-clear",
 							onClick: ve
 						}, {

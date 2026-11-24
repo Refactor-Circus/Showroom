@@ -109,7 +109,7 @@ function parentsOf(type: ShowroomOwnerType): string {
           </template>
           <form class="flex flex-col gap-4" data-testid="showroom-owner-type-create-form" @submit.prevent="create">
             <CatalogActionError :action="action" />
-            <div class="flex flex-wrap items-end gap-3">
+            <div class="flex flex-wrap items-start gap-3">
               <UFormField :label="t('showroom.catalog.fields.code')" :hint="t('showroom.owner_types.code_hint')" :error="action.error('code')" required>
                 <UInput v-model="draft.code" required class="w-56" data-testid="showroom-owner-type-create-code" />
               </UFormField>

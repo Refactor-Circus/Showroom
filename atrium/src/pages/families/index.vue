@@ -89,7 +89,7 @@ async function create(): Promise<void> {
           <template #header>
             <h2 class="font-semibold">{{ t('showroom.catalog.families.new') }}</h2>
           </template>
-          <form class="flex flex-wrap items-end gap-3" data-testid="showroom-family-create-form" @submit.prevent="create">
+          <form class="flex flex-wrap items-start gap-3" data-testid="showroom-family-create-form" @submit.prevent="create">
             <UFormField :label="t('showroom.catalog.fields.code')" :hint="t('showroom.catalog.families.code_hint')" :error="action.error('code')" required>
               <UInput v-model="draft.code" required class="w-56" data-testid="showroom-family-create-code" />
             </UFormField>
@@ -99,18 +99,18 @@ async function create(): Promise<void> {
             <UFormField :label="t('showroom.catalog.fields.sort_order')" :error="action.error('sort_order')">
               <UInput v-model="draft.sort_order" type="number" min="0" class="w-28" data-testid="showroom-family-create-sort" />
             </UFormField>
-            <UButton type="submit" icon="i-lucide-plus" :loading="action.busy.value" data-testid="showroom-family-create-submit">{{ t('showroom.catalog.families.create') }}</UButton>
+            <UButton type="submit" icon="i-lucide-plus" :loading="action.busy.value" class="mt-field-label" data-testid="showroom-family-create-submit">{{ t('showroom.catalog.families.create') }}</UButton>
           </form>
           <CatalogActionError :action="action" class="mt-3" />
         </UCard>
 
         <UCard>
-          <form class="flex flex-wrap items-end gap-3" data-testid="showroom-families-filters" @submit.prevent="filter">
+          <form class="flex flex-wrap items-start gap-3" data-testid="showroom-families-filters" @submit.prevent="filter">
             <UFormField :label="t('showroom.catalog.filters.search')">
               <UInput v-model="search" class="w-56" data-testid="showroom-families-search" />
             </UFormField>
-            <UButton type="submit" icon="i-lucide-filter" data-testid="showroom-families-filter">{{ t('showroom.catalog.filters.filter') }}</UButton>
-            <UButton variant="ghost" icon="i-lucide-x" data-testid="showroom-families-clear" @click="clear">{{ t('showroom.catalog.filters.clear') }}</UButton>
+            <UButton type="submit" icon="i-lucide-filter" class="mt-field-label" data-testid="showroom-families-filter">{{ t('showroom.catalog.filters.filter') }}</UButton>
+            <UButton variant="ghost" icon="i-lucide-x" class="mt-field-label" data-testid="showroom-families-clear" @click="clear">{{ t('showroom.catalog.filters.clear') }}</UButton>
           </form>
         </UCard>
 

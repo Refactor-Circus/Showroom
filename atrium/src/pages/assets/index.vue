@@ -180,7 +180,7 @@ function labelFor(asset: ShowroomAsset): string {
           <template #header>
             <h2 class="font-semibold">{{ t('showroom.assets.upload') }}</h2>
           </template>
-          <form class="flex flex-wrap items-end gap-3" data-testid="showroom-asset-upload-form" @submit.prevent="upload">
+          <form class="flex flex-wrap items-start gap-3" data-testid="showroom-asset-upload-form" @submit.prevent="upload">
             <UFormField :label="t('showroom.assets.file')" :error="action.error('file')" required>
               <UInput ref="fileInput" type="file" required data-testid="showroom-asset-upload-file" @change="choose" />
             </UFormField>
@@ -190,13 +190,13 @@ function labelFor(asset: ShowroomAsset): string {
             <UFormField :label="t('showroom.catalog.fields.label_in', { locale })" :error="action.error('labels')">
               <UInput v-model="draft.label" class="w-56" data-testid="showroom-asset-upload-label" />
             </UFormField>
-            <UButton type="submit" icon="i-lucide-upload" :loading="action.busy.value" data-testid="showroom-asset-upload-submit">{{ t('showroom.assets.upload_button') }}</UButton>
+            <UButton type="submit" icon="i-lucide-upload" :loading="action.busy.value" class="mt-field-label" data-testid="showroom-asset-upload-submit">{{ t('showroom.assets.upload_button') }}</UButton>
           </form>
           <CatalogActionError :action="action" class="mt-3" />
         </UCard>
 
         <UCard>
-          <form class="flex flex-wrap items-end gap-3" data-testid="showroom-assets-filters" @submit.prevent="applyFilters">
+          <form class="flex flex-wrap items-start gap-3" data-testid="showroom-assets-filters" @submit.prevent="applyFilters">
             <UFormField :label="t('showroom.catalog.filters.search')">
               <UInput v-model="filters.search" class="w-56" data-testid="showroom-assets-search" />
             </UFormField>
@@ -206,8 +206,8 @@ function labelFor(asset: ShowroomAsset): string {
             <UFormField :label="t('showroom.assets.product')">
               <UInput v-model="filters.product" class="w-44" data-testid="showroom-assets-product" />
             </UFormField>
-            <UButton type="submit" icon="i-lucide-filter">{{ t('showroom.catalog.filters.filter') }}</UButton>
-            <UButton variant="ghost" color="neutral" icon="i-lucide-x" @click="clearFilters">{{ t('showroom.catalog.filters.clear') }}</UButton>
+            <UButton type="submit" icon="i-lucide-filter" class="mt-field-label">{{ t('showroom.catalog.filters.filter') }}</UButton>
+            <UButton variant="ghost" color="neutral" icon="i-lucide-x" class="mt-field-label" @click="clearFilters">{{ t('showroom.catalog.filters.clear') }}</UButton>
           </form>
         </UCard>
 

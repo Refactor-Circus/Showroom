@@ -80,7 +80,7 @@ async function create(): Promise<void> {
             <h2 class="font-semibold">{{ t('showroom.structure.flags.new') }}</h2>
           </template>
           <form class="flex flex-col gap-4" data-testid="showroom-flag-create-form" @submit.prevent="create">
-            <div class="flex flex-wrap items-end gap-3">
+            <div class="flex flex-wrap items-start gap-3">
               <UFormField :label="t('showroom.catalog.fields.code')" :hint="t('showroom.structure.code_hint')" :error="action.error('code')" required>
                 <UInput v-model="draft.code" required class="w-56" data-testid="showroom-flag-create-code" />
               </UFormField>

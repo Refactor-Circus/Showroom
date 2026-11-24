@@ -178,7 +178,7 @@ var N = {
 						}), v("div", R, [b(c, null, {
 							header: k(() => [v("h2", z, T(E(H)("showroom.assets.details")), 1)]),
 							default: k(() => [v("form", {
-								class: "flex flex-wrap items-end gap-3",
+								class: "flex flex-wrap items-start gap-3",
 								"data-testid": "showroom-asset-form",
 								onSubmit: A(Se, ["prevent"])
 							}, [
@@ -211,6 +211,7 @@ var N = {
 									type: "submit",
 									icon: "i-lucide-check",
 									loading: E(W).busy.value,
+									class: "mt-field-label",
 									"data-testid": "showroom-asset-save"
 								}, {
 									default: k(() => [y(T(E(H)("showroom.catalog.save")), 1)]),
@@ -256,7 +257,7 @@ var N = {
 								])]),
 								_: 1
 							}, 8, ["data", "columns"]), v("form", {
-								class: "flex flex-wrap items-end gap-3",
+								class: "flex flex-wrap items-start gap-3",
 								"data-testid": "showroom-asset-link-form",
 								onSubmit: A(Ce, ["prevent"])
 							}, [
@@ -309,6 +310,7 @@ var N = {
 									type: "submit",
 									icon: "i-lucide-link",
 									loading: E(W).busy.value,
+									class: "mt-field-label",
 									"data-testid": "showroom-asset-link-submit"
 								}, {
 									default: k(() => [y(T(E(H)("showroom.assets.link")), 1)]),

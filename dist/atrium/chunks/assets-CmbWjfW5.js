@@ -130,7 +130,7 @@ var k = {
 					g(u, { "data-testid": "showroom-asset-upload-card" }, {
 						header: w(() => [m("h2", M, x(S(R)("showroom.assets.upload")), 1)]),
 						default: w(() => [m("form", {
-							class: "flex flex-wrap items-end gap-3",
+							class: "flex flex-wrap items-start gap-3",
 							"data-testid": "showroom-asset-upload-form",
 							onSubmit: T(Oe, ["prevent"])
 						}, [
@@ -182,6 +182,7 @@ var k = {
 								type: "submit",
 								icon: "i-lucide-upload",
 								loading: S(H).busy.value,
+								class: "mt-field-label",
 								"data-testid": "showroom-asset-upload-submit"
 							}, {
 								default: w(() => [h(x(S(R)("showroom.assets.upload_button")), 1)]),
@@ -195,7 +196,7 @@ var k = {
 					}),
 					g(u, null, {
 						default: w(() => [m("form", {
-							class: "flex flex-wrap items-end gap-3",
+							class: "flex flex-wrap items-start gap-3",
 							"data-testid": "showroom-assets-filters",
 							onSubmit: T(we, ["prevent"])
 						}, [
@@ -235,7 +236,8 @@ var k = {
 							}, 8, ["label"]),
 							g(a, {
 								type: "submit",
-								icon: "i-lucide-filter"
+								icon: "i-lucide-filter",
+								class: "mt-field-label"
 							}, {
 								default: w(() => [h(x(S(R)("showroom.catalog.filters.filter")), 1)]),
 								_: 1
@@ -244,6 +246,7 @@ var k = {
 								variant: "ghost",
 								color: "neutral",
 								icon: "i-lucide-x",
+								class: "mt-field-label",
 								onClick: Y
 							}, {
 								default: w(() => [h(x(S(R)("showroom.catalog.filters.clear")), 1)]),

@@ -283,7 +283,7 @@ async function createChild(): Promise<void> {
 
               <CatalogActionError :action="childAction" />
 
-              <form class="flex flex-wrap items-end gap-3" data-testid="showroom-child-create-form" @submit.prevent="createChild">
+              <form class="flex flex-wrap items-start gap-3" data-testid="showroom-child-create-form" @submit.prevent="createChild">
                 <UFormField
                   :label="holdsProducts ? t('showroom.catalog.fields.identifier') : t('showroom.catalog.fields.code')"
                   :error="childAction.error(holdsProducts ? 'identifier' : 'code')"
@@ -292,7 +292,7 @@ async function createChild(): Promise<void> {
                   <UInput v-model="child.key" required class="w-56" data-testid="showroom-child-key" />
                 </UFormField>
                 <AxesFields v-model="childAxes" :axes="axes" testid="showroom-child" :error="childAction.error" />
-                <UButton type="submit" icon="i-lucide-plus" :loading="childAction.busy.value" data-testid="showroom-child-create">
+                <UButton type="submit" icon="i-lucide-plus" :loading="childAction.busy.value" class="mt-field-label" data-testid="showroom-child-create">
                   {{ holdsProducts ? t('showroom.catalog.product_models.add_variant') : t('showroom.catalog.product_models.add_sub_model') }}
                 </UButton>
               </form>

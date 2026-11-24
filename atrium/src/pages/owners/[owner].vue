@@ -173,14 +173,14 @@ async function destroy(): Promise<void> {
               <template #header>
                 <h2 class="font-semibold">{{ t('showroom.owners.details') }}</h2>
               </template>
-              <div class="flex flex-wrap items-end gap-4">
+              <div class="flex flex-wrap items-start gap-4">
                 <UFormField :label="t('showroom.catalog.fields.label_in', { locale })" :error="action.error('labels')">
                   <UInput v-model="form.label" class="w-56" data-testid="showroom-owner-label" />
                 </UFormField>
                 <UFormField :label="t('showroom.catalog.fields.parent')" :hint="t('showroom.owners.move_hint')" :error="action.error('parent')">
                   <UInput v-model="form.parent" class="w-48" data-testid="showroom-owner-parent" />
                 </UFormField>
-                <UCheckbox v-model="form.enabled" :label="t('showroom.catalog.enabled')" class="h-9 items-center" data-testid="showroom-owner-enabled-input" />
+                <UCheckbox v-model="form.enabled" :label="t('showroom.catalog.enabled')" class="mt-field-label h-field items-center" data-testid="showroom-owner-enabled-input" />
               </div>
             </UCard>
 
@@ -189,7 +189,7 @@ async function destroy(): Promise<void> {
                 <h2 class="font-semibold">{{ t('showroom.catalog.products.identifiers_and_flags') }}</h2>
               </template>
               <div class="flex flex-col gap-4">
-                <p class="text-sm">
+                <p class="flex flex-wrap items-baseline gap-1 text-sm">
                   <span class="text-muted">{{ t('showroom.catalog.fields.slug') }}:</span>
                   <span class="font-mono" data-testid="showroom-owner-slug">{{ owner.slug }}</span>
                 </p>
@@ -247,7 +247,7 @@ async function destroy(): Promise<void> {
                   </li>
                 </ul>
 
-                <form class="flex flex-wrap items-end gap-3" data-testid="showroom-owner-child-form" @submit.prevent="addChild">
+                <form class="flex flex-wrap items-start gap-3" data-testid="showroom-owner-child-form" @submit.prevent="addChild">
                   <CatalogActionError :action="childAction" class="w-full" />
                   <UFormField :label="t('showroom.catalog.fields.code')" :error="childAction.error('code')" required>
                     <UInput v-model="child.code" required class="w-40" data-testid="showroom-owner-child-code" />
@@ -255,7 +255,7 @@ async function destroy(): Promise<void> {
                   <UFormField :label="t('showroom.catalog.fields.type')" :error="childAction.error('type')" required>
                     <USelect v-model="child.type" :items="childTypeItems" :placeholder="t('showroom.owners.choose_type')" required class="w-40" data-testid="showroom-owner-child-type" />
                   </UFormField>
-                  <UButton type="submit" icon="i-lucide-plus" :loading="childAction.busy.value" data-testid="showroom-owner-child-submit">{{ t('showroom.owners.add_child') }}</UButton>
+                  <UButton type="submit" icon="i-lucide-plus" :loading="childAction.busy.value" class="mt-field-label" data-testid="showroom-owner-child-submit">{{ t('showroom.owners.add_child') }}</UButton>
                 </form>
                 <small v-if="childAction.error('parent')" class="text-xs text-error">{{ childAction.error('parent') }}</small>
               </div>

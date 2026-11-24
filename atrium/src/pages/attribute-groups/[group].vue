@@ -87,14 +87,14 @@ async function destroy(): Promise<void> {
             <template #header>
               <h2 class="font-semibold">{{ t('showroom.structure.details') }}</h2>
             </template>
-            <form class="flex flex-wrap items-end gap-3" data-testid="showroom-group-form" @submit.prevent="save">
+            <form class="flex flex-wrap items-start gap-3" data-testid="showroom-group-form" @submit.prevent="save">
               <UFormField :label="t('showroom.catalog.fields.label_in', { locale })" :error="action.error('labels')">
                 <UInput v-model="form.label" class="w-64" data-testid="showroom-group-label" />
               </UFormField>
               <UFormField :label="t('showroom.catalog.fields.sort_order')" :error="action.error('sort_order')">
                 <UInput v-model="form.sort_order" type="number" min="0" class="w-28" data-testid="showroom-group-sort" />
               </UFormField>
-              <UButton type="submit" icon="i-lucide-check" :loading="action.busy.value" data-testid="showroom-group-save">{{ t('showroom.catalog.save') }}</UButton>
+              <UButton type="submit" icon="i-lucide-check" :loading="action.busy.value" class="mt-field-label" data-testid="showroom-group-save">{{ t('showroom.catalog.save') }}</UButton>
             </form>
           </UCard>
 

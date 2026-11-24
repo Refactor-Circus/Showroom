@@ -76,7 +76,7 @@ var ee = { class: "font-semibold" }, W = { class: "space-y-4" }, G = {
 					}, 1032, ["to", "data-testid"]))), 128))])),
 					D(e, { action: L(u) }, null, 8, ["action"]),
 					T("form", {
-						class: "flex flex-wrap items-end gap-3",
+						class: "flex flex-wrap items-start gap-3",
 						"data-testid": "showroom-asset-upload",
 						onSubmit: H(A, ["prevent"])
 					}, [
@@ -109,6 +109,7 @@ var ee = { class: "font-semibold" }, W = { class: "space-y-4" }, G = {
 							type: "submit",
 							icon: "i-lucide-upload",
 							loading: L(u).busy.value,
+							class: "mt-field-label",
 							"data-testid": "showroom-asset-upload-submit"
 						}, {
 							default: V(() => [E(I(L(c)("showroom.catalog.assets.upload")), 1)]),
@@ -282,7 +283,7 @@ var ee = { class: "font-semibold" }, W = { class: "space-y-4" }, G = {
 					D(e, { action: L(l) }, null, 8, ["action"]),
 					a.types.length > 0 ? (j(), w("form", {
 						key: 1,
-						class: "flex flex-wrap items-end gap-3",
+						class: "flex flex-wrap items-start gap-3",
 						"data-testid": "showroom-association-add",
 						onSubmit: H(B, ["prevent"])
 					}, [
@@ -343,6 +344,7 @@ var ee = { class: "font-semibold" }, W = { class: "space-y-4" }, G = {
 							type: "submit",
 							icon: "i-lucide-plus",
 							loading: L(l).busy.value,
+							class: "mt-field-label",
 							"data-testid": "showroom-association-add-submit"
 						}, {
 							default: V(() => [E(I(L(c)("showroom.catalog.associations.add")), 1)]),
@@ -424,7 +426,7 @@ var ee = { class: "font-semibold" }, W = { class: "space-y-4" }, G = {
 			let r = v, i = h, o = f, d = p;
 			return n.locales.length > 0 || n.channels.length > 0 ? (j(), S(d, { key: 0 }, {
 				default: V(() => [T("form", {
-					class: "flex flex-wrap items-end gap-3",
+					class: "flex flex-wrap items-start gap-3",
 					"data-testid": "showroom-slot-picker",
 					onSubmit: H(u, ["prevent"])
 				}, [
@@ -458,6 +460,7 @@ var ee = { class: "font-semibold" }, W = { class: "space-y-4" }, G = {
 						type: "submit",
 						variant: "outline",
 						icon: "i-lucide-arrow-left-right",
+						class: "mt-field-label",
 						"data-testid": "showroom-slot-switch"
 					}, {
 						default: V(() => [E(I(L(a)("showroom.catalog.values.switch")), 1)]),

@@ -71,7 +71,7 @@ var P = {
 					w(T, { "data-testid": "showroom-association-type-new" }, {
 						header: A(() => [S("h2", I, O(k(V)("showroom.structure.association_types.new")), 1)]),
 						default: A(() => [S("form", {
-							class: "flex flex-wrap items-end gap-3",
+							class: "flex flex-wrap items-start gap-3",
 							"data-testid": "showroom-association-type-create-form",
 							onSubmit: j(ie, ["prevent"])
 						}, [
@@ -110,20 +110,21 @@ var P = {
 								modelValue: k($).is_two_way,
 								"onUpdate:modelValue": i[2] ||= (e) => k($).is_two_way = e,
 								label: k(V)("showroom.structure.association_types.two_way"),
-								class: "h-9 items-center",
+								class: "mt-field-label h-field items-center",
 								"data-testid": "showroom-association-type-create-two-way"
 							}, null, 8, ["modelValue", "label"]),
 							w(l, {
 								modelValue: k($).is_quantified,
 								"onUpdate:modelValue": i[3] ||= (e) => k($).is_quantified = e,
 								label: k(V)("showroom.structure.association_types.quantified"),
-								class: "h-9 items-center",
+								class: "mt-field-label h-field items-center",
 								"data-testid": "showroom-association-type-create-quantified"
 							}, null, 8, ["modelValue", "label"]),
 							w(y, {
 								type: "submit",
 								icon: "i-lucide-plus",
 								loading: k(W).busy.value,
+								class: "mt-field-label",
 								"data-testid": "showroom-association-type-create-submit"
 							}, {
 								default: A(() => [C(O(k(V)("showroom.catalog.create")), 1)]),

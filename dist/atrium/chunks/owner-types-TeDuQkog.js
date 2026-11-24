@@ -14,7 +14,7 @@ import { useRoute as N } from "vue-router";
 var P = {
 	class: "space-y-4",
 	"data-testid": "showroom-owner-types-page"
-}, F = { class: "space-y-4" }, I = { class: "font-semibold" }, L = { class: "flex flex-wrap items-end gap-3" }, R = { class: "space-y-4" }, oe = ["data-testid"], z = { class: "font-mono text-xs" }, B = { class: "tabular-nums" }, V = /* @__PURE__ */ C({
+}, F = { class: "space-y-4" }, I = { class: "font-semibold" }, L = { class: "flex flex-wrap items-start gap-3" }, R = { class: "space-y-4" }, oe = ["data-testid"], z = { class: "font-mono text-xs" }, B = { class: "tabular-nums" }, V = /* @__PURE__ */ C({
 	__name: "index",
 	setup(C) {
 		let { t: V, locale: H } = M(), U = N(), W = i(), G = y(() => [

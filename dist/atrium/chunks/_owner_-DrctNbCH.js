@@ -77,7 +77,7 @@ var U = { class: "font-semibold" }, W = { class: "space-y-4" }, G = {
 					}, 1032, ["to", "data-testid"]))), 128))])),
 					k(e, { action: R(l) }, null, 8, ["action"]),
 					D("form", {
-						class: "flex flex-wrap items-end gap-3",
+						class: "flex flex-wrap items-start gap-3",
 						"data-testid": "showroom-asset-upload",
 						onSubmit: V(te, ["prevent"])
 					}, [
@@ -110,6 +110,7 @@ var U = { class: "font-semibold" }, W = { class: "space-y-4" }, G = {
 							type: "submit",
 							icon: "i-lucide-upload",
 							loading: R(l).busy.value,
+							class: "mt-field-label",
 							"data-testid": "showroom-asset-upload-submit"
 						}, {
 							default: B(() => [O(L(R(s)("showroom.catalog.assets.upload")), 1)]),
@@ -140,7 +141,7 @@ var U = { class: "font-semibold" }, W = { class: "space-y-4" }, G = {
 }, _e = {
 	class: "text-sm text-muted",
 	"data-testid": "showroom-owner-counts"
-}, ve = { class: "font-semibold" }, ye = { class: "flex flex-wrap items-end gap-4" }, be = { class: "font-semibold" }, xe = { class: "flex flex-col gap-4" }, Se = { class: "text-sm" }, Ce = { class: "text-muted" }, we = {
+}, ve = { class: "font-semibold" }, ye = { class: "flex flex-wrap items-start gap-4" }, be = { class: "font-semibold" }, xe = { class: "flex flex-col gap-4" }, Se = { class: "flex flex-wrap items-baseline gap-1 text-sm" }, Ce = { class: "text-muted" }, we = {
 	class: "font-mono",
 	"data-testid": "showroom-owner-slug"
 }, Te = {
@@ -327,7 +328,7 @@ var U = { class: "font-semibold" }, W = { class: "space-y-4" }, G = {
 										modelValue: R(Z).enabled,
 										"onUpdate:modelValue": i[2] ||= (e) => R(Z).enabled = e,
 										label: R(m)("showroom.catalog.enabled"),
-										class: "h-9 items-center",
+										class: "mt-field-label h-field items-center",
 										"data-testid": "showroom-owner-enabled-input"
 									}, null, 8, ["modelValue", "label"])
 								])]),
@@ -400,7 +401,7 @@ var U = { class: "font-semibold" }, W = { class: "space-y-4" }, G = {
 									_: 2
 								}, 1032, ["to", "data-testid"])]))), 128))])),
 								D("form", {
-									class: "flex flex-wrap items-end gap-3",
+									class: "flex flex-wrap items-start gap-3",
 									"data-testid": "showroom-owner-child-form",
 									onSubmit: V(Qe, ["prevent"])
 								}, [
@@ -446,6 +447,7 @@ var U = { class: "font-semibold" }, W = { class: "space-y-4" }, G = {
 										type: "submit",
 										icon: "i-lucide-plus",
 										loading: R(I).busy.value,
+										class: "mt-field-label",
 										"data-testid": "showroom-owner-child-submit"
 									}, {
 										default: B(() => [O(L(R(m)("showroom.owners.add_child")), 1)]),

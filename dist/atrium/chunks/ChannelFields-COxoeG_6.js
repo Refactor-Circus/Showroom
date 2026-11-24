@@ -9,7 +9,7 @@ var b = { class: "flex flex-col gap-3" }, x = { class: "mb-1 text-xs font-medium
 }, w = {
 	key: 0,
 	class: "text-xs text-error"
-}, T = { class: "flex flex-wrap items-end gap-3" }, E = /* @__PURE__ */ d({
+}, T = { class: "flex flex-wrap items-start gap-3" }, E = /* @__PURE__ */ d({
 	__name: "ChannelFields",
 	props: /*@__PURE__*/ f({
 		locales: {},

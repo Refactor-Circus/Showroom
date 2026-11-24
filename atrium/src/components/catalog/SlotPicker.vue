@@ -30,14 +30,14 @@ function pick(): void {
 
 <template>
   <UCard v-if="props.locales.length > 0 || props.channels.length > 0">
-    <form class="flex flex-wrap items-end gap-3" data-testid="showroom-slot-picker" @submit.prevent="pick">
+    <form class="flex flex-wrap items-start gap-3" data-testid="showroom-slot-picker" @submit.prevent="pick">
       <UFormField v-if="props.locales.length > 0" :label="t('showroom.catalog.fields.locale')">
         <USelect v-model="choice.locale" :items="localeItems" class="w-44" data-testid="showroom-slot-locale" />
       </UFormField>
       <UFormField v-if="props.channels.length > 0" :label="t('showroom.catalog.fields.channel')">
         <USelect v-model="choice.channel" :items="channelItems" class="w-44" data-testid="showroom-slot-channel" />
       </UFormField>
-      <UButton type="submit" variant="outline" icon="i-lucide-arrow-left-right" data-testid="showroom-slot-switch">{{ t('showroom.catalog.values.switch') }}</UButton>
+      <UButton type="submit" variant="outline" icon="i-lucide-arrow-left-right" class="mt-field-label" data-testid="showroom-slot-switch">{{ t('showroom.catalog.values.switch') }}</UButton>
     </form>
   </UCard>
 </template>

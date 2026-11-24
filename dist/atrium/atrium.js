@@ -788,32 +788,32 @@ var G = {
 	{
 		path: "/showroom/assets/:asset",
 		name: "showroom-assets-asset",
-		component: () => import("./chunks/_asset_-B2k35oXX.js")
+		component: () => import("./chunks/_asset_-k1rO1sYf.js")
 	},
 	{
 		path: "/showroom/assets",
 		name: "showroom-assets",
-		component: () => import("./chunks/assets-7q559ZGs.js")
+		component: () => import("./chunks/assets-CmbWjfW5.js")
 	},
 	{
 		path: "/showroom/association-types",
 		name: "showroom-association-types",
-		component: () => import("./chunks/association-types-B9aBHkg3.js")
+		component: () => import("./chunks/association-types-ENAiHbUt.js")
 	},
 	{
 		path: "/showroom/attribute-groups/:group",
 		name: "showroom-attribute-groups-group",
-		component: () => import("./chunks/_group_-uE-Jb_JA.js")
+		component: () => import("./chunks/_group_-BZ9Mwl81.js")
 	},
 	{
 		path: "/showroom/attribute-groups",
 		name: "showroom-attribute-groups",
-		component: () => import("./chunks/attribute-groups-Dl9gHIgg.js")
+		component: () => import("./chunks/attribute-groups-CrdTnC1o.js")
 	},
 	{
 		path: "/showroom/attributes/:attribute",
 		name: "showroom-attributes-attribute",
-		component: () => import("./chunks/_attribute_-BlVoXV7L.js")
+		component: () => import("./chunks/_attribute_-C98nvyar.js")
 	},
 	{
 		path: "/showroom/attributes/create",
@@ -823,37 +823,37 @@ var G = {
 	{
 		path: "/showroom/attributes",
 		name: "showroom-attributes",
-		component: () => import("./chunks/attributes-CQHiBYcy.js")
+		component: () => import("./chunks/attributes-B5CfMT4x.js")
 	},
 	{
 		path: "/showroom/categories/:category",
 		name: "showroom-categories-category",
-		component: () => import("./chunks/_category_-Blj6ppXq.js")
+		component: () => import("./chunks/_category_-MXoJrNTl.js")
 	},
 	{
 		path: "/showroom/categories",
 		name: "showroom-categories",
-		component: () => import("./chunks/categories-DTd6mSxT.js")
+		component: () => import("./chunks/categories-C7V3VxRQ.js")
 	},
 	{
 		path: "/showroom/channels/:channel",
 		name: "showroom-channels-channel",
-		component: () => import("./chunks/_channel_-CPu8g7Ix.js")
+		component: () => import("./chunks/_channel_-CMukUFgZ.js")
 	},
 	{
 		path: "/showroom/channels",
 		name: "showroom-channels",
-		component: () => import("./chunks/channels-DDmS1e9c.js")
+		component: () => import("./chunks/channels-DxwqyaIL.js")
 	},
 	{
 		path: "/showroom/families/:family",
 		name: "showroom-families-family",
-		component: () => import("./chunks/_family_-BbOJxnzw.js")
+		component: () => import("./chunks/_family_-DYhoxvbv.js")
 	},
 	{
 		path: "/showroom/families",
 		name: "showroom-families",
-		component: () => import("./chunks/families-UyQz5GNb.js")
+		component: () => import("./chunks/families-Bpc1bYES.js")
 	},
 	{
 		path: "/showroom/family-variants/:familyVariant",
@@ -868,7 +868,7 @@ var G = {
 	{
 		path: "/showroom/flags",
 		name: "showroom-flags",
-		component: () => import("./chunks/flags-D9AaCe5M.js")
+		component: () => import("./chunks/flags-DBv1TMhJ.js")
 	},
 	{
 		path: "/showroom/owner-types/:ownerType",
@@ -878,32 +878,32 @@ var G = {
 	{
 		path: "/showroom/owner-types",
 		name: "showroom-owner-types",
-		component: () => import("./chunks/owner-types-BZ7H1-da.js")
+		component: () => import("./chunks/owner-types-TeDuQkog.js")
 	},
 	{
 		path: "/showroom/owners/:owner",
 		name: "showroom-owners-owner",
-		component: () => import("./chunks/_owner_-BXtbPLuC.js")
+		component: () => import("./chunks/_owner_-DrctNbCH.js")
 	},
 	{
 		path: "/showroom/owners",
 		name: "showroom-owners",
-		component: () => import("./chunks/owners-D3x5iWy9.js")
+		component: () => import("./chunks/owners-DJShwr7M.js")
 	},
 	{
 		path: "/showroom/product-models/:productModel",
 		name: "showroom-product-models-productModel",
-		component: () => import("./chunks/_productModel_-CtYrGFZJ.js")
+		component: () => import("./chunks/_productModel_-B1Ir8rM7.js")
 	},
 	{
 		path: "/showroom/product-models",
 		name: "showroom-product-models",
-		component: () => import("./chunks/product-models-BRuXE0t9.js")
+		component: () => import("./chunks/product-models-B3iMht11.js")
 	},
 	{
 		path: "/showroom/products/:product",
 		name: "showroom-products-product",
-		component: () => import("./chunks/_product_-uFz-dJHi.js")
+		component: () => import("./chunks/_product_-CRimsIrh.js")
 	},
 	{
 		path: "/showroom/products/create",
@@ -913,7 +913,7 @@ var G = {
 	{
 		path: "/showroom/products",
 		name: "showroom-products",
-		component: () => import("./chunks/products-oRMxIQVP.js")
+		component: () => import("./chunks/products-DbRBKRtP.js")
 	},
 	{
 		path: "/showroom/transfers",

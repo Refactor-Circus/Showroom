@@ -129,7 +129,7 @@ function typeLabel(code: string | undefined): string {
           <p v-if="types.length === 0" class="text-sm text-muted" data-testid="showroom-owners-no-types">{{ t('showroom.owners.no_types') }}</p>
           <form v-else class="flex flex-col gap-3" data-testid="showroom-owner-create-form" @submit.prevent="create">
             <CatalogActionError :action="action" />
-            <div class="flex flex-wrap items-end gap-3">
+            <div class="flex flex-wrap items-start gap-3">
               <UFormField :label="t('showroom.catalog.fields.code')" :hint="t('showroom.owners.code_hint')" :error="action.error('code')" required>
                 <UInput v-model="draft.code" required class="w-48" data-testid="showroom-owner-create-code" />
               </UFormField>
@@ -142,21 +142,21 @@ function typeLabel(code: string | undefined): string {
               <UFormField :label="t('showroom.catalog.fields.label_in', { locale })" :error="action.error('labels')">
                 <UInput v-model="draft.label" class="w-48" data-testid="showroom-owner-create-label" />
               </UFormField>
-              <UButton type="submit" icon="i-lucide-plus" :loading="action.busy.value" data-testid="showroom-owner-create-submit">{{ t('showroom.catalog.create') }}</UButton>
+              <UButton type="submit" icon="i-lucide-plus" :loading="action.busy.value" class="mt-field-label" data-testid="showroom-owner-create-submit">{{ t('showroom.catalog.create') }}</UButton>
             </div>
           </form>
         </UCard>
 
         <UCard>
-          <form class="flex flex-wrap items-end gap-3" data-testid="showroom-owners-filters" @submit.prevent="applyFilters">
+          <form class="flex flex-wrap items-start gap-3" data-testid="showroom-owners-filters" @submit.prevent="applyFilters">
             <UFormField :label="t('showroom.catalog.filters.search')">
               <UInput v-model="filters.search" class="w-56" data-testid="showroom-owners-search" />
             </UFormField>
             <UFormField :label="t('showroom.catalog.fields.type')">
               <AtriumSelect v-model="filters.type" :items="typeItems" :blank="t('showroom.owners.all_types')" :blank-value="null" class="w-44" data-testid="showroom-owners-type" />
             </UFormField>
-            <UButton type="submit" icon="i-lucide-filter">{{ t('showroom.catalog.filters.filter') }}</UButton>
-            <UButton variant="ghost" color="neutral" icon="i-lucide-x" @click="clearFilters">{{ t('showroom.catalog.filters.clear') }}</UButton>
+            <UButton type="submit" icon="i-lucide-filter" class="mt-field-label">{{ t('showroom.catalog.filters.filter') }}</UButton>
+            <UButton variant="ghost" color="neutral" icon="i-lucide-x" class="mt-field-label" @click="clearFilters">{{ t('showroom.catalog.filters.clear') }}</UButton>
           </form>
         </UCard>
 

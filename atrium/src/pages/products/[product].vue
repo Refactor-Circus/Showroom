@@ -259,7 +259,7 @@ async function destroy(): Promise<void> {
               <template #header>
                 <h2 class="font-semibold">{{ t('showroom.catalog.products.details') }}</h2>
               </template>
-              <div class="flex flex-wrap items-end gap-4">
+              <div class="flex flex-wrap items-start gap-4">
                 <UFormField v-if="!isVariant" :label="t('showroom.catalog.fields.family')" :error="action.error('family')">
                   <AtriumSelect v-model="form.family" :items="familyItems" :blank="t('showroom.catalog.products.no_family')" :blank-value="null" class="w-56" data-testid="showroom-product-family" />
                 </UFormField>
@@ -270,7 +270,7 @@ async function destroy(): Promise<void> {
                 <UFormField v-else :label="t('showroom.catalog.fields.owner')" :hint="t('showroom.catalog.products.owner_hint')" :error="action.error('owner')">
                   <UInput v-model="form.owner" class="w-56" data-testid="showroom-product-owner" />
                 </UFormField>
-                <UCheckbox v-model="form.enabled" :label="t('showroom.catalog.enabled')" class="h-9 items-center" data-testid="showroom-product-enabled-input" />
+                <UCheckbox v-model="form.enabled" :label="t('showroom.catalog.enabled')" class="mt-field-label h-field items-center" data-testid="showroom-product-enabled-input" />
               </div>
             </UCard>
 
@@ -279,7 +279,7 @@ async function destroy(): Promise<void> {
                 <h2 class="font-semibold">{{ t('showroom.catalog.products.identifiers_and_flags') }}</h2>
               </template>
               <div class="flex flex-col gap-4">
-                <p class="text-sm">
+                <p class="flex flex-wrap items-baseline gap-1 text-sm">
                   <span class="text-muted">{{ t('showroom.catalog.fields.slug') }}:</span>
                   <span class="font-mono" data-testid="showroom-product-slug">{{ product.slug }}</span>
                 </p>
@@ -355,11 +355,11 @@ async function destroy(): Promise<void> {
           </form>
 
           <UCard v-if="addable.length > 0">
-            <form class="flex flex-wrap items-end gap-3" data-testid="showroom-add-attribute" @submit.prevent="addAttribute">
+            <form class="flex flex-wrap items-start gap-3" data-testid="showroom-add-attribute" @submit.prevent="addAttribute">
               <UFormField :label="t('showroom.catalog.values.add_attribute')">
                 <USelect v-model="toAdd" :items="addableItems" :placeholder="t('showroom.catalog.values.choose_attribute')" class="w-72" data-testid="showroom-add-attribute-select" />
               </UFormField>
-              <UButton type="submit" variant="outline" icon="i-lucide-plus" data-testid="showroom-add-attribute-submit">{{ t('showroom.catalog.add') }}</UButton>
+              <UButton type="submit" variant="outline" icon="i-lucide-plus" class="mt-field-label" data-testid="showroom-add-attribute-submit">{{ t('showroom.catalog.add') }}</UButton>
             </form>
           </UCard>
 

@@ -65,7 +65,7 @@ async function create(): Promise<void> {
           <template #header>
             <h2 class="font-semibold">{{ t('showroom.structure.groups.new') }}</h2>
           </template>
-          <form class="flex flex-wrap items-end gap-3" data-testid="showroom-group-create-form" @submit.prevent="create">
+          <form class="flex flex-wrap items-start gap-3" data-testid="showroom-group-create-form" @submit.prevent="create">
             <UFormField :label="t('showroom.catalog.fields.code')" :hint="t('showroom.structure.code_hint')" :error="action.error('code')" required>
               <UInput v-model="draft.code" required class="w-56" data-testid="showroom-group-create-code" />
             </UFormField>
@@ -75,7 +75,7 @@ async function create(): Promise<void> {
             <UFormField :label="t('showroom.catalog.fields.sort_order')" :error="action.error('sort_order')">
               <UInput v-model="draft.sort_order" type="number" min="0" class="w-28" data-testid="showroom-group-create-sort" />
             </UFormField>
-            <UButton type="submit" icon="i-lucide-plus" :loading="action.busy.value" data-testid="showroom-group-create-submit">{{ t('showroom.structure.groups.create') }}</UButton>
+            <UButton type="submit" icon="i-lucide-plus" :loading="action.busy.value" class="mt-field-label" data-testid="showroom-group-create-submit">{{ t('showroom.structure.groups.create') }}</UButton>
           </form>
           <CatalogActionError :action="action" class="mt-3" />
         </UCard>

@@ -165,7 +165,7 @@ var B = ["data-testid"], V = { class: "ml-1 font-mono text-xs text-muted" }, H =
 								}, null, 8, ["nodes"])),
 								D(e, { action: F(N) }, null, 8, ["action"]),
 								T("form", {
-									class: "flex flex-wrap items-end gap-3",
+									class: "flex flex-wrap items-start gap-3",
 									"data-testid": "showroom-child-create-form",
 									onSubmit: L(fe, ["prevent"])
 								}, [
@@ -213,6 +213,7 @@ var B = ["data-testid"], V = { class: "ml-1 font-mono text-xs text-muted" }, H =
 										type: "submit",
 										icon: "i-lucide-plus",
 										loading: F(N).busy.value,
+										class: "mt-field-label",
 										"data-testid": "showroom-child-create"
 									}, {
 										default: I(() => [E(P(F(b)("showroom.structure.categories.add_child")), 1)]),
@@ -225,7 +226,7 @@ var B = ["data-testid"], V = { class: "ml-1 font-mono text-xs text-muted" }, H =
 						D(f, null, {
 							header: I(() => [T("h2", q, P(F(b)("showroom.structure.details")), 1)]),
 							default: I(() => [T("form", {
-								class: "flex flex-wrap items-end gap-3",
+								class: "flex flex-wrap items-start gap-3",
 								"data-testid": "showroom-category-form",
 								onSubmit: L(de, ["prevent"])
 							}, [
@@ -276,6 +277,7 @@ var B = ["data-testid"], V = { class: "ml-1 font-mono text-xs text-muted" }, H =
 									type: "submit",
 									icon: "i-lucide-check",
 									loading: F(M).busy.value,
+									class: "mt-field-label",
 									"data-testid": "showroom-category-save"
 								}, {
 									default: I(() => [E(P(F(b)("showroom.catalog.save")), 1)]),

@@ -13,7 +13,7 @@ import { useRoute as I } from "vue-router";
 var L = {
 	class: "space-y-4",
 	"data-testid": "showroom-flags"
-}, R = { class: "space-y-4" }, z = { class: "font-semibold" }, B = { class: "flex flex-wrap items-end gap-3" }, oe = { class: "space-y-4" }, V = ["data-testid"], H = { class: "flex flex-wrap gap-1" }, U = { class: "tabular-nums" }, W = /* @__PURE__ */ T({
+}, R = { class: "space-y-4" }, z = { class: "font-semibold" }, B = { class: "flex flex-wrap items-start gap-3" }, oe = { class: "space-y-4" }, V = ["data-testid"], H = { class: "flex flex-wrap gap-1" }, U = { class: "tabular-nums" }, W = /* @__PURE__ */ T({
 	__name: "index",
 	setup(T) {
 		let { t: W, locale: G } = F(), K = I(), q = i(), J = y(() => {

@@ -58,7 +58,7 @@ var P = {
 				default: A(() => [S("div", F, [w(b, { "data-testid": "showroom-tree-new" }, {
 					header: A(() => [S("h2", I, O(k(B)("showroom.structure.categories.new_tree")), 1)]),
 					default: A(() => [S("form", {
-						class: "flex flex-wrap items-end gap-3",
+						class: "flex flex-wrap items-start gap-3",
 						"data-testid": "showroom-tree-create-form",
 						onSubmit: j(ee, ["prevent"])
 					}, [
@@ -97,6 +97,7 @@ var P = {
 							type: "submit",
 							icon: "i-lucide-plus",
 							loading: k(U).busy.value,
+							class: "mt-field-label",
 							"data-testid": "showroom-tree-create-submit"
 						}, {
 							default: A(() => [C(O(k(B)("showroom.catalog.create")), 1)]),

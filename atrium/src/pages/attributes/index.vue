@@ -107,7 +107,7 @@ function clear(): void {
     <AtriumIntegrationScreen screen-key="showroom.attributes">
       <div class="space-y-4">
         <UCard>
-          <form class="flex flex-wrap items-end gap-3" data-testid="showroom-attributes-filters" @submit.prevent="filter">
+          <form class="flex flex-wrap items-start gap-3" data-testid="showroom-attributes-filters" @submit.prevent="filter">
             <UFormField :label="t('showroom.catalog.filters.search')">
               <UInput v-model="filters.search" class="w-56" data-testid="showroom-attributes-search" />
             </UFormField>
@@ -117,8 +117,8 @@ function clear(): void {
             <UFormField :label="t('showroom.catalog.fields.group')">
               <AtriumSelect v-model="filters.group" :items="groupItems" :blank="t('showroom.structure.attributes.all_groups')" :blank-value="null" class="w-48" data-testid="showroom-attributes-group" />
             </UFormField>
-            <UButton type="submit" icon="i-lucide-filter" data-testid="showroom-attributes-filter">{{ t('showroom.catalog.filters.filter') }}</UButton>
-            <UButton variant="ghost" icon="i-lucide-x" data-testid="showroom-attributes-clear" @click="clear">{{ t('showroom.catalog.filters.clear') }}</UButton>
+            <UButton type="submit" icon="i-lucide-filter" class="mt-field-label" data-testid="showroom-attributes-filter">{{ t('showroom.catalog.filters.filter') }}</UButton>
+            <UButton variant="ghost" icon="i-lucide-x" class="mt-field-label" data-testid="showroom-attributes-clear" @click="clear">{{ t('showroom.catalog.filters.clear') }}</UButton>
           </form>
         </UCard>
 

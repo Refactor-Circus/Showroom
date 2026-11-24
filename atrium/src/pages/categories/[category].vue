@@ -143,7 +143,7 @@ const chain = computed(() => category.value === null ? [] : [
 
               <CatalogActionError :action="childAction" />
 
-              <form class="flex flex-wrap items-end gap-3" data-testid="showroom-child-create-form" @submit.prevent="addChild">
+              <form class="flex flex-wrap items-start gap-3" data-testid="showroom-child-create-form" @submit.prevent="addChild">
                 <UFormField :label="t('showroom.catalog.fields.code')" :error="childAction.error('code')" required>
                   <UInput v-model="draft.code" required class="w-48" data-testid="showroom-child-create-code" />
                 </UFormField>
@@ -153,7 +153,7 @@ const chain = computed(() => category.value === null ? [] : [
                 <UFormField :label="t('showroom.catalog.fields.sort_order')" :error="childAction.error('sort_order')">
                   <UInput v-model="draft.sort_order" type="number" min="0" class="w-28" data-testid="showroom-child-create-sort" />
                 </UFormField>
-                <UButton type="submit" icon="i-lucide-plus" :loading="childAction.busy.value" data-testid="showroom-child-create">{{ t('showroom.structure.categories.add_child') }}</UButton>
+                <UButton type="submit" icon="i-lucide-plus" :loading="childAction.busy.value" class="mt-field-label" data-testid="showroom-child-create">{{ t('showroom.structure.categories.add_child') }}</UButton>
               </form>
             </div>
           </UCard>
@@ -162,7 +162,7 @@ const chain = computed(() => category.value === null ? [] : [
             <template #header>
               <h2 class="font-semibold">{{ t('showroom.structure.details') }}</h2>
             </template>
-            <form class="flex flex-wrap items-end gap-3" data-testid="showroom-category-form" @submit.prevent="save">
+            <form class="flex flex-wrap items-start gap-3" data-testid="showroom-category-form" @submit.prevent="save">
               <UFormField :label="t('showroom.catalog.fields.label_in', { locale })" :error="action.error('labels')">
                 <UInput v-model="form.label" class="w-64" data-testid="showroom-category-label" />
               </UFormField>
@@ -172,7 +172,7 @@ const chain = computed(() => category.value === null ? [] : [
               <UFormField :label="t('showroom.catalog.fields.parent')" :hint="t('showroom.structure.categories.move_hint')" :error="action.error('parent')">
                 <UInput v-model="form.parent" class="w-56" data-testid="showroom-category-parent" />
               </UFormField>
-              <UButton type="submit" icon="i-lucide-check" :loading="action.busy.value" data-testid="showroom-category-save">{{ t('showroom.catalog.save') }}</UButton>
+              <UButton type="submit" icon="i-lucide-check" :loading="action.busy.value" class="mt-field-label" data-testid="showroom-category-save">{{ t('showroom.catalog.save') }}</UButton>
             </form>
           </UCard>
 

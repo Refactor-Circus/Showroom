@@ -14,13 +14,13 @@ var k = {
 }, A = {
 	key: 0,
 	class: "space-y-5"
-}, j = { "data-testid": "showroom-family-title" }, M = { class: "font-mono" }, N = { class: "font-semibold" }, P = { class: "flex flex-wrap items-end gap-3" }, F = { class: "font-semibold" }, I = { class: "space-y-4" }, L = {
+}, j = { "data-testid": "showroom-family-title" }, M = { class: "font-mono" }, N = { class: "font-semibold" }, P = { class: "flex flex-wrap items-start gap-3" }, F = { class: "font-semibold" }, I = { class: "space-y-4" }, L = {
 	key: 0,
 	class: "text-sm text-muted"
 }, R = ["data-testid"], z = {
 	key: 2,
 	class: "text-xs text-error"
-}, he = { class: "flex flex-wrap items-end gap-3" }, ge = { class: "font-semibold" }, _e = { class: "space-y-4" }, ve = {
+}, he = { class: "flex flex-wrap items-start gap-3" }, ge = { class: "font-semibold" }, _e = { class: "space-y-4" }, ve = {
 	key: 0,
 	class: "flex flex-wrap gap-2"
 }, ye = { class: "px-1 text-sm font-medium" }, be = { class: "grid gap-3 sm:grid-cols-2" }, xe = { class: "mb-1 text-xs font-medium uppercase text-muted" }, Se = { class: "flex flex-wrap gap-3" }, Ce = { class: "font-mono text-xs" }, we = {
@@ -334,7 +334,7 @@ var k = {
 										modelValue: T(X).add_required,
 										"onUpdate:modelValue": r[4] ||= (e) => T(X).add_required = e,
 										label: T(B)("showroom.catalog.families.required"),
-										class: "h-9 items-center",
+										class: "mt-field-label h-field items-center",
 										"data-testid": "showroom-family-add-required"
 									}, null, 8, ["modelValue", "label"])])
 								])]),

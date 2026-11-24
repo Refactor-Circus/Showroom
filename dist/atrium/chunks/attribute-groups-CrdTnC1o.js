@@ -62,7 +62,7 @@ var P = {
 				default: A(() => [S("div", F, [w(u, { "data-testid": "showroom-group-new" }, {
 					header: A(() => [S("h2", I, O(k(V)("showroom.structure.groups.new")), 1)]),
 					default: A(() => [S("form", {
-						class: "flex flex-wrap items-end gap-3",
+						class: "flex flex-wrap items-start gap-3",
 						"data-testid": "showroom-group-create-form",
 						onSubmit: j(ne, ["prevent"])
 					}, [
@@ -115,6 +115,7 @@ var P = {
 							type: "submit",
 							icon: "i-lucide-plus",
 							loading: k(W).busy.value,
+							class: "mt-field-label",
 							"data-testid": "showroom-group-create-submit"
 						}, {
 							default: A(() => [C(O(k(V)("showroom.structure.groups.create")), 1)]),

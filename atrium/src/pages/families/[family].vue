@@ -198,7 +198,7 @@ async function createVariant(): Promise<void> {
               <template #header>
                 <h2 class="font-semibold">{{ t('showroom.catalog.products.details') }}</h2>
               </template>
-              <div class="flex flex-wrap items-end gap-3">
+              <div class="flex flex-wrap items-start gap-3">
                 <UFormField :label="t('showroom.catalog.fields.label_in', { locale })" :error="action.error('labels')">
                   <UInput v-model="form.label" class="w-64" data-testid="showroom-family-label" />
                 </UFormField>
@@ -246,11 +246,11 @@ async function createVariant(): Promise<void> {
                 </UTable>
                 <small v-if="action.error('attributes')" class="text-xs text-error">{{ action.error('attributes') }}</small>
 
-                <div class="flex flex-wrap items-end gap-3">
+                <div class="flex flex-wrap items-start gap-3">
                   <UFormField :label="t('showroom.catalog.values.add_attribute')">
                     <AtriumSelect v-model="form.add_attribute" :items="availableItems" :blank="t('showroom.catalog.values.choose_attribute')" :blank-value="null" class="w-72" data-testid="showroom-family-add-attribute" />
                   </UFormField>
-                  <UCheckbox v-model="form.add_required" :label="t('showroom.catalog.families.required')" class="h-9 items-center" data-testid="showroom-family-add-required" />
+                  <UCheckbox v-model="form.add_required" :label="t('showroom.catalog.families.required')" class="mt-field-label h-field items-center" data-testid="showroom-family-add-required" />
                 </div>
               </div>
             </UCard>

@@ -174,14 +174,14 @@ async function destroy(): Promise<void> {
                 <template #header>
                   <h2 class="font-semibold">{{ t('showroom.assets.details') }}</h2>
                 </template>
-                <form class="flex flex-wrap items-end gap-3" data-testid="showroom-asset-form" @submit.prevent="save">
+                <form class="flex flex-wrap items-start gap-3" data-testid="showroom-asset-form" @submit.prevent="save">
                   <UFormField :label="t('showroom.catalog.fields.label_in', { locale })" :error="action.error('labels')">
                     <UInput v-model="label" class="w-64" data-testid="showroom-asset-label" />
                   </UFormField>
                   <UFormField :label="t('showroom.assets.replace_file')" :error="action.error('file')">
                     <UInput ref="fileInput" type="file" data-testid="showroom-asset-file" @change="choose" />
                   </UFormField>
-                  <UButton type="submit" icon="i-lucide-check" :loading="action.busy.value" data-testid="showroom-asset-save">{{ t('showroom.catalog.save') }}</UButton>
+                  <UButton type="submit" icon="i-lucide-check" :loading="action.busy.value" class="mt-field-label" data-testid="showroom-asset-save">{{ t('showroom.catalog.save') }}</UButton>
                 </form>
               </UCard>
 
@@ -216,7 +216,7 @@ async function destroy(): Promise<void> {
                     </template>
                   </UTable>
 
-                  <form class="flex flex-wrap items-end gap-3" data-testid="showroom-asset-link-form" @submit.prevent="attach">
+                  <form class="flex flex-wrap items-start gap-3" data-testid="showroom-asset-link-form" @submit.prevent="attach">
                     <UFormField :label="t('showroom.catalog.fields.type')" :error="action.error('type')" required>
                       <USelect v-model="link.type" :items="linkTypeItems" class="w-40" data-testid="showroom-asset-link-type" />
                     </UFormField>
@@ -226,7 +226,7 @@ async function destroy(): Promise<void> {
                     <UFormField :label="t('showroom.assets.role')" :error="action.error('role')">
                       <UInput v-model="link.role" class="w-36" data-testid="showroom-asset-link-role" />
                     </UFormField>
-                    <UButton type="submit" icon="i-lucide-link" :loading="action.busy.value" data-testid="showroom-asset-link-submit">{{ t('showroom.assets.link') }}</UButton>
+                    <UButton type="submit" icon="i-lucide-link" :loading="action.busy.value" class="mt-field-label" data-testid="showroom-asset-link-submit">{{ t('showroom.assets.link') }}</UButton>
                   </form>
                 </div>
               </UCard>

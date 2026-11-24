@@ -74,7 +74,7 @@ var I = {
 					S(v, { "data-testid": "showroom-family-new" }, {
 						header: j(() => [b("h2", R, O(k(H)("showroom.catalog.families.new")), 1)]),
 						default: j(() => [b("form", {
-							class: "flex flex-wrap items-end gap-3",
+							class: "flex flex-wrap items-start gap-3",
 							"data-testid": "showroom-family-create-form",
 							onSubmit: M(ce, ["prevent"])
 						}, [
@@ -127,6 +127,7 @@ var I = {
 								type: "submit",
 								icon: "i-lucide-plus",
 								loading: k(K).busy.value,
+								class: "mt-field-label",
 								"data-testid": "showroom-family-create-submit"
 							}, {
 								default: j(() => [x(O(k(H)("showroom.catalog.families.create")), 1)]),
@@ -140,7 +141,7 @@ var I = {
 					}),
 					S(v, null, {
 						default: j(() => [b("form", {
-							class: "flex flex-wrap items-end gap-3",
+							class: "flex flex-wrap items-start gap-3",
 							"data-testid": "showroom-families-filters",
 							onSubmit: M(oe, ["prevent"])
 						}, [
@@ -156,6 +157,7 @@ var I = {
 							S(l, {
 								type: "submit",
 								icon: "i-lucide-filter",
+								class: "mt-field-label",
 								"data-testid": "showroom-families-filter"
 							}, {
 								default: j(() => [x(O(k(H)("showroom.catalog.filters.filter")), 1)]),
@@ -164,6 +166,7 @@ var I = {
 							S(l, {
 								variant: "ghost",
 								icon: "i-lucide-x",
+								class: "mt-field-label",
 								"data-testid": "showroom-families-clear",
 								onClick: se
 							}, {

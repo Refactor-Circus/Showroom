@@ -94,28 +94,28 @@ async function create(): Promise<void> {
           <template #header>
             <h2 class="font-semibold">{{ t('showroom.catalog.product_models.new') }}</h2>
           </template>
-          <form class="flex flex-wrap items-end gap-3" data-testid="showroom-product-model-create-form" @submit.prevent="create">
+          <form class="flex flex-wrap items-start gap-3" data-testid="showroom-product-model-create-form" @submit.prevent="create">
             <UFormField :label="t('showroom.catalog.fields.code')" :error="action.error('code')" required>
               <UInput v-model="draft.code" required class="w-56" data-testid="showroom-product-model-create-code" />
             </UFormField>
             <UFormField :label="t('showroom.catalog.fields.family_variant')" :error="action.error('family_variant')" required>
               <USelect v-model="draft.family_variant" :items="variantItems" :placeholder="t('showroom.catalog.product_models.choose_family_variant')" required class="w-64" data-testid="showroom-product-model-create-variant" />
             </UFormField>
-            <UButton type="submit" icon="i-lucide-plus" :loading="action.busy.value" data-testid="showroom-product-model-create-submit">{{ t('showroom.catalog.create') }}</UButton>
+            <UButton type="submit" icon="i-lucide-plus" :loading="action.busy.value" class="mt-field-label" data-testid="showroom-product-model-create-submit">{{ t('showroom.catalog.create') }}</UButton>
           </form>
           <CatalogActionError :action="action" class="mt-3" />
         </UCard>
 
         <UCard>
-          <form class="flex flex-wrap items-end gap-3" data-testid="showroom-product-models-filters" @submit.prevent="filter">
+          <form class="flex flex-wrap items-start gap-3" data-testid="showroom-product-models-filters" @submit.prevent="filter">
             <UFormField :label="t('showroom.catalog.filters.search')">
               <UInput v-model="filters.search" class="w-56" data-testid="showroom-product-models-search" />
             </UFormField>
             <UFormField :label="t('showroom.catalog.fields.family_variant')">
               <AtriumSelect v-model="filters.family_variant" :items="variantItems" :blank="t('showroom.catalog.filters.all_family_variants')" :blank-value="null" class="w-64" data-testid="showroom-product-models-variant" />
             </UFormField>
-            <UButton type="submit" icon="i-lucide-filter" data-testid="showroom-product-models-filter">{{ t('showroom.catalog.filters.filter') }}</UButton>
-            <UButton variant="ghost" icon="i-lucide-x" data-testid="showroom-product-models-clear" @click="clear">{{ t('showroom.catalog.filters.clear') }}</UButton>
+            <UButton type="submit" icon="i-lucide-filter" class="mt-field-label" data-testid="showroom-product-models-filter">{{ t('showroom.catalog.filters.filter') }}</UButton>
+            <UButton variant="ghost" icon="i-lucide-x" class="mt-field-label" data-testid="showroom-product-models-clear" @click="clear">{{ t('showroom.catalog.filters.clear') }}</UButton>
           </form>
         </UCard>
 

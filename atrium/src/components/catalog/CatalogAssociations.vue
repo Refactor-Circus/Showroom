@@ -163,7 +163,7 @@ async function add(): Promise<void> {
 
       <CatalogActionError :action="action" />
 
-      <form v-if="props.types.length > 0" class="flex flex-wrap items-end gap-3" data-testid="showroom-association-add" @submit.prevent="add">
+      <form v-if="props.types.length > 0" class="flex flex-wrap items-start gap-3" data-testid="showroom-association-add" @submit.prevent="add">
         <UFormField :label="t('showroom.catalog.associations.type')" :error="action.error('associations') ?? action.error('quantified_associations')">
           <USelect v-model="form.type" :items="typeItems" :placeholder="t('showroom.catalog.associations.choose_type')" required class="w-44" data-testid="showroom-association-type" />
         </UFormField>
@@ -176,7 +176,7 @@ async function add(): Promise<void> {
         <UFormField :label="t('showroom.catalog.associations.quantity')" :hint="t('showroom.catalog.associations.quantity_hint')">
           <UInput v-model="form.quantity" type="number" min="1" class="w-28" data-testid="showroom-association-quantity" />
         </UFormField>
-        <UButton type="submit" icon="i-lucide-plus" :loading="action.busy.value" data-testid="showroom-association-add-submit">{{ t('showroom.catalog.associations.add') }}</UButton>
+        <UButton type="submit" icon="i-lucide-plus" :loading="action.busy.value" class="mt-field-label" data-testid="showroom-association-add-submit">{{ t('showroom.catalog.associations.add') }}</UButton>
       </form>
     </div>
   </UCard>

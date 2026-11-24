@@ -80,16 +80,16 @@ async function destroy(code: string): Promise<void> {
           <template #header>
             <h2 class="font-semibold">{{ t('showroom.structure.association_types.new') }}</h2>
           </template>
-          <form class="flex flex-wrap items-end gap-3" data-testid="showroom-association-type-create-form" @submit.prevent="create">
+          <form class="flex flex-wrap items-start gap-3" data-testid="showroom-association-type-create-form" @submit.prevent="create">
             <UFormField :label="t('showroom.catalog.fields.code')" :hint="t('showroom.structure.code_hint')" :error="action.error('code')" required>
               <UInput v-model="draft.code" required class="w-56" data-testid="showroom-association-type-create-code" />
             </UFormField>
             <UFormField :label="t('showroom.catalog.fields.label_in', { locale })" :error="action.error('labels')">
               <UInput v-model="draft.label" class="w-56" data-testid="showroom-association-type-create-label" />
             </UFormField>
-            <UCheckbox v-model="draft.is_two_way" :label="t('showroom.structure.association_types.two_way')" class="h-9 items-center" data-testid="showroom-association-type-create-two-way" />
-            <UCheckbox v-model="draft.is_quantified" :label="t('showroom.structure.association_types.quantified')" class="h-9 items-center" data-testid="showroom-association-type-create-quantified" />
-            <UButton type="submit" icon="i-lucide-plus" :loading="action.busy.value" data-testid="showroom-association-type-create-submit">{{ t('showroom.catalog.create') }}</UButton>
+            <UCheckbox v-model="draft.is_two_way" :label="t('showroom.structure.association_types.two_way')" class="mt-field-label h-field items-center" data-testid="showroom-association-type-create-two-way" />
+            <UCheckbox v-model="draft.is_quantified" :label="t('showroom.structure.association_types.quantified')" class="mt-field-label h-field items-center" data-testid="showroom-association-type-create-quantified" />
+            <UButton type="submit" icon="i-lucide-plus" :loading="action.busy.value" class="mt-field-label" data-testid="showroom-association-type-create-submit">{{ t('showroom.catalog.create') }}</UButton>
           </form>
           <CatalogActionError :action="action" class="mt-3" />
         </UCard>

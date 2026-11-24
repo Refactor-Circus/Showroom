@@ -107,6 +107,24 @@ describe('showroom.product', () => {
       expect(fieldValue(wrapper, 'showroom-value-color')).toBe('red')
     })
 
+    it('spaces the slug from its label and lines the details fields up on their labels', async () => {
+      showroomWith()
+
+      const wrapper = await mountShowroomPage(Page, PATH)
+      const slug = wrapper.find('[data-testid="showroom-product-slug"]').element
+
+      // A gap separates "Slug:" from its value ("Slug:shirt-1" ran together).
+      expect(slug.parentElement!.classList).toContain('gap-1')
+      expect(slug.parentElement!.textContent).toContain('Slug:')
+
+      // A field's hint sits under its input, so the Details row aligns to the
+      // top and the label-less checkbox drops by the label row to meet the inputs.
+      const enabled = wrapper.find('[data-testid="showroom-product-enabled-input"]').element.closest('.mt-field-label')!
+      expect(enabled).not.toBeNull()
+      expect(enabled.parentElement!.classList).toContain('items-start')
+      expect(enabled.parentElement!.classList).not.toContain('items-end')
+    })
+
     it('shows the no-access state on a 403', async () => {
       showroomWith({ 'GET /products/{product}': reply(403) })
 

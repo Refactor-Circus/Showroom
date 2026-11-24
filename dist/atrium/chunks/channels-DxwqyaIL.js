@@ -2,7 +2,7 @@ import { t as e } from "./CatalogActionError-BRUgojP9.js";
 import { t } from "./CatalogPager-BwJ4cMnn.js";
 import { t as n } from "./CatalogState-Bkly-MlG.js";
 import { A as r, C as i, D as a, O as o, S as s, f as c, k as l } from "./catalog-DCoO3A8a.js";
-import { t as ee } from "./ChannelFields-D7ZaKf1p.js";
+import { t as ee } from "./ChannelFields-COxoeG_6.js";
 import { c as u, g as d, h as f, l as p, s as m } from "./structure-DbqcM-iO.js";
 import { AtriumIntegrationScreen as h, AtriumPageHeader as te, AtriumState as ne } from "@refactor-circus/atrium";
 import { UButton as re, UCard as ie, UFormField as ae, UInput as oe, ULink as se, UTable as ce } from "@refactor-circus/atrium/ui";
@@ -16,7 +16,7 @@ var j = {
 }, M = { class: "space-y-4" }, N = { class: "font-semibold" }, P = { class: "space-y-4" }, F = {
 	key: 1,
 	class: "flex flex-wrap gap-3"
-}, I = ["data-testid"], L = { class: "font-mono" }, R = { class: "text-muted" }, z = { class: "font-semibold" }, B = { class: "flex flex-wrap items-end gap-3" }, V = { class: "space-y-4" }, pe = ["data-testid"], me = { class: "font-mono text-xs" }, he = { class: "font-mono text-xs" }, ge = { class: "font-mono text-xs" }, H = /* @__PURE__ */ x({
+}, I = ["data-testid"], L = { class: "font-mono" }, R = { class: "text-muted" }, z = { class: "font-semibold" }, B = { class: "flex flex-wrap items-start gap-3" }, V = { class: "space-y-4" }, pe = ["data-testid"], me = { class: "font-mono text-xs" }, he = { class: "font-mono text-xs" }, ge = { class: "font-mono text-xs" }, H = /* @__PURE__ */ x({
 	__name: "index",
 	setup(x) {
 		let { t: H, locale: U } = k(), _e = A(), W = o(), G = o(), K = g(() => {
@@ -114,7 +114,7 @@ var j = {
 									"onClick"
 								])
 							], 8, I))), 128))])), v("form", {
-								class: "flex flex-wrap items-end gap-3",
+								class: "flex flex-wrap items-start gap-3",
 								"data-testid": "showroom-locale-create-form",
 								onSubmit: O(Ee, ["prevent"])
 							}, [
@@ -153,6 +153,7 @@ var j = {
 									type: "submit",
 									icon: "i-lucide-plus",
 									loading: E(G).busy.value,
+									class: "mt-field-label",
 									"data-testid": "showroom-locale-create-submit"
 								}, {
 									default: D(() => [y(T(E(H)("showroom.structure.channels.add_locale")), 1)]),

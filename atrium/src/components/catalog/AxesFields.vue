@@ -5,7 +5,8 @@ import type { MetricInput, ValueInput } from './values'
 /**
  * The axis values a new variant or sub-model needs (v1's `partials/axes`): a
  * choice for a select or boolean axis, an amount and unit for a metric one.
- * They are sent as the new record's values.
+ * They are sent as the new record's values. Each is a `<UFormField>`, so in
+ * the create row its label and control line up with the fields beside it.
  */
 const props = defineProps<{ axes: ShowroomAttribute[], testid: string, error: (field: string) => string | undefined }>()
 
@@ -47,8 +48,7 @@ function choicesOf(axis: ShowroomAttribute): { label: string, value: string }[] 
 </script>
 
 <template>
-  <div v-for="axis in props.axes" :key="axis.code" class="flex flex-col gap-1.5" :data-axis="axis.code">
-    <label class="text-sm font-medium">{{ labelOf(axis.labels, locale, axis.code) }}</label>
+  <UFormField v-for="axis in props.axes" :key="axis.code" :label="labelOf(axis.labels, locale, axis.code)" :error="props.error(`values.${axis.code}`)" :data-axis="axis.code">
     <USelect
       v-if="axis.type === 'select' || axis.type === 'boolean'"
       required
@@ -87,6 +87,5 @@ function choicesOf(axis: ShowroomAttribute): { label: string, value: string }[] 
       :data-testid="`${props.testid}-axis-${axis.code}`"
       @update:model-value="setText(axis.code, $event)"
     />
-    <small v-if="props.error(`values.${axis.code}`)" class="text-xs text-error">{{ props.error(`values.${axis.code}`) }}</small>
-  </div>
+  </UFormField>
 </template>
