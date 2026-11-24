@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { TableColumn } from '@nuxt/ui/components/Table.vue'
 import CatalogActionError from '../../components/catalog/CatalogActionError.vue'
 import CatalogPager from '../../components/catalog/CatalogPager.vue'
 import CatalogState from '../../components/catalog/CatalogState.vue'
@@ -38,6 +39,13 @@ const { client, data, pending, failed, status, reload } = useCatalogLoad(async s
 
 const families = computed(() => data.value?.data ?? [])
 
+const columns = computed<TableColumn<ShowroomFamily>[]>(() => [
+  { accessorKey: 'code', header: t('showroom.catalog.fields.code') },
+  { id: 'label', header: t('showroom.catalog.fields.label') },
+  { accessorKey: 'attributes_count', header: t('showroom.catalog.families.attributes_count'), meta: { class: { th: 'text-right', td: 'text-right tabular-nums' } } },
+  { accessorKey: 'label_attribute', header: t('showroom.catalog.families.label_attribute') }
+])
+
 const search = ref('')
 const draft = reactive({ code: '', label: '', sort_order: '0' })
 
@@ -73,7 +81,7 @@ async function create(): Promise<void> {
 
 <template>
   <div class="space-y-4" data-testid="showroom-families">
-    <h1 class="text-xl font-semibold">{{ t('showroom.catalog.families.title') }}</h1>
+    <AtriumPageHeader :title="t('showroom.catalog.families.title')" />
 
     <AtriumIntegrationScreen screen-key="showroom.families">
       <div class="space-y-4">
@@ -97,7 +105,7 @@ async function create(): Promise<void> {
         </UCard>
 
         <UCard>
-          <form class="atrium-querybar" data-testid="showroom-families-filters" @submit.prevent="filter">
+          <form class="flex flex-wrap items-end gap-3" data-testid="showroom-families-filters" @submit.prevent="filter">
             <UFormField :label="t('showroom.catalog.filters.search')">
               <UInput v-model="search" class="w-56" data-testid="showroom-families-search" />
             </UFormField>
@@ -108,27 +116,19 @@ async function create(): Promise<void> {
 
         <CatalogState :ready="!pending && data !== null" :failed="failed" :status="status">
           <div class="space-y-4">
-            <p v-if="families.length === 0" class="atrium-empty" data-testid="showroom-families-empty">{{ t('showroom.catalog.families.empty') }}</p>
-            <table v-else class="w-full text-left text-sm" data-testid="showroom-families-table">
-              <thead class="text-muted">
-                <tr>
-                  <th class="py-2 pr-3 font-medium">{{ t('showroom.catalog.fields.code') }}</th>
-                  <th class="py-2 pr-3 font-medium">{{ t('showroom.catalog.fields.label') }}</th>
-                  <th class="py-2 pr-3 font-medium">{{ t('showroom.catalog.families.attributes_count') }}</th>
-                  <th class="py-2 font-medium">{{ t('showroom.catalog.families.label_attribute') }}</th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-default">
-                <tr v-for="family in families" :key="family.code" :data-testid="`showroom-family-row-${family.code}`">
-                  <td class="py-2 pr-3">
-                    <RouterLink :to="familyPath(family.code)" class="font-mono font-medium hover:underline">{{ family.code }}</RouterLink>
-                  </td>
-                  <td class="py-2 pr-3">{{ labelOf(family.labels, locale, family.code) }}</td>
-                  <td class="py-2 pr-3 tabular-nums">{{ family.attributes_count ?? t('showroom.catalog.none') }}</td>
-                  <td class="py-2 font-mono text-xs">{{ family.label_attribute ?? t('showroom.catalog.none') }}</td>
-                </tr>
-              </tbody>
-            </table>
+            <UTable :data="families" :columns="columns" data-testid="showroom-families-table">
+              <template #empty>
+                <AtriumState compact :title="t('showroom.catalog.families.empty')" data-testid="showroom-families-empty" />
+              </template>
+              <template #code-cell="{ row: { original: family } }">
+                <span :data-testid="`showroom-family-row-${family.code}`">
+                  <ULink :to="familyPath(family.code)" class="font-mono font-medium hover:underline">{{ family.code }}</ULink>
+                </span>
+              </template>
+              <template #label-cell="{ row: { original: family } }">{{ labelOf(family.labels, locale, family.code) }}</template>
+              <template #attributes_count-cell="{ row: { original: family } }">{{ family.attributes_count ?? t('showroom.catalog.none') }}</template>
+              <template #label_attribute-cell="{ row: { original: family } }"><span class="font-mono text-xs">{{ family.label_attribute ?? t('showroom.catalog.none') }}</span></template>
+            </UTable>
 
             <CatalogPager :next="data?.meta?.next_cursor ?? null" :prev="data?.meta?.prev_cursor ?? null" testid="showroom-families" />
           </div>

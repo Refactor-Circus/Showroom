@@ -20,18 +20,16 @@ const queue = computed(() => stats.value?.review_queue ?? null)
     <AtriumNoAccess v-if="forbidden" compact />
     <AtriumErrorCard v-else-if="status === 'error'" :message="t('atrium.widget.failed')" />
     <template v-else-if="queue">
-      <p v-if="queue.products.length === 0" class="atrium-empty" data-testid="showroom-review-queue-empty">
-        {{ t('showroom.widgets.nothing_in_review') }}
-      </p>
+      <AtriumState v-if="queue.products.length === 0" compact :title="t('showroom.widgets.nothing_in_review')" data-testid="showroom-review-queue-empty" />
       <template v-else>
         <p class="mb-2 text-sm text-muted">
-          <RouterLink
+          <ULink
             class="hover:underline"
             :to="{ path: '/showroom/products', query: { status: 'in_review' } }"
             data-testid="showroom-review-queue-total"
           >
             {{ t('showroom.widgets.waiting_review', { count: queue.total }) }}
-          </RouterLink>
+          </ULink>
         </p>
         <ul class="flex flex-col divide-y divide-default">
           <li
@@ -41,7 +39,7 @@ const queue = computed(() => stats.value?.review_queue ?? null)
             data-testid="showroom-review-queue-product"
             :data-product="product.identifier"
           >
-            <RouterLink class="font-mono hover:underline" :to="productPath(product.id)">{{ product.identifier }}</RouterLink>
+            <ULink class="font-mono hover:underline" :to="productPath(product.id)">{{ product.identifier }}</ULink>
             <span class="text-muted">{{ formatDate(product.updated_at) }}</span>
           </li>
         </ul>

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { TableColumn } from '@nuxt/ui/components/Table.vue'
 import CatalogActionError from '../../components/catalog/CatalogActionError.vue'
 import CatalogState from '../../components/catalog/CatalogState.vue'
 import {
@@ -8,7 +9,8 @@ import {
   untyped,
   useCatalogAction,
   useCatalogLoad,
-  type CatalogOne
+  type CatalogOne,
+  type ShowroomAttribute
 } from '../../components/catalog/catalog'
 import { editedLabels, sortOrder, type ShowroomAttributeGroup } from '../../components/structure/structure'
 
@@ -30,6 +32,12 @@ const { client, data, pending, failed, status, reload } = useCatalogLoad(async s
 
 const group = computed(() => data.value)
 const members = computed(() => group.value?.attributes ?? [])
+
+const memberColumns = computed<TableColumn<ShowroomAttribute>[]>(() => [
+  { accessorKey: 'code', header: t('showroom.catalog.fields.code') },
+  { id: 'label', header: t('showroom.catalog.fields.label') },
+  { accessorKey: 'type', header: t('showroom.catalog.fields.type') }
+])
 const form = reactive({ label: '', sort_order: '0' })
 
 watch(data, () => {
@@ -69,13 +77,9 @@ async function destroy(): Promise<void> {
     <AtriumIntegrationScreen screen-key="showroom.attribute-group" :record="code">
       <CatalogState :ready="!pending && group !== null" :failed="failed" :status="status">
         <div v-if="group" class="space-y-5">
-          <div class="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <h1 class="text-xl font-semibold" data-testid="showroom-group-title">{{ labelOf(group.labels, locale, group.code) }}</h1>
-              <p class="font-mono text-sm text-muted">{{ group.code }}</p>
-            </div>
+          <AtriumPageHeader :title="labelOf(group.labels, locale, group.code)" :description="group.code" data-testid="showroom-group-title">
             <UButton color="error" variant="outline" icon="i-lucide-trash-2" :loading="action.busy.value" data-testid="showroom-group-delete" @click="destroy">{{ t('showroom.catalog.delete') }}</UButton>
-          </div>
+          </AtriumPageHeader>
 
           <CatalogActionError :action="action" />
 
@@ -98,23 +102,18 @@ async function destroy(): Promise<void> {
             <template #header>
               <h2 class="font-semibold">{{ t('showroom.structure.groups.members') }}</h2>
             </template>
-            <p v-if="members.length === 0" class="atrium-empty" data-testid="showroom-group-attributes-empty">{{ t('showroom.structure.groups.no_members') }}</p>
-            <table v-else class="w-full text-left text-sm">
-              <thead class="text-muted">
-                <tr>
-                  <th class="py-1 pr-3 font-medium">{{ t('showroom.catalog.fields.code') }}</th>
-                  <th class="py-1 pr-3 font-medium">{{ t('showroom.catalog.fields.label') }}</th>
-                  <th class="py-1 font-medium">{{ t('showroom.catalog.fields.type') }}</th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-default">
-                <tr v-for="attribute in members" :key="attribute.code" :data-testid="`showroom-group-attribute-${attribute.code}`">
-                  <td class="py-1 pr-3"><RouterLink :to="attributePath(attribute.code)" class="font-mono hover:underline">{{ attribute.code }}</RouterLink></td>
-                  <td class="py-1 pr-3">{{ labelOf(attribute.labels, locale, attribute.code) }}</td>
-                  <td class="py-1"><UBadge color="neutral" variant="subtle">{{ attribute.type }}</UBadge></td>
-                </tr>
-              </tbody>
-            </table>
+            <UTable :data="members" :columns="memberColumns">
+              <template #empty>
+                <AtriumState compact :title="t('showroom.structure.groups.no_members')" data-testid="showroom-group-attributes-empty" />
+              </template>
+              <template #code-cell="{ row: { original: attribute } }">
+                <span :data-testid="`showroom-group-attribute-${attribute.code}`">
+                  <ULink :to="attributePath(attribute.code)" class="font-mono hover:underline">{{ attribute.code }}</ULink>
+                </span>
+              </template>
+              <template #label-cell="{ row: { original: attribute } }">{{ labelOf(attribute.labels, locale, attribute.code) }}</template>
+              <template #type-cell="{ row: { original: attribute } }"><UBadge color="neutral" variant="subtle">{{ attribute.type }}</UBadge></template>
+            </UTable>
           </UCard>
         </div>
       </CatalogState>

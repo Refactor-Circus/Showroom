@@ -9,7 +9,7 @@ import type { ChannelForm, ShowroomCategory } from './structure'
  */
 const form = defineModel<ChannelForm>({ required: true })
 
-defineProps<{
+const props = defineProps<{
   locales: readonly ShowroomLocale[]
   trees: readonly ShowroomCategory[]
   action: CatalogAction
@@ -18,8 +18,13 @@ defineProps<{
 
 const { t } = useI18n()
 
-function toggle(code: string, event: Event): void {
-  const on = (event.target as HTMLInputElement).checked
+const treeItems = computed(() => [
+  { label: t('showroom.catalog.none'), value: null },
+  ...props.trees.map(tree => ({ label: tree.code, value: tree.code }))
+])
+
+function toggle(code: string, checked: boolean | 'indeterminate'): void {
+  const on = checked === true
 
   form.value.locales = on ? [...form.value.locales.filter(entry => entry !== code), code] : form.value.locales.filter(entry => entry !== code)
 }
@@ -30,15 +35,15 @@ function toggle(code: string, event: Event): void {
     <div>
       <p class="mb-1 text-xs font-medium uppercase text-muted">{{ t('showroom.structure.channels.locales') }}</p>
       <div class="flex flex-wrap gap-3">
-        <label v-for="locale in locales" :key="locale.code" class="flex items-center gap-1.5 text-sm">
-          <input
-            type="checkbox"
-            :checked="form.locales.includes(locale.code)"
-            :data-testid="`${testid}-locale-${locale.code}`"
-            @change="toggle(locale.code, $event)"
-          >
-          <span class="font-mono text-xs">{{ locale.code }}</span>
-        </label>
+        <UCheckbox
+          v-for="locale in locales"
+          :key="locale.code"
+          :model-value="form.locales.includes(locale.code)"
+          :label="locale.code"
+          :ui="{ label: 'font-mono text-xs' }"
+          :data-testid="`${testid}-locale-${locale.code}`"
+          @update:model-value="toggle(locale.code, $event)"
+        />
         <span v-if="locales.length === 0" class="text-sm text-muted">{{ t('showroom.structure.channels.no_locales') }}</span>
       </div>
       <small v-if="action.error('locales')" class="text-xs text-error">{{ action.error('locales') }}</small>
@@ -49,10 +54,7 @@ function toggle(code: string, event: Event): void {
         <UInput v-model="form.currencies" class="w-56" :data-testid="`${testid}-currencies`" />
       </UFormField>
       <UFormField :label="t('showroom.structure.channels.category_tree')" :error="action.error('category_tree')">
-        <select v-model="form.category_tree" class="w-56 rounded-md border border-default bg-default px-2.5 py-1.5 text-sm" :data-testid="`${testid}-tree`">
-          <option value="">{{ t('showroom.catalog.none') }}</option>
-          <option v-for="tree in trees" :key="tree.code" :value="tree.code">{{ tree.code }}</option>
-        </select>
+        <USelect v-model="form.category_tree" :items="treeItems" :placeholder="t('showroom.catalog.none')" class="w-56" :data-testid="`${testid}-tree`" />
       </UFormField>
     </div>
   </div>

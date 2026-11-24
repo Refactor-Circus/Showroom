@@ -9,6 +9,7 @@
 //   sends no step results. A failed run still shows its error message.
 // - The owner type beside each code of an owner's chain and children:
 //   `owners.show` names them by code only.
+import type { TableColumn } from '@nuxt/ui/components/Table.vue'
 import CatalogActionError from '../../components/catalog/CatalogActionError.vue'
 import CatalogPager from '../../components/catalog/CatalogPager.vue'
 import CatalogState from '../../components/catalog/CatalogState.vue'
@@ -62,7 +63,7 @@ const { client, data, pending, failed, status, reload } = useCatalogLoad(async s
 
 const assets = computed(() => data.value?.data ?? [])
 
-const filters = reactive({ search: '', type: '', product: '' })
+const filters = reactive<{ search: string, type: string | null, product: string }>({ search: '', type: '', product: '' })
 
 watch(() => route.query, () => {
   filters.search = queryValue(route.query.search) ?? ''
@@ -91,7 +92,20 @@ function show(next: AssetView): void {
 
 const draft = reactive({ code: '', label: '' })
 const file = shallowRef<File | null>(null)
-const fileInput = useTemplateRef<HTMLInputElement>('fileInput')
+const fileInput = useTemplateRef<{ inputRef: HTMLInputElement | null }>('fileInput')
+
+const typeItems = computed(() => [
+  { label: t('showroom.assets.all_types'), value: null },
+  ...ASSET_TYPE_FILTERS.map(filter => ({ label: t(`showroom.assets.types.${filter.key}`), value: filter.value }))
+])
+
+const columns = computed<TableColumn<ShowroomAsset>[]>(() => [
+  { accessorKey: 'code', header: t('showroom.catalog.fields.code') },
+  { id: 'label', header: t('showroom.catalog.fields.label') },
+  { accessorKey: 'mime_type', header: t('showroom.catalog.fields.type') },
+  { accessorKey: 'size', header: t('showroom.assets.size'), meta: { class: { th: 'text-right', td: 'text-right' } } },
+  { accessorKey: 'updated_at', header: t('showroom.catalog.fields.updated') }
+])
 
 function choose(event: Event): void {
   file.value = (event.target as HTMLInputElement).files?.[0] ?? null
@@ -125,8 +139,8 @@ async function upload(): Promise<void> {
     draft.label = ''
     file.value = null
 
-    if (fileInput.value) {
-      fileInput.value.value = ''
+    if (fileInput.value?.inputRef) {
+      fileInput.value.inputRef.value = ''
     }
 
     await reload()
@@ -140,8 +154,7 @@ function labelFor(asset: ShowroomAsset): string {
 
 <template>
   <div class="space-y-4" data-testid="showroom-assets-page">
-    <div class="flex flex-wrap items-start justify-between gap-3">
-      <h1 class="text-xl font-semibold">{{ t('showroom.assets.title') }}</h1>
+    <AtriumPageHeader :title="t('showroom.assets.title')">
       <div class="flex gap-1">
         <UButton
           :variant="view === 'grid' ? 'solid' : 'ghost'"
@@ -162,7 +175,7 @@ function labelFor(asset: ShowroomAsset): string {
           @click="show('list')"
         />
       </div>
-    </div>
+    </AtriumPageHeader>
 
     <AtriumIntegrationScreen screen-key="showroom.assets">
       <div class="space-y-4">
@@ -172,7 +185,7 @@ function labelFor(asset: ShowroomAsset): string {
           </template>
           <form class="flex flex-wrap items-end gap-3" data-testid="showroom-asset-upload-form" @submit.prevent="upload">
             <UFormField :label="t('showroom.assets.file')" :error="action.error('file')" required>
-              <input ref="fileInput" type="file" required class="text-sm" data-testid="showroom-asset-upload-file" @change="choose">
+              <UInput ref="fileInput" type="file" required data-testid="showroom-asset-upload-file" @change="choose" />
             </UFormField>
             <UFormField :label="t('showroom.catalog.fields.code')" :hint="t('showroom.assets.code_hint')" :error="action.error('code')">
               <UInput v-model="draft.code" class="w-48" data-testid="showroom-asset-upload-code" />
@@ -186,15 +199,12 @@ function labelFor(asset: ShowroomAsset): string {
         </UCard>
 
         <UCard>
-          <form class="atrium-querybar" data-testid="showroom-assets-filters" @submit.prevent="applyFilters">
+          <form class="flex flex-wrap items-end gap-3" data-testid="showroom-assets-filters" @submit.prevent="applyFilters">
             <UFormField :label="t('showroom.catalog.filters.search')">
               <UInput v-model="filters.search" class="w-56" data-testid="showroom-assets-search" />
             </UFormField>
             <UFormField :label="t('showroom.catalog.fields.type')">
-              <select v-model="filters.type" class="w-40 rounded-md border border-default bg-default px-2.5 py-1.5 text-sm" data-testid="showroom-assets-type">
-                <option value="">{{ t('showroom.assets.all_types') }}</option>
-                <option v-for="filter in ASSET_TYPE_FILTERS" :key="filter.value" :value="filter.value">{{ t(`showroom.assets.types.${filter.key}`) }}</option>
-              </select>
+              <USelect v-model="filters.type" :items="typeItems" :placeholder="t('showroom.assets.all_types')" class="w-40" data-testid="showroom-assets-type" />
             </UFormField>
             <UFormField :label="t('showroom.assets.product')">
               <UInput v-model="filters.product" class="w-44" data-testid="showroom-assets-product" />
@@ -206,41 +216,39 @@ function labelFor(asset: ShowroomAsset): string {
 
         <CatalogState :ready="!pending && data !== null" :failed="failed" :status="status">
           <div class="space-y-4">
-            <p v-if="assets.length === 0" class="atrium-empty" data-testid="showroom-assets-empty">{{ t('showroom.assets.empty') }}</p>
-            <div v-else-if="view === 'grid'" class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5" data-testid="showroom-assets-grid">
+            <div v-if="view === 'grid'" class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5" data-testid="showroom-assets-grid">
+              <AtriumState v-if="assets.length === 0" compact class="col-span-full" :title="t('showroom.assets.empty')" data-testid="showroom-assets-empty" />
               <div
                 v-for="asset in assets"
                 :key="asset.code"
                 class="rounded-md border border-default p-2 hover:border-primary"
                 :data-testid="`showroom-asset-tile-${asset.code}`"
               >
-                <RouterLink :to="assetPath(asset.code)" class="flex flex-col gap-2">
+                <ULink :to="assetPath(asset.code)" class="flex flex-col gap-2">
                   <AssetThumbnail :asset="asset" :caption="asset.code" />
-                </RouterLink>
+                </ULink>
               </div>
             </div>
-            <table v-else class="w-full text-left text-sm" data-testid="showroom-assets-table">
-              <thead class="text-muted">
-                <tr>
-                  <th class="py-2 pr-3 font-medium">{{ t('showroom.catalog.fields.code') }}</th>
-                  <th class="py-2 pr-3 font-medium">{{ t('showroom.catalog.fields.label') }}</th>
-                  <th class="py-2 pr-3 font-medium">{{ t('showroom.catalog.fields.type') }}</th>
-                  <th class="py-2 pr-3 font-medium">{{ t('showroom.assets.size') }}</th>
-                  <th class="py-2 font-medium">{{ t('showroom.catalog.fields.updated') }}</th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-default">
-                <tr v-for="asset in assets" :key="asset.code" :data-testid="`showroom-asset-row-${asset.code}`">
-                  <td class="py-2 pr-3">
-                    <RouterLink :to="assetPath(asset.code)" class="font-mono font-medium hover:underline">{{ asset.code }}</RouterLink>
-                  </td>
-                  <td class="py-2 pr-3">{{ labelFor(asset) }}</td>
-                  <td class="py-2 pr-3 font-mono text-xs">{{ asset.mime_type ?? t('showroom.catalog.none') }}</td>
-                  <td class="py-2 pr-3 tabular-nums">{{ formatSize(asset.size) }}</td>
-                  <td class="py-2 text-muted">{{ formatDate(asset.updated_at) ?? t('showroom.catalog.none') }}</td>
-                </tr>
-              </tbody>
-            </table>
+            <UTable v-else :data="assets" :columns="columns" data-testid="showroom-assets-table">
+              <template #empty>
+                <AtriumState compact :title="t('showroom.assets.empty')" data-testid="showroom-assets-empty" />
+              </template>
+              <template #code-cell="{ row: { original: asset } }">
+                <span :data-testid="`showroom-asset-row-${asset.code}`">
+                  <ULink :to="assetPath(asset.code)" class="font-mono font-medium hover:underline">{{ asset.code }}</ULink>
+                </span>
+              </template>
+              <template #label-cell="{ row: { original: asset } }">{{ labelFor(asset) }}</template>
+              <template #mime_type-cell="{ row: { original: asset } }">
+                <span class="font-mono text-xs">{{ asset.mime_type ?? t('showroom.catalog.none') }}</span>
+              </template>
+              <template #size-cell="{ row: { original: asset } }">
+                <span class="tabular-nums">{{ formatSize(asset.size) }}</span>
+              </template>
+              <template #updated_at-cell="{ row: { original: asset } }">
+                <span class="text-muted">{{ formatDate(asset.updated_at) ?? t('showroom.catalog.none') }}</span>
+              </template>
+            </UTable>
 
             <CatalogPager :next="data?.meta?.next_cursor ?? null" :prev="data?.meta?.prev_cursor ?? null" testid="showroom-assets" />
           </div>

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { TableColumn } from '@nuxt/ui/components/Table.vue'
 import CatalogActionError from '../../components/catalog/CatalogActionError.vue'
 import CatalogState from '../../components/catalog/CatalogState.vue'
 import {
@@ -40,7 +41,7 @@ interface Row {
   group: string | null
   is_required: boolean
   required_channels: string
-  sort_order: string
+  sort_order: string | number
   remove: boolean
 }
 
@@ -72,7 +73,27 @@ const available = computed(() => [...catalog.attributes.value.values()]
   .sort((a, b) => a.code.localeCompare(b.code)))
 const labelCandidates = computed(() => members.value.filter(member => member.type === 'text'))
 
-const form = reactive({ label: '', label_attribute: '', sort_order: '0', add_attribute: '', add_required: false })
+const form = reactive({ label: '', label_attribute: '' as string | null, sort_order: '0' as string | number, add_attribute: '' as string | null, add_required: false })
+
+const labelAttributeItems = computed(() => [
+  { label: t('showroom.catalog.families.no_label_attribute'), value: null },
+  ...labelCandidates.value.map(member => ({ label: member.attribute, value: member.attribute }))
+])
+
+const availableItems = computed(() => [
+  { label: t('showroom.catalog.values.choose_attribute'), value: null },
+  ...available.value.map(attribute => ({ label: `${attribute.code} (${attribute.type})`, value: attribute.code }))
+])
+
+const memberColumns = computed<TableColumn<Row>[]>(() => [
+  { accessorKey: 'attribute', header: t('showroom.catalog.fields.code') },
+  { accessorKey: 'type', header: t('showroom.catalog.fields.type') },
+  { accessorKey: 'group', header: t('showroom.catalog.fields.group') },
+  { accessorKey: 'is_required', header: t('showroom.catalog.families.required') },
+  { accessorKey: 'required_channels', header: t('showroom.catalog.families.required_channels') },
+  { accessorKey: 'sort_order', header: t('showroom.catalog.fields.sort_order') },
+  { accessorKey: 'remove', header: t('showroom.catalog.remove') }
+])
 const rows = ref<Row[]>([])
 const draft = reactive({ code: '', levels: [{ axes: [], attributes: [] }, { axes: [], attributes: [] }] as LevelPick[] })
 
@@ -142,10 +163,6 @@ function togglePick(level: LevelPick, kind: keyof LevelPick, attribute: string, 
   level[kind] = on ? [...level[kind].filter(entry => entry !== attribute), attribute] : level[kind].filter(entry => entry !== attribute)
 }
 
-function checkedOf(event: Event): boolean {
-  return (event.target as HTMLInputElement).checked
-}
-
 async function createVariant(): Promise<void> {
   if (!client) {
     return
@@ -170,13 +187,17 @@ async function createVariant(): Promise<void> {
     <AtriumIntegrationScreen screen-key="showroom.family" :record="code">
       <CatalogState :ready="!pending && family !== null" :failed="failed" :status="status">
         <div v-if="family" class="space-y-5">
-          <div class="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <h1 class="text-xl font-semibold" data-testid="showroom-family-title">{{ labelOf(family.labels, locale, family.code) }}</h1>
-              <p class="font-mono text-sm text-muted">{{ family.code }}</p>
-            </div>
-            <UButton color="error" variant="outline" icon="i-lucide-trash-2" :loading="action.busy.value" data-testid="showroom-family-delete" @click="destroy">{{ t('showroom.catalog.delete') }}</UButton>
-          </div>
+          <UPageHeader :headline="t('showroom.catalog.fields.family')">
+            <template #title>
+              <span data-testid="showroom-family-title">{{ labelOf(family.labels, locale, family.code) }}</span>
+            </template>
+            <template #description>
+              <span class="font-mono">{{ family.code }}</span>
+            </template>
+            <template #links>
+              <UButton color="error" variant="outline" icon="i-lucide-trash-2" :loading="action.busy.value" data-testid="showroom-family-delete" @click="destroy">{{ t('showroom.catalog.delete') }}</UButton>
+            </template>
+          </UPageHeader>
 
           <form class="space-y-5" data-testid="showroom-family-form" @submit.prevent="save">
             <CatalogActionError :action="action" />
@@ -190,10 +211,7 @@ async function createVariant(): Promise<void> {
                   <UInput v-model="form.label" class="w-64" data-testid="showroom-family-label" />
                 </UFormField>
                 <UFormField :label="t('showroom.catalog.families.label_attribute')" :hint="t('showroom.catalog.families.label_attribute_hint')" :error="action.error('label_attribute')">
-                  <select v-model="form.label_attribute" class="w-64 rounded-md border border-default bg-default px-2.5 py-1.5 text-sm" data-testid="showroom-family-label-attribute">
-                    <option value="">{{ t('showroom.catalog.families.no_label_attribute') }}</option>
-                    <option v-for="member in labelCandidates" :key="member.attribute" :value="member.attribute">{{ member.attribute }}</option>
-                  </select>
+                  <USelect v-model="form.label_attribute" :items="labelAttributeItems" :placeholder="t('showroom.catalog.families.no_label_attribute')" class="w-64" data-testid="showroom-family-label-attribute" />
                 </UFormField>
                 <UFormField :label="t('showroom.catalog.fields.sort_order')" :error="action.error('sort_order')">
                   <UInput v-model="form.sort_order" type="number" min="0" class="w-28" data-testid="showroom-family-sort" />
@@ -207,52 +225,40 @@ async function createVariant(): Promise<void> {
               </template>
               <div class="space-y-4">
                 <p v-if="rows.length === 0" class="text-sm text-muted">{{ t('showroom.catalog.families.no_attributes') }}</p>
-                <table v-else class="w-full text-left text-sm">
-                  <thead class="text-muted">
-                    <tr>
-                      <th class="py-1 pr-3 font-medium">{{ t('showroom.catalog.fields.code') }}</th>
-                      <th class="py-1 pr-3 font-medium">{{ t('showroom.catalog.fields.type') }}</th>
-                      <th class="py-1 pr-3 font-medium">{{ t('showroom.catalog.fields.group') }}</th>
-                      <th class="py-1 pr-3 font-medium">{{ t('showroom.catalog.families.required') }}</th>
-                      <th class="py-1 pr-3 font-medium">{{ t('showroom.catalog.families.required_channels') }}</th>
-                      <th class="py-1 pr-3 font-medium">{{ t('showroom.catalog.fields.sort_order') }}</th>
-                      <th class="py-1 font-medium">{{ t('showroom.catalog.remove') }}</th>
-                    </tr>
-                  </thead>
-                  <tbody class="divide-y divide-default">
-                    <tr v-for="row in rows" :key="row.attribute" :data-testid="`showroom-family-attribute-${row.attribute}`">
-                      <td class="py-1 pr-3"><RouterLink :to="attributePath(row.attribute)" class="font-mono hover:underline">{{ row.attribute }}</RouterLink></td>
-                      <td class="py-1 pr-3"><UBadge color="neutral" variant="subtle">{{ row.type }}</UBadge></td>
-                      <td class="py-1 pr-3">{{ row.group ?? t('showroom.catalog.none') }}</td>
-                      <td class="py-1 pr-3"><input v-model="row.is_required" type="checkbox" :data-testid="`showroom-family-required-${row.attribute}`"></td>
-                      <td class="py-1 pr-3">
-                        <input
-                          v-model="row.required_channels"
-                          class="w-40 rounded-md border border-default bg-default px-2 py-1 text-sm"
-                          :placeholder="t('showroom.catalog.families.required_channels_hint')"
-                          :data-testid="`showroom-family-channels-${row.attribute}`"
-                        >
-                      </td>
-                      <td class="py-1 pr-3">
-                        <input v-model="row.sort_order" type="number" min="0" class="w-20 rounded-md border border-default bg-default px-2 py-1 text-sm" :data-testid="`showroom-family-sort-${row.attribute}`">
-                      </td>
-                      <td class="py-1"><input v-model="row.remove" type="checkbox" :data-testid="`showroom-family-remove-${row.attribute}`"></td>
-                    </tr>
-                  </tbody>
-                </table>
+                <UTable v-else :data="rows" :columns="memberColumns">
+                  <template #attribute-cell="{ row: { original: member } }">
+                    <span :data-testid="`showroom-family-attribute-${member.attribute}`">
+                      <ULink :to="attributePath(member.attribute)" class="font-mono hover:underline">{{ member.attribute }}</ULink>
+                    </span>
+                  </template>
+                  <template #type-cell="{ row: { original: member } }"><UBadge color="neutral" variant="subtle">{{ member.type }}</UBadge></template>
+                  <template #group-cell="{ row: { original: member } }">{{ member.group ?? t('showroom.catalog.none') }}</template>
+                  <template #is_required-cell="{ row: { original: member } }">
+                    <UCheckbox v-model="member.is_required" :aria-label="t('showroom.catalog.families.required')" :data-testid="`showroom-family-required-${member.attribute}`" />
+                  </template>
+                  <template #required_channels-cell="{ row: { original: member } }">
+                    <UInput
+                      v-model="member.required_channels"
+                      size="sm"
+                      class="w-40"
+                      :placeholder="t('showroom.catalog.families.required_channels_hint')"
+                      :data-testid="`showroom-family-channels-${member.attribute}`"
+                    />
+                  </template>
+                  <template #sort_order-cell="{ row: { original: member } }">
+                    <UInput v-model="member.sort_order" type="number" min="0" size="sm" class="w-20" :data-testid="`showroom-family-sort-${member.attribute}`" />
+                  </template>
+                  <template #remove-cell="{ row: { original: member } }">
+                    <UCheckbox v-model="member.remove" :aria-label="t('showroom.catalog.remove')" :data-testid="`showroom-family-remove-${member.attribute}`" />
+                  </template>
+                </UTable>
                 <small v-if="action.error('attributes')" class="text-xs text-error">{{ action.error('attributes') }}</small>
 
                 <div class="flex flex-wrap items-end gap-3">
                   <UFormField :label="t('showroom.catalog.values.add_attribute')">
-                    <select v-model="form.add_attribute" class="w-72 rounded-md border border-default bg-default px-2.5 py-1.5 text-sm" data-testid="showroom-family-add-attribute">
-                      <option value="">{{ t('showroom.catalog.values.choose_attribute') }}</option>
-                      <option v-for="attribute in available" :key="attribute.code" :value="attribute.code">{{ attribute.code }} ({{ attribute.type }})</option>
-                    </select>
+                    <USelect v-model="form.add_attribute" :items="availableItems" :placeholder="t('showroom.catalog.values.choose_attribute')" class="w-72" data-testid="showroom-family-add-attribute" />
                   </UFormField>
-                  <label class="flex h-9 items-center gap-2 text-sm">
-                    <input v-model="form.add_required" type="checkbox" data-testid="showroom-family-add-required">
-                    {{ t('showroom.catalog.families.required') }}
-                  </label>
+                  <UCheckbox v-model="form.add_required" :label="t('showroom.catalog.families.required')" class="h-9 items-center" data-testid="showroom-family-add-required" />
                 </div>
               </div>
             </UCard>
@@ -269,7 +275,7 @@ async function createVariant(): Promise<void> {
             <div class="space-y-4">
               <ul v-if="(data?.variants ?? []).length > 0" class="flex flex-wrap gap-2">
                 <li v-for="variant in data?.variants ?? []" :key="variant.code">
-                  <RouterLink :to="familyVariantPath(variant.code)" class="font-mono text-sm hover:underline" :data-testid="`showroom-family-variant-${variant.code}`">{{ variant.code }}</RouterLink>
+                  <ULink :to="familyVariantPath(variant.code)" class="font-mono text-sm hover:underline" :data-testid="`showroom-family-variant-${variant.code}`">{{ variant.code }}</ULink>
                 </li>
               </ul>
 
@@ -286,15 +292,17 @@ async function createVariant(): Promise<void> {
                     <div v-for="kind in (['axes', 'attributes'] as const)" :key="kind">
                       <p class="mb-1 text-xs font-medium uppercase text-muted">{{ t(`showroom.catalog.families.${kind}`) }}</p>
                       <div class="flex flex-wrap gap-3">
-                        <label v-for="member in members" :key="member.attribute" class="flex items-center gap-1.5 text-sm">
-                          <input
-                            type="checkbox"
-                            :checked="level[kind].includes(member.attribute)"
-                            :data-testid="`showroom-level-${index}-${kind}-${member.attribute}`"
-                            @change="togglePick(level, kind, member.attribute, checkedOf($event))"
-                          >
-                          <span class="font-mono text-xs">{{ member.attribute }}</span>
-                        </label>
+                        <UCheckbox
+                          v-for="member in members"
+                          :key="member.attribute"
+                          :model-value="level[kind].includes(member.attribute)"
+                          :data-testid="`showroom-level-${index}-${kind}-${member.attribute}`"
+                          @update:model-value="togglePick(level, kind, member.attribute, $event === true)"
+                        >
+                          <template #label>
+                            <span class="font-mono text-xs">{{ member.attribute }}</span>
+                          </template>
+                        </UCheckbox>
                       </div>
                     </div>
                   </div>

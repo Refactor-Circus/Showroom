@@ -37,7 +37,17 @@ const action = useCatalogAction()
 const groups = usePickList<ShowroomAttributeGroup>(async showroom =>
   showroomData<CatalogList<ShowroomAttributeGroup>>(await showroom.GET('/attribute-groups', { params: { query: { per_page: ALL } } })))
 
-const form = reactive({ code: '', type: '', group: '', label: '', settings: '', sort_order: '0' })
+const form = reactive<{ code: string, type: string | null, group: string | null, label: string, settings: string, sort_order: string }>({ code: '', type: '', group: '', label: '', settings: '', sort_order: '0' })
+
+const typeItems = computed(() => [
+  { label: t('showroom.structure.attributes.choose_type'), value: null },
+  ...ATTRIBUTE_TYPES.map(type => ({ label: type, value: type }))
+])
+
+const groupItems = computed(() => [
+  { label: t('showroom.structure.attributes.no_group'), value: null },
+  ...groups.value.map(group => ({ label: labelOf(group.labels, locale.value, group.code), value: group.code }))
+])
 const flags = ref<Flags>({ is_unique: false, is_localizable: false, is_scopable: false })
 const settingsError = ref<string | null>(null)
 
@@ -51,7 +61,7 @@ async function create(): Promise<void> {
 
   const body = {
     code: form.code.trim(),
-    type: form.type,
+    type: form.type ?? '',
     group: form.group || null,
     ...newLabels(locale.value, form.label),
     ...flags.value,
@@ -73,7 +83,7 @@ async function create(): Promise<void> {
 
 <template>
   <div class="space-y-4" data-testid="showroom-attribute-create">
-    <h1 class="text-xl font-semibold">{{ t('showroom.structure.attributes.new') }}</h1>
+    <AtriumPageHeader :title="t('showroom.structure.attributes.new')" />
 
     <AtriumIntegrationScreen screen-key="showroom.attribute-create">
       <UCard>
@@ -85,17 +95,11 @@ async function create(): Promise<void> {
           </UFormField>
 
           <UFormField :label="t('showroom.catalog.fields.type')" :hint="t('showroom.structure.attributes.type_hint')" :error="action.error('type')" required>
-            <select v-model="form.type" required class="w-64 rounded-md border border-default bg-default px-2.5 py-1.5 text-sm" data-testid="showroom-attribute-create-type">
-              <option value="">{{ t('showroom.structure.attributes.choose_type') }}</option>
-              <option v-for="type in ATTRIBUTE_TYPES" :key="type" :value="type">{{ type }}</option>
-            </select>
+            <USelect v-model="form.type" :items="typeItems" :placeholder="t('showroom.structure.attributes.choose_type')" required class="w-64" data-testid="showroom-attribute-create-type" />
           </UFormField>
 
           <UFormField :label="t('showroom.catalog.fields.group')" :error="action.error('group')">
-            <select v-model="form.group" class="w-64 rounded-md border border-default bg-default px-2.5 py-1.5 text-sm" data-testid="showroom-attribute-create-group">
-              <option value="">{{ t('showroom.structure.attributes.no_group') }}</option>
-              <option v-for="group in groups" :key="group.code" :value="group.code">{{ labelOf(group.labels, locale, group.code) }}</option>
-            </select>
+            <USelect v-model="form.group" :items="groupItems" :placeholder="t('showroom.structure.attributes.no_group')" class="w-64" data-testid="showroom-attribute-create-group" />
           </UFormField>
 
           <UFormField :label="t('showroom.catalog.fields.label_in', { locale })" :error="action.error('labels')">

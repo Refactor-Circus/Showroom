@@ -5,6 +5,7 @@ import { mockPackageApi, reply, resetPackageApis, type PackageRoutes } from '@re
 import { cursorPage, invalid, mountShowroomPage, ok, resetShowroomPages, screensApi, showroomCalls } from '../catalog/support'
 import { brand, store } from './support'
 import { clearAtriumData, mockAtriumApi, useRouter } from '@refactor-circus/atrium/testing'
+import { pick, row } from '../ui'
 
 /*
  * `showroom.owner-types` (AC 54, 71): every owner type (`owner-types.index`),
@@ -63,12 +64,12 @@ describe('showroom.owner-types', () => {
     expect(listCalls()[0]?.query).toEqual({})
     expect(api).toHaveBeenCalledWith('/screens/showroom.owner-types', expect.anything())
 
-    const row = wrapper.find('[data-testid="showroom-owner-type-row-brand"]')
-    expect(row.find('a').attributes('href')).toBe('/showroom/owner-types/brand')
-    expect(row.text()).toContain('Brand')
-    expect(row.text()).toContain('Any')
-    expect(row.text()).toContain('2')
-    expect(wrapper.find('[data-testid="showroom-owner-type-row-store"]').text()).toContain('brand')
+    const brandRow = row(wrapper, 'showroom-owner-type-row-brand')
+    expect(brandRow.find('a').attributes('href')).toBe('/showroom/owner-types/brand')
+    expect(brandRow.text()).toContain('Brand')
+    expect(brandRow.text()).toContain('Any')
+    expect(brandRow.text()).toContain('2')
+    expect(row(wrapper, 'showroom-owner-type-row-store').text()).toContain('brand')
   })
 
   it('pages with the endpoint\'s cursor', async () => {
@@ -101,10 +102,10 @@ describe('showroom.owner-types', () => {
 
     const wrapper = await mountShowroomPage(Page, PATH)
     await wrapper.find('[data-testid="showroom-owner-type-create-code"]').setValue('kiosk')
-    await wrapper.find('[data-testid="showroom-owner-type-create-any-parent"]').setValue(false)
-    await wrapper.find('[data-testid="showroom-owner-type-create-parent-store"]').setValue(true)
-    await wrapper.find('[data-testid="showroom-owner-type-create-root"]').setValue(false)
-    await wrapper.find('[data-testid="showroom-owner-type-create-owns"]').setValue(false)
+    await pick(wrapper, 'showroom-owner-type-create-any-parent', false)
+    await pick(wrapper, 'showroom-owner-type-create-parent-store', true)
+    await pick(wrapper, 'showroom-owner-type-create-root', false)
+    await pick(wrapper, 'showroom-owner-type-create-owns', false)
     await submit(wrapper)
 
     expect(showroomCalls('POST', '/owner-types')[0]?.body).toEqual({ code: 'kiosk', parent_types: ['store'], can_be_root: false, owns_products: false })

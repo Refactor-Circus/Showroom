@@ -15,9 +15,12 @@ const { t } = useI18n()
 
 <template>
   <div class="flex flex-col gap-2">
-    <label v-for="flag in ATTRIBUTE_FLAGS" :key="flag" class="flex items-center gap-2 text-sm">
-      <input v-model="flags[flag]" type="checkbox" :data-testid="`${testid}-${flag}`">
-      {{ t(`showroom.structure.attributes.${flag}`) }}
-    </label>
+    <UCheckbox
+      v-for="flag in ATTRIBUTE_FLAGS"
+      :key="flag"
+      v-model="flags[flag]"
+      :label="t(`showroom.structure.attributes.${flag}`)"
+      :data-testid="`${testid}-${flag}`"
+    />
   </div>
 </template>

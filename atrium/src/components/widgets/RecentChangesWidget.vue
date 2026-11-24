@@ -31,9 +31,7 @@ function subjectPath(version: Version): string | null {
     <AtriumNoAccess v-if="forbidden" compact />
     <AtriumErrorCard v-else-if="status === 'error'" :message="t('atrium.widget.failed')" />
     <template v-else-if="versions">
-      <p v-if="versions.length === 0" class="atrium-empty" data-testid="showroom-recent-changes-empty">
-        {{ t('showroom.widgets.no_changes') }}
-      </p>
+      <AtriumState v-if="versions.length === 0" compact :title="t('showroom.widgets.no_changes')" data-testid="showroom-recent-changes-empty" />
       <ul v-else class="flex flex-col divide-y divide-default">
         <li
           v-for="version in versions"
@@ -43,7 +41,7 @@ function subjectPath(version: Version): string | null {
           :data-version="version.version"
         >
           <span class="flex items-center gap-2">
-            <RouterLink v-if="subjectPath(version)" class="font-mono hover:underline" :to="subjectPath(version)!">{{ version.subject.key }}</RouterLink>
+            <ULink v-if="subjectPath(version)" class="font-mono hover:underline" :to="subjectPath(version)!">{{ version.subject.key }}</ULink>
             <span class="font-mono text-muted">v{{ version.version }}</span>
             <UBadge color="neutral" variant="subtle" size="sm">{{ version.action }}</UBadge>
           </span>

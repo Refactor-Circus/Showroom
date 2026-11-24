@@ -4,6 +4,7 @@ import { settle } from '@refactor-circus/atrium/testing'
 import { mockPackageApi, reply, resetPackageApis, type PackageRoutes } from '@refactor-circus/atrium/testing'
 import { blouse, lookups, mountShowroomPage, numberedPage, ok, resetShowroomPages, screensApi, shirt, showroomCalls } from './support'
 import { clearAtriumData, mockAtriumApi, useRouter } from '@refactor-circus/atrium/testing'
+import { pick, row } from '../ui'
 
 /*
  * `showroom.products` (AC 54, 71): the product list (`products.index`), paged
@@ -45,12 +46,12 @@ describe('showroom.products', () => {
 
     expect(showroomCalls('GET', '/products')[0]?.query).toEqual({})
     expect(api).toHaveBeenCalledWith('/screens/showroom.products', expect.anything())
-    expect(wrapper.find(`[data-testid="showroom-product-row-${shirt.id}"]`).text()).toContain('shirt-1')
-    expect(wrapper.find(`[data-testid="showroom-product-row-${shirt.id}"]`).text()).toContain('Oxford shirt')
-    expect(wrapper.find(`[data-testid="showroom-product-row-${shirt.id}"]`).text()).toContain('Shirts')
-    expect(wrapper.find(`[data-testid="showroom-product-row-${shirt.id}"] a`).attributes('href')).toBe(`/showroom/products/${shirt.id}`)
-    expect(wrapper.find(`[data-testid="showroom-product-row-${blouse.id}"] [data-status="approved"]`).exists()).toBe(true)
-    expect(wrapper.find(`[data-testid="showroom-product-row-${blouse.id}"] [data-status="disabled"]`).exists()).toBe(true)
+    expect(row(wrapper, `showroom-product-row-${shirt.id}`).text()).toContain('shirt-1')
+    expect(row(wrapper, `showroom-product-row-${shirt.id}`).text()).toContain('Oxford shirt')
+    expect(row(wrapper, `showroom-product-row-${shirt.id}`).text()).toContain('Shirts')
+    expect(row(wrapper, `showroom-product-row-${shirt.id}`).find('a').attributes('href')).toBe(`/showroom/products/${shirt.id}`)
+    expect(row(wrapper, `showroom-product-row-${blouse.id}`).find('[data-status="approved"]').exists()).toBe(true)
+    expect(row(wrapper, `showroom-product-row-${blouse.id}`).find('[data-status="disabled"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="showroom-products-page"]').text()).toContain('1')
   })
 
@@ -58,7 +59,7 @@ describe('showroom.products', () => {
     showroomWith()
 
     const wrapper = await mountShowroomPage(Page, '/showroom/products?page=2')
-    await wrapper.find('[data-testid="showroom-products-status"]').setValue('in_review')
+    await pick(wrapper, 'showroom-products-status', 'in_review')
     await wrapper.find('[data-testid="showroom-products-search"]').setValue('oxford')
     await wrapper.find('[data-testid="showroom-products-filters"]').trigger('submit')
     await settle()

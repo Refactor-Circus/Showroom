@@ -15,6 +15,7 @@
 //   no-access state when `locales.index` answers 403.
 // - The flash messages after each action ("Attribute updated" and the like). The
 //   page reloads instead.
+import type { TableColumn } from '@nuxt/ui/components/Table.vue'
 import CatalogPager from '../../components/catalog/CatalogPager.vue'
 import CatalogState from '../../components/catalog/CatalogState.vue'
 import {
@@ -58,13 +59,31 @@ const groups = usePickList<ShowroomAttributeGroup>(async showroom =>
   showroomData<CatalogList<ShowroomAttributeGroup>>(await showroom.GET('/attribute-groups', { params: { query: { per_page: ALL } } })))
 
 const attributes = computed(() => data.value?.data ?? [])
-const filters = reactive<Record<(typeof FILTERS)[number], string>>({ search: '', type: '', group: '' })
+const filters = reactive<Record<(typeof FILTERS)[number], string | null>>({ search: '', type: '', group: '' })
 
 watch(() => route.query, () => {
   for (const name of FILTERS) {
     filters[name] = queryValue(route.query[name]) ?? ''
   }
 }, { immediate: true })
+
+const typeItems = computed(() => [
+  { label: t('showroom.structure.attributes.all_types'), value: null },
+  ...ATTRIBUTE_TYPES.map(type => ({ label: type, value: type }))
+])
+
+const groupItems = computed(() => [
+  { label: t('showroom.structure.attributes.all_groups'), value: null },
+  ...groups.value.map(group => ({ label: labelOf(group.labels, locale.value, group.code), value: group.code }))
+])
+
+const columns = computed<TableColumn<ShowroomAttribute>[]>(() => [
+  { accessorKey: 'code', header: t('showroom.catalog.fields.code') },
+  { id: 'label', header: t('showroom.catalog.fields.label') },
+  { accessorKey: 'type', header: t('showroom.catalog.fields.type') },
+  { accessorKey: 'group', header: t('showroom.catalog.fields.group') },
+  { id: 'switches', header: t('showroom.structure.attributes.switches') }
+])
 
 function groupLabel(code: string | null | undefined): string {
   if (!code) {
@@ -87,29 +106,22 @@ function clear(): void {
 
 <template>
   <div class="space-y-4" data-testid="showroom-attributes">
-    <div class="flex flex-wrap items-center justify-between gap-3">
-      <h1 class="text-xl font-semibold">{{ t('showroom.structure.attributes.title') }}</h1>
+    <AtriumPageHeader :title="t('showroom.structure.attributes.title')">
       <UButton to="/showroom/attributes/create" icon="i-lucide-plus" data-testid="showroom-attribute-new">{{ t('showroom.structure.attributes.new') }}</UButton>
-    </div>
+    </AtriumPageHeader>
 
     <AtriumIntegrationScreen screen-key="showroom.attributes">
       <div class="space-y-4">
         <UCard>
-          <form class="atrium-querybar" data-testid="showroom-attributes-filters" @submit.prevent="filter">
+          <form class="flex flex-wrap items-end gap-3" data-testid="showroom-attributes-filters" @submit.prevent="filter">
             <UFormField :label="t('showroom.catalog.filters.search')">
               <UInput v-model="filters.search" class="w-56" data-testid="showroom-attributes-search" />
             </UFormField>
             <UFormField :label="t('showroom.catalog.fields.type')">
-              <select v-model="filters.type" class="w-44 rounded-md border border-default bg-default px-2.5 py-1.5 text-sm" data-testid="showroom-attributes-type">
-                <option value="">{{ t('showroom.structure.attributes.all_types') }}</option>
-                <option v-for="type in ATTRIBUTE_TYPES" :key="type" :value="type">{{ type }}</option>
-              </select>
+              <USelect v-model="filters.type" :items="typeItems" :placeholder="t('showroom.structure.attributes.all_types')" class="w-44" data-testid="showroom-attributes-type" />
             </UFormField>
             <UFormField :label="t('showroom.catalog.fields.group')">
-              <select v-model="filters.group" class="w-48 rounded-md border border-default bg-default px-2.5 py-1.5 text-sm" data-testid="showroom-attributes-group">
-                <option value="">{{ t('showroom.structure.attributes.all_groups') }}</option>
-                <option v-for="group in groups" :key="group.code" :value="group.code">{{ labelOf(group.labels, locale, group.code) }}</option>
-              </select>
+              <USelect v-model="filters.group" :items="groupItems" :placeholder="t('showroom.structure.attributes.all_groups')" class="w-48" data-testid="showroom-attributes-group" />
             </UFormField>
             <UButton type="submit" icon="i-lucide-filter" data-testid="showroom-attributes-filter">{{ t('showroom.catalog.filters.filter') }}</UButton>
             <UButton variant="ghost" icon="i-lucide-x" data-testid="showroom-attributes-clear" @click="clear">{{ t('showroom.catalog.filters.clear') }}</UButton>
@@ -118,35 +130,26 @@ function clear(): void {
 
         <CatalogState :ready="!pending && data !== null" :failed="failed" :status="status">
           <div class="space-y-4">
-            <p v-if="attributes.length === 0" class="atrium-empty" data-testid="showroom-attributes-empty">{{ t('showroom.structure.attributes.empty') }}</p>
-            <table v-else class="w-full text-left text-sm" data-testid="showroom-attributes-table">
-              <thead class="text-muted">
-                <tr>
-                  <th class="py-2 pr-3 font-medium">{{ t('showroom.catalog.fields.code') }}</th>
-                  <th class="py-2 pr-3 font-medium">{{ t('showroom.catalog.fields.label') }}</th>
-                  <th class="py-2 pr-3 font-medium">{{ t('showroom.catalog.fields.type') }}</th>
-                  <th class="py-2 pr-3 font-medium">{{ t('showroom.catalog.fields.group') }}</th>
-                  <th class="py-2 font-medium">{{ t('showroom.structure.attributes.switches') }}</th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-default">
-                <tr v-for="attribute in attributes" :key="attribute.code" :data-testid="`showroom-attribute-row-${attribute.code}`">
-                  <td class="py-2 pr-3">
-                    <RouterLink :to="attributePath(attribute.code)" class="font-mono font-medium hover:underline">{{ attribute.code }}</RouterLink>
-                  </td>
-                  <td class="py-2 pr-3">{{ labelOf(attribute.labels, locale, attribute.code) }}</td>
-                  <td class="py-2 pr-3"><UBadge color="neutral" variant="subtle">{{ attribute.type }}</UBadge></td>
-                  <td class="py-2 pr-3">{{ groupLabel(attribute.group) }}</td>
-                  <td class="py-2">
-                    <span class="flex flex-wrap gap-1">
-                      <template v-for="flag in ATTRIBUTE_FLAGS" :key="flag">
-                        <UBadge v-if="attribute[flag]" color="neutral" variant="outline">{{ t(`showroom.structure.attributes.${flag}`) }}</UBadge>
-                      </template>
-                    </span>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+            <UTable :data="attributes" :columns="columns" data-testid="showroom-attributes-table">
+              <template #empty>
+                <AtriumState compact :title="t('showroom.structure.attributes.empty')" data-testid="showroom-attributes-empty" />
+              </template>
+              <template #code-cell="{ row: { original: attribute } }">
+                <span :data-testid="`showroom-attribute-row-${attribute.code}`">
+                  <ULink :to="attributePath(attribute.code)" class="font-mono font-medium hover:underline">{{ attribute.code }}</ULink>
+                </span>
+              </template>
+              <template #label-cell="{ row: { original: attribute } }">{{ labelOf(attribute.labels, locale, attribute.code) }}</template>
+              <template #type-cell="{ row: { original: attribute } }"><UBadge color="neutral" variant="subtle">{{ attribute.type }}</UBadge></template>
+              <template #group-cell="{ row: { original: attribute } }">{{ groupLabel(attribute.group) }}</template>
+              <template #switches-cell="{ row: { original: attribute } }">
+                <span class="flex flex-wrap gap-1">
+                  <template v-for="flag in ATTRIBUTE_FLAGS" :key="flag">
+                    <UBadge v-if="attribute[flag]" color="neutral" variant="outline">{{ t(`showroom.structure.attributes.${flag}`) }}</UBadge>
+                  </template>
+                </span>
+              </template>
+            </UTable>
 
             <CatalogPager :next="data?.meta?.next_cursor ?? null" :prev="data?.meta?.prev_cursor ?? null" testid="showroom-attributes" />
           </div>

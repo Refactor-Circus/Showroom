@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { TableColumn } from '@nuxt/ui/components/Table.vue'
 import CatalogActionError from '../../components/catalog/CatalogActionError.vue'
 import CatalogPager from '../../components/catalog/CatalogPager.vue'
 import CatalogState from '../../components/catalog/CatalogState.vue'
@@ -33,6 +34,13 @@ const { client, data, pending, failed, status, reload } = useCatalogLoad(async s
   showroomData<CatalogList<ShowroomAttributeGroup>>(await showroom.GET('/attribute-groups', { params: { query: query.value } })), query)
 
 const groups = computed(() => data.value?.data ?? [])
+
+const columns = computed<TableColumn<ShowroomAttributeGroup>[]>(() => [
+  { accessorKey: 'code', header: t('showroom.catalog.fields.code') },
+  { id: 'label', header: t('showroom.catalog.fields.label') },
+  { accessorKey: 'attributes_count', header: t('showroom.structure.groups.attributes_count'), meta: { class: { th: 'text-right', td: 'text-right' } } },
+  { accessorKey: 'sort_order', header: t('showroom.catalog.fields.sort_order'), meta: { class: { th: 'text-right', td: 'text-right' } } }
+])
 const draft = reactive({ code: '', label: '', sort_order: '0' })
 
 async function create(): Promise<void> {
@@ -49,7 +57,7 @@ async function create(): Promise<void> {
 
 <template>
   <div class="space-y-4" data-testid="showroom-attribute-groups">
-    <h1 class="text-xl font-semibold">{{ t('showroom.structure.groups.title') }}</h1>
+    <AtriumPageHeader :title="t('showroom.structure.groups.title')" />
 
     <AtriumIntegrationScreen screen-key="showroom.attribute-groups">
       <div class="space-y-4">
@@ -74,27 +82,19 @@ async function create(): Promise<void> {
 
         <CatalogState :ready="!pending && data !== null" :failed="failed" :status="status">
           <div class="space-y-4">
-            <p v-if="groups.length === 0" class="atrium-empty" data-testid="showroom-attribute-groups-empty">{{ t('showroom.structure.groups.empty') }}</p>
-            <table v-else class="w-full text-left text-sm" data-testid="showroom-attribute-groups-table">
-              <thead class="text-muted">
-                <tr>
-                  <th class="py-2 pr-3 font-medium">{{ t('showroom.catalog.fields.code') }}</th>
-                  <th class="py-2 pr-3 font-medium">{{ t('showroom.catalog.fields.label') }}</th>
-                  <th class="py-2 pr-3 font-medium">{{ t('showroom.structure.groups.attributes_count') }}</th>
-                  <th class="py-2 font-medium">{{ t('showroom.catalog.fields.sort_order') }}</th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-default">
-                <tr v-for="group in groups" :key="group.code" :data-testid="`showroom-group-row-${group.code}`">
-                  <td class="py-2 pr-3">
-                    <RouterLink :to="attributeGroupPath(group.code)" class="font-mono font-medium hover:underline">{{ group.code }}</RouterLink>
-                  </td>
-                  <td class="py-2 pr-3">{{ labelOf(group.labels, locale, group.code) }}</td>
-                  <td class="py-2 pr-3 tabular-nums">{{ group.attributes_count ?? t('showroom.catalog.none') }}</td>
-                  <td class="py-2 tabular-nums">{{ group.sort_order }}</td>
-                </tr>
-              </tbody>
-            </table>
+            <UTable :data="groups" :columns="columns" data-testid="showroom-attribute-groups-table">
+              <template #empty>
+                <AtriumState compact :title="t('showroom.structure.groups.empty')" data-testid="showroom-attribute-groups-empty" />
+              </template>
+              <template #code-cell="{ row: { original: group } }">
+                <span :data-testid="`showroom-group-row-${group.code}`">
+                  <ULink :to="attributeGroupPath(group.code)" class="font-mono font-medium hover:underline">{{ group.code }}</ULink>
+                </span>
+              </template>
+              <template #label-cell="{ row: { original: group } }">{{ labelOf(group.labels, locale, group.code) }}</template>
+              <template #attributes_count-cell="{ row: { original: group } }"><span class="tabular-nums">{{ group.attributes_count ?? t('showroom.catalog.none') }}</span></template>
+              <template #sort_order-cell="{ row: { original: group } }"><span class="tabular-nums">{{ group.sort_order }}</span></template>
+            </UTable>
 
             <CatalogPager :next="data?.meta?.next_cursor ?? null" :prev="data?.meta?.prev_cursor ?? null" testid="showroom-attribute-groups" />
           </div>

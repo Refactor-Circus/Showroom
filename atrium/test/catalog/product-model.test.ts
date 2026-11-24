@@ -5,6 +5,7 @@ import { settle } from '@refactor-circus/atrium/testing'
 import { mockPackageApi, reply, resetPackageApis, type PackageRoutes } from '@refactor-circus/atrium/testing'
 import { bySize, confirmWith, invalid, lookups, mountShowroomPage, ok, oxford, resetShowroomPages, screensApi, shirt, showroomCalls } from './support'
 import { clearAtriumData, mockAtriumApi, useRouter } from '@refactor-circus/atrium/testing'
+import { pick, picked } from '../ui'
 
 /*
  * `showroom.product-model` (AC 54, 71): one product model
@@ -121,7 +122,7 @@ describe('showroom.product-model', () => {
 
     const wrapper = await mountShowroomPage(Page, PATH)
     await wrapper.find('[data-testid="showroom-child-key"]').setValue('oxford-m')
-    await wrapper.find('[data-testid="showroom-child-axis-size"]').setValue('m')
+    await pick(wrapper, 'showroom-child-axis-size', 'm')
     await wrapper.find('[data-testid="showroom-child-create-form"]').trigger('submit')
     await settle()
     await settle()
@@ -138,7 +139,7 @@ describe('showroom.product-model', () => {
 
     expect(wrapper.find('[data-testid="showroom-sub-model-oxford-tall-blue"]').attributes('href')).toBe('/showroom/product-models/oxford-tall-blue')
     await wrapper.find('[data-testid="showroom-child-key"]').setValue('oxford-tall-red')
-    await wrapper.find('[data-testid="showroom-child-axis-color"]').setValue('red')
+    await pick(wrapper, 'showroom-child-axis-color', 'red')
     await wrapper.find('[data-testid="showroom-child-create-form"]').trigger('submit')
     await settle()
 
@@ -150,7 +151,7 @@ describe('showroom.product-model', () => {
 
     const wrapper = await mountShowroomPage(Page, PATH)
     await wrapper.find('[data-testid="showroom-child-key"]').setValue('oxford-s2')
-    await wrapper.find('[data-testid="showroom-child-axis-size"]').setValue('s')
+    await pick(wrapper, 'showroom-child-axis-size', 's')
     await wrapper.find('[data-testid="showroom-child-create-form"]').trigger('submit')
     await settle()
 
@@ -177,7 +178,7 @@ describe('showroom.product-model', () => {
     showroomWith()
 
     const wrapper = await mountShowroomPage(Page, PATH)
-    await wrapper.find('[data-testid="showroom-association-type"]').setValue('related')
+    await pick(wrapper, 'showroom-association-type', 'related')
     await wrapper.find('[data-testid="showroom-association-target"]').setValue('shirt-1')
     await wrapper.find('[data-testid="showroom-association-add"]').trigger('submit')
     await settle()

@@ -21,7 +21,7 @@ const counts = computed(() => stats.value?.status ?? null)
     <AtriumNoAccess v-if="forbidden" compact />
     <AtriumErrorCard v-else-if="status === 'error'" :message="t('atrium.widget.failed')" />
     <div v-else-if="counts" class="flex flex-wrap gap-2">
-      <RouterLink
+      <ULink
         v-for="key in PRODUCT_STATUSES"
         :key="key"
         :to="{ path: '/showroom/products', query: { status: key } }"
@@ -31,8 +31,8 @@ const counts = computed(() => stats.value?.status ?? null)
       >
         <UBadge :color="statusColor(key)" variant="subtle" size="sm">{{ t(`showroom.statuses.${key}`) }}</UBadge>
         <span class="text-sm font-semibold tabular-nums">{{ counts.counts[key] ?? 0 }}</span>
-      </RouterLink>
-      <RouterLink
+      </ULink>
+      <ULink
         :to="{ path: '/showroom/products', query: { published: '1' } }"
         class="flex items-center gap-2 rounded-md border border-default px-3 py-2 hover:bg-elevated"
         data-testid="showroom-product-status-count"
@@ -40,7 +40,7 @@ const counts = computed(() => stats.value?.status ?? null)
       >
         <UBadge color="success" variant="subtle" size="sm">{{ t('showroom.widgets.live') }}</UBadge>
         <span class="text-sm font-semibold tabular-nums">{{ counts.published }}</span>
-      </RouterLink>
+      </ULink>
     </div>
     <div v-else class="flex gap-2">
       <USkeleton class="h-9 w-24" />

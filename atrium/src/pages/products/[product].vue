@@ -133,11 +133,18 @@ const formCodes = computed<string[]>(() => {
 const catalog = useAttributeCatalog(() => formCodes.value)
 const editorAttributes = computed(() => catalog.pick(formCodes.value))
 const addable = computed(() => isVariant.value ? [] : [...catalog.attributes.value.keys()].filter(code => !formCodes.value.includes(code)).sort())
-const toAdd = ref('')
+const toAdd = ref<string | null>('')
 
 const slots = useEditingSlot()
 
-const form = reactive({ family: '', owner: '', enabled: true, categories: '', flags: [] as string[] })
+const form = reactive({ family: '' as string | null, owner: '', enabled: true, categories: '', flags: [] as string[] })
+
+const familyItems = computed(() => [
+  { label: t('showroom.catalog.products.no_family'), value: null },
+  ...families.value.map(family => ({ label: labelOf(family.labels, locale.value, family.code), value: family.code }))
+])
+
+const addableItems = computed(() => addable.value.map(code => ({ label: code, value: code })))
 const inputs = ref<Record<string, ValueInput>>({})
 const externalIds = ref<ExternalIdsForm>(externalIdsForm(null))
 
@@ -226,10 +233,6 @@ async function destroy(): Promise<void> {
     await navigateTo('/showroom/products')
   }
 }
-
-function checkedOf(event: Event): boolean {
-  return (event.target as HTMLInputElement).checked
-}
 </script>
 
 <template>
@@ -237,19 +240,18 @@ function checkedOf(event: Event): boolean {
     <AtriumIntegrationScreen screen-key="showroom.product" :record="productId">
       <CatalogState :ready="!pending && product !== null" :failed="failed" :status="status">
         <div v-if="product" class="space-y-5">
-          <div class="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <h1 class="font-mono text-xl font-semibold" data-testid="showroom-product-title">{{ product.identifier }}</h1>
-              <p v-if="product.family" class="text-sm text-muted">{{ familyLabel(product.family) }}</p>
-            </div>
-            <div class="flex flex-wrap items-center gap-2">
+          <UPageHeader :description="product.family ? familyLabel(product.family) ?? undefined : undefined">
+            <template #title>
+              <span class="font-mono" data-testid="showroom-product-title">{{ product.identifier }}</span>
+            </template>
+            <template #links>
               <UBadge :color="product.enabled ? 'success' : 'neutral'" variant="subtle" data-testid="showroom-product-enabled">
                 {{ product.enabled ? t('showroom.catalog.enabled') : t('showroom.catalog.disabled') }}
               </UBadge>
               <UButton v-if="product.parent" :to="productModelPath(product.parent)" variant="outline" icon="i-lucide-arrow-left" data-testid="showroom-product-parent">{{ product.parent }}</UButton>
               <UButton color="error" variant="outline" icon="i-lucide-trash-2" :loading="action.busy.value" data-testid="showroom-product-delete" @click="destroy">{{ t('showroom.catalog.delete') }}</UButton>
-            </div>
-          </div>
+            </template>
+          </UPageHeader>
 
           <ProductWorkflow :product="product" :versions="data?.versions ?? []" @changed="reload" />
 
@@ -264,10 +266,7 @@ function checkedOf(event: Event): boolean {
               </template>
               <div class="flex flex-wrap items-end gap-4">
                 <UFormField v-if="!isVariant" :label="t('showroom.catalog.fields.family')" :error="action.error('family')">
-                  <select v-model="form.family" class="w-56 rounded-md border border-default bg-default px-2.5 py-1.5 text-sm" data-testid="showroom-product-family">
-                    <option value="">{{ t('showroom.catalog.products.no_family') }}</option>
-                    <option v-for="family in families" :key="family.code" :value="family.code">{{ labelOf(family.labels, locale, family.code) }}</option>
-                  </select>
+                  <USelect v-model="form.family" :items="familyItems" :placeholder="t('showroom.catalog.products.no_family')" class="w-56" data-testid="showroom-product-family" />
                 </UFormField>
                 <div v-if="isVariant" class="text-sm" data-testid="showroom-product-inherited-owner">
                   <p class="font-medium">{{ t('showroom.catalog.products.inherited_owner') }}</p>
@@ -276,10 +275,7 @@ function checkedOf(event: Event): boolean {
                 <UFormField v-else :label="t('showroom.catalog.fields.owner')" :hint="t('showroom.catalog.products.owner_hint')" :error="action.error('owner')">
                   <UInput v-model="form.owner" class="w-56" data-testid="showroom-product-owner" />
                 </UFormField>
-                <label class="flex h-9 items-center gap-2 text-sm">
-                  <input v-model="form.enabled" type="checkbox" data-testid="showroom-product-enabled-input">
-                  {{ t('showroom.catalog.enabled') }}
-                </label>
+                <UCheckbox v-model="form.enabled" :label="t('showroom.catalog.enabled')" class="h-9 items-center" data-testid="showroom-product-enabled-input" />
               </div>
             </UCard>
 
@@ -298,17 +294,18 @@ function checkedOf(event: Event): boolean {
                 <div v-if="product.flags !== undefined" data-testid="showroom-own-flags">
                   <p class="mb-1 text-xs font-medium uppercase text-muted">{{ t('showroom.catalog.flags.own') }}</p>
                   <div class="flex flex-wrap gap-3">
-                    <label v-for="flag in productFlags" :key="flag.code" class="flex items-center gap-1.5 text-sm">
-                      <input
-                        type="checkbox"
-                        :value="flag.code"
-                        :checked="form.flags.includes(flag.code)"
-                        :data-testid="`showroom-flag-${flag.code}`"
-                        @change="toggleFlag(flag.code, checkedOf($event))"
-                      >
-                      <span class="font-mono text-xs">{{ flag.code }}</span>
-                      <span v-if="labelOf(flag.labels, locale, flag.code) !== flag.code" class="text-muted">{{ labelOf(flag.labels, locale, flag.code) }}</span>
-                    </label>
+                    <UCheckbox
+                      v-for="flag in productFlags"
+                      :key="flag.code"
+                      :model-value="form.flags.includes(flag.code)"
+                      :data-testid="`showroom-flag-${flag.code}`"
+                      @update:model-value="toggleFlag(flag.code, $event === true)"
+                    >
+                      <template #label>
+                        <span class="font-mono text-xs">{{ flag.code }}</span>
+                        <span v-if="labelOf(flag.labels, locale, flag.code) !== flag.code" class="ml-1.5 text-muted">{{ labelOf(flag.labels, locale, flag.code) }}</span>
+                      </template>
+                    </UCheckbox>
                     <span v-if="productFlags.length === 0" class="text-sm text-muted">{{ t('showroom.catalog.flags.none') }}</span>
                   </div>
                   <small v-if="action.error('flags')" class="text-xs text-error">{{ action.error('flags') }}</small>
@@ -344,7 +341,7 @@ function checkedOf(event: Event): boolean {
                 <p v-if="inheritedCategories.length > 0" class="text-xs" data-testid="showroom-inherited-categories">
                   {{ t('showroom.catalog.categories.inherited') }}:
                   <template v-for="(code, index) in inheritedCategories" :key="code">
-                    <RouterLink :to="categoryPath(code)" class="font-mono hover:underline">{{ code }}</RouterLink><span v-if="index < inheritedCategories.length - 1">, </span>
+                    <ULink :to="categoryPath(code)" class="font-mono hover:underline">{{ code }}</ULink><span v-if="index < inheritedCategories.length - 1">, </span>
                   </template>
                 </p>
               </div>
@@ -365,10 +362,7 @@ function checkedOf(event: Event): boolean {
           <UCard v-if="addable.length > 0">
             <form class="flex flex-wrap items-end gap-3" data-testid="showroom-add-attribute" @submit.prevent="addAttribute">
               <UFormField :label="t('showroom.catalog.values.add_attribute')">
-                <select v-model="toAdd" class="w-72 rounded-md border border-default bg-default px-2.5 py-1.5 text-sm" data-testid="showroom-add-attribute-select">
-                  <option value="">{{ t('showroom.catalog.values.choose_attribute') }}</option>
-                  <option v-for="code in addable" :key="code" :value="code">{{ code }}</option>
-                </select>
+                <USelect v-model="toAdd" :items="addableItems" :placeholder="t('showroom.catalog.values.choose_attribute')" class="w-72" data-testid="showroom-add-attribute-select" />
               </UFormField>
               <UButton type="submit" variant="outline" icon="i-lucide-plus" data-testid="showroom-add-attribute-submit">{{ t('showroom.catalog.add') }}</UButton>
             </form>

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { TableColumn } from '@nuxt/ui/components/Table.vue'
 import CatalogActionError from '../../components/catalog/CatalogActionError.vue'
 import CatalogState from '../../components/catalog/CatalogState.vue'
 import {
@@ -45,7 +46,16 @@ const links = computed(() => asset.value?.links ?? [])
 
 const label = ref('')
 const file = shallowRef<File | null>(null)
-const fileInput = useTemplateRef<HTMLInputElement>('fileInput')
+const fileInput = useTemplateRef<{ inputRef: HTMLInputElement | null }>('fileInput')
+
+const linkTypeItems = computed(() => ASSET_LINK_TYPES.map(type => ({ label: t(`showroom.assets.link_types.${type}`), value: type })))
+
+const linkColumns = computed<TableColumn<AssetLink>[]>(() => [
+  { accessorKey: 'type', header: t('showroom.catalog.fields.type') },
+  { accessorKey: 'target', header: t('showroom.assets.target') },
+  { accessorKey: 'role', header: t('showroom.assets.role') },
+  { id: 'actions', header: '', meta: { class: { td: 'text-right' } } }
+])
 const link = reactive<{ type: AssetLinkType, target: string, role: string }>({ type: 'product', target: '', role: 'media' })
 
 watch(data, () => {
@@ -85,8 +95,8 @@ async function save(): Promise<void> {
   if (saved) {
     file.value = null
 
-    if (fileInput.value) {
-      fileInput.value.value = ''
+    if (fileInput.value?.inputRef) {
+      fileInput.value.inputRef.value = ''
     }
 
     await reload()
@@ -135,16 +145,15 @@ async function destroy(): Promise<void> {
     <AtriumIntegrationScreen screen-key="showroom.asset" :record="code">
       <CatalogState :ready="!pending && asset !== null" :failed="failed" :status="status">
         <div v-if="asset" class="space-y-5">
-          <div class="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <h1 class="text-xl font-semibold" data-testid="showroom-asset-title">{{ labelOf(asset.labels, locale, asset.code) }}</h1>
-              <p class="text-sm text-muted">{{ asset.filename }}</p>
-            </div>
-            <div class="flex flex-wrap items-center gap-2">
+          <UPageHeader :headline="t('showroom.assets.title')" :description="asset.filename" :ui="{ title: 'truncate' }">
+            <template #title>
+              <span data-testid="showroom-asset-title">{{ labelOf(asset.labels, locale, asset.code) }}</span>
+            </template>
+            <template #links>
               <UButton :to="asset.url" target="_blank" external variant="outline" icon="i-lucide-external-link" data-testid="showroom-asset-open">{{ t('showroom.assets.open_file') }}</UButton>
               <UButton color="error" variant="outline" icon="i-lucide-trash-2" :loading="action.busy.value" data-testid="showroom-asset-delete" @click="destroy">{{ t('showroom.catalog.delete') }}</UButton>
-            </div>
-          </div>
+            </template>
+          </UPageHeader>
 
           <CatalogActionError :action="action" />
 
@@ -173,7 +182,7 @@ async function destroy(): Promise<void> {
                     <UInput v-model="label" class="w-64" data-testid="showroom-asset-label" />
                   </UFormField>
                   <UFormField :label="t('showroom.assets.replace_file')" :error="action.error('file')">
-                    <input ref="fileInput" type="file" class="text-sm" data-testid="showroom-asset-file" @change="choose">
+                    <UInput ref="fileInput" type="file" data-testid="showroom-asset-file" @change="choose" />
                   </UFormField>
                   <UButton type="submit" icon="i-lucide-check" :loading="action.busy.value" data-testid="showroom-asset-save">{{ t('showroom.catalog.save') }}</UButton>
                 </form>
@@ -184,45 +193,35 @@ async function destroy(): Promise<void> {
                   <h2 class="font-semibold">{{ t('showroom.assets.links') }}</h2>
                 </template>
                 <div class="space-y-4">
-                  <p v-if="links.length === 0" class="atrium-empty" data-testid="showroom-asset-links-empty">{{ t('showroom.assets.no_links') }}</p>
-                  <table v-else class="w-full text-left text-sm">
-                    <thead class="text-muted">
-                      <tr>
-                        <th class="py-2 pr-3 font-medium">{{ t('showroom.catalog.fields.type') }}</th>
-                        <th class="py-2 pr-3 font-medium">{{ t('showroom.assets.target') }}</th>
-                        <th class="py-2 pr-3 font-medium">{{ t('showroom.assets.role') }}</th>
-                        <th class="py-2" />
-                      </tr>
-                    </thead>
-                    <tbody class="divide-y divide-default">
-                      <tr v-for="entry in links" :key="`${entry.type}-${entry.target}-${entry.role ?? ''}`" :data-testid="`showroom-asset-link-${entry.type}-${entry.target}`">
-                        <td class="py-2 pr-3">{{ t(`showroom.assets.link_types.${entry.type}`) }}</td>
-                        <td class="py-2 pr-3">
-                          <RouterLink :to="linkTargetPath(entry)" class="font-mono text-xs hover:underline">{{ entry.target }}</RouterLink>
-                        </td>
-                        <td class="py-2 pr-3">{{ entry.role ?? t('showroom.catalog.none') }}</td>
-                        <td class="py-2 text-right">
-                          <UButton
-                            variant="ghost"
-                            color="neutral"
-                            size="sm"
-                            icon="i-lucide-unlink"
-                            :loading="action.busy.value"
-                            :data-testid="`showroom-asset-unlink-${entry.type}-${entry.target}`"
-                            @click="detach(entry)"
-                          >
-                            {{ t('showroom.assets.unlink') }}
-                          </UButton>
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
+                  <UTable :data="links" :columns="linkColumns">
+                    <template #empty>
+                      <AtriumState compact :title="t('showroom.assets.no_links')" data-testid="showroom-asset-links-empty" />
+                    </template>
+                    <template #type-cell="{ row: { original: entry } }">
+                      <span :data-testid="`showroom-asset-link-${entry.type}-${entry.target}`">{{ t(`showroom.assets.link_types.${entry.type}`) }}</span>
+                    </template>
+                    <template #target-cell="{ row: { original: entry } }">
+                      <ULink :to="linkTargetPath(entry)" class="font-mono text-xs hover:underline">{{ entry.target }}</ULink>
+                    </template>
+                    <template #role-cell="{ row: { original: entry } }">{{ entry.role ?? t('showroom.catalog.none') }}</template>
+                    <template #actions-cell="{ row: { original: entry } }">
+                      <UButton
+                        variant="ghost"
+                        color="neutral"
+                        size="sm"
+                        icon="i-lucide-unlink"
+                        :loading="action.busy.value"
+                        :data-testid="`showroom-asset-unlink-${entry.type}-${entry.target}`"
+                        @click="detach(entry)"
+                      >
+                        {{ t('showroom.assets.unlink') }}
+                      </UButton>
+                    </template>
+                  </UTable>
 
                   <form class="flex flex-wrap items-end gap-3" data-testid="showroom-asset-link-form" @submit.prevent="attach">
                     <UFormField :label="t('showroom.catalog.fields.type')" :error="action.error('type')" required>
-                      <select v-model="link.type" class="w-40 rounded-md border border-default bg-default px-2.5 py-1.5 text-sm" data-testid="showroom-asset-link-type">
-                        <option v-for="type in ASSET_LINK_TYPES" :key="type" :value="type">{{ t(`showroom.assets.link_types.${type}`) }}</option>
-                      </select>
+                      <USelect v-model="link.type" :items="linkTypeItems" class="w-40" data-testid="showroom-asset-link-type" />
                     </UFormField>
                     <UFormField :label="t('showroom.assets.target')" :hint="t('showroom.assets.target_hint')" :error="action.error('target')" required>
                       <UInput v-model="link.target" required class="w-48" data-testid="showroom-asset-link-target" />

@@ -1,9 +1,9 @@
-import { AtriumErrorCard as e, AtriumNoAccess as t, atriumStatus as n, defineAtriumModule as r, integrationData as i, mergeAtriumMessages as a, useAtriumI18n as o, useAtriumIntegration as s, useIntegrationQuery as c } from "@refactor-circus/atrium";
-import { UBadge as l, UCard as u, UProgress as d, USkeleton as f } from "@refactor-circus/atrium/ui";
-import { Fragment as p, computed as m, createBlock as h, createCommentVNode as g, createElementBlock as _, createElementVNode as v, createTextVNode as y, createVNode as b, defineComponent as x, onMounted as S, openBlock as C, renderList as w, resolveComponent as T, shallowRef as E, toDisplayString as D, unref as O, withCtx as k } from "vue";
-import { useI18n as A } from "vue-i18n";
+import { AtriumErrorCard as e, AtriumNoAccess as t, AtriumState as n, atriumStatus as r, defineAtriumModule as i, integrationData as a, mergeAtriumMessages as o, useAtriumI18n as s, useAtriumIntegration as c, useIntegrationQuery as l } from "@refactor-circus/atrium";
+import { UBadge as u, UCard as d, ULink as f, UProgress as p, USkeleton as m } from "@refactor-circus/atrium/ui";
+import { Fragment as h, computed as g, createBlock as _, createCommentVNode as v, createElementBlock as y, createElementVNode as b, createTextVNode as x, createVNode as S, defineComponent as C, onMounted as w, openBlock as T, renderList as E, shallowRef as D, toDisplayString as O, unref as k, withCtx as A } from "vue";
+import { useI18n as j } from "vue-i18n";
 // src/components/search/source.ts
-function j(e, t, n) {
+function M(e, t, n) {
 	let r = (e) => encodeURIComponent(e);
 	switch (e) {
 		case "products": return `/showroom/products/${r(t)}`;
@@ -12,108 +12,108 @@ function j(e, t, n) {
 		default: return `/showroom/${e}/${r(n)}`;
 	}
 }
-var M = async (e, { limit: t }) => {
-	let { client: n } = s("showroom");
+var ee = async (e, { limit: t }) => {
+	let { client: n } = c("showroom");
 	if (!n) return [];
-	let r = o(), { data: a } = i(await n.GET("/search", { params: { query: {
+	let r = s(), { data: i } = a(await n.GET("/search", { params: { query: {
 		q: e,
 		limit: t
 	} } }));
-	return a.map((e) => ({
+	return i.map((e) => ({
 		title: e.label,
 		subtitle: e.subtitle,
 		icon: null,
 		group: r.t(`showroom.search.groups.${e.type}`),
 		link: {
-			path: j(e.type, e.id, e.code),
+			path: M(e.type, e.id, e.code),
 			external: !1
 		}
 	}));
-}, N = { "data-testid": "showroom-settings" }, ee = {
+}, te = { "data-testid": "showroom-settings" }, N = {
 	key: 3,
 	class: "flex flex-col gap-4"
-}, te = { class: "font-medium" }, ne = { class: "space-y-2 text-sm" }, P = ["data-row"], F = { class: "text-muted" }, I = { class: "font-mono tabular-nums" }, L = /* @__PURE__ */ x({
+}, P = { class: "font-medium" }, ne = { class: "space-y-2 text-sm" }, F = ["data-row"], I = { class: "text-muted" }, L = { class: "font-mono tabular-nums" }, R = /* @__PURE__ */ C({
 	__name: "SettingsPanel",
 	props: { data: {} },
-	setup(r) {
-		let { t: a } = A(), { client: o } = s("showroom"), c = E(null), l = E(null);
-		S(async () => {
+	setup(n) {
+		let { t: i } = j(), { client: o } = c("showroom"), s = D(null), l = D(null);
+		w(async () => {
 			if (o) try {
-				c.value = i(await o.GET("/settings-summary")).data;
+				s.value = a(await o.GET("/settings-summary")).data;
 			} catch (e) {
 				l.value = e;
 			}
 		});
-		let d = m(() => n(l.value) === 403), g = m(() => a("showroom.settings.off")), y = m(() => {
-			let e = c.value;
+		let u = g(() => r(l.value) === 403), f = g(() => i("showroom.settings.off")), p = g(() => {
+			let e = s.value;
 			return e ? [{
 				key: "api",
-				title: a("showroom.settings.api"),
+				title: i("showroom.settings.api"),
 				rows: [
 					{
 						key: "authorization",
-						label: a("showroom.settings.authorization"),
-						value: e.authorization ? a("showroom.settings.on") : g.value
+						label: i("showroom.settings.authorization"),
+						value: e.authorization ? i("showroom.settings.on") : f.value
 					},
 					{
 						key: "routes_prefix",
-						label: a("showroom.settings.routes_prefix"),
-						value: e.routes.enabled ? `/${e.routes.prefix}` : g.value
+						label: i("showroom.settings.routes_prefix"),
+						value: e.routes.enabled ? `/${e.routes.prefix}` : f.value
 					},
 					{
 						key: "per_page",
-						label: a("showroom.settings.per_page"),
+						label: i("showroom.settings.per_page"),
 						value: String(e.pagination.per_page)
 					},
 					{
 						key: "max_per_page",
-						label: a("showroom.settings.max_per_page"),
+						label: i("showroom.settings.max_per_page"),
 						value: String(e.pagination.max_per_page)
 					}
 				]
 			}, {
 				key: "mcp",
-				title: a("showroom.settings.mcp"),
+				title: i("showroom.settings.mcp"),
 				rows: [{
 					key: "web_transport",
-					label: a("showroom.settings.web_transport"),
-					value: e.mcp.web.enabled ? `/${e.mcp.web.route}` : g.value
+					label: i("showroom.settings.web_transport"),
+					value: e.mcp.web.enabled ? `/${e.mcp.web.route}` : f.value
 				}, {
 					key: "local_transport",
-					label: a("showroom.settings.local_transport"),
-					value: e.mcp.local.enabled ? e.mcp.local.handle : g.value
+					label: i("showroom.settings.local_transport"),
+					value: e.mcp.local.enabled ? e.mcp.local.handle : f.value
 				}]
 			}] : [];
 		});
 		return (n, r) => {
-			let i = t, o = e, s = f, m = u;
-			return C(), _("div", N, [O(d) ? (C(), h(i, { key: 0 })) : O(l) ? (C(), h(o, {
+			let a = t, o = e, c = m, f = d;
+			return T(), y("div", te, [k(u) ? (T(), _(a, { key: 0 })) : k(l) ? (T(), _(o, {
 				key: 1,
-				message: O(a)("atrium.settings.failed")
-			}, null, 8, ["message"])) : O(c) ? (C(), _("div", ee, [(C(!0), _(p, null, w(O(y), (e) => (C(), h(m, {
+				message: k(i)("atrium.settings.failed")
+			}, null, 8, ["message"])) : k(s) ? (T(), y("div", N, [(T(!0), y(h, null, E(k(p), (e) => (T(), _(f, {
 				key: e.key,
 				"data-testid": `showroom-settings-${e.key}`
 			}, {
-				header: k(() => [v("h3", te, D(e.title), 1)]),
-				default: k(() => [v("dl", ne, [(C(!0), _(p, null, w(e.rows, (e) => (C(), _("div", {
+				header: A(() => [b("h3", P, O(e.title), 1)]),
+				default: A(() => [b("dl", ne, [(T(!0), y(h, null, E(e.rows, (e) => (T(), y("div", {
 					key: e.key,
 					class: "flex justify-between gap-3",
 					"data-row": e.key
-				}, [v("dt", F, D(e.label), 1), v("dd", I, D(e.value), 1)], 8, P))), 128))])]),
+				}, [b("dt", I, O(e.label), 1), b("dd", L, O(e.value), 1)], 8, F))), 128))])]),
 				_: 2
-			}, 1032, ["data-testid"]))), 128))])) : (C(), h(s, {
+			}, 1032, ["data-testid"]))), 128))])) : (T(), _(c, {
 				key: 2,
 				class: "h-24"
 			}))]);
 		};
 	}
-}), R = [
+}), z = [
 	"draft",
 	"in_review",
 	"approved",
 	"archived"
 ];
-function z(e) {
+function B(e) {
 	switch (e) {
 		case "in_review": return "info";
 		case "approved": return "success";
@@ -121,55 +121,56 @@ function z(e) {
 		default: return "neutral";
 	}
 }
-function B() {
-	return c("showroom", "showroom.stats.show", async (e) => i(await e.GET("/stats")).data);
-}
-function V(e) {
-	return `/showroom/products/${encodeURIComponent(e)}`;
+function V() {
+	return l("showroom", "showroom.stats.show", async (e) => a(await e.GET("/stats")).data);
 }
 function H(e) {
-	return `/showroom/product-models/${encodeURIComponent(e)}`;
+	return `/showroom/products/${encodeURIComponent(e)}`;
 }
 function U(e) {
+	return `/showroom/product-models/${encodeURIComponent(e)}`;
+}
+function W(e) {
 	if (!e) return null;
 	let t = new Date(e);
 	return Number.isNaN(t.getTime()) ? e : t.toLocaleString();
 }
 // src/components/widgets/CompletenessWidget.vue?vue&type=script&setup=true&lang.ts
-var W = {
+var G = {
 	class: "h-full",
 	"data-testid": "showroom-completeness"
-}, G = {
-	key: 0,
-	class: "atrium-empty",
-	"data-testid": "showroom-completeness-empty"
 }, K = {
 	key: 1,
 	class: "flex flex-col gap-3"
 }, q = ["data-slot"], J = { class: "flex items-center justify-between gap-3 text-sm" }, Y = { class: "tabular-nums" }, X = { "data-testid": "showroom-completeness-average" }, Z = { class: "text-muted" }, re = {
 	key: 3,
 	class: "space-y-2"
-}, ie = /* @__PURE__ */ x({
+}, ie = /* @__PURE__ */ C({
 	__name: "CompletenessWidget",
 	props: {
 		data: {},
 		settings: {}
 	},
-	setup(n) {
-		let { t: r } = A(), { data: i, status: a, forbidden: o } = B(), s = m(() => i.value?.completeness ?? null);
-		return (n, i) => {
-			let c = t, l = e, u = T("RouterLink"), m = d, g = f;
-			return C(), _("div", W, [O(o) ? (C(), h(c, {
+	setup(r) {
+		let { t: i } = j(), { data: a, status: o, forbidden: s } = V(), c = g(() => a.value?.completeness ?? null);
+		return (r, a) => {
+			let l = t, u = e, d = n, g = f, v = p, C = m;
+			return T(), y("div", G, [k(s) ? (T(), _(l, {
 				key: 0,
 				compact: ""
-			})) : O(a) === "error" ? (C(), h(l, {
+			})) : k(o) === "error" ? (T(), _(u, {
 				key: 1,
-				message: O(r)("atrium.widget.failed")
-			}, null, 8, ["message"])) : O(s) ? (C(), _(p, { key: 2 }, [O(s).length === 0 ? (C(), _("p", G, D(O(r)("showroom.widgets.no_completeness_yet")), 1)) : (C(), _("ul", K, [(C(!0), _(p, null, w(O(s), (e) => (C(), _("li", {
+				message: k(i)("atrium.widget.failed")
+			}, null, 8, ["message"])) : k(c) ? (T(), y(h, { key: 2 }, [k(c).length === 0 ? (T(), _(d, {
+				key: 0,
+				compact: "",
+				title: k(i)("showroom.widgets.no_completeness_yet"),
+				"data-testid": "showroom-completeness-empty"
+			}, null, 8, ["title"])) : (T(), y("ul", K, [(T(!0), y(h, null, E(k(c), (e) => (T(), y("li", {
 				key: `${e.channel}-${e.locale}`,
 				"data-testid": "showroom-completeness-row",
 				"data-slot": `${e.channel}-${e.locale}`
-			}, [v("div", J, [b(u, {
+			}, [b("div", J, [S(g, {
 				class: "font-mono hover:underline",
 				to: {
 					path: "/showroom/products",
@@ -180,45 +181,45 @@ var W = {
 					}
 				}
 			}, {
-				default: k(() => [y(D(e.channel) + " · " + D(e.locale), 1)]),
+				default: A(() => [x(O(e.channel) + " · " + O(e.locale), 1)]),
 				_: 2
-			}, 1032, ["to"]), v("span", Y, [v("span", X, D(e.average) + "%", 1), v("span", Z, " — " + D(O(r)("showroom.widgets.fully_complete", {
+			}, 1032, ["to"]), b("span", Y, [b("span", X, O(e.average) + "%", 1), b("span", Z, " — " + O(k(i)("showroom.widgets.fully_complete", {
 				complete: e.complete,
 				products: e.products
-			})), 1)])]), b(m, {
+			})), 1)])]), S(v, {
 				class: "mt-1",
 				"model-value": e.average,
 				max: 100,
 				size: "sm"
-			}, null, 8, ["model-value"])], 8, q))), 128))]))], 64)) : (C(), _("div", re, [b(g, { class: "h-4 w-2/3" }), b(g, { class: "h-4 w-1/2" })]))]);
+			}, null, 8, ["model-value"])], 8, q))), 128))]))], 64)) : (T(), y("div", re, [S(C, { class: "h-4 w-2/3" }), S(C, { class: "h-4 w-1/2" })]))]);
 		};
 	}
-}), ae = {
+}), Q = {
 	class: "h-full",
 	"data-testid": "showroom-product-status"
-}, oe = {
+}, ae = {
 	key: 2,
 	class: "flex flex-wrap gap-2"
-}, se = { class: "text-sm font-semibold tabular-nums" }, ce = { class: "text-sm font-semibold tabular-nums" }, le = {
+}, oe = { class: "text-sm font-semibold tabular-nums" }, se = { class: "text-sm font-semibold tabular-nums" }, ce = {
 	key: 3,
 	class: "flex gap-2"
-}, ue = /* @__PURE__ */ x({
+}, le = /* @__PURE__ */ C({
 	__name: "ProductStatusWidget",
 	props: {
 		data: {},
 		settings: {}
 	},
 	setup(n) {
-		let { t: r } = A(), { data: i, status: a, forbidden: o } = B(), s = m(() => i.value?.status ?? null);
+		let { t: r } = j(), { data: i, status: a, forbidden: o } = V(), s = g(() => i.value?.status ?? null);
 		return (n, i) => {
-			let c = t, u = e, d = l, m = T("RouterLink"), g = f;
-			return C(), _("div", ae, [O(o) ? (C(), h(c, {
+			let c = t, l = e, d = u, p = f, g = m;
+			return T(), y("div", Q, [k(o) ? (T(), _(c, {
 				key: 0,
 				compact: ""
-			})) : O(a) === "error" ? (C(), h(u, {
+			})) : k(a) === "error" ? (T(), _(l, {
 				key: 1,
-				message: O(r)("atrium.widget.failed")
-			}, null, 8, ["message"])) : O(s) ? (C(), _("div", oe, [(C(!0), _(p, null, w(O(R), (e) => (C(), h(m, {
+				message: k(r)("atrium.widget.failed")
+			}, null, 8, ["message"])) : k(s) ? (T(), y("div", ae, [(T(!0), y(h, null, E(k(z), (e) => (T(), _(p, {
 				key: e,
 				to: {
 					path: "/showroom/products",
@@ -228,16 +229,16 @@ var W = {
 				"data-testid": "showroom-product-status-count",
 				"data-status": e
 			}, {
-				default: k(() => [b(d, {
-					color: O(z)(e),
+				default: A(() => [S(d, {
+					color: k(B)(e),
 					variant: "subtle",
 					size: "sm"
 				}, {
-					default: k(() => [y(D(O(r)(`showroom.statuses.${e}`)), 1)]),
+					default: A(() => [x(O(k(r)(`showroom.statuses.${e}`)), 1)]),
 					_: 2
-				}, 1032, ["color"]), v("span", se, D(O(s).counts[e] ?? 0), 1)]),
+				}, 1032, ["color"]), b("span", oe, O(k(s).counts[e] ?? 0), 1)]),
 				_: 2
-			}, 1032, ["to", "data-status"]))), 128)), b(m, {
+			}, 1032, ["to", "data-status"]))), 128)), S(p, {
 				to: {
 					path: "/showroom/products",
 					query: { published: "1" }
@@ -246,103 +247,105 @@ var W = {
 				"data-testid": "showroom-product-status-count",
 				"data-status": "published"
 			}, {
-				default: k(() => [b(d, {
+				default: A(() => [S(d, {
 					color: "success",
 					variant: "subtle",
 					size: "sm"
 				}, {
-					default: k(() => [y(D(O(r)("showroom.widgets.live")), 1)]),
+					default: A(() => [x(O(k(r)("showroom.widgets.live")), 1)]),
 					_: 1
-				}), v("span", ce, D(O(s).published), 1)]),
+				}), b("span", se, O(k(s).published), 1)]),
 				_: 1
-			})])) : (C(), _("div", le, [b(g, { class: "h-9 w-24" }), b(g, { class: "h-9 w-24" })]))]);
+			})])) : (T(), y("div", ce, [S(g, { class: "h-9 w-24" }), S(g, { class: "h-9 w-24" })]))]);
 		};
 	}
-}), de = {
+}), ue = {
 	class: "h-full",
 	"data-testid": "showroom-recent-changes"
-}, fe = {
-	key: 0,
-	class: "atrium-empty",
-	"data-testid": "showroom-recent-changes-empty"
-}, pe = {
+}, de = {
 	key: 1,
 	class: "flex flex-col divide-y divide-default"
-}, me = ["data-version"], he = { class: "flex items-center gap-2" }, ge = { class: "font-mono text-muted" }, _e = { class: "text-right text-muted" }, ve = {
+}, fe = ["data-version"], pe = { class: "flex items-center gap-2" }, me = { class: "font-mono text-muted" }, he = { class: "text-right text-muted" }, ge = {
 	key: 3,
 	class: "space-y-2"
-}, ye = /* @__PURE__ */ x({
+}, _e = /* @__PURE__ */ C({
 	__name: "RecentChangesWidget",
 	props: {
 		data: {},
 		settings: {}
 	},
-	setup(n) {
-		let { t: r } = A(), { data: i, status: a, forbidden: o } = B(), s = m(() => i.value?.recent_versions ?? null);
-		function c(e) {
-			return e.subject.key === null ? null : e.subject.type === "product" ? V(e.subject.id) : H(e.subject.key);
+	setup(r) {
+		let { t: i } = j(), { data: a, status: o, forbidden: s } = V(), c = g(() => a.value?.recent_versions ?? null);
+		function l(e) {
+			return e.subject.key === null ? null : e.subject.type === "product" ? H(e.subject.id) : U(e.subject.key);
 		}
-		return (n, i) => {
-			let u = t, d = e, m = T("RouterLink"), x = l, S = f;
-			return C(), _("div", de, [O(o) ? (C(), h(u, {
+		return (r, a) => {
+			let d = t, p = e, g = n, C = f, w = u, D = m;
+			return T(), y("div", ue, [k(s) ? (T(), _(d, {
 				key: 0,
 				compact: ""
-			})) : O(a) === "error" ? (C(), h(d, {
+			})) : k(o) === "error" ? (T(), _(p, {
 				key: 1,
-				message: O(r)("atrium.widget.failed")
-			}, null, 8, ["message"])) : O(s) ? (C(), _(p, { key: 2 }, [O(s).length === 0 ? (C(), _("p", fe, D(O(r)("showroom.widgets.no_changes")), 1)) : (C(), _("ul", pe, [(C(!0), _(p, null, w(O(s), (e) => (C(), _("li", {
+				message: k(i)("atrium.widget.failed")
+			}, null, 8, ["message"])) : k(c) ? (T(), y(h, { key: 2 }, [k(c).length === 0 ? (T(), _(g, {
+				key: 0,
+				compact: "",
+				title: k(i)("showroom.widgets.no_changes"),
+				"data-testid": "showroom-recent-changes-empty"
+			}, null, 8, ["title"])) : (T(), y("ul", de, [(T(!0), y(h, null, E(k(c), (e) => (T(), y("li", {
 				key: `${e.subject.type}-${e.subject.id}-${e.version}`,
 				class: "flex items-center justify-between gap-3 py-2 text-sm",
 				"data-testid": "showroom-recent-change",
 				"data-version": e.version
-			}, [v("span", he, [
-				c(e) ? (C(), h(m, {
+			}, [b("span", pe, [
+				l(e) ? (T(), _(C, {
 					key: 0,
 					class: "font-mono hover:underline",
-					to: c(e)
+					to: l(e)
 				}, {
-					default: k(() => [y(D(e.subject.key), 1)]),
+					default: A(() => [x(O(e.subject.key), 1)]),
 					_: 2
-				}, 1032, ["to"])) : g("", !0),
-				v("span", ge, "v" + D(e.version), 1),
-				b(x, {
+				}, 1032, ["to"])) : v("", !0),
+				b("span", me, "v" + O(e.version), 1),
+				S(w, {
 					color: "neutral",
 					variant: "subtle",
 					size: "sm"
 				}, {
-					default: k(() => [y(D(e.action), 1)]),
+					default: A(() => [x(O(e.action), 1)]),
 					_: 2
 				}, 1024)
-			]), v("span", _e, [e.author ? (C(), _(p, { key: 0 }, [y(D(O(r)("showroom.widgets.by", { author: String(e.author.id) })) + " · ", 1)], 64)) : g("", !0), y(" " + D(O(U)(e.created_at)), 1)])], 8, me))), 128))]))], 64)) : (C(), _("div", ve, [b(S, { class: "h-4 w-2/3" }), b(S, { class: "h-4 w-1/2" })]))]);
+			]), b("span", he, [e.author ? (T(), y(h, { key: 0 }, [x(O(k(i)("showroom.widgets.by", { author: String(e.author.id) })) + " · ", 1)], 64)) : v("", !0), x(" " + O(k(W)(e.created_at)), 1)])], 8, fe))), 128))]))], 64)) : (T(), y("div", ge, [S(D, { class: "h-4 w-2/3" }), S(D, { class: "h-4 w-1/2" })]))]);
 		};
 	}
-}), be = {
+}), ve = {
 	class: "h-full",
 	"data-testid": "showroom-review-queue"
-}, xe = {
-	key: 0,
-	class: "atrium-empty",
-	"data-testid": "showroom-review-queue-empty"
-}, Q = { class: "mb-2 text-sm text-muted" }, Se = { class: "flex flex-col divide-y divide-default" }, Ce = ["data-product"], we = { class: "text-muted" }, Te = {
+}, ye = { class: "mb-2 text-sm text-muted" }, be = { class: "flex flex-col divide-y divide-default" }, xe = ["data-product"], Se = { class: "text-muted" }, Ce = {
 	key: 3,
 	class: "space-y-2"
-}, Ee = /* @__PURE__ */ x({
+}, we = /* @__PURE__ */ C({
 	__name: "ReviewQueueWidget",
 	props: {
 		data: {},
 		settings: {}
 	},
-	setup(n) {
-		let { t: r } = A(), { data: i, status: a, forbidden: o } = B(), s = m(() => i.value?.review_queue ?? null);
-		return (n, i) => {
-			let c = t, l = e, u = T("RouterLink"), d = f;
-			return C(), _("div", be, [O(o) ? (C(), h(c, {
+	setup(r) {
+		let { t: i } = j(), { data: a, status: o, forbidden: s } = V(), c = g(() => a.value?.review_queue ?? null);
+		return (r, a) => {
+			let l = t, u = e, d = n, p = f, g = m;
+			return T(), y("div", ve, [k(s) ? (T(), _(l, {
 				key: 0,
 				compact: ""
-			})) : O(a) === "error" ? (C(), h(l, {
+			})) : k(o) === "error" ? (T(), _(u, {
 				key: 1,
-				message: O(r)("atrium.widget.failed")
-			}, null, 8, ["message"])) : O(s) ? (C(), _(p, { key: 2 }, [O(s).products.length === 0 ? (C(), _("p", xe, D(O(r)("showroom.widgets.nothing_in_review")), 1)) : (C(), _(p, { key: 1 }, [v("p", Q, [b(u, {
+				message: k(i)("atrium.widget.failed")
+			}, null, 8, ["message"])) : k(c) ? (T(), y(h, { key: 2 }, [k(c).products.length === 0 ? (T(), _(d, {
+				key: 0,
+				compact: "",
+				title: k(i)("showroom.widgets.nothing_in_review"),
+				"data-testid": "showroom-review-queue-empty"
+			}, null, 8, ["title"])) : (T(), y(h, { key: 1 }, [b("p", ye, [S(p, {
 				class: "hover:underline",
 				to: {
 					path: "/showroom/products",
@@ -350,23 +353,23 @@ var W = {
 				},
 				"data-testid": "showroom-review-queue-total"
 			}, {
-				default: k(() => [y(D(O(r)("showroom.widgets.waiting_review", { count: O(s).total })), 1)]),
+				default: A(() => [x(O(k(i)("showroom.widgets.waiting_review", { count: k(c).total })), 1)]),
 				_: 1
-			})]), v("ul", Se, [(C(!0), _(p, null, w(O(s).products, (e) => (C(), _("li", {
+			})]), b("ul", be, [(T(!0), y(h, null, E(k(c).products, (e) => (T(), y("li", {
 				key: e.id,
 				class: "flex items-center justify-between gap-3 py-2 text-sm",
 				"data-testid": "showroom-review-queue-product",
 				"data-product": e.identifier
-			}, [b(u, {
+			}, [S(p, {
 				class: "font-mono hover:underline",
-				to: O(V)(e.id)
+				to: k(H)(e.id)
 			}, {
-				default: k(() => [y(D(e.identifier), 1)]),
+				default: A(() => [x(O(e.identifier), 1)]),
 				_: 2
-			}, 1032, ["to"]), v("span", we, D(O(U)(e.updated_at)), 1)], 8, Ce))), 128))])], 64))], 64)) : (C(), _("div", Te, [b(d, { class: "h-4 w-1/3" }), b(d, { class: "h-4 w-2/3" })]))]);
+			}, 1032, ["to"]), b("span", Se, O(k(W)(e.updated_at)), 1)], 8, xe))), 128))])], 64))], 64)) : (T(), y("div", Ce, [S(g, { class: "h-4 w-1/3" }), S(g, { class: "h-4 w-2/3" })]))]);
 		};
 	}
-}), De = { showroom: {
+}), Te = { showroom: {
 	assets: {
 		title: "Assets",
 		grid: "Grid",
@@ -479,7 +482,7 @@ var W = {
 			submit: "Start export"
 		}
 	}
-} }, Oe = { showroom: { catalog: {
+} }, Ee = { showroom: { catalog: {
 	none: "—",
 	yes: "Yes",
 	no: "No",
@@ -656,7 +659,7 @@ var W = {
 		add: "Add",
 		remove: "Remove"
 	}
-} } }, ke = { showroom: { structure: {
+} } }, De = { showroom: { structure: {
 	code_hint: "Lowercase letters, digits and underscores. Cannot be changed later.",
 	details: "Details",
 	attributes: {
@@ -744,7 +747,7 @@ var W = {
 		delete_note: "A flag still assigned to a product or owner cannot be deleted; remove it from them first.",
 		confirm_delete: "Delete this flag?"
 	}
-} } }, Ae = { showroom: {
+} } }, Oe = { showroom: {
 	statuses: {
 		draft: "Draft",
 		in_review: "In review",
@@ -781,141 +784,141 @@ var W = {
 		attributes: "Attributes",
 		attribute_groups: "Attribute groups"
 	} }
-} }, je = [
+} }, ke = [
 	{
 		path: "/showroom/assets/:asset",
 		name: "showroom-assets-asset",
-		component: () => import("./chunks/_asset_-DR6XVmhe.js")
+		component: () => import("./chunks/_asset_-DQj5qWlg.js")
 	},
 	{
 		path: "/showroom/assets",
 		name: "showroom-assets",
-		component: () => import("./chunks/assets-uhYkcx8t.js")
+		component: () => import("./chunks/assets-D-KxVHIq.js")
 	},
 	{
 		path: "/showroom/association-types",
 		name: "showroom-association-types",
-		component: () => import("./chunks/association-types-DTPIV6QU.js")
+		component: () => import("./chunks/association-types-B9aBHkg3.js")
 	},
 	{
 		path: "/showroom/attribute-groups/:group",
 		name: "showroom-attribute-groups-group",
-		component: () => import("./chunks/_group_-SgppfZbC.js")
+		component: () => import("./chunks/_group_-uE-Jb_JA.js")
 	},
 	{
 		path: "/showroom/attribute-groups",
 		name: "showroom-attribute-groups",
-		component: () => import("./chunks/attribute-groups-DUjLdRxf.js")
+		component: () => import("./chunks/attribute-groups-Dl9gHIgg.js")
 	},
 	{
 		path: "/showroom/attributes/:attribute",
 		name: "showroom-attributes-attribute",
-		component: () => import("./chunks/_attribute_--TXN91U1.js")
+		component: () => import("./chunks/_attribute_-CTHogZaI.js")
 	},
 	{
 		path: "/showroom/attributes/create",
 		name: "showroom-attributes-create",
-		component: () => import("./chunks/create-CmQY3EeL.js")
+		component: () => import("./chunks/create-DWaPf-ta.js")
 	},
 	{
 		path: "/showroom/attributes",
 		name: "showroom-attributes",
-		component: () => import("./chunks/attributes-DWBRCaOt.js")
+		component: () => import("./chunks/attributes-BWp1mhNs.js")
 	},
 	{
 		path: "/showroom/categories/:category",
 		name: "showroom-categories-category",
-		component: () => import("./chunks/_category_-C37u8ksX.js")
+		component: () => import("./chunks/_category_-Blj6ppXq.js")
 	},
 	{
 		path: "/showroom/categories",
 		name: "showroom-categories",
-		component: () => import("./chunks/categories-ByEVStEG.js")
+		component: () => import("./chunks/categories-DTd6mSxT.js")
 	},
 	{
 		path: "/showroom/channels/:channel",
 		name: "showroom-channels-channel",
-		component: () => import("./chunks/_channel_-DJ3yfAz7.js")
+		component: () => import("./chunks/_channel_-DkRLpYKz.js")
 	},
 	{
 		path: "/showroom/channels",
 		name: "showroom-channels",
-		component: () => import("./chunks/channels-D2n0YhuZ.js")
+		component: () => import("./chunks/channels-_7TW7MpK.js")
 	},
 	{
 		path: "/showroom/families/:family",
 		name: "showroom-families-family",
-		component: () => import("./chunks/_family_-B9IU_OP2.js")
+		component: () => import("./chunks/_family_-BrZ0sTN-.js")
 	},
 	{
 		path: "/showroom/families",
 		name: "showroom-families",
-		component: () => import("./chunks/families-DYjHSM1F.js")
+		component: () => import("./chunks/families-UyQz5GNb.js")
 	},
 	{
 		path: "/showroom/family-variants/:familyVariant",
 		name: "showroom-family-variants-familyVariant",
-		component: () => import("./chunks/_familyVariant_-4vrTesnV.js")
+		component: () => import("./chunks/_familyVariant_-K40r0HzU.js")
 	},
 	{
 		path: "/showroom/flags/:flag",
 		name: "showroom-flags-flag",
-		component: () => import("./chunks/_flag_-BW9e6wB8.js")
+		component: () => import("./chunks/_flag_-DWple0yL.js")
 	},
 	{
 		path: "/showroom/flags",
 		name: "showroom-flags",
-		component: () => import("./chunks/flags-lpke_po8.js")
+		component: () => import("./chunks/flags-D9AaCe5M.js")
 	},
 	{
 		path: "/showroom/owner-types/:ownerType",
 		name: "showroom-owner-types-ownerType",
-		component: () => import("./chunks/_ownerType_-DD1MO30y.js")
+		component: () => import("./chunks/_ownerType_-kZEjEvdt.js")
 	},
 	{
 		path: "/showroom/owner-types",
 		name: "showroom-owner-types",
-		component: () => import("./chunks/owner-types-CCEaR62f.js")
+		component: () => import("./chunks/owner-types-BZ7H1-da.js")
 	},
 	{
 		path: "/showroom/owners/:owner",
 		name: "showroom-owners-owner",
-		component: () => import("./chunks/_owner_-QLqC4Y3m.js")
+		component: () => import("./chunks/_owner_-BL8y_Kyz.js")
 	},
 	{
 		path: "/showroom/owners",
 		name: "showroom-owners",
-		component: () => import("./chunks/owners-CMRvxRVE.js")
+		component: () => import("./chunks/owners-BPL6y4aU.js")
 	},
 	{
 		path: "/showroom/product-models/:productModel",
 		name: "showroom-product-models-productModel",
-		component: () => import("./chunks/_productModel_-RhzqWtAE.js")
+		component: () => import("./chunks/_productModel_-KC3FUIrh.js")
 	},
 	{
 		path: "/showroom/product-models",
 		name: "showroom-product-models",
-		component: () => import("./chunks/product-models-COK93XqA.js")
+		component: () => import("./chunks/product-models-InHM-z7L.js")
 	},
 	{
 		path: "/showroom/products/:product",
 		name: "showroom-products-product",
-		component: () => import("./chunks/_product_-DbnHx7hU.js")
+		component: () => import("./chunks/_product_-DjgjMUWm.js")
 	},
 	{
 		path: "/showroom/products/create",
 		name: "showroom-products-create",
-		component: () => import("./chunks/create-B5c-zBKN.js")
+		component: () => import("./chunks/create-BNvoJ6qj.js")
 	},
 	{
 		path: "/showroom/products",
 		name: "showroom-products",
-		component: () => import("./chunks/products-YPz21AbX.js")
+		component: () => import("./chunks/products-BqYi7gfC.js")
 	},
 	{
 		path: "/showroom/transfers",
 		name: "showroom-transfers",
-		component: () => import("./chunks/transfers-BCKlDr0I.js")
+		component: () => import("./chunks/transfers-yVk8pEB3.js")
 	}
 ], $ = {
 	"showroom.products": "showroom-products",
@@ -945,18 +948,18 @@ var W = {
 	"showroom.assets": "showroom-assets",
 	"showroom.asset": "showroom-assets-asset",
 	"showroom.transfers": "showroom-transfers"
-}, Me = r({
+}, Ae = i({
 	key: "showroom",
-	routes: je,
+	routes: ke,
 	screens: $,
 	widgets: {
-		"showroom.product-status": ue,
+		"showroom.product-status": le,
 		"showroom.completeness": ie,
-		"showroom.review-queue": Ee,
-		"showroom.recent-changes": ye
+		"showroom.review-queue": we,
+		"showroom.recent-changes": _e
 	},
-	settingsPanels: { showroom: L },
-	searchSources: { showroom: M },
-	messages: { en: a(De, Oe, ke, Ae) }
+	settingsPanels: { showroom: R },
+	searchSources: { showroom: ee },
+	messages: { en: o(Te, Ee, De, Oe) }
 });
-export { Me as default, $ as screens };
+export { Ae as default, $ as screens };

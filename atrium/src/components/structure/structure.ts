@@ -85,7 +85,7 @@ export type StructureAssociationType = ShowroomAssociationType & { associations_
 export interface ChannelForm {
   locales: string[]
   currencies: string
-  category_tree: string
+  category_tree: string | null
 }
 
 /** The `ChannelForm` of `channel`, or a blank one. */

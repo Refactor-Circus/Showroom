@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { TableColumn } from '@nuxt/ui/components/Table.vue'
 import {
   availableTransitions,
   formatDate,
@@ -7,6 +8,7 @@ import {
   TRANSITIONS,
   useCatalogAction,
   useShowroom,
+  type CompletenessScore,
   type ProductTransition,
   type ShowroomProduct,
   type ShowroomVersion
@@ -32,6 +34,13 @@ const comment = ref('')
 
 const transitions = computed(() => availableTransitions(props.product.status, props.product.published_version))
 const completeness = computed(() => props.product.completeness ?? [])
+
+const completenessColumns = computed<TableColumn<CompletenessScore>[]>(() => [
+  { accessorKey: 'scope', header: t('showroom.catalog.fields.channel') },
+  { accessorKey: 'locale', header: t('showroom.catalog.fields.locale') },
+  { accessorKey: 'ratio', header: '%', meta: { class: { th: 'text-right', td: 'text-right' } } },
+  { accessorKey: 'missing_attributes', header: t('showroom.catalog.workflow.missing') }
+])
 
 function iconOf(transition: ProductTransition): string {
   return TRANSITIONS.find(entry => entry.name === transition)?.icon ?? 'i-lucide-arrow-right'
@@ -114,24 +123,14 @@ async function revert(version: ShowroomVersion): Promise<void> {
         <h2 class="font-semibold">{{ t('showroom.catalog.workflow.completeness') }}</h2>
       </template>
       <p v-if="completeness.length === 0" class="text-sm text-muted">{{ t('showroom.catalog.workflow.no_completeness') }}</p>
-      <table v-else class="w-full text-left text-sm">
-        <thead class="text-muted">
-          <tr>
-            <th class="py-1 pr-3 font-medium">{{ t('showroom.catalog.fields.channel') }}</th>
-            <th class="py-1 pr-3 font-medium">{{ t('showroom.catalog.fields.locale') }}</th>
-            <th class="py-1 pr-3 font-medium">%</th>
-            <th class="py-1 font-medium">{{ t('showroom.catalog.workflow.missing') }}</th>
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-default">
-          <tr v-for="score in completeness" :key="`${score.scope}/${score.locale}`" :data-completeness="`${score.scope}/${score.locale}`">
-            <td class="py-1 pr-3 font-mono text-xs">{{ score.scope }}</td>
-            <td class="py-1 pr-3 font-mono text-xs">{{ score.locale }}</td>
-            <td class="py-1 pr-3"><UBadge :color="ratioColor(score.ratio)" variant="subtle">{{ score.ratio }}%</UBadge></td>
-            <td class="py-1 font-mono text-xs">{{ score.missing_attributes.join(', ') || t('showroom.catalog.none') }}</td>
-          </tr>
-        </tbody>
-      </table>
+      <UTable v-else :data="completeness" :columns="completenessColumns">
+        <template #scope-cell="{ row: { original: score } }">
+          <span class="font-mono text-xs" :data-testid="`showroom-completeness-${score.scope}-${score.locale}`" :data-completeness="`${score.scope}/${score.locale}`">{{ score.scope }}</span>
+        </template>
+        <template #locale-cell="{ row: { original: score } }"><span class="font-mono text-xs">{{ score.locale }}</span></template>
+        <template #ratio-cell="{ row: { original: score } }"><UBadge :color="ratioColor(score.ratio)" variant="subtle">{{ score.ratio }}%</UBadge></template>
+        <template #missing_attributes-cell="{ row: { original: score } }"><span class="font-mono text-xs">{{ score.missing_attributes.join(', ') || t('showroom.catalog.none') }}</span></template>
+      </UTable>
     </UCard>
 
     <UCard data-testid="showroom-history">

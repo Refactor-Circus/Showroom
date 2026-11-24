@@ -5,6 +5,7 @@ import { mockPackageApi, reply, resetPackageApis, type PackageRoutes } from '@re
 import { cursorPage, invalid, mountShowroomPage, ok, resetShowroomPages, screensApi, showroomCalls } from '../catalog/support'
 import { hero, manual, pickFile } from './support'
 import { clearAtriumData, mockAtriumApi, useRouter } from '@refactor-circus/atrium/testing'
+import { pick, row } from '../ui'
 
 /*
  * `showroom.assets` (AC 54, 71): every asset (`assets.index`), a cursor page
@@ -74,11 +75,11 @@ describe('showroom.assets', () => {
     await settle()
 
     expect(useRouter().currentRoute.value.query).toEqual({ view: 'list' })
-    const row = wrapper.find('[data-testid="showroom-asset-row-hero"]')
-    expect(row.find('a').attributes('href')).toBe('/showroom/assets/hero')
-    expect(row.text()).toContain('Hero shot')
-    expect(row.text()).toContain('image/jpeg')
-    expect(row.text()).toContain('20.0 KB')
+    const heroRow = row(wrapper, 'showroom-asset-row-hero')
+    expect(heroRow.find('a').attributes('href')).toBe('/showroom/assets/hero')
+    expect(heroRow.text()).toContain('Hero shot')
+    expect(heroRow.text()).toContain('image/jpeg')
+    expect(heroRow.text()).toContain('20.0 KB')
     expect(wrapper.find('[data-testid="showroom-asset-tile-hero"]').exists()).toBe(false)
     expect(showroomCalls('GET', '/assets')).toHaveLength(1)
   })
@@ -88,7 +89,7 @@ describe('showroom.assets', () => {
 
     const wrapper = await mountShowroomPage(Page, PATH)
     await wrapper.find('[data-testid="showroom-assets-search"]').setValue('hero')
-    await wrapper.find('[data-testid="showroom-assets-type"]').setValue('image/*')
+    await pick(wrapper, 'showroom-assets-type', 'image/*')
     await wrapper.find('[data-testid="showroom-assets-product"]').setValue('TEE-1')
     await wrapper.find('[data-testid="showroom-assets-filters"]').trigger('submit')
     await settle()

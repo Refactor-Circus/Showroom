@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { TableColumn } from '@nuxt/ui/components/Table.vue'
 import CatalogActionError from '../../components/catalog/CatalogActionError.vue'
 import CatalogPager from '../../components/catalog/CatalogPager.vue'
 import CatalogState from '../../components/catalog/CatalogState.vue'
@@ -38,6 +39,13 @@ const { client, data, pending, failed, status, reload } = useCatalogLoad(async s
 const flags = computed(() => data.value?.data ?? [])
 const draft = reactive({ code: '', label: '' })
 
+const columns = computed<TableColumn<ShowroomFlag>[]>(() => [
+  { accessorKey: 'code', header: t('showroom.catalog.fields.code') },
+  { id: 'label', header: t('showroom.catalog.fields.label') },
+  { accessorKey: 'applies_to', header: t('showroom.structure.flags.applies_to') },
+  { accessorKey: 'sort_order', header: t('showroom.catalog.fields.sort_order'), meta: { class: { th: 'text-right', td: 'text-right' } } }
+])
+
 function blankFields(): FlagForm {
   return { applies_to: [...FLAG_SUBJECTS], sort_order: '' }
 }
@@ -63,10 +71,7 @@ async function create(): Promise<void> {
 
 <template>
   <div class="space-y-4" data-testid="showroom-flags">
-    <div>
-      <h1 class="text-xl font-semibold">{{ t('showroom.structure.flags.title') }}</h1>
-      <p class="text-sm text-muted">{{ t('showroom.structure.flags.description') }}</p>
-    </div>
+    <AtriumPageHeader :title="t('showroom.structure.flags.title')" :description="t('showroom.structure.flags.description')" />
 
     <AtriumIntegrationScreen screen-key="showroom.flags">
       <div class="space-y-4">
@@ -93,31 +98,23 @@ async function create(): Promise<void> {
 
         <CatalogState :ready="!pending && data !== null" :failed="failed" :status="status">
           <div class="space-y-4">
-            <p v-if="flags.length === 0" class="atrium-empty" data-testid="showroom-flags-empty">{{ t('showroom.structure.flags.empty') }}</p>
-            <table v-else class="w-full text-left text-sm" data-testid="showroom-flags-table">
-              <thead class="text-muted">
-                <tr>
-                  <th class="py-2 pr-3 font-medium">{{ t('showroom.catalog.fields.code') }}</th>
-                  <th class="py-2 pr-3 font-medium">{{ t('showroom.catalog.fields.label') }}</th>
-                  <th class="py-2 pr-3 font-medium">{{ t('showroom.structure.flags.applies_to') }}</th>
-                  <th class="py-2 font-medium">{{ t('showroom.catalog.fields.sort_order') }}</th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-default">
-                <tr v-for="flag in flags" :key="flag.code" :data-testid="`showroom-flag-row-${flag.code}`">
-                  <td class="py-2 pr-3">
-                    <RouterLink :to="flagPath(flag.code)" class="font-mono font-medium hover:underline">{{ flag.code }}</RouterLink>
-                  </td>
-                  <td class="py-2 pr-3">{{ labelOf(flag.labels, locale, flag.code) }}</td>
-                  <td class="py-2 pr-3">
-                    <span class="flex flex-wrap gap-1">
-                      <UBadge v-for="subject in flag.applies_to" :key="subject" color="neutral" variant="outline">{{ t(`showroom.structure.flags.subject_${subject}`) }}</UBadge>
-                    </span>
-                  </td>
-                  <td class="py-2 tabular-nums">{{ flag.sort_order }}</td>
-                </tr>
-              </tbody>
-            </table>
+            <UTable :data="flags" :columns="columns" data-testid="showroom-flags-table">
+              <template #empty>
+                <AtriumState compact :title="t('showroom.structure.flags.empty')" data-testid="showroom-flags-empty" />
+              </template>
+              <template #code-cell="{ row: { original: flag } }">
+                <span :data-testid="`showroom-flag-row-${flag.code}`">
+                  <ULink :to="flagPath(flag.code)" class="font-mono font-medium hover:underline">{{ flag.code }}</ULink>
+                </span>
+              </template>
+              <template #label-cell="{ row: { original: flag } }">{{ labelOf(flag.labels, locale, flag.code) }}</template>
+              <template #applies_to-cell="{ row: { original: flag } }">
+                <span class="flex flex-wrap gap-1">
+                  <UBadge v-for="subject in flag.applies_to" :key="subject" color="neutral" variant="outline">{{ t(`showroom.structure.flags.subject_${subject}`) }}</UBadge>
+                </span>
+              </template>
+              <template #sort_order-cell="{ row: { original: flag } }"><span class="tabular-nums">{{ flag.sort_order }}</span></template>
+            </UTable>
 
             <CatalogPager :next="data?.meta?.next_cursor ?? null" :prev="data?.meta?.prev_cursor ?? null" testid="showroom-flags" />
           </div>

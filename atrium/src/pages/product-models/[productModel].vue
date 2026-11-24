@@ -196,19 +196,19 @@ async function createChild(): Promise<void> {
     <AtriumIntegrationScreen screen-key="showroom.product-model" :record="code">
       <CatalogState :ready="!pending && model !== null" :failed="failed" :status="status">
         <div v-if="model" class="space-y-5">
-          <div class="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <h1 class="font-mono text-xl font-semibold" data-testid="showroom-product-model-title">{{ model.code }}</h1>
-              <p class="text-sm text-muted">
-                <RouterLink v-if="model.family_variant" :to="familyVariantPath(model.family_variant)" class="font-mono hover:underline">{{ model.family_variant }}</RouterLink>
-                · {{ t('showroom.catalog.product_models.level', { level: model.level }) }}
-              </p>
-            </div>
-            <div class="flex flex-wrap items-center gap-2">
+          <UPageHeader>
+            <template #title>
+              <span class="font-mono" data-testid="showroom-product-model-title">{{ model.code }}</span>
+            </template>
+            <template #description>
+              <ULink v-if="model.family_variant" :to="familyVariantPath(model.family_variant)" class="font-mono hover:underline">{{ model.family_variant }}</ULink>
+              · {{ t('showroom.catalog.product_models.level', { level: model.level }) }}
+            </template>
+            <template #links>
               <UButton v-if="model.parent" :to="productModelPath(model.parent)" variant="outline" icon="i-lucide-arrow-left" data-testid="showroom-product-model-parent">{{ model.parent }}</UButton>
               <UButton color="error" variant="outline" icon="i-lucide-trash-2" :loading="action.busy.value" data-testid="showroom-product-model-delete" @click="destroy">{{ t('showroom.catalog.delete') }}</UButton>
-            </div>
-          </div>
+            </template>
+          </UPageHeader>
 
           <SlotPicker :locales="slots.locales.value" :channels="slots.channels.value" :editing="slots.slot.value" @pick="slots.pick" />
 
@@ -235,7 +235,7 @@ async function createChild(): Promise<void> {
                 <p v-if="inheritedCategories.length > 0" class="text-xs" data-testid="showroom-inherited-categories">
                   {{ t('showroom.catalog.categories.inherited') }}:
                   <template v-for="(category, index) in inheritedCategories" :key="category">
-                    <RouterLink :to="categoryPath(category)" class="font-mono hover:underline">{{ category }}</RouterLink><span v-if="index < inheritedCategories.length - 1">, </span>
+                    <ULink :to="categoryPath(category)" class="font-mono hover:underline">{{ category }}</ULink><span v-if="index < inheritedCategories.length - 1">, </span>
                   </template>
                 </p>
               </div>
@@ -274,12 +274,12 @@ async function createChild(): Promise<void> {
             <div class="space-y-4">
               <ul v-if="holdsProducts && (model.products ?? []).length > 0" class="flex flex-wrap gap-2">
                 <li v-for="identifier in model.products ?? []" :key="identifier">
-                  <RouterLink :to="productSearchPath(identifier)" class="font-mono text-sm hover:underline" :data-testid="`showroom-variant-product-${identifier}`">{{ identifier }}</RouterLink>
+                  <ULink :to="productSearchPath(identifier)" class="font-mono text-sm hover:underline" :data-testid="`showroom-variant-product-${identifier}`">{{ identifier }}</ULink>
                 </li>
               </ul>
               <ul v-if="!holdsProducts && (model.children ?? []).length > 0" class="flex flex-wrap gap-2">
                 <li v-for="childCode in model.children ?? []" :key="childCode">
-                  <RouterLink :to="productModelPath(childCode)" class="font-mono text-sm hover:underline" :data-testid="`showroom-sub-model-${childCode}`">{{ childCode }}</RouterLink>
+                  <ULink :to="productModelPath(childCode)" class="font-mono text-sm hover:underline" :data-testid="`showroom-sub-model-${childCode}`">{{ childCode }}</ULink>
                 </li>
               </ul>
 

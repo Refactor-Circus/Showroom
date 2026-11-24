@@ -26,6 +26,7 @@
 //   (`showroom.lookup.products`), so they link to the product list searched for it.
 // - The flash messages after each action ("Product updated" and the like). The
 //   page reloads instead.
+import type { TableColumn } from '@nuxt/ui/components/Table.vue'
 import CatalogPager from '../../components/catalog/CatalogPager.vue'
 import CatalogState from '../../components/catalog/CatalogState.vue'
 import {
@@ -84,7 +85,7 @@ const { data, pending, failed, status } = useCatalogLoad(async showroom =>
 const products = computed(() => data.value?.data ?? [])
 const paging = computed(() => ({ current: data.value?.meta?.current_page ?? 1, last: data.value?.meta?.last_page ?? 1 }))
 
-const filters = reactive<Record<(typeof FILTERS)[number], string>>({ search: '', family: '', category: '', owner: '', status: '', enabled: '' })
+const filters = reactive<Record<(typeof FILTERS)[number], string | null>>({ search: '', family: '', category: '', owner: '', status: '', enabled: '' })
 
 watch(() => FILTERS.map(filter => route.query[filter]), () => {
   for (const filter of FILTERS) {
@@ -106,6 +107,32 @@ function familyLabel(code: string | null | undefined): string {
   return family ? labelOf(family.labels, locale.value, family.code) : code || t('showroom.catalog.none')
 }
 
+const familyItems = computed(() => [
+  { label: t('showroom.catalog.filters.all_families'), value: null },
+  ...families.value.map(family => ({ label: labelOf(family.labels, locale.value, family.code), value: family.code }))
+])
+
+const statusItems = computed(() => [
+  { label: t('showroom.catalog.filters.all_statuses'), value: null },
+  ...PRODUCT_STATUSES.map(choice => ({ label: t(`showroom.statuses.${choice}`), value: choice }))
+])
+
+const enabledItems = computed(() => [
+  { label: t('showroom.catalog.filters.all_statuses'), value: null },
+  { label: t('showroom.catalog.enabled'), value: '1' },
+  { label: t('showroom.catalog.disabled'), value: '0' }
+])
+
+const columns = computed<TableColumn<ShowroomProduct>[]>(() => [
+  { accessorKey: 'identifier', header: t('showroom.catalog.fields.identifier') },
+  { id: 'label', header: t('showroom.catalog.fields.label') },
+  { accessorKey: 'family', header: t('showroom.catalog.fields.family') },
+  { accessorKey: 'parent', header: t('showroom.catalog.fields.parent') },
+  { accessorKey: 'enabled', header: t('showroom.catalog.fields.enabled') },
+  { accessorKey: 'status', header: t('showroom.catalog.fields.workflow') },
+  { accessorKey: 'updated_at', header: t('showroom.catalog.fields.updated') }
+])
+
 function filter(): void {
   const next: Record<string, string | undefined> = {}
 
@@ -123,26 +150,20 @@ function clear(): void {
 
 <template>
   <div class="space-y-4" data-testid="showroom-products">
-    <div class="flex flex-wrap items-center justify-between gap-3">
-      <h1 class="text-xl font-semibold">{{ t('showroom.catalog.products.title') }}</h1>
-      <div class="flex gap-2">
-        <UButton to="/showroom/flags" variant="outline" icon="i-lucide-flag" data-testid="showroom-flag-definitions">{{ t('showroom.catalog.products.flag_definitions') }}</UButton>
-        <UButton to="/showroom/products/create" icon="i-lucide-plus" data-testid="showroom-products-new">{{ t('showroom.catalog.products.new') }}</UButton>
-      </div>
-    </div>
+    <AtriumPageHeader :title="t('showroom.catalog.products.title')">
+      <UButton to="/showroom/flags" variant="outline" icon="i-lucide-flag" data-testid="showroom-flag-definitions">{{ t('showroom.catalog.products.flag_definitions') }}</UButton>
+      <UButton to="/showroom/products/create" icon="i-lucide-plus" data-testid="showroom-products-new">{{ t('showroom.catalog.products.new') }}</UButton>
+    </AtriumPageHeader>
 
     <AtriumIntegrationScreen screen-key="showroom.products">
       <div class="space-y-4">
         <UCard>
-          <form class="atrium-querybar" data-testid="showroom-products-filters" @submit.prevent="filter">
+          <form class="flex flex-wrap items-end gap-3" data-testid="showroom-products-filters" @submit.prevent="filter">
             <UFormField :label="t('showroom.catalog.filters.search')">
               <UInput v-model="filters.search" name="search" class="w-64" data-testid="showroom-products-search" />
             </UFormField>
             <UFormField :label="t('showroom.catalog.fields.family')">
-              <select v-model="filters.family" class="w-48 rounded-md border border-default bg-default px-2.5 py-1.5 text-sm" data-testid="showroom-products-family">
-                <option value="">{{ t('showroom.catalog.filters.all_families') }}</option>
-                <option v-for="family in families" :key="family.code" :value="family.code">{{ labelOf(family.labels, locale, family.code) }}</option>
-              </select>
+              <USelect v-model="filters.family" :items="familyItems" :placeholder="t('showroom.catalog.filters.all_families')" class="w-48" data-testid="showroom-products-family" />
             </UFormField>
             <UFormField :label="t('showroom.catalog.fields.category')">
               <UInput v-model="filters.category" name="category" class="w-44" data-testid="showroom-products-category" />
@@ -151,17 +172,10 @@ function clear(): void {
               <UInput v-model="filters.owner" name="owner" class="w-44" data-testid="showroom-products-owner" />
             </UFormField>
             <UFormField :label="t('showroom.catalog.fields.workflow')">
-              <select v-model="filters.status" class="w-40 rounded-md border border-default bg-default px-2.5 py-1.5 text-sm" data-testid="showroom-products-status">
-                <option value="">{{ t('showroom.catalog.filters.all_statuses') }}</option>
-                <option v-for="choice in PRODUCT_STATUSES" :key="choice" :value="choice">{{ t(`showroom.statuses.${choice}`) }}</option>
-              </select>
+              <USelect v-model="filters.status" :items="statusItems" :placeholder="t('showroom.catalog.filters.all_statuses')" class="w-40" data-testid="showroom-products-status" />
             </UFormField>
             <UFormField :label="t('showroom.catalog.fields.enabled')">
-              <select v-model="filters.enabled" class="w-40 rounded-md border border-default bg-default px-2.5 py-1.5 text-sm" data-testid="showroom-products-enabled">
-                <option value="">{{ t('showroom.catalog.filters.all_statuses') }}</option>
-                <option value="1">{{ t('showroom.catalog.enabled') }}</option>
-                <option value="0">{{ t('showroom.catalog.disabled') }}</option>
-              </select>
+              <USelect v-model="filters.enabled" :items="enabledItems" :placeholder="t('showroom.catalog.filters.all_statuses')" class="w-40" data-testid="showroom-products-enabled" />
             </UFormField>
             <UButton type="submit" icon="i-lucide-filter" data-testid="showroom-products-filter">{{ t('showroom.catalog.filters.filter') }}</UButton>
             <UButton variant="ghost" icon="i-lucide-x" data-testid="showroom-products-clear" @click="clear">{{ t('showroom.catalog.filters.clear') }}</UButton>
@@ -170,45 +184,34 @@ function clear(): void {
 
         <CatalogState :ready="!pending && data !== null" :failed="failed" :status="status">
           <div class="space-y-4">
-            <p v-if="products.length === 0" class="atrium-empty" data-testid="showroom-products-empty">{{ t('showroom.catalog.products.empty') }}</p>
-            <table v-else class="w-full text-left text-sm" data-testid="showroom-products-table">
-              <thead class="text-muted">
-                <tr>
-                  <th class="py-2 pr-3 font-medium">{{ t('showroom.catalog.fields.identifier') }}</th>
-                  <th class="py-2 pr-3 font-medium">{{ t('showroom.catalog.fields.label') }}</th>
-                  <th class="py-2 pr-3 font-medium">{{ t('showroom.catalog.fields.family') }}</th>
-                  <th class="py-2 pr-3 font-medium">{{ t('showroom.catalog.fields.parent') }}</th>
-                  <th class="py-2 pr-3 font-medium">{{ t('showroom.catalog.fields.enabled') }}</th>
-                  <th class="py-2 pr-3 font-medium">{{ t('showroom.catalog.fields.workflow') }}</th>
-                  <th class="py-2 font-medium">{{ t('showroom.catalog.fields.updated') }}</th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-default">
-                <tr v-for="product in products" :key="product.id" :data-testid="`showroom-product-row-${product.id}`">
-                  <td class="py-2 pr-3">
-                    <RouterLink :to="productPath(product.id)" class="font-mono font-medium hover:underline">{{ product.identifier }}</RouterLink>
-                  </td>
-                  <td class="py-2 pr-3">{{ labelOfProduct(product) }}</td>
-                  <td class="py-2 pr-3">{{ familyLabel(product.family) }}</td>
-                  <td class="py-2 pr-3 font-mono text-xs">
-                    <RouterLink v-if="product.parent" :to="productModelPath(product.parent)" class="hover:underline">{{ product.parent }}</RouterLink>
-                    <span v-else>{{ t('showroom.catalog.none') }}</span>
-                  </td>
-                  <td class="py-2 pr-3">
-                    <UBadge :color="product.enabled ? 'success' : 'neutral'" variant="subtle" :data-status="product.enabled ? 'enabled' : 'disabled'">
-                      {{ product.enabled ? t('showroom.catalog.enabled') : t('showroom.catalog.disabled') }}
-                    </UBadge>
-                  </td>
-                  <td class="py-2 pr-3">
-                    <span class="flex items-center gap-2">
-                      <UBadge :color="statusColor(product.status)" variant="subtle" :data-status="product.status">{{ t(`showroom.statuses.${product.status}`) }}</UBadge>
-                      <UBadge v-if="product.published_version" color="neutral" variant="outline">v{{ product.published_version }}</UBadge>
-                    </span>
-                  </td>
-                  <td class="py-2">{{ formatDate(product.updated_at) ?? t('showroom.catalog.none') }}</td>
-                </tr>
-              </tbody>
-            </table>
+            <UTable :data="products" :columns="columns" data-testid="showroom-products-table">
+              <template #empty>
+                <AtriumState compact :title="t('showroom.catalog.products.empty')" data-testid="showroom-products-empty" />
+              </template>
+              <template #identifier-cell="{ row: { original: product } }">
+                <span :data-testid="`showroom-product-row-${product.id}`">
+                  <ULink :to="productPath(product.id)" class="font-mono font-medium hover:underline">{{ product.identifier }}</ULink>
+                </span>
+              </template>
+              <template #label-cell="{ row: { original: product } }">{{ labelOfProduct(product) }}</template>
+              <template #family-cell="{ row: { original: product } }">{{ familyLabel(product.family) }}</template>
+              <template #parent-cell="{ row: { original: product } }">
+                <ULink v-if="product.parent" :to="productModelPath(product.parent)" class="font-mono text-xs hover:underline">{{ product.parent }}</ULink>
+                <span v-else>{{ t('showroom.catalog.none') }}</span>
+              </template>
+              <template #enabled-cell="{ row: { original: product } }">
+                <UBadge :color="product.enabled ? 'success' : 'neutral'" variant="subtle" :data-status="product.enabled ? 'enabled' : 'disabled'">
+                  {{ product.enabled ? t('showroom.catalog.enabled') : t('showroom.catalog.disabled') }}
+                </UBadge>
+              </template>
+              <template #status-cell="{ row: { original: product } }">
+                <span class="flex items-center gap-2">
+                  <UBadge :color="statusColor(product.status)" variant="subtle" :data-status="product.status">{{ t(`showroom.statuses.${product.status}`) }}</UBadge>
+                  <UBadge v-if="product.published_version" color="neutral" variant="outline">v{{ product.published_version }}</UBadge>
+                </span>
+              </template>
+              <template #updated_at-cell="{ row: { original: product } }">{{ formatDate(product.updated_at) ?? t('showroom.catalog.none') }}</template>
+            </UTable>
 
             <CatalogPager :current="paging.current" :last="paging.last" testid="showroom-products" />
           </div>

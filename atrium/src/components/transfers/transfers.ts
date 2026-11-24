@@ -80,9 +80,9 @@ export function runStatusColor(status: TransferRun['status']): 'success' | 'erro
 /** The export form: the format, the optional family, category tree and channel, and published copies or working ones. */
 export interface ExportForm {
   format: ExportFormat
-  family: string
-  category: string
-  scope: string
+  family: string | null
+  category: string | null
+  scope: string | null
   published: boolean
 }
 

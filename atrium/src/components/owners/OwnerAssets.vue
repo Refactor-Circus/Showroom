@@ -20,7 +20,7 @@ const action = useCatalogAction()
 
 const file = shallowRef<File | null>(null)
 const role = ref('logo')
-const input = useTemplateRef<HTMLInputElement>('fileInput')
+const input = useTemplateRef<{ inputRef: HTMLInputElement | null }>('fileInput')
 
 function choose(event: Event): void {
   file.value = (event.target as HTMLInputElement).files?.[0] ?? null
@@ -55,8 +55,8 @@ async function upload(): Promise<void> {
   if (succeeded) {
     file.value = null
 
-    if (input.value) {
-      input.value.value = ''
+    if (input.value?.inputRef) {
+      input.value.inputRef.value = ''
     }
 
     emit('changed')
@@ -71,9 +71,9 @@ async function upload(): Promise<void> {
     </template>
 
     <div class="space-y-4">
-      <p v-if="props.assets.length === 0" class="atrium-empty" data-testid="showroom-owner-assets-empty">{{ t('showroom.catalog.assets.none') }}</p>
+      <AtriumState v-if="props.assets.length === 0" compact :title="t('showroom.catalog.assets.none')" data-testid="showroom-owner-assets-empty" />
       <div v-else class="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <RouterLink
+        <ULink
           v-for="asset in props.assets"
           :key="`${asset.inherited ? 'inherited' : 'own'}-${asset.code}`"
           :to="assetPath(asset.code)"
@@ -81,14 +81,14 @@ async function upload(): Promise<void> {
           :data-testid="`showroom-asset-${asset.code}`"
         >
           <AssetThumbnail :asset="{ filename: asset.code, mime_type: asset.mime_type, url: asset.url ?? '' }" :caption="caption(asset)" />
-        </RouterLink>
+        </ULink>
       </div>
 
       <CatalogActionError :action="action" />
 
       <form class="flex flex-wrap items-end gap-3" data-testid="showroom-asset-upload" @submit.prevent="upload">
         <UFormField :label="t('showroom.catalog.assets.upload_and_link')" :error="action.error('file')">
-          <input ref="fileInput" type="file" required class="text-sm" data-testid="showroom-asset-file" @change="choose">
+          <UInput ref="fileInput" type="file" required data-testid="showroom-asset-file" @change="choose" />
         </UFormField>
         <UFormField :label="t('showroom.catalog.assets.role')" :error="action.error('role')">
           <UInput v-model="role" class="w-32" data-testid="showroom-asset-role" />

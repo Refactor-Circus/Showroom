@@ -18,43 +18,31 @@ function toggle(code: string, on: boolean): void {
     ? [...rules.value.parent_types.filter(entry => entry !== code), code]
     : rules.value.parent_types.filter(entry => entry !== code)
 }
-
-function checkedOf(event: Event): boolean {
-  return (event.target as HTMLInputElement).checked
-}
 </script>
 
 <template>
   <div class="flex flex-col gap-3" :data-testid="`${props.testid}-rules`">
     <div>
       <p class="mb-1 text-xs font-medium uppercase text-muted">{{ t('showroom.owner_types.parent_types') }}</p>
-      <label class="flex items-center gap-2 text-sm">
-        <input v-model="rules.any_parent" type="checkbox" :data-testid="`${props.testid}-any-parent`">
-        {{ t('showroom.owner_types.any_parent') }}
-      </label>
+      <UCheckbox v-model="rules.any_parent" :label="t('showroom.owner_types.any_parent')" :data-testid="`${props.testid}-any-parent`" />
       <div v-if="!rules.any_parent" class="mt-2 flex flex-wrap gap-3">
-        <label v-for="type in props.types" :key="type.code" class="flex items-center gap-1.5 text-sm">
-          <input
-            type="checkbox"
-            :value="type.code"
-            :checked="rules.parent_types.includes(type.code)"
-            :data-testid="`${props.testid}-parent-${type.code}`"
-            @change="toggle(type.code, checkedOf($event))"
-          >
-          <span class="font-mono text-xs">{{ type.code }}</span>
-          <span v-if="labelOf(type.labels, locale, type.code) !== type.code" class="text-muted">{{ labelOf(type.labels, locale, type.code) }}</span>
-        </label>
+        <UCheckbox
+          v-for="type in props.types"
+          :key="type.code"
+          :model-value="rules.parent_types.includes(type.code)"
+          :data-testid="`${props.testid}-parent-${type.code}`"
+          @update:model-value="toggle(type.code, $event === true)"
+        >
+          <template #label>
+            <span class="font-mono text-xs">{{ type.code }}</span>
+            <span v-if="labelOf(type.labels, locale, type.code) !== type.code" class="ms-1.5 text-muted">{{ labelOf(type.labels, locale, type.code) }}</span>
+          </template>
+        </UCheckbox>
         <span v-if="props.types.length === 0" class="text-sm text-muted">{{ t('showroom.owner_types.no_types') }}</span>
       </div>
       <small v-if="props.action.error('parent_types')" class="text-xs text-error">{{ props.action.error('parent_types') }}</small>
     </div>
-    <label class="flex items-center gap-2 text-sm">
-      <input v-model="rules.can_be_root" type="checkbox" :data-testid="`${props.testid}-root`">
-      {{ t('showroom.owner_types.can_be_root') }}
-    </label>
-    <label class="flex items-center gap-2 text-sm">
-      <input v-model="rules.owns_products" type="checkbox" :data-testid="`${props.testid}-owns`">
-      {{ t('showroom.owner_types.owns_products') }}
-    </label>
+    <UCheckbox v-model="rules.can_be_root" :label="t('showroom.owner_types.can_be_root')" :data-testid="`${props.testid}-root`" />
+    <UCheckbox v-model="rules.owns_products" :label="t('showroom.owner_types.owns_products')" :data-testid="`${props.testid}-owns`" />
   </div>
 </template>

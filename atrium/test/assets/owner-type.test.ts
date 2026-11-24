@@ -5,6 +5,7 @@ import { mockPackageApi, reply, resetPackageApis, type PackageRoutes } from '@re
 import { confirmWith, cursorPage, invalid, mountShowroomPage, ok, resetShowroomPages, screensApi, showroomCalls } from '../catalog/support'
 import { brand, store } from './support'
 import { clearAtriumData, mockAtriumApi, useRouter } from '@refactor-circus/atrium/testing'
+import { pick, picked } from '../ui'
 
 /*
  * `showroom.owner-type` (AC 54, 71): one owner type (`owner-types.show`) and
@@ -62,10 +63,10 @@ describe('showroom.owner-type', () => {
     expect(api).toHaveBeenCalledWith('/screens/showroom.owner-type', expect.objectContaining({ query: expect.objectContaining({ record: 'store' }) }))
     expect(wrapper.find('[data-testid="showroom-owner-type-title"]').text()).toBe('Store')
     expect(wrapper.find('[data-testid="showroom-owner-type-owners"]').attributes('href')).toBe('/showroom/owners?type=store')
-    expect((wrapper.find('[data-testid="showroom-owner-type-any-parent"]').element as HTMLInputElement).checked).toBe(false)
-    expect((wrapper.find('[data-testid="showroom-owner-type-parent-brand"]').element as HTMLInputElement).checked).toBe(true)
-    expect((wrapper.find('[data-testid="showroom-owner-type-root"]').element as HTMLInputElement).checked).toBe(false)
-    expect((wrapper.find('[data-testid="showroom-owner-type-owns"]').element as HTMLInputElement).checked).toBe(false)
+    expect(picked(wrapper, 'showroom-owner-type-any-parent')).toBe(false)
+    expect(picked(wrapper, 'showroom-owner-type-parent-brand')).toBe(true)
+    expect(picked(wrapper, 'showroom-owner-type-root')).toBe(false)
+    expect(picked(wrapper, 'showroom-owner-type-owns')).toBe(false)
   })
 
   it('saves the labels and rules, then reloads', async () => {
@@ -73,8 +74,8 @@ describe('showroom.owner-type', () => {
 
     const wrapper = await mountShowroomPage(Page, PATH)
     await wrapper.find('[data-testid="showroom-owner-type-label"]').setValue('Shop')
-    await wrapper.find('[data-testid="showroom-owner-type-parent-store"]').setValue(true)
-    await wrapper.find('[data-testid="showroom-owner-type-owns"]').setValue(true)
+    await pick(wrapper, 'showroom-owner-type-parent-store', true)
+    await pick(wrapper, 'showroom-owner-type-owns', true)
     await save(wrapper)
 
     const [call] = showroomCalls('PATCH', '/owner-types/{ownerType}')
@@ -87,7 +88,7 @@ describe('showroom.owner-type', () => {
     showroomWith()
 
     const wrapper = await mountShowroomPage(Page, PATH)
-    await wrapper.find('[data-testid="showroom-owner-type-any-parent"]').setValue(true)
+    await pick(wrapper, 'showroom-owner-type-any-parent', true)
     await save(wrapper)
 
     expect(showroomCalls('PATCH', '/owner-types/{ownerType}')[0]?.body).toMatchObject({ parent_types: null })

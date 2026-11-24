@@ -13,8 +13,6 @@ const inputs = defineModel<Record<string, ValueInput>>({ required: true })
 
 const { t, locale } = useI18n()
 
-const control = 'w-48 rounded-md border border-default bg-default px-2.5 py-1.5 text-sm'
-
 function text(code: string): string {
   const value = inputs.value[code]
 
@@ -27,73 +25,68 @@ function metric(code: string): MetricInput {
   return value && typeof value === 'object' && 'amount' in value ? value as MetricInput : { amount: '', unit: '' }
 }
 
-function valueOf(event: Event): string {
-  return (event.target as HTMLInputElement | HTMLSelectElement).value
+/** What a field emitted, as the form keeps it: a string, empty for none. */
+function asText(value: unknown): string {
+  return value === null || value === undefined ? '' : String(value)
 }
 
-function setText(code: string, event: Event): void {
-  inputs.value[code] = valueOf(event)
+function setText(code: string, value: unknown): void {
+  inputs.value[code] = asText(value)
 }
 
-function setMetric(code: string, part: keyof MetricInput, event: Event): void {
-  inputs.value[code] = { ...metric(code), [part]: valueOf(event) }
+function setMetric(code: string, part: keyof MetricInput, value: unknown): void {
+  inputs.value[code] = { ...metric(code), [part]: asText(value) }
+}
+
+/** An axis's choices: its options, or yes and no. */
+function choicesOf(axis: ShowroomAttribute): { label: string, value: string }[] {
+  return axis.type === 'boolean'
+    ? [{ label: t('showroom.catalog.yes'), value: '1' }, { label: t('showroom.catalog.no'), value: '0' }]
+    : (axis.options ?? []).map(option => ({ label: labelOf(option.labels, locale.value, option.code), value: option.code }))
 }
 </script>
 
 <template>
   <div v-for="axis in props.axes" :key="axis.code" class="flex flex-col gap-1.5" :data-axis="axis.code">
     <label class="text-sm font-medium">{{ labelOf(axis.labels, locale, axis.code) }}</label>
-    <select
-      v-if="axis.type === 'select'"
+    <USelect
+      v-if="axis.type === 'select' || axis.type === 'boolean'"
       required
-      :class="control"
-      :value="text(axis.code)"
+      class="w-48"
+      :items="choicesOf(axis)"
+      :placeholder="t('showroom.catalog.none')"
+      :model-value="text(axis.code)"
       :data-testid="`${props.testid}-axis-${axis.code}`"
-      @change="setText(axis.code, $event)"
-    >
-      <option value="" disabled>{{ t('showroom.catalog.none') }}</option>
-      <option v-for="option in axis.options ?? []" :key="option.code" :value="option.code">{{ labelOf(option.labels, locale, option.code) }}</option>
-    </select>
-    <select
-      v-else-if="axis.type === 'boolean'"
-      required
-      :class="control"
-      :value="text(axis.code)"
-      :data-testid="`${props.testid}-axis-${axis.code}`"
-      @change="setText(axis.code, $event)"
-    >
-      <option value="" disabled>{{ t('showroom.catalog.none') }}</option>
-      <option value="1">{{ t('showroom.catalog.yes') }}</option>
-      <option value="0">{{ t('showroom.catalog.no') }}</option>
-    </select>
+      @update:model-value="setText(axis.code, $event)"
+    />
     <div v-else-if="axis.type === 'metric'" class="grid grid-cols-2 gap-2">
-      <input
+      <UInput
         required
         type="number"
         step="any"
-        :class="control"
+        class="w-48"
         :aria-label="t('showroom.catalog.values.amount')"
-        :value="metric(axis.code).amount"
+        :model-value="metric(axis.code).amount"
         :data-testid="`${props.testid}-axis-${axis.code}-amount`"
-        @input="setMetric(axis.code, 'amount', $event)"
-      >
-      <input
+        @update:model-value="setMetric(axis.code, 'amount', $event)"
+      />
+      <UInput
         required
-        :class="control"
+        class="w-48"
         :aria-label="t('showroom.catalog.values.unit')"
-        :value="metric(axis.code).unit"
+        :model-value="metric(axis.code).unit"
         :data-testid="`${props.testid}-axis-${axis.code}-unit`"
-        @input="setMetric(axis.code, 'unit', $event)"
-      >
+        @update:model-value="setMetric(axis.code, 'unit', $event)"
+      />
     </div>
-    <input
+    <UInput
       v-else
       required
-      :class="control"
-      :value="text(axis.code)"
+      class="w-48"
+      :model-value="text(axis.code)"
       :data-testid="`${props.testid}-axis-${axis.code}`"
-      @input="setText(axis.code, $event)"
-    >
+      @update:model-value="setText(axis.code, $event)"
+    />
     <small v-if="props.error(`values.${axis.code}`)" class="text-xs text-error">{{ props.error(`values.${axis.code}`) }}</small>
   </div>
 </template>

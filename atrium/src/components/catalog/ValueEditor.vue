@@ -19,8 +19,6 @@ const inputs = defineModel<Record<string, ValueInput>>({ required: true })
 
 const { t, locale } = useI18n()
 
-const control = 'w-full rounded-md border border-default bg-default px-2.5 py-1.5 text-sm'
-
 function text(code: string): string {
   const value = inputs.value[code]
 
@@ -63,12 +61,18 @@ function setPrice(code: string, currency: string, value: string): void {
   inputs.value[code] = { ...prices(code), [currency]: value }
 }
 
-function valueOf(event: Event): string {
-  return (event.target as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement).value
+/** What a field emitted, as the form keeps it: a string, empty for none. */
+function asText(value: unknown): string {
+  return value === null || value === undefined ? '' : String(value)
 }
 
-function checkedOf(event: Event): boolean {
-  return (event.target as HTMLInputElement).checked
+/** A select's choices: none first, then the attribute's options or yes and no. */
+function choicesOf(attribute: ShowroomAttribute): { label: string, value: string | null }[] {
+  const choices = attribute.type === 'boolean'
+    ? [{ label: t('showroom.catalog.yes'), value: '1' }, { label: t('showroom.catalog.no'), value: '0' }]
+    : (attribute.options ?? []).map(option => ({ label: labelOf(option.labels, locale.value, option.code), value: option.code }))
+
+  return [{ label: t('showroom.catalog.none'), value: null }, ...choices]
 }
 
 function slotNote(attribute: ShowroomAttribute): string {
@@ -82,7 +86,7 @@ function slotNote(attribute: ShowroomAttribute): string {
 </script>
 
 <template>
-  <p v-if="props.attributes.length === 0" class="atrium-empty" data-testid="showroom-values-empty">{{ t('showroom.catalog.values.none_settable') }}</p>
+  <AtriumState v-if="props.attributes.length === 0" compact :title="t('showroom.catalog.values.none_settable')" data-testid="showroom-values-empty" />
   <div v-else class="grid gap-4 sm:grid-cols-2" data-testid="showroom-values">
     <div v-for="attribute in props.attributes" :key="attribute.code" class="flex flex-col gap-1.5" :data-attribute="attribute.code">
       <label class="text-sm font-medium" :for="`showroom-value-${attribute.code}`">
@@ -92,119 +96,101 @@ function slotNote(attribute: ShowroomAttribute): string {
 
       <p v-if="!slotAvailable(attribute, props.editing)" class="text-xs text-muted">{{ t('showroom.catalog.values.slot_unavailable') }}</p>
       <template v-else>
-        <textarea
+        <UTextarea
           v-if="attribute.type === 'textarea'"
           :id="`showroom-value-${attribute.code}`"
-          :class="control"
-          rows="3"
+          class="w-full"
+          :rows="3"
           :disabled="props.disabled"
-          :value="text(attribute.code)"
+          :model-value="text(attribute.code)"
           :data-testid="`showroom-value-${attribute.code}`"
-          @input="setText(attribute.code, valueOf($event))"
+          @update:model-value="setText(attribute.code, asText($event))"
         />
-        <input
+        <UInput
           v-else-if="attribute.type === 'number' || attribute.type === 'decimal'"
           :id="`showroom-value-${attribute.code}`"
           type="number"
           :step="attribute.type === 'number' ? '1' : 'any'"
-          :class="control"
+          class="w-full"
           :disabled="props.disabled"
-          :value="text(attribute.code)"
+          :model-value="text(attribute.code)"
           :data-testid="`showroom-value-${attribute.code}`"
-          @input="setText(attribute.code, valueOf($event))"
-        >
-        <input
+          @update:model-value="setText(attribute.code, asText($event))"
+        />
+        <UInput
           v-else-if="attribute.type === 'date'"
           :id="`showroom-value-${attribute.code}`"
           type="date"
-          :class="control"
+          class="w-full"
           :disabled="props.disabled"
-          :value="text(attribute.code)"
+          :model-value="text(attribute.code)"
           :data-testid="`showroom-value-${attribute.code}`"
-          @input="setText(attribute.code, valueOf($event))"
-        >
-        <select
-          v-else-if="attribute.type === 'boolean'"
+          @update:model-value="setText(attribute.code, asText($event))"
+        />
+        <USelect
+          v-else-if="attribute.type === 'boolean' || attribute.type === 'select'"
           :id="`showroom-value-${attribute.code}`"
-          :class="control"
+          class="w-full"
+          :items="choicesOf(attribute)"
+          :placeholder="t('showroom.catalog.none')"
           :disabled="props.disabled"
-          :value="text(attribute.code)"
+          :model-value="text(attribute.code)"
           :data-testid="`showroom-value-${attribute.code}`"
-          @change="setText(attribute.code, valueOf($event))"
-        >
-          <option value="">{{ t('showroom.catalog.none') }}</option>
-          <option value="1">{{ t('showroom.catalog.yes') }}</option>
-          <option value="0">{{ t('showroom.catalog.no') }}</option>
-        </select>
-        <select
-          v-else-if="attribute.type === 'select'"
-          :id="`showroom-value-${attribute.code}`"
-          :class="control"
-          :disabled="props.disabled"
-          :value="text(attribute.code)"
-          :data-testid="`showroom-value-${attribute.code}`"
-          @change="setText(attribute.code, valueOf($event))"
-        >
-          <option value="">{{ t('showroom.catalog.none') }}</option>
-          <option v-for="option in attribute.options ?? []" :key="option.code" :value="option.code">{{ labelOf(option.labels, locale, option.code) }}</option>
-        </select>
+          @update:model-value="setText(attribute.code, asText($event))"
+        />
         <div v-else-if="attribute.type === 'multiselect'" class="flex flex-wrap gap-3">
-          <label v-for="option in attribute.options ?? []" :key="option.code" class="flex items-center gap-1.5 text-sm">
-            <input
-              type="checkbox"
-              :value="option.code"
-              :disabled="props.disabled"
-              :checked="picked(attribute.code).includes(option.code)"
-              :data-testid="`showroom-value-${attribute.code}-${option.code}`"
-              @change="toggle(attribute.code, option.code, checkedOf($event))"
-            >
-            {{ labelOf(option.labels, locale, option.code) }}
-          </label>
+          <UCheckbox
+            v-for="option in attribute.options ?? []"
+            :key="option.code"
+            :label="labelOf(option.labels, locale, option.code)"
+            :disabled="props.disabled"
+            :model-value="picked(attribute.code).includes(option.code)"
+            :data-testid="`showroom-value-${attribute.code}-${option.code}`"
+            @update:model-value="toggle(attribute.code, option.code, $event === true)"
+          />
         </div>
         <div v-else-if="attribute.type === 'metric'" class="grid grid-cols-2 gap-2">
-          <input
+          <UInput
             :id="`showroom-value-${attribute.code}`"
             type="number"
             step="any"
-            :class="control"
             :aria-label="t('showroom.catalog.values.amount')"
             :disabled="props.disabled"
-            :value="metric(attribute.code).amount"
+            :model-value="metric(attribute.code).amount"
             :data-testid="`showroom-value-${attribute.code}-amount`"
-            @input="setMetric(attribute.code, 'amount', valueOf($event))"
-          >
-          <input
-            :class="control"
+            @update:model-value="setMetric(attribute.code, 'amount', asText($event))"
+          />
+          <UInput
             :aria-label="t('showroom.catalog.values.unit')"
             :disabled="props.disabled"
-            :value="metric(attribute.code).unit"
+            :model-value="metric(attribute.code).unit"
             :data-testid="`showroom-value-${attribute.code}-unit`"
-            @input="setMetric(attribute.code, 'unit', valueOf($event))"
-          >
+            @update:model-value="setMetric(attribute.code, 'unit', asText($event))"
+          />
         </div>
         <div v-else-if="attribute.type === 'price'" class="flex flex-wrap gap-2">
           <label v-for="currency in currenciesOf(attribute, inputs[attribute.code])" :key="currency" class="flex items-center gap-1.5">
             <span class="font-mono text-xs">{{ currency }}</span>
-            <input
+            <UInput
               type="number"
               step="any"
-              class="w-32 rounded-md border border-default bg-default px-2.5 py-1.5 text-sm"
+              class="w-32"
               :disabled="props.disabled"
-              :value="prices(attribute.code)[currency] ?? ''"
+              :model-value="prices(attribute.code)[currency] ?? ''"
               :data-testid="`showroom-value-${attribute.code}-${currency}`"
-              @input="setPrice(attribute.code, currency, valueOf($event))"
-            >
+              @update:model-value="setPrice(attribute.code, currency, asText($event))"
+            />
           </label>
         </div>
-        <input
+        <UInput
           v-else
           :id="`showroom-value-${attribute.code}`"
-          :class="control"
+          class="w-full"
           :disabled="props.disabled"
-          :value="text(attribute.code)"
+          :model-value="text(attribute.code)"
           :data-testid="`showroom-value-${attribute.code}`"
-          @input="setText(attribute.code, valueOf($event))"
-        >
+          @update:model-value="setText(attribute.code, asText($event))"
+        />
 
         <small v-if="props.error(`values.${attribute.code}`)" class="text-xs text-error" :data-testid="`showroom-value-error-${attribute.code}`">{{ props.error(`values.${attribute.code}`) }}</small>
       </template>

@@ -25,7 +25,12 @@ const action = useCatalogAction()
 
 const families = usePickList(async showroom => showroomData<CatalogList<ShowroomFamily>>(await showroom.GET('/families', { params: { query: { per_page: ALL } } })))
 
-const form = reactive({ identifier: '', family: '' })
+const form = reactive<{ identifier: string, family: string | null }>({ identifier: '', family: null })
+
+const familyItems = computed(() => [
+  { label: t('showroom.catalog.products.no_family'), value: null },
+  ...families.value.map(family => ({ label: labelOf(family.labels, locale.value, family.code), value: family.code }))
+])
 
 async function create(): Promise<void> {
   if (!client) {
@@ -48,7 +53,7 @@ async function create(): Promise<void> {
 
 <template>
   <div class="space-y-4" data-testid="showroom-product-create">
-    <h1 class="text-xl font-semibold">{{ t('showroom.catalog.products.new') }}</h1>
+    <AtriumPageHeader :title="t('showroom.catalog.products.new')" />
 
     <AtriumIntegrationScreen screen-key="showroom.product-create">
       <UCard>
@@ -58,10 +63,7 @@ async function create(): Promise<void> {
             <UInput v-model="form.identifier" required data-testid="showroom-product-create-identifier" />
           </UFormField>
           <UFormField :label="t('showroom.catalog.fields.family')" :error="action.error('family')">
-            <select v-model="form.family" class="w-full rounded-md border border-default bg-default px-2.5 py-1.5 text-sm" data-testid="showroom-product-create-family">
-              <option value="">{{ t('showroom.catalog.products.no_family') }}</option>
-              <option v-for="family in families" :key="family.code" :value="family.code">{{ labelOf(family.labels, locale, family.code) }}</option>
-            </select>
+            <USelect v-model="form.family" :items="familyItems" :placeholder="t('showroom.catalog.products.no_family')" class="w-full" data-testid="showroom-product-create-family" />
           </UFormField>
           <div>
             <UButton type="submit" icon="i-lucide-plus" :loading="action.busy.value" data-testid="showroom-product-create-submit">{{ t('showroom.catalog.products.create') }}</UButton>

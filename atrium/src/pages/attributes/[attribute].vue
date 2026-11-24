@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { TableColumn } from '@nuxt/ui/components/Table.vue'
 import CatalogActionError from '../../components/catalog/CatalogActionError.vue'
 import CatalogState from '../../components/catalog/CatalogState.vue'
 import {
@@ -11,7 +12,8 @@ import {
   usePickList,
   type CatalogList,
   type CatalogOne,
-  type ShowroomAttribute
+  type ShowroomAttribute,
+  type ShowroomAttributeOption
 } from '../../components/catalog/catalog'
 import AttributeFlags from '../../components/structure/AttributeFlags.vue'
 import {
@@ -51,7 +53,7 @@ const groups = usePickList<ShowroomAttributeGroup>(async showroom =>
 const attribute = computed(() => data.value)
 const options = computed(() => attribute.value?.options ?? [])
 
-const form = reactive({ group: '', label: '', settings: '', sort_order: '0' })
+const form = reactive<{ group: string | null, label: string, settings: string, sort_order: string }>({ group: '', label: '', settings: '', sort_order: '0' })
 const flags = ref<Flags>({ is_unique: false, is_localizable: false, is_scopable: false })
 const draft = reactive({ code: '', label: '', sort_order: '0' })
 const settingsError = ref<string | null>(null)
@@ -126,6 +128,19 @@ async function deleteOption(option: string): Promise<void> {
     await reload()
   }
 }
+
+const groupItems = computed(() => [
+  { label: t('showroom.structure.attributes.no_group'), value: null },
+  ...(form.group && !groups.value.some(group => group.code === form.group) ? [{ label: form.group, value: form.group }] : []),
+  ...groups.value.map(group => ({ label: labelOf(group.labels, locale.value, group.code), value: group.code }))
+])
+
+const optionColumns = computed<TableColumn<ShowroomAttributeOption>[]>(() => [
+  { accessorKey: 'code', header: t('showroom.catalog.fields.code') },
+  { id: 'label', header: t('showroom.catalog.fields.label') },
+  { accessorKey: 'sort_order', header: t('showroom.catalog.fields.sort_order'), meta: { class: { th: 'text-right', td: 'text-right' } } },
+  { id: 'actions', header: '' }
+])
 </script>
 
 <template>
@@ -133,16 +148,10 @@ async function deleteOption(option: string): Promise<void> {
     <AtriumIntegrationScreen screen-key="showroom.attribute" :record="code">
       <CatalogState :ready="!pending && attribute !== null" :failed="failed" :status="status">
         <div v-if="attribute" class="space-y-5">
-          <div class="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <h1 class="text-xl font-semibold" data-testid="showroom-attribute-title">{{ labelOf(attribute.labels, locale, attribute.code) }}</h1>
-              <p class="font-mono text-sm text-muted">{{ attribute.code }}</p>
-            </div>
-            <div class="flex items-center gap-2">
-              <UBadge color="neutral" variant="subtle" data-testid="showroom-attribute-type">{{ attribute.type }}</UBadge>
-              <UButton color="error" variant="outline" icon="i-lucide-trash-2" :loading="action.busy.value" data-testid="showroom-attribute-delete" @click="destroy">{{ t('showroom.catalog.delete') }}</UButton>
-            </div>
-          </div>
+          <AtriumPageHeader :title="labelOf(attribute.labels, locale, attribute.code)" :description="attribute.code" data-testid="showroom-attribute-title">
+            <UBadge color="neutral" variant="subtle" data-testid="showroom-attribute-type">{{ attribute.type }}</UBadge>
+            <UButton color="error" variant="outline" icon="i-lucide-trash-2" :loading="action.busy.value" data-testid="showroom-attribute-delete" @click="destroy">{{ t('showroom.catalog.delete') }}</UButton>
+          </AtriumPageHeader>
 
           <CatalogActionError :action="action" />
 
@@ -152,11 +161,7 @@ async function deleteOption(option: string): Promise<void> {
             </template>
             <form class="flex max-w-xl flex-col gap-4" data-testid="showroom-attribute-form" @submit.prevent="save">
               <UFormField :label="t('showroom.catalog.fields.group')" :error="action.error('group')">
-                <select v-model="form.group" class="w-64 rounded-md border border-default bg-default px-2.5 py-1.5 text-sm" data-testid="showroom-attribute-group">
-                  <option value="">{{ t('showroom.structure.attributes.no_group') }}</option>
-                  <option v-if="form.group && !groups.some(group => group.code === form.group)" :value="form.group">{{ form.group }}</option>
-                  <option v-for="group in groups" :key="group.code" :value="group.code">{{ labelOf(group.labels, locale, group.code) }}</option>
-                </select>
+                <USelect v-model="form.group" :items="groupItems" :placeholder="t('showroom.structure.attributes.no_group')" class="w-64" data-testid="showroom-attribute-group" />
               </UFormField>
 
               <UFormField :label="t('showroom.catalog.fields.label_in', { locale })" :error="action.error('labels')">
@@ -184,34 +189,26 @@ async function deleteOption(option: string): Promise<void> {
               <h2 class="font-semibold">{{ t('showroom.structure.attributes.options') }}</h2>
             </template>
             <div class="space-y-4">
-              <p v-if="options.length === 0" class="text-sm text-muted">{{ t('showroom.structure.attributes.no_options') }}</p>
-              <table v-else class="w-full text-left text-sm">
-                <thead class="text-muted">
-                  <tr>
-                    <th class="py-1 pr-3 font-medium">{{ t('showroom.catalog.fields.code') }}</th>
-                    <th class="py-1 pr-3 font-medium">{{ t('showroom.catalog.fields.label') }}</th>
-                    <th class="py-1 pr-3 font-medium">{{ t('showroom.catalog.fields.sort_order') }}</th>
-                    <th class="py-1 font-medium" />
-                  </tr>
-                </thead>
-                <tbody class="divide-y divide-default">
-                  <tr v-for="option in options" :key="option.code" :data-testid="`showroom-option-row-${option.code}`">
-                    <td class="py-1 pr-3 font-mono text-xs">{{ option.code }}</td>
-                    <td class="py-1 pr-3">{{ labelOf(option.labels, locale, option.code) }}</td>
-                    <td class="py-1 pr-3 tabular-nums">{{ option.sort_order }}</td>
-                    <td class="py-1">
-                      <UButton
-                        variant="ghost"
-                        size="sm"
-                        icon="i-lucide-trash-2"
-                        :aria-label="t('showroom.catalog.delete')"
-                        :data-testid="`showroom-option-delete-${option.code}`"
-                        @click="deleteOption(option.code)"
-                      />
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
+              <UTable :data="options" :columns="optionColumns">
+                <template #empty>
+                  <AtriumState compact :title="t('showroom.structure.attributes.no_options')" />
+                </template>
+                <template #code-cell="{ row: { original: option } }">
+                  <span class="font-mono text-xs" :data-testid="`showroom-option-row-${option.code}`">{{ option.code }}</span>
+                </template>
+                <template #label-cell="{ row: { original: option } }">{{ labelOf(option.labels, locale, option.code) }}</template>
+                <template #sort_order-cell="{ row: { original: option } }"><span class="tabular-nums">{{ option.sort_order }}</span></template>
+                <template #actions-cell="{ row: { original: option } }">
+                  <UButton
+                    variant="ghost"
+                    size="sm"
+                    icon="i-lucide-trash-2"
+                    :aria-label="t('showroom.catalog.delete')"
+                    :data-testid="`showroom-option-delete-${option.code}`"
+                    @click="deleteOption(option.code)"
+                  />
+                </template>
+              </UTable>
 
               <CatalogActionError :action="optionAction" />
 

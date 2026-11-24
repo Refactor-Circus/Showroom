@@ -75,16 +75,15 @@ async function destroy(): Promise<void> {
     <AtriumIntegrationScreen screen-key="showroom.flag" :record="code">
       <CatalogState :ready="!pending && flag !== null" :failed="failed" :status="status">
         <div v-if="flag" class="space-y-5">
-          <div class="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <h1 class="text-xl font-semibold" data-testid="showroom-flag-title">{{ labelOf(flag.labels, locale, flag.code) }}</h1>
-              <p class="text-sm text-muted">
+          <AtriumPageHeader :title="labelOf(flag.labels, locale, flag.code)" data-testid="showroom-flag-title">
+            <template #meta>
+              <p>
                 {{ t('showroom.catalog.fields.code') }}:
                 <span class="font-mono" data-testid="showroom-flag-code">{{ flag.code }}</span>
               </p>
-            </div>
+            </template>
             <UButton color="error" variant="outline" icon="i-lucide-trash-2" :loading="action.busy.value" data-testid="showroom-flag-delete" @click="destroy">{{ t('showroom.catalog.delete') }}</UButton>
-          </div>
+          </AtriumPageHeader>
 
           <CatalogActionError :action="action" />
 

@@ -97,7 +97,22 @@ const channels = usePickList(async showroom => showroomData<CatalogList<Showroom
 
 const mode = ref<ImportMode>('upsert')
 const file = shallowRef<File | null>(null)
-const fileInput = useTemplateRef<HTMLInputElement>('fileInput')
+const fileInput = useTemplateRef<{ inputRef: HTMLInputElement | null }>('fileInput')
+
+const modeItems = computed(() => IMPORT_MODES.map(entry => ({ label: t(`showroom.transfers.import.modes.${entry}`), value: entry })))
+const formatItems = computed(() => EXPORT_FORMATS.map(entry => ({ label: t(`showroom.transfers.export.formats.${entry}`), value: entry })))
+const familyItems = computed(() => [
+  { label: t('showroom.transfers.export.all_families'), value: null },
+  ...families.value.map(family => ({ label: labelOf(family.labels, locale.value, family.code), value: family.code }))
+])
+const treeItems = computed(() => [
+  { label: t('showroom.transfers.export.all_categories'), value: null },
+  ...trees.value.map(tree => ({ label: labelOf(tree.labels, locale.value, tree.code), value: tree.code }))
+])
+const channelItems = computed(() => [
+  { label: t('showroom.transfers.export.no_channel'), value: null },
+  ...channels.value.map(channel => ({ label: labelOf(channel.labels, locale.value, channel.code), value: channel.code }))
+])
 const exportForm = reactive<ExportForm>({ format: 'jsonl', family: '', category: '', scope: '', published: false })
 const started = shallowRef<TransferRun | null>(null)
 
@@ -127,8 +142,8 @@ async function startImport(): Promise<void> {
     started.value = answer.run
     file.value = null
 
-    if (fileInput.value) {
-      fileInput.value.value = ''
+    if (fileInput.value?.inputRef) {
+      fileInput.value.inputRef.value = ''
     }
 
     await loadRuns()
@@ -153,7 +168,7 @@ async function startExport(): Promise<void> {
 
 <template>
   <div class="space-y-4" data-testid="showroom-transfers">
-    <h1 class="text-xl font-semibold">{{ t('showroom.transfers.title') }}</h1>
+    <AtriumPageHeader :title="t('showroom.transfers.title')" />
 
     <AtriumIntegrationScreen screen-key="showroom.transfers">
       <div class="space-y-4">
@@ -174,12 +189,10 @@ async function startExport(): Promise<void> {
             <form class="flex flex-col gap-3" data-testid="showroom-transfer-import-form" @submit.prevent="startImport">
               <CatalogActionError :action="importing" />
               <UFormField :label="t('showroom.transfers.import.file')" :hint="t('showroom.transfers.import.file_hint')" :error="importing.error('file')" required>
-                <input ref="fileInput" type="file" accept=".csv,.jsonl,text/csv" class="block w-full text-sm" data-testid="showroom-transfer-import-file" @change="choose">
+                <UInput ref="fileInput" type="file" accept=".csv,.jsonl,text/csv" class="w-full" data-testid="showroom-transfer-import-file" @change="choose" />
               </UFormField>
               <UFormField :label="t('showroom.transfers.import.mode')" :error="importing.error('mode')">
-                <select v-model="mode" class="w-full rounded-md border border-default bg-default px-2.5 py-1.5 text-sm" data-testid="showroom-transfer-import-mode">
-                  <option v-for="entry in IMPORT_MODES" :key="entry" :value="entry">{{ t(`showroom.transfers.import.modes.${entry}`) }}</option>
-                </select>
+                <USelect v-model="mode" :items="modeItems" class="w-full" data-testid="showroom-transfer-import-mode" />
               </UFormField>
               <div>
                 <UButton type="submit" icon="i-lucide-upload" :loading="importing.busy.value" data-testid="showroom-transfer-import-submit">{{ t('showroom.transfers.import.submit') }}</UButton>
@@ -194,32 +207,18 @@ async function startExport(): Promise<void> {
             <form class="flex flex-col gap-3" data-testid="showroom-transfer-export-form" @submit.prevent="startExport">
               <CatalogActionError :action="exporting" />
               <UFormField :label="t('showroom.transfers.export.format')" :error="exporting.error('format')">
-                <select v-model="exportForm.format" class="w-full rounded-md border border-default bg-default px-2.5 py-1.5 text-sm" data-testid="showroom-transfer-export-format">
-                  <option v-for="entry in EXPORT_FORMATS" :key="entry" :value="entry">{{ t(`showroom.transfers.export.formats.${entry}`) }}</option>
-                </select>
+                <USelect v-model="exportForm.format" :items="formatItems" class="w-full" data-testid="showroom-transfer-export-format" />
               </UFormField>
               <UFormField :label="t('showroom.catalog.fields.family')" :error="exporting.error('family')">
-                <select v-model="exportForm.family" class="w-full rounded-md border border-default bg-default px-2.5 py-1.5 text-sm" data-testid="showroom-transfer-export-family">
-                  <option value="">{{ t('showroom.transfers.export.all_families') }}</option>
-                  <option v-for="family in families" :key="family.code" :value="family.code">{{ labelOf(family.labels, locale, family.code) }}</option>
-                </select>
+                <USelect v-model="exportForm.family" :items="familyItems" :placeholder="t('showroom.transfers.export.all_families')" class="w-full" data-testid="showroom-transfer-export-family" />
               </UFormField>
               <UFormField :label="t('showroom.transfers.export.category_tree')" :error="exporting.error('category')">
-                <select v-model="exportForm.category" class="w-full rounded-md border border-default bg-default px-2.5 py-1.5 text-sm" data-testid="showroom-transfer-export-category">
-                  <option value="">{{ t('showroom.transfers.export.all_categories') }}</option>
-                  <option v-for="tree in trees" :key="tree.code" :value="tree.code">{{ labelOf(tree.labels, locale, tree.code) }}</option>
-                </select>
+                <USelect v-model="exportForm.category" :items="treeItems" :placeholder="t('showroom.transfers.export.all_categories')" class="w-full" data-testid="showroom-transfer-export-category" />
               </UFormField>
               <UFormField :label="t('showroom.catalog.fields.channel')" :error="exporting.error('scope')">
-                <select v-model="exportForm.scope" class="w-full rounded-md border border-default bg-default px-2.5 py-1.5 text-sm" data-testid="showroom-transfer-export-scope">
-                  <option value="">{{ t('showroom.transfers.export.no_channel') }}</option>
-                  <option v-for="channel in channels" :key="channel.code" :value="channel.code">{{ labelOf(channel.labels, locale, channel.code) }}</option>
-                </select>
+                <USelect v-model="exportForm.scope" :items="channelItems" :placeholder="t('showroom.transfers.export.no_channel')" class="w-full" data-testid="showroom-transfer-export-scope" />
               </UFormField>
-              <label class="flex items-center gap-2 text-sm">
-                <input v-model="exportForm.published" type="checkbox" data-testid="showroom-transfer-export-published">
-                {{ t('showroom.transfers.export.published') }}
-              </label>
+              <UCheckbox v-model="exportForm.published" :label="t('showroom.transfers.export.published')" data-testid="showroom-transfer-export-published" />
               <div>
                 <UButton type="submit" icon="i-lucide-download" :loading="exporting.busy.value" data-testid="showroom-transfer-export-submit">{{ t('showroom.transfers.export.submit') }}</UButton>
               </div>
@@ -243,7 +242,7 @@ async function startExport(): Promise<void> {
           <AtriumNoAccess v-else-if="runsFailed && runsStatus === 403" compact />
           <AtriumErrorCard v-else-if="runsFailed" :message="t('showroom.transfers.runs_failed')" />
           <USkeleton v-else-if="!runsLoaded" class="h-24" />
-          <p v-else-if="runs.length === 0" class="text-sm text-muted" data-testid="showroom-transfers-no-runs">{{ t('showroom.transfers.no_runs') }}</p>
+          <AtriumState v-else-if="runs.length === 0" compact :title="t('showroom.transfers.no_runs')" data-testid="showroom-transfers-no-runs" />
           <TransferRunsTable v-else :runs="runs" :row-actions="rowActions" />
         </UCard>
       </div>

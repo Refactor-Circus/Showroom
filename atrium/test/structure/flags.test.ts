@@ -5,6 +5,7 @@ import { mockPackageApi, reply, resetPackageApis, type PackageRoutes } from '@re
 import { cursorPage, invalid, mountShowroomPage, ok, resetShowroomPages, screensApi, showroomCalls } from '../catalog/support'
 import { clearance, restricted } from './support'
 import { clearAtriumData, mockAtriumApi, useRouter } from '@refactor-circus/atrium/testing'
+import { pick, row as rowOf } from '../ui'
 
 /*
  * `showroom.flags` (AC 54, 71): every flag definition (`flags.index`), a
@@ -58,12 +59,12 @@ describe('showroom.flags', () => {
     expect(showroomCalls('GET', '/flags')[0]?.query).toEqual({})
     expect(api).toHaveBeenCalledWith('/screens/showroom.flags', expect.anything())
 
-    const row = wrapper.find('[data-testid="showroom-flag-row-clearance"]')
+    const row = rowOf(wrapper, 'showroom-flag-row-clearance')
     expect(row.find('a').attributes('href')).toBe('/showroom/flags/clearance')
     expect(row.text()).toContain('Clearance')
     expect(row.text()).toContain('Products')
     expect(row.text()).toContain('Owners')
-    expect(wrapper.find('[data-testid="showroom-flag-row-restricted"]').text()).not.toContain('Owners')
+    expect(rowOf(wrapper, 'showroom-flag-row-restricted').text()).not.toContain('Owners')
   })
 
   it('pages with the endpoint\'s cursor', async () => {
@@ -83,7 +84,7 @@ describe('showroom.flags', () => {
     const wrapper = await mountShowroomPage(Page, PATH)
     await wrapper.find('[data-testid="showroom-flag-create-code"]').setValue('pricing_only')
     await wrapper.find('[data-testid="showroom-flag-create-label"]').setValue('Pricing only')
-    await wrapper.find('[data-testid="showroom-flag-create-applies-owner"]').setValue(false)
+    await pick(wrapper, 'showroom-flag-create-applies-owner', false)
     await wrapper.find('[data-testid="showroom-flag-create-sort"]').setValue('5')
     await submit(wrapper)
 
@@ -108,8 +109,8 @@ describe('showroom.flags', () => {
 
     const wrapper = await mountShowroomPage(Page, PATH)
     await wrapper.find('[data-testid="showroom-flag-create-code"]').setValue('eco')
-    await wrapper.find('[data-testid="showroom-flag-create-applies-product"]').setValue(false)
-    await wrapper.find('[data-testid="showroom-flag-create-applies-owner"]').setValue(false)
+    await pick(wrapper, 'showroom-flag-create-applies-product', false)
+    await pick(wrapper, 'showroom-flag-create-applies-owner', false)
     await submit(wrapper)
 
     expect(showroomCalls('POST', '/flags')[0]?.body).toMatchObject({ applies_to: [] })

@@ -5,6 +5,7 @@ import { mockPackageApi, reply, resetPackageApis, type PackageRoutes } from '@re
 import { confirmWith, invalid, mountShowroomPage, ok, resetShowroomPages, screensApi, showroomCalls } from '../catalog/support'
 import { restricted } from './support'
 import { clearAtriumData, mockAtriumApi, useRouter } from '@refactor-circus/atrium/testing'
+import { pick, picked } from '../ui'
 
 /*
  * `showroom.flag` (AC 54, 71): one flag (`flags.show`), its code shown but
@@ -61,10 +62,10 @@ describe('showroom.flag', () => {
 
     expect(showroomCalls('GET', '/flags/{flag}')[0]?.path).toBe('/flags/restricted')
     expect(api).toHaveBeenCalledWith('/screens/showroom.flag', expect.objectContaining({ query: expect.objectContaining({ record: 'restricted' }) }))
-    expect(wrapper.find('[data-testid="showroom-flag-title"]').text()).toBe('Restricted')
+    expect(wrapper.find('[data-testid="showroom-flag-title"] h1').text()).toBe('Restricted')
     expect(wrapper.find('[data-testid="showroom-flag-code"]').text()).toBe('restricted')
-    expect((wrapper.find('[data-testid="showroom-flag-applies-product"]').element as HTMLInputElement).checked).toBe(true)
-    expect((wrapper.find('[data-testid="showroom-flag-applies-owner"]').element as HTMLInputElement).checked).toBe(false)
+    expect(picked(wrapper, 'showroom-flag-applies-product')).toBe(true)
+    expect(picked(wrapper, 'showroom-flag-applies-owner')).toBe(false)
     expect((wrapper.find('[data-testid="showroom-flag-sort"]').element as HTMLInputElement).value).toBe('3')
   })
 
@@ -73,7 +74,7 @@ describe('showroom.flag', () => {
 
     const wrapper = await mountShowroomPage(Page, PATH)
     await wrapper.find('[data-testid="showroom-flag-label"]').setValue('Restricted sale')
-    await wrapper.find('[data-testid="showroom-flag-applies-owner"]').setValue(true)
+    await pick(wrapper, 'showroom-flag-applies-owner', true)
     await wrapper.find('[data-testid="showroom-flag-sort"]').setValue('1')
     await save(wrapper)
 
@@ -87,7 +88,7 @@ describe('showroom.flag', () => {
     showroomWith({ 'PATCH /flags/{flag}': invalid({ applies_to: ['The applies to field must have at least 1 items.'] }) })
 
     const wrapper = await mountShowroomPage(Page, PATH)
-    await wrapper.find('[data-testid="showroom-flag-applies-product"]').setValue(false)
+    await pick(wrapper, 'showroom-flag-applies-product', false)
     await save(wrapper)
 
     expect(showroomCalls('PATCH', '/flags/{flag}')[0]?.body).toMatchObject({ applies_to: [] })

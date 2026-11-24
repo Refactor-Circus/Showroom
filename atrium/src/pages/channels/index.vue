@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { TableColumn } from '@nuxt/ui/components/Table.vue'
 import CatalogActionError from '../../components/catalog/CatalogActionError.vue'
 import CatalogPager from '../../components/catalog/CatalogPager.vue'
 import CatalogState from '../../components/catalog/CatalogState.vue'
@@ -58,6 +59,14 @@ const draft = reactive({ code: '', label: '' })
 const fields = ref(channelForm())
 const localeDraft = reactive({ code: '', label: '' })
 
+const columns = computed<TableColumn<StructureChannel>[]>(() => [
+  { accessorKey: 'code', header: t('showroom.catalog.fields.code') },
+  { id: 'label', header: t('showroom.catalog.fields.label') },
+  { accessorKey: 'locales', header: t('showroom.structure.channels.locales') },
+  { accessorKey: 'currencies', header: t('showroom.structure.channels.currencies') },
+  { accessorKey: 'category_tree', header: t('showroom.structure.channels.category_tree') }
+])
+
 async function create(): Promise<void> {
   const body = { code: draft.code.trim(), ...newLabels(locale.value, draft.label), ...channelBody(fields.value) }
 
@@ -99,10 +108,7 @@ function localeLabel(entry: ShowroomLocale): string {
 
 <template>
   <div class="space-y-4" data-testid="showroom-channels">
-    <div>
-      <h1 class="text-xl font-semibold">{{ t('showroom.structure.channels.title') }}</h1>
-      <p class="text-sm text-muted">{{ t('showroom.structure.channels.description') }}</p>
-    </div>
+    <AtriumPageHeader :title="t('showroom.structure.channels.title')" :description="t('showroom.structure.channels.description')" />
 
     <AtriumIntegrationScreen screen-key="showroom.channels">
       <div class="space-y-4">
@@ -112,7 +118,7 @@ function localeLabel(entry: ShowroomLocale): string {
           </template>
           <CatalogState :ready="!localeLoad.pending.value && localeLoad.data.value !== null" :failed="localeLoad.failed.value" :status="localeLoad.status.value" compact>
             <div class="space-y-4">
-              <p v-if="locales.length === 0" class="atrium-empty" data-testid="showroom-locales-empty">{{ t('showroom.structure.channels.no_locales') }}</p>
+              <AtriumState v-if="locales.length === 0" compact :title="t('showroom.structure.channels.no_locales')" data-testid="showroom-locales-empty" />
               <ul v-else class="flex flex-wrap gap-3">
                 <li
                   v-for="entry in locales"
@@ -171,29 +177,20 @@ function localeLabel(entry: ShowroomLocale): string {
 
         <CatalogState :ready="!pending && data !== null" :failed="failed" :status="status">
           <div class="space-y-4">
-            <p v-if="channels.length === 0" class="atrium-empty" data-testid="showroom-channels-empty">{{ t('showroom.structure.channels.empty') }}</p>
-            <table v-else class="w-full text-left text-sm" data-testid="showroom-channels-table">
-              <thead class="text-muted">
-                <tr>
-                  <th class="py-2 pr-3 font-medium">{{ t('showroom.catalog.fields.code') }}</th>
-                  <th class="py-2 pr-3 font-medium">{{ t('showroom.catalog.fields.label') }}</th>
-                  <th class="py-2 pr-3 font-medium">{{ t('showroom.structure.channels.locales') }}</th>
-                  <th class="py-2 pr-3 font-medium">{{ t('showroom.structure.channels.currencies') }}</th>
-                  <th class="py-2 font-medium">{{ t('showroom.structure.channels.category_tree') }}</th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-default">
-                <tr v-for="channel in channels" :key="channel.code" :data-testid="`showroom-channel-row-${channel.code}`">
-                  <td class="py-2 pr-3">
-                    <RouterLink :to="channelPath(channel.code)" class="font-mono font-medium hover:underline">{{ channel.code }}</RouterLink>
-                  </td>
-                  <td class="py-2 pr-3">{{ labelOf(channel.labels, locale, channel.code) }}</td>
-                  <td class="py-2 pr-3 font-mono text-xs">{{ (channel.locales ?? []).join(', ') }}</td>
-                  <td class="py-2 pr-3 font-mono text-xs">{{ channel.currencies.join(', ') }}</td>
-                  <td class="py-2 font-mono text-xs">{{ channel.category_tree ?? t('showroom.catalog.none') }}</td>
-                </tr>
-              </tbody>
-            </table>
+            <UTable :data="channels" :columns="columns" data-testid="showroom-channels-table">
+              <template #empty>
+                <AtriumState compact :title="t('showroom.structure.channels.empty')" data-testid="showroom-channels-empty" />
+              </template>
+              <template #code-cell="{ row: { original: channel } }">
+                <span :data-testid="`showroom-channel-row-${channel.code}`">
+                  <ULink :to="channelPath(channel.code)" class="font-mono font-medium hover:underline">{{ channel.code }}</ULink>
+                </span>
+              </template>
+              <template #label-cell="{ row: { original: channel } }">{{ labelOf(channel.labels, locale, channel.code) }}</template>
+              <template #locales-cell="{ row: { original: channel } }"><span class="font-mono text-xs">{{ (channel.locales ?? []).join(', ') }}</span></template>
+              <template #currencies-cell="{ row: { original: channel } }"><span class="font-mono text-xs">{{ channel.currencies.join(', ') }}</span></template>
+              <template #category_tree-cell="{ row: { original: channel } }"><span class="font-mono text-xs">{{ channel.category_tree ?? t('showroom.catalog.none') }}</span></template>
+            </UTable>
 
             <CatalogPager :next="data?.meta?.next_cursor ?? null" :prev="data?.meta?.prev_cursor ?? null" testid="showroom-channels" />
           </div>

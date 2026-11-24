@@ -33,7 +33,14 @@ const action = useCatalogAction()
 
 const KINDS: readonly AssociationKind[] = ['products', 'product_models']
 
-const form = reactive({ type: '', kind: 'products' as AssociationKind, target: '', quantity: '' })
+const form = reactive({ type: '', kind: 'products' as AssociationKind, target: '', quantity: '' as string | number })
+
+const typeItems = computed(() => props.types.map(type => ({ label: type.code, value: type.code })))
+
+const kindItems = computed(() => [
+  { label: t('showroom.catalog.associations.product'), value: 'products' },
+  { label: t('showroom.catalog.associations.product_model'), value: 'product_models' }
+])
 
 interface Row {
   type: string
@@ -127,7 +134,7 @@ async function add(): Promise<void> {
     </template>
 
     <div class="space-y-4">
-      <p v-if="rows.length === 0" class="atrium-empty" data-testid="showroom-associations-empty">{{ t('showroom.catalog.associations.none') }}</p>
+      <AtriumState v-if="rows.length === 0" compact :title="t('showroom.catalog.associations.none')" data-testid="showroom-associations-empty" />
       <div v-for="[type, entries] in rows" :key="type" :data-association-type="type">
         <p class="mb-1 font-mono text-xs font-medium uppercase text-muted">{{ type }}</p>
         <ul class="flex flex-wrap gap-2">
@@ -137,7 +144,7 @@ async function add(): Promise<void> {
             class="flex items-center gap-1.5 rounded-md border border-default px-2 py-1 text-sm"
             :data-testid="`showroom-association-${type}-${row.identifier}`"
           >
-            <RouterLink :to="pathOf(row)" class="font-mono hover:underline">{{ row.identifier }}</RouterLink>
+            <ULink :to="pathOf(row)" class="font-mono hover:underline">{{ row.identifier }}</ULink>
             <span v-if="row.quantity !== null" class="text-xs text-muted">× {{ row.quantity }}</span>
             <UButton
               v-if="row.own"
@@ -158,16 +165,10 @@ async function add(): Promise<void> {
 
       <form v-if="props.types.length > 0" class="flex flex-wrap items-end gap-3" data-testid="showroom-association-add" @submit.prevent="add">
         <UFormField :label="t('showroom.catalog.associations.type')" :error="action.error('associations') ?? action.error('quantified_associations')">
-          <select v-model="form.type" required class="w-44 rounded-md border border-default bg-default px-2.5 py-1.5 text-sm" data-testid="showroom-association-type">
-            <option value="" disabled>{{ t('showroom.catalog.associations.choose_type') }}</option>
-            <option v-for="type in props.types" :key="type.code" :value="type.code">{{ type.code }}</option>
-          </select>
+          <USelect v-model="form.type" :items="typeItems" :placeholder="t('showroom.catalog.associations.choose_type')" required class="w-44" data-testid="showroom-association-type" />
         </UFormField>
         <UFormField :label="t('showroom.catalog.associations.target_kind')">
-          <select v-model="form.kind" class="w-40 rounded-md border border-default bg-default px-2.5 py-1.5 text-sm" data-testid="showroom-association-kind">
-            <option value="products">{{ t('showroom.catalog.associations.product') }}</option>
-            <option value="product_models">{{ t('showroom.catalog.associations.product_model') }}</option>
-          </select>
+          <USelect v-model="form.kind" :items="kindItems" class="w-40" data-testid="showroom-association-kind" />
         </UFormField>
         <UFormField :label="t('showroom.catalog.associations.target')">
           <UInput v-model="form.target" required class="w-44" data-testid="showroom-association-target" />

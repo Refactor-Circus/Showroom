@@ -111,6 +111,12 @@ async function destroy(): Promise<void> {
     await navigateTo('/showroom/categories')
   }
 }
+
+const chain = computed(() => category.value === null ? [] : [
+  { label: t('showroom.structure.categories.title'), to: '/showroom/categories' },
+  ...ancestors.value.map(link => ({ label: labelOf(link.labels, locale.value, link.code), to: categoryPath(link.code) })),
+  { label: labelOf(category.value.labels, locale.value, category.value.code) }
+])
 </script>
 
 <template>
@@ -118,26 +124,12 @@ async function destroy(): Promise<void> {
     <AtriumIntegrationScreen screen-key="showroom.category" :record="code">
       <CatalogState :ready="!pending && category !== null" :failed="failed" :status="status">
         <div v-if="category" class="space-y-5">
-          <div class="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <h1 class="text-xl font-semibold" data-testid="showroom-category-title">{{ labelOf(category.labels, locale, category.code) }}</h1>
-              <p class="font-mono text-sm text-muted">{{ category.code }}</p>
-            </div>
-            <div class="flex items-center gap-2">
-              <UButton :to="categoryProductsPath(category.code)" variant="outline" icon="i-lucide-box" data-testid="showroom-category-products">{{ t('showroom.structure.categories.products') }}</UButton>
-              <UButton color="error" variant="outline" icon="i-lucide-trash-2" :loading="action.busy.value" data-testid="showroom-category-delete" @click="destroy">{{ t('showroom.catalog.delete') }}</UButton>
-            </div>
-          </div>
+          <AtriumPageHeader :title="labelOf(category.labels, locale, category.code)" :description="category.code" data-testid="showroom-category-title">
+            <UButton :to="categoryProductsPath(category.code)" variant="outline" icon="i-lucide-box" data-testid="showroom-category-products">{{ t('showroom.structure.categories.products') }}</UButton>
+            <UButton color="error" variant="outline" icon="i-lucide-trash-2" :loading="action.busy.value" data-testid="showroom-category-delete" @click="destroy">{{ t('showroom.catalog.delete') }}</UButton>
+          </AtriumPageHeader>
 
-          <nav :aria-label="t('showroom.structure.categories.chain')" class="flex flex-wrap items-center gap-1 text-sm" data-testid="showroom-category-chain">
-            <RouterLink to="/showroom/categories" class="hover:underline">{{ t('showroom.structure.categories.title') }}</RouterLink>
-            <template v-for="link in ancestors" :key="link.code">
-              <span class="text-muted">›</span>
-              <RouterLink :to="categoryPath(link.code)" class="hover:underline">{{ labelOf(link.labels, locale, link.code) }}</RouterLink>
-            </template>
-            <span class="text-muted">›</span>
-            <span class="font-medium">{{ labelOf(category.labels, locale, category.code) }}</span>
-          </nav>
+          <UBreadcrumb :items="chain" :aria-label="t('showroom.structure.categories.chain')" data-testid="showroom-category-chain" />
 
           <CatalogActionError :action="action" />
 
@@ -146,7 +138,7 @@ async function destroy(): Promise<void> {
               <h2 class="font-semibold">{{ t('showroom.structure.categories.branch') }}</h2>
             </template>
             <div class="space-y-4">
-              <p v-if="tree.length === 0" class="atrium-empty" data-testid="showroom-branch-empty">{{ t('showroom.structure.categories.no_branch') }}</p>
+              <AtriumState v-if="tree.length === 0" compact :title="t('showroom.structure.categories.no_branch')" data-testid="showroom-branch-empty" />
               <CategoryBranch v-else :nodes="tree" />
 
               <CatalogActionError :action="childAction" />

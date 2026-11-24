@@ -20,6 +20,9 @@ watch(() => props.editing, (editing) => {
   choice.channel = editing.channel ?? ''
 }, { immediate: true })
 
+const localeItems = computed(() => props.locales.map(entry => ({ label: labelOf(entry.labels, locale.value, entry.code), value: entry.code })))
+const channelItems = computed(() => props.channels.map(entry => ({ label: labelOf(entry.labels, locale.value, entry.code), value: entry.code })))
+
 function pick(): void {
   emit('pick', { locale: choice.locale || null, channel: choice.channel || null })
 }
@@ -29,14 +32,10 @@ function pick(): void {
   <UCard v-if="props.locales.length > 0 || props.channels.length > 0">
     <form class="flex flex-wrap items-end gap-3" data-testid="showroom-slot-picker" @submit.prevent="pick">
       <UFormField v-if="props.locales.length > 0" :label="t('showroom.catalog.fields.locale')">
-        <select v-model="choice.locale" class="w-44 rounded-md border border-default bg-default px-2.5 py-1.5 text-sm" data-testid="showroom-slot-locale">
-          <option v-for="entry in props.locales" :key="entry.code" :value="entry.code">{{ labelOf(entry.labels, locale, entry.code) }}</option>
-        </select>
+        <USelect v-model="choice.locale" :items="localeItems" class="w-44" data-testid="showroom-slot-locale" />
       </UFormField>
       <UFormField v-if="props.channels.length > 0" :label="t('showroom.catalog.fields.channel')">
-        <select v-model="choice.channel" class="w-44 rounded-md border border-default bg-default px-2.5 py-1.5 text-sm" data-testid="showroom-slot-channel">
-          <option v-for="entry in props.channels" :key="entry.code" :value="entry.code">{{ labelOf(entry.labels, locale, entry.code) }}</option>
-        </select>
+        <USelect v-model="choice.channel" :items="channelItems" class="w-44" data-testid="showroom-slot-channel" />
       </UFormField>
       <UButton type="submit" variant="outline" icon="i-lucide-arrow-left-right" data-testid="showroom-slot-switch">{{ t('showroom.catalog.values.switch') }}</UButton>
     </form>

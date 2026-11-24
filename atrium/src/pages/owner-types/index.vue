@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { TableColumn } from '@nuxt/ui/components/Table.vue'
 import CatalogActionError from '../../components/catalog/CatalogActionError.vue'
 import CatalogPager from '../../components/catalog/CatalogPager.vue'
 import CatalogState from '../../components/catalog/CatalogState.vue'
@@ -27,6 +28,15 @@ import { ownerTypePath, ownerTypeRules, ownerTypeRulesBody, type ShowroomOwnerTy
 const { t, locale } = useI18n()
 const route = useRoute()
 const action = useCatalogAction()
+
+const columns = computed<TableColumn<ShowroomOwnerType>[]>(() => [
+  { accessorKey: 'code', header: t('showroom.catalog.fields.code') },
+  { id: 'label', header: t('showroom.catalog.fields.label') },
+  { accessorKey: 'parent_types', header: t('showroom.owner_types.parent_types') },
+  { accessorKey: 'can_be_root', header: t('showroom.owner_types.can_be_root') },
+  { accessorKey: 'owns_products', header: t('showroom.owner_types.owns_products') },
+  { accessorKey: 'owners_count', header: t('showroom.owner_types.owners'), meta: { class: { th: 'text-right', td: 'text-right' } } }
+])
 
 const query = computed(() => {
   const cursor = queryValue(route.query.cursor)
@@ -87,13 +97,9 @@ function parentsOf(type: ShowroomOwnerType): string {
 
 <template>
   <div class="space-y-4" data-testid="showroom-owner-types-page">
-    <div class="flex flex-wrap items-start justify-between gap-3">
-      <div>
-        <h1 class="text-xl font-semibold">{{ t('showroom.owner_types.title') }}</h1>
-        <p class="text-sm text-muted">{{ t('showroom.owner_types.description') }}</p>
-      </div>
+    <AtriumPageHeader :title="t('showroom.owner_types.title')" :description="t('showroom.owner_types.description')">
       <UButton to="/showroom/owners" variant="outline" icon="i-lucide-building-2">{{ t('showroom.owners.title') }}</UButton>
-    </div>
+    </AtriumPageHeader>
 
     <AtriumIntegrationScreen screen-key="showroom.owner-types">
       <div class="space-y-4">
@@ -120,31 +126,25 @@ function parentsOf(type: ShowroomOwnerType): string {
 
         <CatalogState :ready="!pending && data !== null" :failed="failed" :status="status">
           <div class="space-y-4">
-            <p v-if="types.length === 0" class="atrium-empty" data-testid="showroom-owner-types-empty">{{ t('showroom.owner_types.empty') }}</p>
-            <table v-else class="w-full text-left text-sm" data-testid="showroom-owner-types-table">
-              <thead class="text-muted">
-                <tr>
-                  <th class="py-2 pr-3 font-medium">{{ t('showroom.catalog.fields.code') }}</th>
-                  <th class="py-2 pr-3 font-medium">{{ t('showroom.catalog.fields.label') }}</th>
-                  <th class="py-2 pr-3 font-medium">{{ t('showroom.owner_types.parent_types') }}</th>
-                  <th class="py-2 pr-3 font-medium">{{ t('showroom.owner_types.can_be_root') }}</th>
-                  <th class="py-2 pr-3 font-medium">{{ t('showroom.owner_types.owns_products') }}</th>
-                  <th class="py-2 font-medium">{{ t('showroom.owner_types.owners') }}</th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-default">
-                <tr v-for="type in types" :key="type.code" :data-testid="`showroom-owner-type-row-${type.code}`">
-                  <td class="py-2 pr-3">
-                    <RouterLink :to="ownerTypePath(type.code)" class="font-mono font-medium hover:underline">{{ type.code }}</RouterLink>
-                  </td>
-                  <td class="py-2 pr-3">{{ labelOf(type.labels, locale, type.code) }}</td>
-                  <td class="py-2 pr-3 font-mono text-xs">{{ parentsOf(type) }}</td>
-                  <td class="py-2 pr-3">{{ type.can_be_root ? t('showroom.catalog.yes') : t('showroom.catalog.no') }}</td>
-                  <td class="py-2 pr-3">{{ type.owns_products ? t('showroom.catalog.yes') : t('showroom.catalog.no') }}</td>
-                  <td class="py-2 tabular-nums">{{ type.owners_count ?? 0 }}</td>
-                </tr>
-              </tbody>
-            </table>
+            <UTable :data="types" :columns="columns" data-testid="showroom-owner-types-table">
+              <template #empty>
+                <AtriumState compact :title="t('showroom.owner_types.empty')" data-testid="showroom-owner-types-empty" />
+              </template>
+              <template #code-cell="{ row: { original: type } }">
+                <span :data-testid="`showroom-owner-type-row-${type.code}`">
+                  <ULink :to="ownerTypePath(type.code)" class="font-mono font-medium hover:underline">{{ type.code }}</ULink>
+                </span>
+              </template>
+              <template #label-cell="{ row: { original: type } }">{{ labelOf(type.labels, locale, type.code) }}</template>
+              <template #parent_types-cell="{ row: { original: type } }">
+                <span class="font-mono text-xs">{{ parentsOf(type) }}</span>
+              </template>
+              <template #can_be_root-cell="{ row: { original: type } }">{{ type.can_be_root ? t('showroom.catalog.yes') : t('showroom.catalog.no') }}</template>
+              <template #owns_products-cell="{ row: { original: type } }">{{ type.owns_products ? t('showroom.catalog.yes') : t('showroom.catalog.no') }}</template>
+              <template #owners_count-cell="{ row: { original: type } }">
+                <span class="tabular-nums">{{ type.owners_count ?? 0 }}</span>
+              </template>
+            </UTable>
 
             <CatalogPager :next="data?.meta?.next_cursor ?? null" :prev="data?.meta?.prev_cursor ?? null" testid="showroom-owner-types" />
           </div>

@@ -20,9 +20,7 @@ const rows = computed(() => stats.value?.completeness ?? null)
     <AtriumNoAccess v-if="forbidden" compact />
     <AtriumErrorCard v-else-if="status === 'error'" :message="t('atrium.widget.failed')" />
     <template v-else-if="rows">
-      <p v-if="rows.length === 0" class="atrium-empty" data-testid="showroom-completeness-empty">
-        {{ t('showroom.widgets.no_completeness_yet') }}
-      </p>
+      <AtriumState v-if="rows.length === 0" compact :title="t('showroom.widgets.no_completeness_yet')" data-testid="showroom-completeness-empty" />
       <ul v-else class="flex flex-col gap-3">
         <li
           v-for="row in rows"
@@ -31,12 +29,12 @@ const rows = computed(() => stats.value?.completeness ?? null)
           :data-slot="`${row.channel}-${row.locale}`"
         >
           <div class="flex items-center justify-between gap-3 text-sm">
-            <RouterLink
+            <ULink
               class="font-mono hover:underline"
               :to="{ path: '/showroom/products', query: { 'complete[scope]': row.channel, 'complete[locale]': row.locale, 'complete[min]': '100' } }"
             >
               {{ row.channel }} · {{ row.locale }}
-            </RouterLink>
+            </ULink>
             <span class="tabular-nums">
               <span data-testid="showroom-completeness-average">{{ row.average }}%</span>
               <span class="text-muted"> — {{ t('showroom.widgets.fully_complete', { complete: row.complete, products: row.products }) }}</span>

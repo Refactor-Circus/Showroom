@@ -5,6 +5,7 @@ import { mockPackageApi, reply, resetPackageApis, type PackageRoutes } from '@re
 import { cursorPage, mountShowroomPage, ok, resetShowroomPages, screensApi, showroomCalls } from '../catalog/support'
 import { color, looks, name, specs } from './support'
 import { clearAtriumData, mockAtriumApi, useRouter } from '@refactor-circus/atrium/testing'
+import { pick, picked, row as rowOf } from '../ui'
 
 /*
  * `showroom.attributes` (AC 54, 71): every attribute (`attributes.index`), a
@@ -55,13 +56,13 @@ describe('showroom.attributes', () => {
     expect(showroomCalls('GET', '/attribute-groups')[0]?.query).toEqual({ per_page: '100' })
     expect(api).toHaveBeenCalledWith('/screens/showroom.attributes', expect.anything())
 
-    const row = wrapper.find('[data-testid="showroom-attribute-row-color"]')
+    const row = rowOf(wrapper, 'showroom-attribute-row-color')
     expect(row.find('a').attributes('href')).toBe('/showroom/attributes/color')
     expect(row.text()).toContain('Color')
     expect(row.text()).toContain('select')
     expect(row.text()).toContain('Looks')
     expect(row.text()).toContain('Scopable')
-    expect(wrapper.find('[data-testid="showroom-attribute-row-name"]').text()).toContain('Unique')
+    expect(rowOf(wrapper, 'showroom-attribute-row-name').text()).toContain('Unique')
     expect(wrapper.find('[data-testid="showroom-attribute-new"]').attributes('href')).toBe('/showroom/attributes/create')
   })
 
@@ -70,8 +71,8 @@ describe('showroom.attributes', () => {
 
     const wrapper = await mountShowroomPage(Page, PATH)
     await wrapper.find('[data-testid="showroom-attributes-search"]').setValue('col')
-    await wrapper.find('[data-testid="showroom-attributes-type"]').setValue('select')
-    await wrapper.find('[data-testid="showroom-attributes-group"]').setValue('looks')
+    await pick(wrapper, 'showroom-attributes-type', 'select')
+    await pick(wrapper, 'showroom-attributes-group', 'looks')
     await wrapper.find('[data-testid="showroom-attributes-filters"]').trigger('submit')
     await reloaded()
 
@@ -89,7 +90,7 @@ describe('showroom.attributes', () => {
     const wrapper = await mountShowroomPage(Page, `${PATH}?type=text&group=specs`)
 
     expect(showroomCalls('GET', '/attributes')[0]?.query).toEqual({ type: 'text', group: 'specs' })
-    expect((wrapper.find('[data-testid="showroom-attributes-type"]').element as HTMLSelectElement).value).toBe('text')
+    expect(picked(wrapper, 'showroom-attributes-type')).toBe('text')
 
     await wrapper.find('[data-testid="showroom-attributes-clear"]').trigger('click')
     await reloaded()

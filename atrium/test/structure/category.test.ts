@@ -70,7 +70,7 @@ describe('showroom.category', () => {
     expect(showroomCalls('GET', '/categories/{category}').map(call => call.path)).toEqual(['/categories/tops', '/categories/master'])
     expect(showroomCalls('GET', '/categories')[0]?.query).toEqual({ under: 'tops', per_page: '100' })
     expect(api).toHaveBeenCalledWith('/screens/showroom.category', expect.objectContaining({ query: expect.objectContaining({ record: 'tops' }) }))
-    expect(wrapper.find('[data-testid="showroom-category-title"]').text()).toBe('Tops')
+    expect(wrapper.find('[data-testid="showroom-category-title"] h1').text()).toBe('Tops')
 
     const chain = wrapper.find('[data-testid="showroom-category-chain"]')
     expect(chain.findAll('a').map(link => link.attributes('href'))).toEqual(['/showroom/categories', '/showroom/categories/master'])

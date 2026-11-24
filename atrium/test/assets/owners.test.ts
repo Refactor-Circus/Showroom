@@ -5,6 +5,7 @@ import { mockPackageApi, reply, resetPackageApis, type PackageRoutes } from '@re
 import { cursorPage, invalid, mountShowroomPage, ok, resetShowroomPages, screensApi, showroomCalls } from '../catalog/support'
 import { acme, brand, downtown, store } from './support'
 import { clearAtriumData, mockAtriumApi, useRouter } from '@refactor-circus/atrium/testing'
+import { pick, row } from '../ui'
 
 /*
  * `showroom.owners` (AC 54, 71): every owner (`owners.index`), a cursor page
@@ -59,11 +60,11 @@ describe('showroom.owners', () => {
     expect(showroomCalls('GET', '/owners')[0]?.query).toEqual({})
     expect(api).toHaveBeenCalledWith('/screens/showroom.owners', expect.anything())
 
-    const row = wrapper.find('[data-testid="showroom-owner-row-downtown"]')
-    expect(row.find('a').attributes('href')).toBe('/showroom/owners/01JOWNERDOWNTOWN')
-    expect(row.text()).toContain('Downtown')
-    expect(row.text()).toContain('store')
-    expect(row.text()).toContain('acme')
+    const downtownRow = row(wrapper, 'showroom-owner-row-downtown')
+    expect(downtownRow.find('a').attributes('href')).toBe('/showroom/owners/01JOWNERDOWNTOWN')
+    expect(downtownRow.text()).toContain('Downtown')
+    expect(downtownRow.text()).toContain('store')
+    expect(downtownRow.text()).toContain('acme')
     expect(wrapper.find('[data-testid="showroom-owners-owner-types"]').attributes('href')).toBe('/showroom/owner-types')
     expect(wrapper.find('[data-testid="showroom-owners-flags"]').attributes('href')).toBe('/showroom/flags')
   })
@@ -73,7 +74,7 @@ describe('showroom.owners', () => {
 
     const wrapper = await mountShowroomPage(Page, PATH)
     await wrapper.find('[data-testid="showroom-owners-search"]').setValue('acme')
-    await wrapper.find('[data-testid="showroom-owners-type"]').setValue('brand')
+    await pick(wrapper, 'showroom-owners-type', 'brand')
     await submit(wrapper, 'showroom-owners-filters')
 
     expect(showroomCalls('GET', '/owners').at(-1)?.query).toEqual({ search: 'acme', type: 'brand' })
@@ -103,7 +104,7 @@ describe('showroom.owners', () => {
 
     const wrapper = await mountShowroomPage(Page, PATH)
     await wrapper.find('[data-testid="showroom-owner-create-code"]').setValue('uptown')
-    await wrapper.find('[data-testid="showroom-owner-create-type"]').setValue('store')
+    await pick(wrapper, 'showroom-owner-create-type', 'store')
     await wrapper.find('[data-testid="showroom-owner-create-parent"]').setValue('acme')
     await wrapper.find('[data-testid="showroom-owner-create-label"]').setValue('Uptown')
     await submit(wrapper, 'showroom-owner-create-form')
@@ -119,7 +120,7 @@ describe('showroom.owners', () => {
 
     const wrapper = await mountShowroomPage(Page, PATH)
     await wrapper.find('[data-testid="showroom-owner-create-code"]').setValue('globex')
-    await wrapper.find('[data-testid="showroom-owner-create-type"]').setValue('brand')
+    await pick(wrapper, 'showroom-owner-create-type', 'brand')
     await submit(wrapper, 'showroom-owner-create-form')
 
     expect(showroomCalls('POST', '/owners')[0]?.body).toEqual({ code: 'globex', type: 'brand' })
@@ -139,7 +140,7 @@ describe('showroom.owners', () => {
 
     const wrapper = await mountShowroomPage(Page, PATH)
     await wrapper.find('[data-testid="showroom-owner-create-code"]').setValue('uptown')
-    await wrapper.find('[data-testid="showroom-owner-create-type"]').setValue('store')
+    await pick(wrapper, 'showroom-owner-create-type', 'store')
     await wrapper.find('[data-testid="showroom-owner-create-parent"]').setValue('downtown')
     await submit(wrapper, 'showroom-owner-create-form')
 
@@ -151,7 +152,7 @@ describe('showroom.owners', () => {
 
     const wrapper = await mountShowroomPage(Page, PATH)
     await wrapper.find('[data-testid="showroom-owner-create-code"]').setValue('uptown')
-    await wrapper.find('[data-testid="showroom-owner-create-type"]').setValue('brand')
+    await pick(wrapper, 'showroom-owner-create-type', 'brand')
     await submit(wrapper, 'showroom-owner-create-form')
 
     expect(wrapper.find('[data-testid="atrium-no-access"]').exists()).toBe(true)

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { TableColumn } from '@nuxt/ui/components/Table.vue'
 import CatalogActionError from '../../components/catalog/CatalogActionError.vue'
 import CatalogPager from '../../components/catalog/CatalogPager.vue'
 import CatalogState from '../../components/catalog/CatalogState.vue'
@@ -37,6 +38,12 @@ const { client, data, pending, failed, status, reload } = useCatalogLoad(async s
 const trees = computed(() => data.value?.data ?? [])
 const draft = reactive({ code: '', label: '' })
 
+const columns = computed<TableColumn<ShowroomCategory>[]>(() => [
+  { accessorKey: 'code', header: t('showroom.catalog.fields.code') },
+  { id: 'label', header: t('showroom.catalog.fields.label') },
+  { accessorKey: 'children_count', header: t('showroom.structure.categories.children'), meta: { class: { th: 'text-right', td: 'text-right' } } }
+])
+
 async function create(): Promise<void> {
   const body = { code: draft.code.trim(), ...newLabels(locale.value, draft.label) }
 
@@ -50,10 +57,7 @@ async function create(): Promise<void> {
 
 <template>
   <div class="space-y-4" data-testid="showroom-categories">
-    <div>
-      <h1 class="text-xl font-semibold">{{ t('showroom.structure.categories.title') }}</h1>
-      <p class="text-sm text-muted">{{ t('showroom.structure.categories.description') }}</p>
-    </div>
+    <AtriumPageHeader :title="t('showroom.structure.categories.title')" :description="t('showroom.structure.categories.description')" />
 
     <AtriumIntegrationScreen screen-key="showroom.categories">
       <div class="space-y-4">
@@ -75,25 +79,18 @@ async function create(): Promise<void> {
 
         <CatalogState :ready="!pending && data !== null" :failed="failed" :status="status">
           <div class="space-y-4">
-            <p v-if="trees.length === 0" class="atrium-empty" data-testid="showroom-categories-empty">{{ t('showroom.structure.categories.empty') }}</p>
-            <table v-else class="w-full text-left text-sm" data-testid="showroom-categories-table">
-              <thead class="text-muted">
-                <tr>
-                  <th class="py-2 pr-3 font-medium">{{ t('showroom.catalog.fields.code') }}</th>
-                  <th class="py-2 pr-3 font-medium">{{ t('showroom.catalog.fields.label') }}</th>
-                  <th class="py-2 font-medium">{{ t('showroom.structure.categories.children') }}</th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-default">
-                <tr v-for="tree in trees" :key="tree.code" :data-testid="`showroom-category-row-${tree.code}`">
-                  <td class="py-2 pr-3">
-                    <RouterLink :to="categoryPath(tree.code)" class="font-mono font-medium hover:underline">{{ tree.code }}</RouterLink>
-                  </td>
-                  <td class="py-2 pr-3">{{ labelOf(tree.labels, locale, tree.code) }}</td>
-                  <td class="py-2 tabular-nums">{{ tree.children_count ?? t('showroom.catalog.none') }}</td>
-                </tr>
-              </tbody>
-            </table>
+            <UTable :data="trees" :columns="columns" data-testid="showroom-categories-table">
+              <template #empty>
+                <AtriumState compact :title="t('showroom.structure.categories.empty')" data-testid="showroom-categories-empty" />
+              </template>
+              <template #code-cell="{ row: { original: tree } }">
+                <span :data-testid="`showroom-category-row-${tree.code}`">
+                  <ULink :to="categoryPath(tree.code)" class="font-mono font-medium hover:underline">{{ tree.code }}</ULink>
+                </span>
+              </template>
+              <template #label-cell="{ row: { original: tree } }">{{ labelOf(tree.labels, locale, tree.code) }}</template>
+              <template #children_count-cell="{ row: { original: tree } }"><span class="tabular-nums">{{ tree.children_count ?? t('showroom.catalog.none') }}</span></template>
+            </UTable>
 
             <CatalogPager :next="data?.meta?.next_cursor ?? null" :prev="data?.meta?.prev_cursor ?? null" testid="showroom-categories" />
           </div>

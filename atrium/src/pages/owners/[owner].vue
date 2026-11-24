@@ -50,6 +50,8 @@ const flagOptions = usePickList(async showroom => showroomData<CatalogList<Showr
 const ownerFlags = computed(() => flagOptions.value.filter(flag => flag.applies_to.includes('owner')))
 
 /** The types a child of this owner may have: those allowing its type as parent. */
+const childTypeItems = computed(() => childTypes.value.map(type => ({ label: typeLabel(type.code), value: type.code })))
+
 const childTypes = computed(() => types.value.filter(type => type.parent_types === null || type.parent_types === undefined || type.parent_types.includes(owner.value?.type ?? '')))
 
 const form = reactive({ label: '', parent: '', enabled: true, flags: [] as string[] })
@@ -72,10 +74,6 @@ watch(data, () => {
 
 function toggleFlag(code: string, on: boolean): void {
   form.flags = on ? [...form.flags.filter(flag => flag !== code), code] : form.flags.filter(flag => flag !== code)
-}
-
-function checkedOf(event: Event): boolean {
-  return (event.target as HTMLInputElement).checked
 }
 
 function typeLabel(code: string | undefined): string {
@@ -137,18 +135,20 @@ async function destroy(): Promise<void> {
         <div v-if="owner" class="space-y-5">
           <nav v-if="(owner.chain ?? []).length > 1" class="flex flex-wrap items-center gap-1 text-sm text-muted" data-testid="showroom-owner-chain">
             <template v-for="code in ancestors" :key="code">
-              <RouterLink :to="ownerSearchPath(code)" class="font-mono hover:underline">{{ code }}</RouterLink>
+              <ULink :to="ownerSearchPath(code)" class="font-mono hover:underline">{{ code }}</ULink>
               <UIcon name="i-lucide-chevron-right" class="size-3" />
             </template>
             <span class="font-mono text-default">{{ owner.code }}</span>
           </nav>
 
-          <div class="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <h1 class="text-xl font-semibold" data-testid="showroom-owner-title">{{ labelOf(owner.labels, locale, owner.code) }}</h1>
-              <p class="font-mono text-sm text-muted" data-testid="showroom-owner-subtitle">{{ [owner.code, owner.type].filter(part => part).join(' · ') }}</p>
-            </div>
-            <div class="flex flex-wrap items-center gap-2">
+          <UPageHeader :headline="t('showroom.owners.title')" :ui="{ title: 'truncate' }">
+            <template #title>
+              <span data-testid="showroom-owner-title">{{ labelOf(owner.labels, locale, owner.code) }}</span>
+            </template>
+            <template #description>
+              <span class="font-mono text-sm" data-testid="showroom-owner-subtitle">{{ [owner.code, owner.type].filter(part => part).join(' · ') }}</span>
+            </template>
+            <template #links>
               <UBadge :color="owner.enabled ? 'success' : 'neutral'" variant="subtle" data-testid="showroom-owner-enabled">
                 {{ owner.enabled ? t('showroom.catalog.enabled') : t('showroom.catalog.disabled') }}
               </UBadge>
@@ -161,8 +161,8 @@ async function destroy(): Promise<void> {
                 {{ t('showroom.owners.products') }}
               </UButton>
               <UButton color="error" variant="outline" icon="i-lucide-trash-2" :loading="action.busy.value" data-testid="showroom-owner-delete" @click="destroy">{{ t('showroom.catalog.delete') }}</UButton>
-            </div>
-          </div>
+            </template>
+          </UPageHeader>
 
           <p class="text-sm text-muted" data-testid="showroom-owner-counts">
             {{ t('showroom.owners.counts', { products: owner.products_count ?? 0, models: owner.product_models_count ?? 0 }) }}
@@ -182,10 +182,7 @@ async function destroy(): Promise<void> {
                 <UFormField :label="t('showroom.catalog.fields.parent')" :hint="t('showroom.owners.move_hint')" :error="action.error('parent')">
                   <UInput v-model="form.parent" class="w-48" data-testid="showroom-owner-parent" />
                 </UFormField>
-                <label class="flex h-9 items-center gap-2 text-sm">
-                  <input v-model="form.enabled" type="checkbox" data-testid="showroom-owner-enabled-input">
-                  {{ t('showroom.catalog.enabled') }}
-                </label>
+                <UCheckbox v-model="form.enabled" :label="t('showroom.catalog.enabled')" class="h-9 items-center" data-testid="showroom-owner-enabled-input" />
               </div>
             </UCard>
 
@@ -204,17 +201,18 @@ async function destroy(): Promise<void> {
                 <div v-if="owner.flags !== undefined" data-testid="showroom-own-flags">
                   <p class="mb-1 text-xs font-medium uppercase text-muted">{{ t('showroom.catalog.flags.own') }}</p>
                   <div class="flex flex-wrap gap-3">
-                    <label v-for="flag in ownerFlags" :key="flag.code" class="flex items-center gap-1.5 text-sm">
-                      <input
-                        type="checkbox"
-                        :value="flag.code"
-                        :checked="form.flags.includes(flag.code)"
-                        :data-testid="`showroom-flag-${flag.code}`"
-                        @change="toggleFlag(flag.code, checkedOf($event))"
-                      >
-                      <span class="font-mono text-xs">{{ flag.code }}</span>
-                      <span v-if="labelOf(flag.labels, locale, flag.code) !== flag.code" class="text-muted">{{ labelOf(flag.labels, locale, flag.code) }}</span>
-                    </label>
+                    <UCheckbox
+                      v-for="flag in ownerFlags"
+                      :key="flag.code"
+                      :model-value="form.flags.includes(flag.code)"
+                      :data-testid="`showroom-flag-${flag.code}`"
+                      @update:model-value="toggleFlag(flag.code, $event === true)"
+                    >
+                      <template #label>
+                        <span class="font-mono text-xs">{{ flag.code }}</span>
+                        <span v-if="labelOf(flag.labels, locale, flag.code) !== flag.code" class="ms-1.5 text-muted">{{ labelOf(flag.labels, locale, flag.code) }}</span>
+                      </template>
+                    </UCheckbox>
                     <span v-if="ownerFlags.length === 0" class="text-sm text-muted">{{ t('showroom.owners.no_flags') }}</span>
                   </div>
                   <small v-if="action.error('flags')" class="text-xs text-error">{{ action.error('flags') }}</small>
@@ -247,7 +245,7 @@ async function destroy(): Promise<void> {
                 <p v-if="(owner.children ?? []).length === 0" class="text-sm text-muted">{{ t('showroom.owners.no_children') }}</p>
                 <ul v-else class="flex flex-wrap gap-2">
                   <li v-for="code in owner.children" :key="code">
-                    <RouterLink :to="ownerSearchPath(code)" class="font-mono text-sm hover:underline" :data-testid="`showroom-owner-child-${code}`">{{ code }}</RouterLink>
+                    <ULink :to="ownerSearchPath(code)" class="font-mono text-sm hover:underline" :data-testid="`showroom-owner-child-${code}`">{{ code }}</ULink>
                   </li>
                 </ul>
 
@@ -257,10 +255,7 @@ async function destroy(): Promise<void> {
                     <UInput v-model="child.code" required class="w-40" data-testid="showroom-owner-child-code" />
                   </UFormField>
                   <UFormField :label="t('showroom.catalog.fields.type')" :error="childAction.error('type')" required>
-                    <select v-model="child.type" required class="w-40 rounded-md border border-default bg-default px-2.5 py-1.5 text-sm" data-testid="showroom-owner-child-type">
-                      <option value="" disabled>{{ t('showroom.owners.choose_type') }}</option>
-                      <option v-for="type in childTypes" :key="type.code" :value="type.code">{{ typeLabel(type.code) }}</option>
-                    </select>
+                    <USelect v-model="child.type" :items="childTypeItems" :placeholder="t('showroom.owners.choose_type')" required class="w-40" data-testid="showroom-owner-child-type" />
                   </UFormField>
                   <UButton type="submit" icon="i-lucide-plus" :loading="childAction.busy.value" data-testid="showroom-owner-child-submit">{{ t('showroom.owners.add_child') }}</UButton>
                 </form>

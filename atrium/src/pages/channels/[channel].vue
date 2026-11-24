@@ -85,13 +85,9 @@ async function destroy(): Promise<void> {
     <AtriumIntegrationScreen screen-key="showroom.channel" :record="code">
       <CatalogState :ready="!pending && channel !== null" :failed="failed" :status="status">
         <div v-if="channel" class="space-y-5">
-          <div class="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <h1 class="text-xl font-semibold" data-testid="showroom-channel-title">{{ labelOf(channel.labels, locale, channel.code) }}</h1>
-              <p class="font-mono text-sm text-muted">{{ channel.code }}</p>
-            </div>
+          <AtriumPageHeader :title="labelOf(channel.labels, locale, channel.code)" :description="channel.code" data-testid="showroom-channel-title">
             <UButton color="error" variant="outline" icon="i-lucide-trash-2" :loading="action.busy.value" data-testid="showroom-channel-delete" @click="destroy">{{ t('showroom.catalog.delete') }}</UButton>
-          </div>
+          </AtriumPageHeader>
 
           <CatalogActionError :action="action" />
 

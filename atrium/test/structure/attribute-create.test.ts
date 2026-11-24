@@ -5,6 +5,7 @@ import { mockPackageApi, reply, resetPackageApis, type PackageRoutes } from '@re
 import { cursorPage, invalid, mountShowroomPage, ok, resetShowroomPages, screensApi, showroomCalls } from '../catalog/support'
 import { color, looks, specs } from './support'
 import { clearAtriumData, mockAtriumApi, useRouter } from '@refactor-circus/atrium/testing'
+import { choices, pick } from '../ui'
 
 /*
  * `showroom.attribute-create` (AC 54, 71): v1's new-attribute form. It sends
@@ -31,7 +32,7 @@ function showroomWith(overrides: PackageRoutes<'showroom'> = {}): void {
 
 async function fill(wrapper: Awaited<ReturnType<typeof mountShowroomPage>>): Promise<void> {
   await wrapper.find('[data-testid="showroom-attribute-create-code"]').setValue('material')
-  await wrapper.find('[data-testid="showroom-attribute-create-type"]').setValue('select')
+  await pick(wrapper, 'showroom-attribute-create-type', 'select')
 }
 
 async function submit(wrapper: Awaited<ReturnType<typeof mountShowroomPage>>): Promise<void> {
@@ -58,11 +59,11 @@ describe('showroom.attribute-create', () => {
     showroomWith()
 
     const wrapper = await mountShowroomPage(Page, PATH)
-    const types = wrapper.findAll('[data-testid="showroom-attribute-create-type"] option').map(option => option.attributes('value'))
-    const groups = wrapper.findAll('[data-testid="showroom-attribute-create-group"] option').map(option => option.attributes('value'))
+    const types = choices(wrapper, 'showroom-attribute-create-type')
+    const groups = choices(wrapper, 'showroom-attribute-create-group')
 
-    expect(types).toEqual(['', 'text', 'textarea', 'number', 'decimal', 'boolean', 'date', 'select', 'multiselect', 'price', 'metric'])
-    expect(groups).toEqual(['', 'looks', 'specs'])
+    expect(types).toEqual([null, 'text', 'textarea', 'number', 'decimal', 'boolean', 'date', 'select', 'multiselect', 'price', 'metric'])
+    expect(groups).toEqual([null, 'looks', 'specs'])
     expect(api).toHaveBeenCalledWith('/screens/showroom.attribute-create', expect.anything())
   })
 
@@ -71,9 +72,9 @@ describe('showroom.attribute-create', () => {
 
     const wrapper = await mountShowroomPage(Page, PATH)
     await fill(wrapper)
-    await wrapper.find('[data-testid="showroom-attribute-create-group"]').setValue('looks')
+    await pick(wrapper, 'showroom-attribute-create-group', 'looks')
     await wrapper.find('[data-testid="showroom-attribute-create-label"]').setValue('Material')
-    await wrapper.find('[data-testid="showroom-attribute-create-flag-is_localizable"]').setValue(true)
+    await pick(wrapper, 'showroom-attribute-create-flag-is_localizable', true)
     await wrapper.find('[data-testid="showroom-attribute-create-settings"]').setValue('{"max_length": 40}')
     await wrapper.find('[data-testid="showroom-attribute-create-sort"]').setValue('7')
     await submit(wrapper)

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { TableColumn } from '@nuxt/ui/components/Table.vue'
 import CatalogActionError from '../../components/catalog/CatalogActionError.vue'
 import CatalogPager from '../../components/catalog/CatalogPager.vue'
 import CatalogState from '../../components/catalog/CatalogState.vue'
@@ -48,8 +49,16 @@ const { client, data, pending, failed, status, reload } = useCatalogLoad(async s
 
 const models = computed(() => data.value?.data ?? [])
 
-const filters = reactive({ search: '', family_variant: '' })
+const filters = reactive<{ search: string, family_variant: string | null }>({ search: '', family_variant: '' })
 const draft = reactive({ code: '', family_variant: '' })
+
+const variantItems = computed(() => variants.value.map(variant => ({ label: labelOf(variant.labels, locale.value, variant.code), value: variant.code })))
+
+const columns = computed<TableColumn<ShowroomProductModel>[]>(() => [
+  { accessorKey: 'code', header: t('showroom.catalog.fields.code') },
+  { accessorKey: 'family_variant', header: t('showroom.catalog.fields.family_variant') },
+  { accessorKey: 'updated_at', header: t('showroom.catalog.fields.updated') }
+])
 
 watch(() => [route.query.search, route.query.family_variant], () => {
   filters.search = queryValue(route.query.search) ?? ''
@@ -77,7 +86,7 @@ async function create(): Promise<void> {
 
 <template>
   <div class="space-y-4" data-testid="showroom-product-models">
-    <h1 class="text-xl font-semibold">{{ t('showroom.catalog.product_models.title') }}</h1>
+    <AtriumPageHeader :title="t('showroom.catalog.product_models.title')" />
 
     <AtriumIntegrationScreen screen-key="showroom.product-models">
       <div class="space-y-4">
@@ -90,10 +99,7 @@ async function create(): Promise<void> {
               <UInput v-model="draft.code" required class="w-56" data-testid="showroom-product-model-create-code" />
             </UFormField>
             <UFormField :label="t('showroom.catalog.fields.family_variant')" :error="action.error('family_variant')" required>
-              <select v-model="draft.family_variant" required class="w-64 rounded-md border border-default bg-default px-2.5 py-1.5 text-sm" data-testid="showroom-product-model-create-variant">
-                <option value="" disabled>{{ t('showroom.catalog.product_models.choose_family_variant') }}</option>
-                <option v-for="variant in variants" :key="variant.code" :value="variant.code">{{ labelOf(variant.labels, locale, variant.code) }}</option>
-              </select>
+              <USelect v-model="draft.family_variant" :items="variantItems" :placeholder="t('showroom.catalog.product_models.choose_family_variant')" required class="w-64" data-testid="showroom-product-model-create-variant" />
             </UFormField>
             <UButton type="submit" icon="i-lucide-plus" :loading="action.busy.value" data-testid="showroom-product-model-create-submit">{{ t('showroom.catalog.create') }}</UButton>
           </form>
@@ -101,15 +107,12 @@ async function create(): Promise<void> {
         </UCard>
 
         <UCard>
-          <form class="atrium-querybar" data-testid="showroom-product-models-filters" @submit.prevent="filter">
+          <form class="flex flex-wrap items-end gap-3" data-testid="showroom-product-models-filters" @submit.prevent="filter">
             <UFormField :label="t('showroom.catalog.filters.search')">
               <UInput v-model="filters.search" class="w-56" data-testid="showroom-product-models-search" />
             </UFormField>
             <UFormField :label="t('showroom.catalog.fields.family_variant')">
-              <select v-model="filters.family_variant" class="w-64 rounded-md border border-default bg-default px-2.5 py-1.5 text-sm" data-testid="showroom-product-models-variant">
-                <option value="">{{ t('showroom.catalog.filters.all_family_variants') }}</option>
-                <option v-for="variant in variants" :key="variant.code" :value="variant.code">{{ labelOf(variant.labels, locale, variant.code) }}</option>
-              </select>
+              <USelect v-model="filters.family_variant" :items="[{ label: t('showroom.catalog.filters.all_family_variants'), value: null }, ...variantItems]" :placeholder="t('showroom.catalog.filters.all_family_variants')" class="w-64" data-testid="showroom-product-models-variant" />
             </UFormField>
             <UButton type="submit" icon="i-lucide-filter" data-testid="showroom-product-models-filter">{{ t('showroom.catalog.filters.filter') }}</UButton>
             <UButton variant="ghost" icon="i-lucide-x" data-testid="showroom-product-models-clear" @click="clear">{{ t('showroom.catalog.filters.clear') }}</UButton>
@@ -118,25 +121,18 @@ async function create(): Promise<void> {
 
         <CatalogState :ready="!pending && data !== null" :failed="failed" :status="status">
           <div class="space-y-4">
-            <p v-if="models.length === 0" class="atrium-empty" data-testid="showroom-product-models-empty">{{ t('showroom.catalog.product_models.empty') }}</p>
-            <table v-else class="w-full text-left text-sm" data-testid="showroom-product-models-table">
-              <thead class="text-muted">
-                <tr>
-                  <th class="py-2 pr-3 font-medium">{{ t('showroom.catalog.fields.code') }}</th>
-                  <th class="py-2 pr-3 font-medium">{{ t('showroom.catalog.fields.family_variant') }}</th>
-                  <th class="py-2 font-medium">{{ t('showroom.catalog.fields.updated') }}</th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-default">
-                <tr v-for="model in models" :key="model.code" :data-testid="`showroom-product-model-row-${model.code}`">
-                  <td class="py-2 pr-3">
-                    <RouterLink :to="productModelPath(model.code)" class="font-mono font-medium hover:underline">{{ model.code }}</RouterLink>
-                  </td>
-                  <td class="py-2 pr-3 font-mono text-xs">{{ model.family_variant ?? t('showroom.catalog.none') }}</td>
-                  <td class="py-2">{{ formatDate(model.updated_at) ?? t('showroom.catalog.none') }}</td>
-                </tr>
-              </tbody>
-            </table>
+            <UTable :data="models" :columns="columns" data-testid="showroom-product-models-table">
+              <template #empty>
+                <AtriumState compact :title="t('showroom.catalog.product_models.empty')" data-testid="showroom-product-models-empty" />
+              </template>
+              <template #code-cell="{ row: { original: model } }">
+                <span :data-testid="`showroom-product-model-row-${model.code}`">
+                  <ULink :to="productModelPath(model.code)" class="font-mono font-medium hover:underline">{{ model.code }}</ULink>
+                </span>
+              </template>
+              <template #family_variant-cell="{ row: { original: model } }"><span class="font-mono text-xs">{{ model.family_variant ?? t('showroom.catalog.none') }}</span></template>
+              <template #updated_at-cell="{ row: { original: model } }">{{ formatDate(model.updated_at) ?? t('showroom.catalog.none') }}</template>
+            </UTable>
 
             <CatalogPager :next="data?.meta?.next_cursor ?? null" :prev="data?.meta?.prev_cursor ?? null" testid="showroom-product-models" />
           </div>

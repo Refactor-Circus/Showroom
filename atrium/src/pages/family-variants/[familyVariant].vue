@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { TableColumn } from '@nuxt/ui/components/Table.vue'
 import CatalogActionError from '../../components/catalog/CatalogActionError.vue'
 import CatalogState from '../../components/catalog/CatalogState.vue'
 import {
@@ -42,6 +43,25 @@ const { client, data, pending, failed, status } = useCatalogLoad<Loaded>(async (
 
 const variant = computed(() => data.value?.variant ?? null)
 
+interface LevelRow {
+  key: string
+  level: string
+  axes: string
+  attributes: string
+}
+
+const columns = computed<TableColumn<LevelRow>[]>(() => [
+  { accessorKey: 'level', header: t('showroom.catalog.family_variants.level') },
+  { accessorKey: 'axes', header: t('showroom.catalog.families.axes') },
+  { accessorKey: 'attributes', header: t('showroom.catalog.families.attributes') }
+])
+
+/** The common attributes, then each level's axes and attributes. */
+const levelRows = computed<LevelRow[]>(() => variant.value === null ? [] : [
+  { key: 'common', level: t('showroom.catalog.family_variants.common'), axes: t('showroom.catalog.none'), attributes: codes(variant.value.common_attributes) },
+  ...(variant.value.levels ?? []).map(level => ({ key: String(level.level), level: String(level.level), axes: codes(level.axes), attributes: codes(level.attributes) }))
+])
+
 function codes(list: readonly string[] | undefined): string {
   return list && list.length > 0 ? list.join(', ') : t('showroom.catalog.none')
 }
@@ -64,16 +84,18 @@ async function destroy(): Promise<void> {
     <AtriumIntegrationScreen screen-key="showroom.family-variant" :record="code">
       <CatalogState :ready="!pending && variant !== null" :failed="failed" :status="status">
         <div v-if="variant" class="space-y-5">
-          <div class="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <h1 class="text-xl font-semibold" data-testid="showroom-family-variant-title">{{ labelOf(variant.labels, locale, variant.code) }}</h1>
-              <p class="font-mono text-sm text-muted">{{ variant.code }}<template v-if="variant.family"> · {{ variant.family }}</template></p>
-            </div>
-            <div class="flex flex-wrap items-center gap-2">
+          <UPageHeader :headline="t('showroom.catalog.fields.family_variant')">
+            <template #title>
+              <span data-testid="showroom-family-variant-title">{{ labelOf(variant.labels, locale, variant.code) }}</span>
+            </template>
+            <template #description>
+              <span class="font-mono">{{ variant.code }}<template v-if="variant.family"> · {{ variant.family }}</template></span>
+            </template>
+            <template #links>
               <UButton v-if="variant.family" :to="familyPath(variant.family)" variant="outline" icon="i-lucide-arrow-left" data-testid="showroom-family-variant-family">{{ variant.family }}</UButton>
               <UButton color="error" variant="outline" icon="i-lucide-trash-2" :loading="action.busy.value" data-testid="showroom-family-variant-delete" @click="destroy">{{ t('showroom.catalog.delete') }}</UButton>
-            </div>
-          </div>
+            </template>
+          </UPageHeader>
 
           <CatalogActionError :action="action" />
 
@@ -81,27 +103,13 @@ async function destroy(): Promise<void> {
             <template #header>
               <h2 class="font-semibold">{{ t('showroom.catalog.family_variants.levels') }}</h2>
             </template>
-            <table class="w-full text-left text-sm">
-              <thead class="text-muted">
-                <tr>
-                  <th class="py-1 pr-3 font-medium">{{ t('showroom.catalog.family_variants.level') }}</th>
-                  <th class="py-1 pr-3 font-medium">{{ t('showroom.catalog.families.axes') }}</th>
-                  <th class="py-1 font-medium">{{ t('showroom.catalog.families.attributes') }}</th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-default">
-                <tr data-testid="showroom-level-common">
-                  <td class="py-1 pr-3">{{ t('showroom.catalog.family_variants.common') }}</td>
-                  <td class="py-1 pr-3">{{ t('showroom.catalog.none') }}</td>
-                  <td class="py-1 font-mono text-xs">{{ codes(variant.common_attributes) }}</td>
-                </tr>
-                <tr v-for="level in variant.levels ?? []" :key="level.level" :data-testid="`showroom-level-${level.level}`">
-                  <td class="py-1 pr-3">{{ level.level }}</td>
-                  <td class="py-1 pr-3 font-mono text-xs">{{ codes(level.axes) }}</td>
-                  <td class="py-1 font-mono text-xs">{{ codes(level.attributes) }}</td>
-                </tr>
-              </tbody>
-            </table>
+            <UTable :data="levelRows" :columns="columns">
+              <template #level-cell="{ row: { original: level } }">
+                <span :data-testid="`showroom-level-${level.key}`">{{ level.level }}</span>
+              </template>
+              <template #axes-cell="{ row: { original: level } }"><span class="font-mono text-xs">{{ level.axes }}</span></template>
+              <template #attributes-cell="{ row: { original: level } }"><span class="font-mono text-xs">{{ level.attributes }}</span></template>
+            </UTable>
           </UCard>
 
           <UCard data-testid="showroom-family-variant-models">
@@ -111,7 +119,7 @@ async function destroy(): Promise<void> {
             <p v-if="(data?.models ?? []).length === 0" class="text-sm text-muted">{{ t('showroom.catalog.product_models.empty') }}</p>
             <ul v-else class="flex flex-wrap gap-2">
               <li v-for="model in data?.models ?? []" :key="model.code">
-                <RouterLink :to="productModelPath(model.code)" class="font-mono text-sm hover:underline" :data-testid="`showroom-family-variant-model-${model.code}`">{{ model.code }}</RouterLink>
+                <ULink :to="productModelPath(model.code)" class="font-mono text-sm hover:underline" :data-testid="`showroom-family-variant-model-${model.code}`">{{ model.code }}</ULink>
               </li>
             </ul>
           </UCard>

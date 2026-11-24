@@ -3,6 +3,7 @@ import Page from '../../src/pages/products/[product].vue'
 import { settle } from '@refactor-circus/atrium/testing'
 import { mockPackageApi, reply, resetPackageApis, type PackageRoutes } from '@refactor-circus/atrium/testing'
 import { clearAtriumData, mockAtriumApi, useRouter } from '@refactor-circus/atrium/testing'
+import { pick, picked, row } from '../ui'
 import {
   bySize,
   confirmWith,
@@ -101,9 +102,9 @@ describe('showroom.product', () => {
       expect(wrapper.find('[data-testid="showroom-product-title"]').text()).toBe('shirt-1')
       expect(wrapper.find('[data-testid="showroom-product-status"]').exists()).toBe(true)
       expect(wrapper.find('[data-testid="showroom-product-slug"]').text()).toBe('shirt-1')
-      expect(wrapper.find('[data-completeness="web/en"]').text()).toContain('50%')
+      expect(row(wrapper, 'showroom-completeness-web-en').text()).toContain('50%')
       expect((wrapper.find('[data-testid="showroom-value-name"]').element as HTMLInputElement).value).toBe('Oxford shirt')
-      expect((wrapper.find('[data-testid="showroom-value-color"]').element as HTMLSelectElement).value).toBe('red')
+      expect(picked(wrapper, 'showroom-value-color')).toBe('red')
     })
 
     it('shows the no-access state on a 403', async () => {
@@ -142,10 +143,10 @@ describe('showroom.product', () => {
 
       const wrapper = await mountShowroomPage(Page, PATH)
       await wrapper.find('[data-testid="showroom-value-name"]').setValue('Linen shirt')
-      await wrapper.find('[data-testid="showroom-value-color"]').setValue('blue')
-      await wrapper.find('[data-testid="showroom-product-family"]').setValue('shoes')
+      await pick(wrapper, 'showroom-value-color', 'blue')
+      await pick(wrapper, 'showroom-product-family', 'shoes')
       await wrapper.find('[data-testid="showroom-product-owner"]').setValue('  ')
-      await wrapper.find('[data-testid="showroom-product-enabled-input"]').setValue(false)
+      await pick(wrapper, 'showroom-product-enabled-input', false)
       await submit(wrapper)
 
       expect(showroomCalls('PATCH', '/products/{product}')[0]?.body).toEqual({
@@ -167,7 +168,7 @@ describe('showroom.product', () => {
 
       expect((wrapper.find('[data-testid="showroom-value-name"]').element as HTMLInputElement).value).toBe('')
       await wrapper.find('[data-testid="showroom-value-name"]').setValue('Chemise')
-      await wrapper.find('[data-testid="showroom-value-color"]').setValue('')
+      await pick(wrapper, 'showroom-value-color', null)
       await submit(wrapper)
 
       expect(showroomCalls('PATCH', '/products/{product}')[0]?.body).toMatchObject({
@@ -182,7 +183,7 @@ describe('showroom.product', () => {
       showroomWith()
 
       const wrapper = await mountShowroomPage(Page, PATH)
-      await wrapper.find('[data-testid="showroom-slot-locale"]').setValue('fr')
+      await pick(wrapper, 'showroom-slot-locale', 'fr')
       await wrapper.find('[data-testid="showroom-slot-picker"]').trigger('submit')
       await settle()
 
@@ -193,7 +194,7 @@ describe('showroom.product', () => {
       showroomWith()
 
       const wrapper = await mountShowroomPage(Page, PATH)
-      await wrapper.find('[data-testid="showroom-add-attribute-select"]').setValue('weight')
+      await pick(wrapper, 'showroom-add-attribute-select', 'weight')
       await wrapper.find('[data-testid="showroom-add-attribute"]').trigger('submit')
       await settle()
       await wrapper.find('[data-testid="showroom-value-weight"]').setValue('250')
@@ -244,10 +245,10 @@ describe('showroom.product', () => {
 
       expect(wrapper.find('[data-effective-flag="eco"]').attributes('data-inherited')).toBe('false')
       expect(wrapper.find('[data-effective-flag="sale"]').attributes('data-inherited')).toBe('true')
-      expect((wrapper.find('[data-testid="showroom-flag-eco"]').element as HTMLInputElement).checked).toBe(true)
+      expect(picked(wrapper, 'showroom-flag-eco')).toBe(true)
 
-      await wrapper.find('[data-testid="showroom-flag-eco"]').setValue(false)
-      await wrapper.find('[data-testid="showroom-flag-sale"]').setValue(true)
+      await pick(wrapper, 'showroom-flag-eco', false)
+      await pick(wrapper, 'showroom-flag-sale', true)
       await submit(wrapper)
 
       expect(showroomCalls('PATCH', '/products/{product}')[0]?.body).toMatchObject({ flags: ['sale'] })
@@ -450,8 +451,8 @@ describe('showroom.product', () => {
       showroomWith()
 
       const wrapper = await mountShowroomPage(Page, PATH)
-      await wrapper.find('[data-testid="showroom-association-type"]').setValue('related')
-      await wrapper.find('[data-testid="showroom-association-kind"]').setValue('product_models')
+      await pick(wrapper, 'showroom-association-type', 'related')
+      await pick(wrapper, 'showroom-association-kind', 'product_models')
       await wrapper.find('[data-testid="showroom-association-target"]').setValue('oxford')
       await wrapper.find('[data-testid="showroom-association-add"]').trigger('submit')
       await settle()
@@ -463,7 +464,7 @@ describe('showroom.product', () => {
       showroomWith()
 
       const wrapper = await mountShowroomPage(Page, PATH)
-      await wrapper.find('[data-testid="showroom-association-type"]').setValue('bundle')
+      await pick(wrapper, 'showroom-association-type', 'bundle')
       await wrapper.find('[data-testid="showroom-association-target"]').setValue('shirt-3')
       await wrapper.find('[data-testid="showroom-association-quantity"]').setValue('2')
       await wrapper.find('[data-testid="showroom-association-add"]').trigger('submit')
@@ -478,7 +479,7 @@ describe('showroom.product', () => {
       showroomWith({ 'PATCH /products/{product}': invalid({ 'associations.related.products.1': ['The product shirt-404 does not exist.'] }) })
 
       const wrapper = await mountShowroomPage(Page, PATH)
-      await wrapper.find('[data-testid="showroom-association-type"]').setValue('related')
+      await pick(wrapper, 'showroom-association-type', 'related')
       await wrapper.find('[data-testid="showroom-association-target"]').setValue('shirt-404')
       await wrapper.find('[data-testid="showroom-association-add"]').trigger('submit')
       await settle()
@@ -543,7 +544,7 @@ describe('showroom.product', () => {
       expect(wrapper.find('[data-testid="showroom-inherited-name|en|"]').text()).toBe('Oxford')
       expect(wrapper.find('[data-testid="showroom-inherited-categories"]').text()).toContain('tops')
       expect(wrapper.find('[data-testid="showroom-value-name"]').exists()).toBe(false)
-      expect((wrapper.find('[data-testid="showroom-value-color"]').element as HTMLSelectElement).value).toBe('blue')
+      expect(picked(wrapper, 'showroom-value-color')).toBe('blue')
     })
 
     it('saves only what a variant owns: no family or owner, its own categories and its level\'s values', async () => {
