@@ -129,3 +129,9 @@
 - Rationale: The user said "move the vue files for each module back into their respective modules. modules need to register their js. js should be injected into the blade file. modules are responsible for their own frontend and cjs clients from now on".
 - Date: 2026-11-24
 - Raised by: user
+
+## D-021: Who declares Showroom's Atrium integration?
+- Choice: Showroom, in a static JSON manifest. `atrium/src/integration.json` (Atrium's integration schema, version 1, key `showroom`) declares the `showroom.atrium` feature, the eleven nav items, the four widgets, the settings panel, the search source and the 27 screens; the transfers screen's `flow_prefix` is a `$config` expression on `atrium.integrations.showroom.transfers.flow_prefix` (default `showroom:`). The preset validates it and writes `dist/atrium/integration.json`, which `extra.atrium.integration` names. The SDK pin moves to Atrium 009b5bc (D-090 there). No PHP and no Atrium dependency are added; `AtriumModuleTest` checks the declaration points at a manifest with key `showroom` and version 1 that matches its source, and `atrium/test/integration.test.ts` checks the module registers everything the manifest declares.
+- Rationale: The user said "move the php declarations": each package's Atrium integration moves out of Atrium into the package, and Atrium reads it from the package's JSON manifest.
+- Date: 2026-11-24
+- Raised by: user

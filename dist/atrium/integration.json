@@ -1,0 +1,290 @@
+{
+  "$schema": "../node_modules/@refactor-circus/atrium/schema/integration.schema.json",
+  "version": 1,
+  "key": "showroom",
+  "label": "Showroom",
+  "features": [
+    "showroom.atrium"
+  ],
+  "navigation": [
+    {
+      "label": "Products",
+      "path": "/showroom/products",
+      "icon": "i-lucide-box",
+      "group": "Catalog",
+      "sort": 1
+    },
+    {
+      "label": "Product models",
+      "path": "/showroom/product-models",
+      "icon": "i-lucide-layers",
+      "group": "Catalog",
+      "sort": 2
+    },
+    {
+      "label": "Categories",
+      "path": "/showroom/categories",
+      "icon": "i-lucide-folder",
+      "group": "Catalog",
+      "sort": 3
+    },
+    {
+      "label": "Assets",
+      "path": "/showroom/assets",
+      "icon": "i-lucide-image",
+      "group": "Catalog",
+      "sort": 4
+    },
+    {
+      "label": "Owners",
+      "path": "/showroom/owners",
+      "icon": "i-lucide-store",
+      "group": "Catalog",
+      "sort": 3
+    },
+    {
+      "label": "Families",
+      "path": "/showroom/families",
+      "icon": "i-lucide-layout-grid",
+      "group": "Catalog",
+      "sort": 5
+    },
+    {
+      "label": "Attributes",
+      "path": "/showroom/attributes",
+      "icon": "i-lucide-tag",
+      "group": "Catalog",
+      "sort": 10
+    },
+    {
+      "label": "Channels",
+      "path": "/showroom/channels",
+      "icon": "i-lucide-globe",
+      "group": "Catalog",
+      "sort": 30
+    },
+    {
+      "label": "Import & export",
+      "path": "/showroom/transfers",
+      "icon": "i-lucide-arrow-up-down",
+      "group": "Catalog",
+      "sort": 40
+    },
+    {
+      "label": "Association types",
+      "path": "/showroom/association-types",
+      "icon": "i-lucide-link",
+      "group": "Catalog",
+      "sort": 35
+    },
+    {
+      "label": "Attribute groups",
+      "path": "/showroom/attribute-groups",
+      "icon": "i-lucide-grid-2x2",
+      "group": "Catalog",
+      "sort": 20
+    }
+  ],
+  "widgets": [
+    {
+      "key": "showroom.product-status",
+      "label": "Products by status",
+      "description": "How many products sit in each review state, and how many are live.",
+      "icon": "i-lucide-box",
+      "size": {
+        "width": 6,
+        "height": 1
+      }
+    },
+    {
+      "key": "showroom.completeness",
+      "label": "Completeness",
+      "description": "Average completeness and fully complete products per channel and locale.",
+      "icon": "i-lucide-gauge",
+      "size": {
+        "width": 6,
+        "height": 2
+      }
+    },
+    {
+      "key": "showroom.review-queue",
+      "label": "Review queue",
+      "description": "Products waiting for review, oldest first.",
+      "icon": "i-lucide-list-checks",
+      "size": {
+        "width": 6,
+        "height": 2
+      }
+    },
+    {
+      "key": "showroom.recent-changes",
+      "label": "Recent changes",
+      "description": "The latest product edits, transitions and reverts.",
+      "icon": "i-lucide-history",
+      "size": {
+        "width": 6,
+        "height": 2
+      }
+    }
+  ],
+  "settings": {
+    "key": "showroom",
+    "label": "Showroom",
+    "description": "How the catalog is exposed over HTTP and MCP.",
+    "icon": "i-lucide-box"
+  },
+  "search_sources": [
+    {
+      "key": "showroom",
+      "label": "Showroom",
+      "icon": "i-lucide-box"
+    }
+  ],
+  "screens": [
+    {
+      "key": "showroom.products",
+      "kind": "list",
+      "path": "/showroom/products"
+    },
+    {
+      "key": "showroom.product-create",
+      "kind": "detail",
+      "path": "/showroom/products/create"
+    },
+    {
+      "key": "showroom.product",
+      "kind": "detail",
+      "path": "/showroom/products/:product",
+      "subject_type": "showroom_product"
+    },
+    {
+      "key": "showroom.product-models",
+      "kind": "list",
+      "path": "/showroom/product-models"
+    },
+    {
+      "key": "showroom.product-model",
+      "kind": "detail",
+      "path": "/showroom/product-models/:productModel",
+      "subject_type": "showroom_product_model"
+    },
+    {
+      "key": "showroom.families",
+      "kind": "list",
+      "path": "/showroom/families"
+    },
+    {
+      "key": "showroom.family",
+      "kind": "detail",
+      "path": "/showroom/families/:family"
+    },
+    {
+      "key": "showroom.family-variant",
+      "kind": "detail",
+      "path": "/showroom/family-variants/:familyVariant"
+    },
+    {
+      "key": "showroom.attributes",
+      "kind": "list",
+      "path": "/showroom/attributes"
+    },
+    {
+      "key": "showroom.attribute-create",
+      "kind": "detail",
+      "path": "/showroom/attributes/create"
+    },
+    {
+      "key": "showroom.attribute",
+      "kind": "detail",
+      "path": "/showroom/attributes/:attribute"
+    },
+    {
+      "key": "showroom.attribute-groups",
+      "kind": "list",
+      "path": "/showroom/attribute-groups"
+    },
+    {
+      "key": "showroom.attribute-group",
+      "kind": "detail",
+      "path": "/showroom/attribute-groups/:group"
+    },
+    {
+      "key": "showroom.association-types",
+      "kind": "list",
+      "path": "/showroom/association-types"
+    },
+    {
+      "key": "showroom.categories",
+      "kind": "list",
+      "path": "/showroom/categories"
+    },
+    {
+      "key": "showroom.category",
+      "kind": "detail",
+      "path": "/showroom/categories/:category"
+    },
+    {
+      "key": "showroom.channels",
+      "kind": "list",
+      "path": "/showroom/channels"
+    },
+    {
+      "key": "showroom.channel",
+      "kind": "detail",
+      "path": "/showroom/channels/:channel"
+    },
+    {
+      "key": "showroom.owners",
+      "kind": "list",
+      "path": "/showroom/owners"
+    },
+    {
+      "key": "showroom.owner",
+      "kind": "detail",
+      "path": "/showroom/owners/:owner",
+      "subject_type": "showroom_owner"
+    },
+    {
+      "key": "showroom.owner-types",
+      "kind": "list",
+      "path": "/showroom/owner-types"
+    },
+    {
+      "key": "showroom.owner-type",
+      "kind": "detail",
+      "path": "/showroom/owner-types/:ownerType"
+    },
+    {
+      "key": "showroom.flags",
+      "kind": "list",
+      "path": "/showroom/flags"
+    },
+    {
+      "key": "showroom.flag",
+      "kind": "detail",
+      "path": "/showroom/flags/:flag"
+    },
+    {
+      "key": "showroom.assets",
+      "kind": "list",
+      "path": "/showroom/assets"
+    },
+    {
+      "key": "showroom.asset",
+      "kind": "detail",
+      "path": "/showroom/assets/:asset"
+    },
+    {
+      "key": "showroom.transfers",
+      "kind": "list",
+      "path": "/showroom/transfers",
+      "options": {
+        "flow_prefix": {
+          "$config": "atrium.integrations.showroom.transfers.flow_prefix",
+          "type": "string",
+          "default": "showroom:"
+        }
+      }
+    }
+  ]
+}

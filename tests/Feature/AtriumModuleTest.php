@@ -9,7 +9,10 @@ declare(strict_types=1);
  * SHA-256 of the files it was built from; this recomputes it the way the
  * preset does (`hashInputs()` in @refactor-circus/atrium/vite), so a source
  * changed without a rebuild fails here with no Node needed. CI also rebuilds
- * and diffs (the `ui` job in .github/workflows/tests.yml).
+ * and diffs (the `ui` job in .github/workflows/tests.yml). The module's
+ * Atrium integration (nav, widgets, settings panel, search source, screens)
+ * is declared in `atrium/src/integration.json` (D-090), which the build
+ * checks and copies to `dist/atrium/integration.json`.
  */
 
 function showroomPackageRoot(): string
@@ -94,6 +97,7 @@ it('declares its Atrium module in composer.json extra.atrium', function (): void
         'key' => 'showroom',
         'scripts' => ['dist/atrium/atrium.js'],
         'styles' => ['dist/atrium/atrium.css'],
+        'integration' => 'dist/atrium/integration.json',
     ]);
 });
 
@@ -106,6 +110,25 @@ it('commits every script and stylesheet the declaration names', function (): voi
     foreach ($files as $file) {
         expect(showroomPackageRoot().'/'.$file)->toBeFile();
     }
+});
+
+it('ships its integration manifest where extra.atrium.integration points', function (): void {
+    $path = showroomAtriumDeclaration()['integration'] ?? null;
+
+    expect($path)->toBe('dist/atrium/integration.json')
+        ->and(showroomPackageRoot().'/'.$path)->toBeFile();
+
+    /** @var array<string, mixed> $manifest */
+    $manifest = json_decode((string) file_get_contents(showroomPackageRoot().'/'.$path), true, 512, JSON_THROW_ON_ERROR);
+
+    expect($manifest)
+        ->toHaveKey('key', 'showroom')
+        ->toHaveKey('version', 1);
+});
+
+it('ships the manifest its sources declare', function (): void {
+    expect(json_decode((string) file_get_contents(showroomPackageRoot().'/dist/atrium/integration.json'), true, 512, JSON_THROW_ON_ERROR))
+        ->toBe(json_decode((string) file_get_contents(showroomPackageRoot().'/atrium/src/integration.json'), true, 512, JSON_THROW_ON_ERROR));
 });
 
 it('was built for the showroom key and shared API 1.0', function (): void {

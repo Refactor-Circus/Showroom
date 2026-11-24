@@ -136,7 +136,8 @@
             ],
             "styles": [
                 "dist/atrium/atrium.css"
-            ]
+            ],
+            "integration": "dist/atrium/integration.json"
         },
         "branch-alias": {
             "dev-main": "2.0.x-dev"

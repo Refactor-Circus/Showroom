@@ -59,6 +59,7 @@ it('declares only its Atrium front-end module under extra.atrium, no PHP plugin'
         'key' => 'showroom',
         'scripts' => ['dist/atrium/atrium.js'],
         'styles' => ['dist/atrium/atrium.css'],
+        'integration' => 'dist/atrium/integration.json',
     ]);
 });
 

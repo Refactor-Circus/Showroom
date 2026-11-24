@@ -30,7 +30,7 @@ import { routes } from './routes'
  */
 
 /**
- * Each screen key Showroom declares (`ShowroomIntegration::screens()`) to
+ * Each screen key Showroom declares (`src/integration.json`, D-090) to
  * the name of the layer route that renders it: the page at the declared path.
  */
 export const screens: Record<string, string> = {
