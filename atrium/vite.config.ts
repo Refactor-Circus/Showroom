@@ -4,6 +4,6 @@ import { atriumModule } from '@refactor-circus/atrium/vite'
 export default atriumModule({
   key: 'showroom',
   outDir: '../dist/atrium',
-  inputs: ['src', 'package.json', 'vite.config.ts', 'pnpm-lock.yaml'],
+  inputs: ['src', '../client/src', 'package.json', 'vite.config.ts', 'pnpm-lock.yaml'],
   test: { setupFiles: ['test/setup.ts'] },
 })
