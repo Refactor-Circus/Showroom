@@ -123,3 +123,9 @@
 - Rationale: The user said "i'd like everything release as v2 to match". This supersedes any earlier choice to keep `^0.1` constraints or release Keystone as v0.2.0.
 - Date: 2026-11-23
 - Raised by: user
+
+## D-020: Where does Showroom's Atrium front end live?
+- Choice: In Showroom. The Vue module staged in Atrium (`ui/modules/showroom`) moves to `atrium/`, built with `@refactor-circus/atrium/vite` into the committed `dist/atrium/` and declared in `composer.json` under `extra.atrium`; Atrium's Blade page injects its script. Types come from Showroom's own `client/src/schema.d.ts`; the transfers page keeps a copy of Impex's schema as `atrium/types/impex-schema.d.ts` (no dependency on Impex). The PHP stays Atrium-free: `NoAtriumReferencesTest` and the ArchTest rule are narrowed to allow only `extra.atrium`, `atrium/`, `dist/atrium/`, the `ui` CI job and docs. `AtriumModuleTest` checks the declaration and the build's source hash.
+- Rationale: The user said "move the vue files for each module back into their respective modules. modules need to register their js. js should be injected into the blade file. modules are responsible for their own frontend and cjs clients from now on".
+- Date: 2026-11-24
+- Raised by: user

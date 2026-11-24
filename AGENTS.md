@@ -2,7 +2,7 @@
 
 This repository is a Laravel package. Keep the package focused, idiomatic, and easy for Laravel developers to install, test, and maintain.
 
-Showroom is a JSON API and MCP package: since v2.0.0 it ships no UI (no Atrium plugin, views, Blade directives or screens). Front ends, Atrium v2 among them, call the JSON API through the committed `openapi.json` and the TypeScript client in `client/`.
+Showroom is a JSON API and MCP package: since v2.0.0 its PHP ships no UI (no Atrium plugin, views, Blade directives or screens). Front ends call the JSON API through the committed `openapi.json` and the TypeScript client in `client/`. Showroom does ship its Atrium front-end module, JS only: Vue sources in `atrium/` (pnpm, `@refactor-circus/atrium` SDK as a dev dependency, types from `client/src/schema.d.ts`), built into the committed `dist/atrium/` and declared in `composer.json` under `extra.atrium`, which Atrium v2 discovers and loads on its page.
 
 ## Package Conventions
 
@@ -31,7 +31,8 @@ Showroom is a JSON API and MCP package: since v2.0.0 it ships no UI (no Atrium p
 - Policies: every model has a policy in `showroom.policies` (`Arch::modelsWithoutPolicies()`), registered by `registerPolicies()`. Child records defer to their parent through `Support\Policies\Policy::defersTo()` (Keystone's `allowsOn()`): associations to their source, versions and completeness to their product; `SearchableProductPolicy` asks the product policy.
 - Cross-domain code lives in `src/Support`.
 - Batches cost a constant number of queries: product and product model lists eager-load what their resources read (`ListProductsAction::eagerLoads()`), export pages load `ExportProductPages::eagerLoads()` and published versions with `Versions::publishedSnapshots()`, search documents are built with `ProductDocument::many()`, and completeness refreshes in bulk; `tests/Feature/PerformanceTest.php` pins each with query counts. A write that reaches many products never lists them in its own transaction: it calls `ProductIndex::queueWithin(SyncScope, id)` (a queued `QueueProductSyncs` that walks them in chunks), and bulk writers wrap themselves in `ProductIndex::deferring()`. `SyncScope` values are stored in queued jobs: append, never rename.
-- No UI and no Atrium: Showroom renders nothing and names no other package's UI. No file under `src/`, `config/`, `resources/`, `workbench/` or `composer.json` mentions Atrium (`tests/Feature/NoAtriumReferencesTest.php`), and no `RefactorCircus\Showroom` class uses `RefactorCircus\Atrium` (`tests/ArchTest.php`). Data a front end needs that the API lacks becomes an endpoint and MCP tool (usually in `Catalog`), never a view. History (Keen) and transfer runs (Impex) are read from those packages' own APIs. Domain providers register `AuditHooks::label()` only where the audit log's default naming falls short (localized labels, associations, versions).
+- No UI and no Atrium in PHP: Showroom's PHP renders nothing and names no other package's UI. No file under `src/`, `config/`, `routes/`, `database/`, `lang/`, `resources/` (the Boost skill aside) or `workbench/` mentions Atrium, and `composer.json` names it only in `extra.atrium` (`tests/Feature/NoAtriumReferencesTest.php`); no `RefactorCircus\Showroom` class uses `RefactorCircus\Atrium` (`tests/ArchTest.php`), and Atrium is never required or suggested. Data a front end needs that the API lacks becomes an endpoint and MCP tool (usually in `Catalog`), never a view. History (Keen) and transfer runs (Impex) are read from those packages' own APIs. Domain providers register `AuditHooks::label()` only where the audit log's default naming falls short (localized labels, associations, versions).
+- The Atrium module (`atrium/`): after changing anything there, run `pnpm install`, `pnpm typecheck`, `pnpm test` and `pnpm build` in `atrium/` and commit `dist/atrium/` (with its `build.json`). `tests/Feature/AtriumModuleTest.php` fails, without Node, when the build is older than its sources, and the `ui` CI job rebuilds and diffs. `atrium/types/impex-schema.d.ts` is a copy of Impex's client schema for the transfers page (Showroom does not depend on Impex); refresh it by hand. After `composer client:generate`, typecheck the module too.
 - One config file, `config/showroom.php`. Existing keys are renamed or removed only in a major release, each listed in the CHANGELOG's upgrade note for that release (v2.0.0 removed `showroom.ui.*` and `showroom.atrium.*` and moved `widget_cache_seconds` to `showroom.stats.cache_seconds`); a new key is added under its own commented banner section.
 
 ## Quick Commands
@@ -40,6 +41,7 @@ Showroom is a JSON API and MCP package: since v2.0.0 it ships no UI (no Atrium p
 - Formatting check: `composer lint:check`
 - Static analysis: `composer analyse`
 - Pest tests: `composer test:unit`
+- Atrium module: `cd atrium && pnpm install && pnpm typecheck && pnpm test && pnpm build`, then commit `dist/atrium/`
 - Regenerate `openapi.json` and `client/`: `composer client:generate` (needs Node); export the document only: `composer openapi:export`
 - Workbench build: `composer build`
 - Workbench server: `composer serve`

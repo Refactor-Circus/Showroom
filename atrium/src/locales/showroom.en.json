@@ -1,0 +1,42 @@
+{
+  "showroom": {
+    "statuses": {
+      "draft": "Draft",
+      "in_review": "In review",
+      "approved": "Approved",
+      "archived": "Archived"
+    },
+    "widgets": {
+      "live": "Live",
+      "no_completeness_yet": "No completeness scores yet. They need families with required attributes and at least one channel.",
+      "fully_complete": "{complete} of {products} complete",
+      "nothing_in_review": "Nothing is waiting for review.",
+      "waiting_review": "{count} waiting",
+      "no_changes": "No changes yet.",
+      "by": "by {author}"
+    },
+    "settings": {
+      "api": "HTTP API",
+      "mcp": "MCP",
+      "authorization": "Authorization",
+      "routes_prefix": "Route prefix",
+      "per_page": "Page size",
+      "max_per_page": "Maximum page size",
+      "web_transport": "Web transport",
+      "local_transport": "Local transport",
+      "on": "On",
+      "off": "Off"
+    },
+    "search": {
+      "groups": {
+        "products": "Products",
+        "assets": "Assets",
+        "categories": "Categories",
+        "owners": "Owners",
+        "families": "Families",
+        "attributes": "Attributes",
+        "attribute_groups": "Attribute groups"
+      }
+    }
+  }
+}

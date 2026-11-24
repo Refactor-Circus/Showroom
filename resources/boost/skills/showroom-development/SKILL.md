@@ -14,7 +14,7 @@ metadata:
 
 Use this skill when a Laravel application needs product information management (PIM) with Showroom: managing the attributes products are described with, over PHP, HTTP or MCP.
 
-Showroom is a JSON API and MCP package: it ships no screens, views or Blade components. A front end calls the JSON API, typed by the committed `openapi.json` and the `@refactor-circus/showroom-client` TypeScript client; the suite's admin panel is a separate package that does the same.
+Showroom is a JSON API and MCP package: its PHP ships no screens, views or Blade components. A front end calls the JSON API, typed by the committed `openapi.json` and the `@refactor-circus/showroom-client` TypeScript client. Showroom's own Atrium module (JS only, sources in `atrium/`, built into the committed `dist/atrium/` and declared in `composer.json` under `extra.atrium`) is the suite admin panel's front end for it; rebuild it with `pnpm build` in `atrium/` after changing it.
 
 ## Primary Goal
 

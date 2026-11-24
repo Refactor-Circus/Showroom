@@ -1,0 +1,182 @@
+{
+  "showroom": {
+    "catalog": {
+      "none": "—",
+      "yes": "Yes",
+      "no": "No",
+      "enabled": "Enabled",
+      "disabled": "Disabled",
+      "inherited": "inherited",
+      "add": "Add",
+      "create": "Create",
+      "save": "Save",
+      "delete": "Delete",
+      "remove": "Remove",
+      "state": {
+        "not_found": "Not found.",
+        "load_failed": "Showroom could not be loaded.",
+        "action_forbidden": "You may not do this."
+      },
+      "pager": {
+        "previous": "Previous",
+        "next": "Next",
+        "page": "Page {current} of {last}"
+      },
+      "filters": {
+        "search": "Search",
+        "filter": "Filter",
+        "clear": "Clear",
+        "all_statuses": "All statuses",
+        "all_families": "All families",
+        "all_family_variants": "All family variants"
+      },
+      "fields": {
+        "identifier": "Identifier",
+        "code": "Code",
+        "label": "Label",
+        "label_in": "Label ({locale})",
+        "family": "Family",
+        "family_variant": "Family variant",
+        "parent": "Parent",
+        "owner": "Owner",
+        "category": "Category",
+        "enabled": "Status",
+        "workflow": "Workflow",
+        "updated": "Updated",
+        "slug": "Slug",
+        "locale": "Locale",
+        "channel": "Channel",
+        "type": "Type",
+        "group": "Group",
+        "sort_order": "Sort order"
+      },
+      "products": {
+        "title": "Products",
+        "new": "New product",
+        "create": "Create product",
+        "empty": "No products found.",
+        "flag_definitions": "Flag definitions",
+        "identifier_hint": "Unique, and never changed once the product exists.",
+        "no_family": "No family",
+        "details": "Details",
+        "owner_hint": "An owner code; leave empty for none.",
+        "inherited_owner": "Owner (from its product model)",
+        "identifiers_and_flags": "Identifiers and flags",
+        "confirm_delete": "Delete this product? This cannot be undone."
+      },
+      "product_models": {
+        "title": "Product models",
+        "new": "New product model",
+        "empty": "No product models found.",
+        "choose_family_variant": "Choose a family variant",
+        "level": "level {level}",
+        "variant_products": "Variant products",
+        "sub_models": "Sub-models",
+        "add_variant": "Add variant",
+        "add_sub_model": "Add sub-model",
+        "confirm_delete": "Delete this product model? This cannot be undone."
+      },
+      "families": {
+        "title": "Families",
+        "new": "New family",
+        "create": "Create family",
+        "empty": "No families found.",
+        "code_hint": "Lowercase letters, digits and underscores, starting with a letter.",
+        "attributes_count": "Attributes",
+        "label_attribute": "Label attribute",
+        "label_attribute_hint": "The text attribute products of this family are labelled by.",
+        "no_label_attribute": "No label attribute",
+        "members": "Family attributes",
+        "no_attributes": "This family has no attributes yet.",
+        "required": "Required",
+        "required_channels": "Required on channels",
+        "required_channels_hint": "All channels",
+        "variants": "Family variants",
+        "level": "Level {level}",
+        "axes": "Axes",
+        "attributes": "Attributes",
+        "create_variant": "Create family variant",
+        "confirm_delete": "Delete this family? This cannot be undone."
+      },
+      "family_variants": {
+        "levels": "Levels",
+        "level": "Level",
+        "common": "Common",
+        "confirm_delete": "Delete this family variant? This cannot be undone."
+      },
+      "workflow": {
+        "title": "Workflow",
+        "published_version": "Published version",
+        "not_published": "Not published",
+        "comment": "Comment",
+        "completeness": "Completeness",
+        "no_completeness": "No completeness scores yet.",
+        "missing": "Missing",
+        "history": "History",
+        "no_history": "No history yet.",
+        "by": "by {author}",
+        "revert": "Revert",
+        "confirm_revert": "Revert the product to version {version}?",
+        "transitions": {
+          "submit": "Submit for review",
+          "approve": "Approve",
+          "reject": "Reject",
+          "publish": "Publish",
+          "unpublish": "Unpublish",
+          "archive": "Archive",
+          "restore": "Restore"
+        }
+      },
+      "values": {
+        "title": "Values",
+        "inherited": "Inherited values",
+        "none_settable": "No attributes can be set here.",
+        "slot_unavailable": "Add a locale or channel first.",
+        "switch": "Switch",
+        "amount": "Amount",
+        "unit": "Unit",
+        "add_attribute": "Add attribute",
+        "choose_attribute": "Choose an attribute"
+      },
+      "categories": {
+        "title": "Categories",
+        "hint": "Category codes, separated by commas.",
+        "inherited": "Inherited categories"
+      },
+      "external_ids": {
+        "title": "External ids",
+        "source": "New source",
+        "source_hint": "Lowercase letters, digits, dashes and underscores.",
+        "id": "External id",
+        "synced": "synced {time}",
+        "never_synced": "never synced"
+      },
+      "flags": {
+        "own": "Own flags",
+        "effective": "Effective flags",
+        "none": "No flags apply to products."
+      },
+      "assets": {
+        "title": "Assets",
+        "none": "No assets here yet.",
+        "upload_and_link": "Upload and link",
+        "role": "Role",
+        "upload": "Upload"
+      },
+      "associations": {
+        "title": "Associations",
+        "none": "No associations.",
+        "type": "Association type",
+        "choose_type": "Choose a type",
+        "target_kind": "Target kind",
+        "product": "Product",
+        "product_model": "Product model",
+        "target": "Target",
+        "quantity": "Quantity",
+        "quantity_hint": "For quantified types.",
+        "add": "Add",
+        "remove": "Remove"
+      }
+    }
+  }
+}

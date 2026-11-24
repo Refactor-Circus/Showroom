@@ -51,8 +51,15 @@ it('has no Atrium dependency, suggestion or conflict', function (string $section
     expect(showroomComposerPackages($section))->not->toContain('refactor-circus/atrium');
 })->with(['require', 'require-dev', 'suggest', 'conflict']);
 
-it('registers no Atrium plugin', function (): void {
-    expect(showroomComposer()['extra'] ?? [])->not->toHaveKey('atrium');
+it('declares only its Atrium front-end module under extra.atrium, no PHP plugin', function (): void {
+    /** @var array<string, mixed> $extra */
+    $extra = showroomComposer()['extra'] ?? [];
+
+    expect($extra['atrium'] ?? null)->toBe([
+        'key' => 'showroom',
+        'scripts' => ['dist/atrium/atrium.js'],
+        'styles' => ['dist/atrium/atrium.css'],
+    ]);
 });
 
 it('declares no Atrium repository', function (): void {

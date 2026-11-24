@@ -13,7 +13,7 @@
 
 Showroom is a product information management (PIM) system delivered as a Laravel package: a single source of truth for product data — attributes, families, variants, taxonomy, ownership, media and channel-ready content — inside your own application.
 
-Every operation is one Action, reachable over a JSON API and an MCP server for agents. Showroom ships no UI of its own: a committed OpenAPI document and TypeScript client let any front end call the API with types, and [Atrium v2](#front-end-atrium-v2) is the admin panel built on them.
+Every operation is one Action, reachable over a JSON API and an MCP server for agents. Showroom's PHP renders no UI: a committed OpenAPI document and TypeScript client let any front end call the API with types, and Showroom ships its own module for the [Atrium v2](#front-end-atrium-v2) admin panel, built on them.
 
 > **Status:** early development. The catalog core — attributes, families, products, product models and variants, pluggable search and hierarchical ownership — category trees, media, channels and locales, associations and bundles, completeness, workflow and versioning have landed; the rest of the [roadmap](#roadmap) follows.
 
@@ -327,7 +327,9 @@ It runs `composer openapi:export` (which writes `openapi.json`), then `npm --pre
 
 ## Front end: Atrium v2
 
-Showroom has no screens. [Atrium](https://github.com/Refactor-Circus/Atrium) v2 is the optional admin panel for it: install it in the host (`composer require refactor-circus/atrium`) and its Nuxt layer brings the catalog pages, the overview widgets, ⌘K search and the settings panel, calling Showroom's API through `@refactor-circus/showroom-client`. Atrium owns the panel's path, middleware, navigation and links, and builds them from each record's `type` and `id`; see Atrium's Showroom integration for setup. Showroom needs no configuration for it, and the Actions, JSON API and MCP server work the same without it.
+Showroom's PHP has no screens. [Atrium](https://github.com/Refactor-Circus/Atrium) v2 is the optional admin panel for it: install it in the host (`composer require refactor-circus/atrium`) and it loads Showroom's own Atrium module, which brings the catalog pages, the overview widgets, ⌘K search and the settings panel, calling Showroom's API with the types of `@refactor-circus/showroom-client`.
+
+The module is JS only and needs no Node on the host: its Vue sources live in `atrium/` (left out of the Composer archive), its build is committed in `dist/atrium/`, and `composer.json` declares it under `extra.atrium` (`key` `showroom`, `dist/atrium/atrium.js` and `dist/atrium/atrium.css`), which Atrium discovers with `php artisan atrium:discover`. Showroom has no Composer dependency on Atrium. To change it, run `pnpm install`, `pnpm typecheck`, `pnpm test` and `pnpm build` in `atrium/` and commit `dist/atrium/`; `tests/Feature/AtriumModuleTest.php` fails while the build is older than its sources. Atrium owns the panel's path, middleware, navigation and links, and builds them from each record's `type` and `id`; see Atrium's Showroom integration for setup. Showroom needs no configuration for it, and the Actions, JSON API and MCP server work the same without it.
 
 Showroom keeps no transfer record and has no transfers-list endpoint: an import or export run is Impex's. Atrium lists Showroom's runs through Impex's runs API (`GET {impex prefix}/runs`, filtered by `flow`), and starting a run stays on `POST /showroom/imports` and `POST /showroom/exports`. The export form's choices (families, channels, root categories) come from the existing list endpoints.
 

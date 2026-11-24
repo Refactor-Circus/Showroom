@@ -1,0 +1,116 @@
+{
+  "showroom": {
+    "assets": {
+      "title": "Assets",
+      "grid": "Grid",
+      "list": "List",
+      "upload": "Upload an asset",
+      "upload_button": "Upload",
+      "file": "File",
+      "code_hint": "Optional; taken from the file name when left empty.",
+      "all_types": "All types",
+      "types": {
+        "images": "Images",
+        "pdf": "PDF",
+        "videos": "Videos"
+      },
+      "product": "Product",
+      "empty": "No assets match these filters.",
+      "size": "Size",
+      "checksum": "Checksum",
+      "details": "Details",
+      "open_file": "Open file",
+      "replace_file": "Replace file",
+      "links": "Linked to",
+      "no_links": "This asset is not linked to anything yet.",
+      "link_types": {
+        "product": "Product",
+        "product_model": "Product model",
+        "owner": "Owner"
+      },
+      "target": "Target",
+      "target_hint": "A product identifier, or a product model or owner code.",
+      "role": "Role",
+      "link": "Link",
+      "unlink": "Unlink",
+      "confirm_delete": "Delete this asset? Its links are removed too."
+    },
+    "owners": {
+      "title": "Owners",
+      "description": "Brands, suppliers, stores and the other owners products belong to, as a tree.",
+      "flags": "Flags",
+      "new": "New owner",
+      "no_types": "Create an owner type first.",
+      "code_hint": "Lowercase letters, digits, dashes and underscores. Cannot be changed later.",
+      "choose_type": "Choose a type",
+      "parent_hint": "The parent owner's code; leave empty for a root.",
+      "all_types": "All types",
+      "empty": "No owners match these filters.",
+      "children": "Children",
+      "no_children": "No owners beneath this one yet.",
+      "add_child": "Add child",
+      "details": "Details",
+      "move_hint": "Change to move this owner, with everything beneath it. Empty to make it a root.",
+      "products": "Products",
+      "counts": "Owns {products} product(s) and {models} product model(s).",
+      "no_flags": "No flags apply to owners.",
+      "confirm_delete": "Delete this owner?"
+    },
+    "owner_types": {
+      "title": "Owner types",
+      "description": "The kinds of owner, and the chain rules between them.",
+      "new": "New owner type",
+      "code_hint": "Lowercase letters, digits and underscores. Cannot be changed later.",
+      "empty": "No owner types yet.",
+      "rules": "Chain rules",
+      "parent_types": "Parent types",
+      "any_parent": "Any type may be the parent",
+      "any": "Any",
+      "no_types": "No owner types yet.",
+      "can_be_root": "May be a root",
+      "owns_products": "Owns products",
+      "owners": "Owners",
+      "owners_of_type": "Owners ({count})",
+      "confirm_delete": "Delete this owner type?"
+    },
+    "transfers": {
+      "title": "Transfers",
+      "recent": "Recent transfers",
+      "flow": "Flow",
+      "status": "Status",
+      "started": "Started",
+      "finished": "Finished",
+      "no_runs": "No transfers yet.",
+      "runs_failed": "The transfers could not be loaded from Impex.",
+      "requires_impex": "Listing transfers requires Impex.",
+      "requires_impex_hint": "Imports and exports still start here; follow them once Impex is active.",
+      "started_notice": "Transfer queued ({flow}).",
+      "import": {
+        "title": "Import products",
+        "file": "File",
+        "file_hint": "A CSV or JSON Lines file.",
+        "mode": "Mode",
+        "modes": {
+          "upsert": "Create or update",
+          "create": "Create only",
+          "update": "Update only"
+        },
+        "submit": "Start import"
+      },
+      "export": {
+        "title": "Export products",
+        "format": "Format",
+        "formats": {
+          "jsonl": "JSON Lines",
+          "csv": "CSV"
+        },
+        "all_families": "All families",
+        "category_tree": "Category tree",
+        "all_categories": "All categories",
+        "no_channel": "No channel",
+        "published": "Published copies only",
+        "submit": "Start export"
+      }
+    }
+  }
+}

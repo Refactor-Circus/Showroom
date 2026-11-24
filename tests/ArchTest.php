@@ -23,7 +23,8 @@ arch('the package source declares strict types')
     ->expect('RefactorCircus\Showroom')
     ->toUseStrictTypes();
 
-// Showroom ships no UI: Atrium v2 calls its API, so no class names Atrium.
+// Showroom's PHP knows nothing of Atrium: its Atrium module is JS only
+// (atrium/, dist/atrium, extra.atrium), so no class names Atrium.
 arch('no Showroom class uses an Atrium class')
     ->expect('RefactorCircus\Showroom')
     ->not->toUse('RefactorCircus\Atrium');
