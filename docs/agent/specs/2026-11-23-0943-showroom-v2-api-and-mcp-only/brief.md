@@ -8,7 +8,7 @@ Risk: high
 - Docs, CHANGELOG (v2.0.0 upgrade note), README, CLAUDE.md and the Boost skill are updated.
 
 ## Why
-Showroom v2.0.0 ships only its JSON API and MCP server. Data the screens computed in PHP becomes API, and a committed OpenAPI document plus typed client lets Atrium v2's Nuxt layer consume it. Decisions that shaped it:
+Showroom v2.0.0 ships only its JSON API and MCP server. Data the screens computed in PHP becomes API, and a committed OpenAPI document plus typed client lets Showroom's own Atrium module (`dist/atrium`, loaded by Atrium v2's prebuilt Vue app on a Blade page) consume it. Decisions that shaped it:
 - D-001: no transfers endpoint.
 - D-003: one four-section stats payload.
 - D-004: a Catalog domain.

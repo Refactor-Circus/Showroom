@@ -1,4 +1,3 @@
-import './sdk-components'
 import { useTestModule } from '@refactor-circus/atrium/testing'
 import Showroom from '../src/atrium'
 

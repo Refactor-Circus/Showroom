@@ -2,7 +2,7 @@
 
 ## Goal
 
-Showroom v2.0.0 ships only its JSON API and MCP server. Its Atrium plugin, Blade screens and Atrium config are deleted. The data the screens computed in PHP becomes API (`stats`, `search`, `settings-summary`), and a committed OpenAPI document and TypeScript client let Atrium v2's Nuxt layer call the API with types.
+Showroom v2.0.0 ships only its JSON API and MCP server. Its Atrium plugin, Blade screens and Atrium config are deleted. The data the screens computed in PHP becomes API (`stats`, `search`, `settings-summary`), and a committed OpenAPI document and TypeScript client let Showroom's own Atrium module (`atrium/`, built to `dist/atrium` and loaded by Atrium v2's prebuilt Vue app on its Blade page) call the API with types.
 
 ## Acceptance criteria
 
@@ -158,6 +158,6 @@ Search: `{"data": [{"type": "owners", "id": "01J…", "code": "acme", "label": "
 - **Transitive Atrium.** Cortex, Impex and Keen at `^0.1` require Atrium, so it stays installed in dev until their v2 specs land. If their providers need Atrium booted in tests, `tests/TestCase.php` keeps `atrium.disabled` (AC 17). The arch and grep rules still keep Showroom's own code clean.
 - **Scramble inference.** Responses come from `$request->persist()`, which Scramble may not follow to the resource. The new endpoints must have full schemas (AC 20). Existing endpoints are guaranteed path, method, parameters and request body; their response schemas are best effort, through a workbench extension if needed. Gaps limit the client's typing of those responses, not its paths.
 - **Determinism.** Scramble output must be byte-stable across runs and machines (key order, `info.version`, server URL). Otherwise the staleness test flakes. Pin the version in the workbench config and use a relative server URL.
-- **Git dependency on a subfolder.** npm cannot install a git subdirectory; pnpm (`#v2.0.0&path:client`) and Yarn can. Atrium's Nuxt layer chooses how to consume it; committing `dist/` keeps it usable without a build step.
+- **Git dependency on a subfolder.** npm cannot install a git subdirectory; pnpm (`#v2.0.0&path:client`) and Yarn can. Consumers choose how to install it (Showroom's own Atrium module imports it from the repository); committing `dist/` keeps it usable without a build step.
 - **Breaking for hosts.** Hosts that published the Showroom views, set `showroom.atrium.*`, used `ShowroomSupportFeature` or called `ProductStatus::badge()` break. The CHANGELOG upgrade note covers each.
 - **Waits for** Keystone `2026-11-23-0943-drop-the-atrium-plugin-hook`. Removing the call works on the current Keystone too, so the build does not need a Keystone release.

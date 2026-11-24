@@ -60,7 +60,7 @@
 
 ## D-009: What does `client/` ship?
 - Choice: TypeScript source plus a committed `dist/` built with `tsc`. `package.json` names `@refactor-circus/showroom-client` at version `2.0.0`, with `main`/`types`/`exports` pointing at `dist`. It is not published to a registry.
-- Rationale: A git dependency is installed without a build step, so consumers (Atrium's Nuxt layer) need compiled output. Publishing to a registry is not part of the shaped decision.
+- Rationale: A git dependency is installed without a build step, so consumers (originally planned as Atrium's Nuxt layer; now any JS consumer outside the repository) need compiled output. Publishing to a registry is not part of the shaped decision.
 - Date: 2026-11-23
 - Raised by: write-spec; default chosen because the user asked to proceed without stopping
 
