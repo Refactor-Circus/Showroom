@@ -4,8 +4,8 @@ import { A as n, C as r, D as i, O as a, f as o, k as s } from "./catalog-DCoO3A
 import { u as c } from "./structure-DbqcM-iO.js";
 import { t as l } from "./OwnerTypeRules-CvmgahMf.js";
 import { a as u, i as d } from "./owners-C7wgNkGA.js";
-import { AtriumIntegrationScreen as f, navigateTo as p } from "@refactor-circus/atrium";
-import { UButton as m, UCard as h, UFormField as g, UInput as _, UPageHeader as ee } from "@refactor-circus/atrium/ui";
+import { AtriumIntegrationScreen as f, AtriumPageHeader as p, navigateTo as m } from "@refactor-circus/atrium";
+import { UButton as h, UCard as g, UFormField as _, UInput as ee } from "@refactor-circus/atrium/ui";
 import { computed as v, createCommentVNode as y, createElementBlock as b, createElementVNode as x, createTextVNode as S, createVNode as C, defineComponent as w, isRef as T, openBlock as E, ref as D, toDisplayString as O, unref as k, watch as te, withCtx as A, withModifiers as j } from "vue";
 import { useI18n as M } from "vue-i18n";
 import { useRoute as N } from "vue-router";
@@ -16,7 +16,10 @@ var P = {
 }, F = {
 	key: 0,
 	class: "space-y-5"
-}, I = { "data-testid": "showroom-owner-type-title" }, L = { class: "font-mono text-sm" }, R = { class: "font-semibold" }, z = /* @__PURE__ */ w({
+}, I = {
+	class: "truncate",
+	"data-testid": "showroom-owner-type-title"
+}, L = { class: "font-mono text-sm" }, R = { class: "font-semibold" }, z = /* @__PURE__ */ w({
 	__name: "[ownerType]",
 	setup(w) {
 		let { t: z, locale: B } = M(), V = N(), H = a(), U = v(() => String(V.params.ownerType)), { client: W, data: G, pending: K, failed: q, status: J, reload: Y } = s(async (e) => r(await e.GET("/owner-types/{ownerType}", { params: { path: { ownerType: U.value } } })).data, U), X = v(() => G.value), Z = n(async (e) => r(await e.GET("/owner-types", { params: { query: { per_page: 100 } } }))), Q = D(""), $ = D(d());
@@ -36,10 +39,10 @@ var P = {
 			}))) && await Y();
 		}
 		async function re() {
-			W && window.confirm(z("showroom.owner_types.confirm_delete")) && await H.run(async () => r(await W.DELETE("/owner-types/{ownerType}", { params: { path: { ownerType: U.value } } }))) && await p("/showroom/owner-types");
+			W && window.confirm(z("showroom.owner_types.confirm_delete")) && await H.run(async () => r(await W.DELETE("/owner-types/{ownerType}", { params: { path: { ownerType: U.value } } }))) && await m("/showroom/owner-types");
 		}
 		return (n, r) => {
-			let i = m, a = ee, s = _, c = g, u = h, d = f;
+			let i = h, a = p, s = ee, c = _, u = g, d = f;
 			return E(), b("div", P, [C(d, {
 				"screen-key": "showroom.owner-type",
 				record: k(U)
@@ -50,13 +53,10 @@ var P = {
 					status: k(J)
 				}, {
 					default: A(() => [k(X) ? (E(), b("div", F, [
-						C(a, {
-							headline: k(z)("showroom.owner_types.title"),
-							ui: { title: "truncate" }
-						}, {
+						C(a, { overline: k(z)("showroom.owner_types.title") }, {
 							title: A(() => [x("span", I, O(k(o)(k(X).labels, k(B), k(X).code)), 1)]),
 							description: A(() => [x("span", L, O(k(X).code), 1)]),
-							links: A(() => [C(i, {
+							default: A(() => [C(i, {
 								to: `/showroom/owners?type=${encodeURIComponent(k(X).code)}`,
 								variant: "outline",
 								icon: "i-lucide-building-2",
@@ -76,7 +76,7 @@ var P = {
 								_: 1
 							}, 8, ["loading"])]),
 							_: 1
-						}, 8, ["headline"]),
+						}, 8, ["overline"]),
 						C(e, { action: k(H) }, null, 8, ["action"]),
 						C(u, null, {
 							header: A(() => [x("h2", R, O(k(z)("showroom.owner_types.rules")), 1)]),

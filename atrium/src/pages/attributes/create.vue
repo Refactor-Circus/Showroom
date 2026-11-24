@@ -39,15 +39,9 @@ const groups = usePickList<ShowroomAttributeGroup>(async showroom =>
 
 const form = reactive<{ code: string, type: string | null, group: string | null, label: string, settings: string, sort_order: string }>({ code: '', type: '', group: '', label: '', settings: '', sort_order: '0' })
 
-const typeItems = computed(() => [
-  { label: t('showroom.structure.attributes.choose_type'), value: null },
-  ...ATTRIBUTE_TYPES.map(type => ({ label: type, value: type }))
-])
+const typeItems = computed(() => ATTRIBUTE_TYPES.map(type => ({ label: type, value: type })))
 
-const groupItems = computed(() => [
-  { label: t('showroom.structure.attributes.no_group'), value: null },
-  ...groups.value.map(group => ({ label: labelOf(group.labels, locale.value, group.code), value: group.code }))
-])
+const groupItems = computed(() => groups.value.map(group => ({ label: labelOf(group.labels, locale.value, group.code), value: group.code })))
 const flags = ref<Flags>({ is_unique: false, is_localizable: false, is_scopable: false })
 const settingsError = ref<string | null>(null)
 
@@ -95,11 +89,11 @@ async function create(): Promise<void> {
           </UFormField>
 
           <UFormField :label="t('showroom.catalog.fields.type')" :hint="t('showroom.structure.attributes.type_hint')" :error="action.error('type')" required>
-            <USelect v-model="form.type" :items="typeItems" :placeholder="t('showroom.structure.attributes.choose_type')" required class="w-64" data-testid="showroom-attribute-create-type" />
+            <AtriumSelect v-model="form.type" :items="typeItems" :blank="t('showroom.structure.attributes.choose_type')" :blank-value="null" required class="w-64" data-testid="showroom-attribute-create-type" />
           </UFormField>
 
           <UFormField :label="t('showroom.catalog.fields.group')" :error="action.error('group')">
-            <USelect v-model="form.group" :items="groupItems" :placeholder="t('showroom.structure.attributes.no_group')" class="w-64" data-testid="showroom-attribute-create-group" />
+            <AtriumSelect v-model="form.group" :items="groupItems" :blank="t('showroom.structure.attributes.no_group')" :blank-value="null" class="w-64" data-testid="showroom-attribute-create-group" />
           </UFormField>
 
           <UFormField :label="t('showroom.catalog.fields.label_in', { locale })" :error="action.error('labels')">

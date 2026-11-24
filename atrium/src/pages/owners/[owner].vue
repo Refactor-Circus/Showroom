@@ -141,28 +141,26 @@ async function destroy(): Promise<void> {
             <span class="font-mono text-default">{{ owner.code }}</span>
           </nav>
 
-          <UPageHeader :headline="t('showroom.owners.title')" :ui="{ title: 'truncate' }">
+          <AtriumPageHeader :overline="t('showroom.owners.title')">
             <template #title>
-              <span data-testid="showroom-owner-title">{{ labelOf(owner.labels, locale, owner.code) }}</span>
+              <span class="truncate" data-testid="showroom-owner-title">{{ labelOf(owner.labels, locale, owner.code) }}</span>
             </template>
             <template #description>
               <span class="font-mono text-sm" data-testid="showroom-owner-subtitle">{{ [owner.code, owner.type].filter(part => part).join(' · ') }}</span>
             </template>
-            <template #links>
-              <UBadge :color="owner.enabled ? 'success' : 'neutral'" variant="subtle" data-testid="showroom-owner-enabled">
-                {{ owner.enabled ? t('showroom.catalog.enabled') : t('showroom.catalog.disabled') }}
-              </UBadge>
-              <UButton
-                :to="`/showroom/products?owner=${encodeURIComponent(owner.code)}`"
-                variant="outline"
-                icon="i-lucide-package"
-                data-testid="showroom-owner-products"
-              >
-                {{ t('showroom.owners.products') }}
-              </UButton>
-              <UButton color="error" variant="outline" icon="i-lucide-trash-2" :loading="action.busy.value" data-testid="showroom-owner-delete" @click="destroy">{{ t('showroom.catalog.delete') }}</UButton>
-            </template>
-          </UPageHeader>
+            <UBadge :color="owner.enabled ? 'success' : 'neutral'" variant="subtle" data-testid="showroom-owner-enabled">
+              {{ owner.enabled ? t('showroom.catalog.enabled') : t('showroom.catalog.disabled') }}
+            </UBadge>
+            <UButton
+              :to="`/showroom/products?owner=${encodeURIComponent(owner.code)}`"
+              variant="outline"
+              icon="i-lucide-package"
+              data-testid="showroom-owner-products"
+            >
+              {{ t('showroom.owners.products') }}
+            </UButton>
+            <UButton color="error" variant="outline" icon="i-lucide-trash-2" :loading="action.busy.value" data-testid="showroom-owner-delete" @click="destroy">{{ t('showroom.catalog.delete') }}</UButton>
+          </AtriumPageHeader>
 
           <p class="text-sm text-muted" data-testid="showroom-owner-counts">
             {{ t('showroom.owners.counts', { products: owner.products_count ?? 0, models: owner.product_models_count ?? 0 }) }}

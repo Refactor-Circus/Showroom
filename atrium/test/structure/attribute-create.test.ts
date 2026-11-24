@@ -5,7 +5,7 @@ import { mockPackageApi, reply, resetPackageApis, type PackageRoutes } from '@re
 import { cursorPage, invalid, mountShowroomPage, ok, resetShowroomPages, screensApi, showroomCalls } from '../catalog/support'
 import { color, looks, specs } from './support'
 import { clearAtriumData, mockAtriumApi, useRouter } from '@refactor-circus/atrium/testing'
-import { choices, pick } from '../ui'
+import { selectValues, setField } from '@refactor-circus/atrium/testing'
 
 /*
  * `showroom.attribute-create` (AC 54, 71): v1's new-attribute form. It sends
@@ -32,7 +32,7 @@ function showroomWith(overrides: PackageRoutes<'showroom'> = {}): void {
 
 async function fill(wrapper: Awaited<ReturnType<typeof mountShowroomPage>>): Promise<void> {
   await wrapper.find('[data-testid="showroom-attribute-create-code"]').setValue('material')
-  await pick(wrapper, 'showroom-attribute-create-type', 'select')
+  await setField(wrapper, 'showroom-attribute-create-type', 'select')
 }
 
 async function submit(wrapper: Awaited<ReturnType<typeof mountShowroomPage>>): Promise<void> {
@@ -59,8 +59,8 @@ describe('showroom.attribute-create', () => {
     showroomWith()
 
     const wrapper = await mountShowroomPage(Page, PATH)
-    const types = choices(wrapper, 'showroom-attribute-create-type')
-    const groups = choices(wrapper, 'showroom-attribute-create-group')
+    const types = selectValues(wrapper, 'showroom-attribute-create-type')
+    const groups = selectValues(wrapper, 'showroom-attribute-create-group')
 
     expect(types).toEqual([null, 'text', 'textarea', 'number', 'decimal', 'boolean', 'date', 'select', 'multiselect', 'price', 'metric'])
     expect(groups).toEqual([null, 'looks', 'specs'])
@@ -72,9 +72,9 @@ describe('showroom.attribute-create', () => {
 
     const wrapper = await mountShowroomPage(Page, PATH)
     await fill(wrapper)
-    await pick(wrapper, 'showroom-attribute-create-group', 'looks')
+    await setField(wrapper, 'showroom-attribute-create-group', 'looks')
     await wrapper.find('[data-testid="showroom-attribute-create-label"]').setValue('Material')
-    await pick(wrapper, 'showroom-attribute-create-flag-is_localizable', true)
+    await setField(wrapper, 'showroom-attribute-create-flag-is_localizable', true)
     await wrapper.find('[data-testid="showroom-attribute-create-settings"]').setValue('{"max_length": 40}')
     await wrapper.find('[data-testid="showroom-attribute-create-sort"]').setValue('7')
     await submit(wrapper)

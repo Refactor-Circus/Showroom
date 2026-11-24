@@ -4,7 +4,7 @@ import { settle } from '@refactor-circus/atrium/testing'
 import { mockPackageApi, reply, resetPackageApis, type PackageRoutes } from '@refactor-circus/atrium/testing'
 import { cursorPage, invalid, mountShowroomPage, ok, resetShowroomPages, screensApi, shirts, shoes, showroomCalls } from './support'
 import { clearAtriumData, mockAtriumApi, useRouter } from '@refactor-circus/atrium/testing'
-import { row } from '../ui'
+import { tableRow } from '@refactor-circus/atrium/testing'
 
 /*
  * `showroom.families` (AC 54, 71): every family (`families.index`), a cursor
@@ -47,9 +47,9 @@ describe('showroom.families', () => {
 
     expect(showroomCalls('GET', '/families')[0]?.query).toEqual({})
     expect(api).toHaveBeenCalledWith('/screens/showroom.families', expect.anything())
-    expect(row(wrapper, 'showroom-family-row-shirts').find('a').attributes('href')).toBe('/showroom/families/shirts')
-    expect(row(wrapper, 'showroom-family-row-shirts').text()).toContain('Shirts')
-    expect(row(wrapper, 'showroom-family-row-shirts').text()).toContain('name')
+    expect(tableRow(wrapper, 'showroom-family-row-shirts').find('a').attributes('href')).toBe('/showroom/families/shirts')
+    expect(tableRow(wrapper, 'showroom-family-row-shirts').text()).toContain('Shirts')
+    expect(tableRow(wrapper, 'showroom-family-row-shirts').text()).toContain('name')
   })
 
   it('sends the search as the endpoint\'s query, and pages with its cursor', async () => {

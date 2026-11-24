@@ -27,10 +27,7 @@ const families = usePickList(async showroom => showroomData<CatalogList<Showroom
 
 const form = reactive<{ identifier: string, family: string | null }>({ identifier: '', family: null })
 
-const familyItems = computed(() => [
-  { label: t('showroom.catalog.products.no_family'), value: null },
-  ...families.value.map(family => ({ label: labelOf(family.labels, locale.value, family.code), value: family.code }))
-])
+const familyItems = computed(() => families.value.map(family => ({ label: labelOf(family.labels, locale.value, family.code), value: family.code })))
 
 async function create(): Promise<void> {
   if (!client) {
@@ -63,7 +60,7 @@ async function create(): Promise<void> {
             <UInput v-model="form.identifier" required data-testid="showroom-product-create-identifier" />
           </UFormField>
           <UFormField :label="t('showroom.catalog.fields.family')" :error="action.error('family')">
-            <USelect v-model="form.family" :items="familyItems" :placeholder="t('showroom.catalog.products.no_family')" class="w-full" data-testid="showroom-product-create-family" />
+            <AtriumSelect v-model="form.family" :items="familyItems" :blank="t('showroom.catalog.products.no_family')" :blank-value="null" class="w-full" data-testid="showroom-product-create-family" />
           </UFormField>
           <div>
             <UButton type="submit" icon="i-lucide-plus" :loading="action.busy.value" data-testid="showroom-product-create-submit">{{ t('showroom.catalog.products.create') }}</UButton>

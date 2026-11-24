@@ -6,16 +6,16 @@ import { u as p } from "./structure-DbqcM-iO.js";
 import { t as m } from "./AssetThumbnail-DCu2iAUU.js";
 import { i as h } from "./assets-DNUkY-zI.js";
 import { n as g } from "./owners-C7wgNkGA.js";
-import { AtriumIntegrationScreen as _, AtriumState as v, navigateTo as y } from "@refactor-circus/atrium";
-import { UBadge as ee, UButton as b, UCard as te, UCheckbox as ne, UFormField as re, UIcon as ie, UInput as x, ULink as S, UPageHeader as ae, USelect as oe } from "@refactor-circus/atrium/ui";
-import { Fragment as C, computed as w, createBlock as T, createCommentVNode as E, createElementBlock as D, createElementVNode as O, createTextVNode as k, createVNode as A, defineComponent as j, isRef as se, openBlock as M, reactive as N, ref as P, renderList as F, shallowRef as I, toDisplayString as L, unref as R, useTemplateRef as z, watch as ce, withCtx as B, withModifiers as V } from "vue";
+import { AtriumIntegrationScreen as ee, AtriumPageHeader as te, AtriumState as _, navigateTo as v } from "@refactor-circus/atrium";
+import { UBadge as ne, UButton as re, UCard as ie, UCheckbox as ae, UFormField as y, UIcon as oe, UInput as b, ULink as x, USelect as se } from "@refactor-circus/atrium/ui";
+import { Fragment as S, computed as C, createBlock as w, createCommentVNode as T, createElementBlock as E, createElementVNode as D, createTextVNode as O, createVNode as k, defineComponent as A, isRef as j, openBlock as M, reactive as N, ref as P, renderList as F, shallowRef as I, toDisplayString as L, unref as R, useTemplateRef as z, watch as ce, withCtx as B, withModifiers as V } from "vue";
 import { useI18n as H } from "vue-i18n";
 import { useRoute as le } from "vue-router";
 // src/components/owners/OwnerAssets.vue?vue&type=script&setup=true&lang.ts
 var U = { class: "font-semibold" }, W = { class: "space-y-4" }, G = {
 	key: 1,
 	class: "grid grid-cols-2 gap-3 sm:grid-cols-4"
-}, ue = /* @__PURE__ */ j({
+}, ue = /* @__PURE__ */ A({
 	__name: "OwnerAssets",
 	props: {
 		assets: {},
@@ -27,10 +27,10 @@ var U = { class: "font-semibold" }, W = { class: "space-y-4" }, G = {
 		function g(e) {
 			d.value = e.target.files?.[0] ?? null;
 		}
-		function _(e) {
+		function ee(e) {
 			return [e.role, e.inherited ? s("showroom.catalog.inherited") : e.code].filter((e) => e).join(" · ");
 		}
-		async function y() {
+		async function te() {
 			let e = d.value;
 			c && e && await l.run(async () => {
 				let t = new FormData();
@@ -50,42 +50,42 @@ var U = { class: "font-semibold" }, W = { class: "space-y-4" }, G = {
 			}) && (d.value = null, p.value?.inputRef && (p.value.inputRef.value = ""), a("changed"));
 		}
 		return (t, n) => {
-			let i = v, a = S, o = x, c = re, u = b, d = te;
-			return M(), T(d, { "data-testid": "showroom-owner-assets" }, {
-				header: B(() => [O("h2", U, L(R(s)("showroom.catalog.assets.title")), 1)]),
-				default: B(() => [O("div", W, [
-					r.assets.length === 0 ? (M(), T(i, {
+			let i = _, a = x, o = b, c = y, u = re, d = ie;
+			return M(), w(d, { "data-testid": "showroom-owner-assets" }, {
+				header: B(() => [D("h2", U, L(R(s)("showroom.catalog.assets.title")), 1)]),
+				default: B(() => [D("div", W, [
+					r.assets.length === 0 ? (M(), w(i, {
 						key: 0,
 						compact: "",
 						title: R(s)("showroom.catalog.assets.none"),
 						"data-testid": "showroom-owner-assets-empty"
-					}, null, 8, ["title"])) : (M(), D("div", G, [(M(!0), D(C, null, F(r.assets, (e) => (M(), T(a, {
+					}, null, 8, ["title"])) : (M(), E("div", G, [(M(!0), E(S, null, F(r.assets, (e) => (M(), w(a, {
 						key: `${e.inherited ? "inherited" : "own"}-${e.code}`,
 						to: R(h)(e.code),
 						class: "flex flex-col gap-2 rounded-md border border-default p-2 hover:border-primary",
 						"data-testid": `showroom-asset-${e.code}`
 					}, {
-						default: B(() => [A(m, {
+						default: B(() => [k(m, {
 							asset: {
 								filename: e.code,
 								mime_type: e.mime_type,
 								url: e.url ?? ""
 							},
-							caption: _(e)
+							caption: ee(e)
 						}, null, 8, ["asset", "caption"])]),
 						_: 2
 					}, 1032, ["to", "data-testid"]))), 128))])),
-					A(e, { action: R(l) }, null, 8, ["action"]),
-					O("form", {
+					k(e, { action: R(l) }, null, 8, ["action"]),
+					D("form", {
 						class: "flex flex-wrap items-end gap-3",
 						"data-testid": "showroom-asset-upload",
-						onSubmit: V(y, ["prevent"])
+						onSubmit: V(te, ["prevent"])
 					}, [
-						A(c, {
+						k(c, {
 							label: R(s)("showroom.catalog.assets.upload_and_link"),
 							error: R(l).error("file")
 						}, {
-							default: B(() => [A(o, {
+							default: B(() => [k(o, {
 								ref: "fileInput",
 								type: "file",
 								required: "",
@@ -94,25 +94,25 @@ var U = { class: "font-semibold" }, W = { class: "space-y-4" }, G = {
 							}, null, 512)]),
 							_: 1
 						}, 8, ["label", "error"]),
-						A(c, {
+						k(c, {
 							label: R(s)("showroom.catalog.assets.role"),
 							error: R(l).error("role")
 						}, {
-							default: B(() => [A(o, {
+							default: B(() => [k(o, {
 								modelValue: R(f),
-								"onUpdate:modelValue": n[0] ||= (e) => se(f) ? f.value = e : null,
+								"onUpdate:modelValue": n[0] ||= (e) => j(f) ? f.value = e : null,
 								class: "w-32",
 								"data-testid": "showroom-asset-role"
 							}, null, 8, ["modelValue"])]),
 							_: 1
 						}, 8, ["label", "error"]),
-						A(u, {
+						k(u, {
 							type: "submit",
 							icon: "i-lucide-upload",
 							loading: R(l).busy.value,
 							"data-testid": "showroom-asset-upload-submit"
 						}, {
-							default: B(() => [k(L(R(s)("showroom.catalog.assets.upload")), 1)]),
+							default: B(() => [O(L(R(s)("showroom.catalog.assets.upload")), 1)]),
 							_: 1
 						}, 8, ["loading"])
 					], 32)
@@ -131,7 +131,10 @@ var U = { class: "font-semibold" }, W = { class: "space-y-4" }, G = {
 	key: 0,
 	class: "flex flex-wrap items-center gap-1 text-sm text-muted",
 	"data-testid": "showroom-owner-chain"
-}, me = { class: "font-mono text-default" }, he = { "data-testid": "showroom-owner-title" }, ge = {
+}, me = { class: "font-mono text-default" }, he = {
+	class: "truncate",
+	"data-testid": "showroom-owner-title"
+}, ge = {
 	class: "font-mono text-sm",
 	"data-testid": "showroom-owner-subtitle"
 }, _e = {
@@ -167,13 +170,13 @@ var U = { class: "font-semibold" }, W = { class: "space-y-4" }, G = {
 }, Ue = {
 	key: 2,
 	class: "text-xs text-error"
-}, K = /* @__PURE__ */ j({
+}, K = /* @__PURE__ */ A({
 	__name: "[owner]",
 	setup(u) {
-		let { t: m, locale: h } = H(), v = le(), j = o(), I = o(), z = w(() => String(v.params.owner)), { client: U, data: W, pending: G, failed: K, status: We, reload: q } = d(async (e) => i(await e.GET("/owners/{owner}", { params: { path: { owner: z.value } } })).data, z), J = w(() => W.value), Ge = w(() => (J.value?.chain ?? []).slice(0, -1)), Y = r(async (e) => i(await e.GET("/owner-types", { params: { query: { per_page: 100 } } }))), Ke = r(async (e) => i(await e.GET("/flags", { params: { query: { per_page: 100 } } }))), X = w(() => Ke.value.filter((e) => e.applies_to.includes("owner"))), qe = w(() => Je.value.map((e) => ({
+		let { t: m, locale: h } = H(), _ = le(), A = o(), I = o(), z = C(() => String(_.params.owner)), { client: U, data: W, pending: G, failed: K, status: We, reload: q } = d(async (e) => i(await e.GET("/owners/{owner}", { params: { path: { owner: z.value } } })).data, z), J = C(() => W.value), Ge = C(() => (J.value?.chain ?? []).slice(0, -1)), Y = r(async (e) => i(await e.GET("/owner-types", { params: { query: { per_page: 100 } } }))), Ke = r(async (e) => i(await e.GET("/flags", { params: { query: { per_page: 100 } } }))), X = C(() => Ke.value.filter((e) => e.applies_to.includes("owner"))), qe = C(() => Je.value.map((e) => ({
 			label: Xe(e.code),
 			value: e.code
-		}))), Je = w(() => Y.value.filter((e) => e.parent_types === null || e.parent_types === void 0 || e.parent_types.includes(J.value?.type ?? ""))), Z = N({
+		}))), Je = C(() => Y.value.filter((e) => e.parent_types === null || e.parent_types === void 0 || e.parent_types.includes(J.value?.type ?? ""))), Z = N({
 			label: "",
 			parent: "",
 			enabled: !0,
@@ -203,7 +206,7 @@ var U = { class: "font-semibold" }, W = { class: "space-y-4" }, G = {
 				external_ids: f(Q.value),
 				...e.flags === void 0 ? {} : { flags: Z.flags }
 			};
-			await j.run(async () => i(await U.PATCH("/owners/{owner}", {
+			await A.run(async () => i(await U.PATCH("/owners/{owner}", {
 				params: { path: { owner: z.value } },
 				body: a(t)
 			}))) && await q();
@@ -219,86 +222,83 @@ var U = { class: "font-semibold" }, W = { class: "space-y-4" }, G = {
 			await I.run(async () => i(await U.POST("/owners", { body: a(t) }))) && ($.code = "", await q());
 		}
 		async function $e() {
-			U && window.confirm(m("showroom.owners.confirm_delete")) && await j.run(async () => i(await U.DELETE("/owners/{owner}", { params: { path: { owner: z.value } } }))) && await y("/showroom/owners");
+			U && window.confirm(m("showroom.owners.confirm_delete")) && await A.run(async () => i(await U.DELETE("/owners/{owner}", { params: { path: { owner: z.value } } }))) && await v("/showroom/owners");
 		}
 		return (r, i) => {
-			let a = S, o = ie, s = ee, c = b, u = ae, d = x, f = re, p = ne, v = te, y = oe, w = _;
-			return M(), D("div", de, [A(w, {
+			let a = x, o = oe, s = ne, c = re, u = te, d = b, f = y, p = ae, _ = ie, v = se, C = ee;
+			return M(), E("div", de, [k(C, {
 				"screen-key": "showroom.owner",
 				record: R(z)
 			}, {
-				default: B(() => [A(t, {
+				default: B(() => [k(t, {
 					ready: !R(G) && R(J) !== null,
 					failed: R(K),
 					status: R(We)
 				}, {
-					default: B(() => [R(J) ? (M(), D("div", fe, [
-						(R(J).chain ?? []).length > 1 ? (M(), D("nav", pe, [(M(!0), D(C, null, F(R(Ge), (e) => (M(), D(C, { key: e }, [A(a, {
+					default: B(() => [R(J) ? (M(), E("div", fe, [
+						(R(J).chain ?? []).length > 1 ? (M(), E("nav", pe, [(M(!0), E(S, null, F(R(Ge), (e) => (M(), E(S, { key: e }, [k(a, {
 							to: R(g)(e),
 							class: "font-mono hover:underline"
 						}, {
-							default: B(() => [k(L(e), 1)]),
+							default: B(() => [O(L(e), 1)]),
 							_: 2
-						}, 1032, ["to"]), A(o, {
+						}, 1032, ["to"]), k(o, {
 							name: "i-lucide-chevron-right",
 							class: "size-3"
-						})], 64))), 128)), O("span", me, L(R(J).code), 1)])) : E("", !0),
-						A(u, {
-							headline: R(m)("showroom.owners.title"),
-							ui: { title: "truncate" }
-						}, {
-							title: B(() => [O("span", he, L(R(l)(R(J).labels, R(h), R(J).code)), 1)]),
-							description: B(() => [O("span", ge, L([R(J).code, R(J).type].filter((e) => e).join(" · ")), 1)]),
-							links: B(() => [
-								A(s, {
+						})], 64))), 128)), D("span", me, L(R(J).code), 1)])) : T("", !0),
+						k(u, { overline: R(m)("showroom.owners.title") }, {
+							title: B(() => [D("span", he, L(R(l)(R(J).labels, R(h), R(J).code)), 1)]),
+							description: B(() => [D("span", ge, L([R(J).code, R(J).type].filter((e) => e).join(" · ")), 1)]),
+							default: B(() => [
+								k(s, {
 									color: R(J).enabled ? "success" : "neutral",
 									variant: "subtle",
 									"data-testid": "showroom-owner-enabled"
 								}, {
-									default: B(() => [k(L(R(J).enabled ? R(m)("showroom.catalog.enabled") : R(m)("showroom.catalog.disabled")), 1)]),
+									default: B(() => [O(L(R(J).enabled ? R(m)("showroom.catalog.enabled") : R(m)("showroom.catalog.disabled")), 1)]),
 									_: 1
 								}, 8, ["color"]),
-								A(c, {
+								k(c, {
 									to: `/showroom/products?owner=${encodeURIComponent(R(J).code)}`,
 									variant: "outline",
 									icon: "i-lucide-package",
 									"data-testid": "showroom-owner-products"
 								}, {
-									default: B(() => [k(L(R(m)("showroom.owners.products")), 1)]),
+									default: B(() => [O(L(R(m)("showroom.owners.products")), 1)]),
 									_: 1
 								}, 8, ["to"]),
-								A(c, {
+								k(c, {
 									color: "error",
 									variant: "outline",
 									icon: "i-lucide-trash-2",
-									loading: R(j).busy.value,
+									loading: R(A).busy.value,
 									"data-testid": "showroom-owner-delete",
 									onClick: $e
 								}, {
-									default: B(() => [k(L(R(m)("showroom.catalog.delete")), 1)]),
+									default: B(() => [O(L(R(m)("showroom.catalog.delete")), 1)]),
 									_: 1
 								}, 8, ["loading"])
 							]),
 							_: 1
-						}, 8, ["headline"]),
-						O("p", _e, L(R(m)("showroom.owners.counts", {
+						}, 8, ["overline"]),
+						D("p", _e, L(R(m)("showroom.owners.counts", {
 							products: R(J).products_count ?? 0,
 							models: R(J).product_models_count ?? 0
 						})), 1),
-						O("form", {
+						D("form", {
 							class: "space-y-5",
 							"data-testid": "showroom-owner-form",
 							onSubmit: V(Ze, ["prevent"])
 						}, [
-							A(e, { action: R(j) }, null, 8, ["action"]),
-							A(v, null, {
-								header: B(() => [O("h2", ve, L(R(m)("showroom.owners.details")), 1)]),
-								default: B(() => [O("div", ye, [
-									A(f, {
+							k(e, { action: R(A) }, null, 8, ["action"]),
+							k(_, null, {
+								header: B(() => [D("h2", ve, L(R(m)("showroom.owners.details")), 1)]),
+								default: B(() => [D("div", ye, [
+									k(f, {
 										label: R(m)("showroom.catalog.fields.label_in", { locale: R(h) }),
-										error: R(j).error("labels")
+										error: R(A).error("labels")
 									}, {
-										default: B(() => [A(d, {
+										default: B(() => [k(d, {
 											modelValue: R(Z).label,
 											"onUpdate:modelValue": i[0] ||= (e) => R(Z).label = e,
 											class: "w-56",
@@ -306,12 +306,12 @@ var U = { class: "font-semibold" }, W = { class: "space-y-4" }, G = {
 										}, null, 8, ["modelValue"])]),
 										_: 1
 									}, 8, ["label", "error"]),
-									A(f, {
+									k(f, {
 										label: R(m)("showroom.catalog.fields.parent"),
 										hint: R(m)("showroom.owners.move_hint"),
-										error: R(j).error("parent")
+										error: R(A).error("parent")
 									}, {
-										default: B(() => [A(d, {
+										default: B(() => [k(d, {
 											modelValue: R(Z).parent,
 											"onUpdate:modelValue": i[1] ||= (e) => R(Z).parent = e,
 											class: "w-48",
@@ -323,7 +323,7 @@ var U = { class: "font-semibold" }, W = { class: "space-y-4" }, G = {
 										"hint",
 										"error"
 									]),
-									A(p, {
+									k(p, {
 										modelValue: R(Z).enabled,
 										"onUpdate:modelValue": i[2] ||= (e) => R(Z).enabled = e,
 										label: R(m)("showroom.catalog.enabled"),
@@ -333,87 +333,87 @@ var U = { class: "font-semibold" }, W = { class: "space-y-4" }, G = {
 								])]),
 								_: 1
 							}),
-							A(v, { "data-testid": "showroom-owner-identity" }, {
-								header: B(() => [O("h2", be, L(R(m)("showroom.catalog.products.identifiers_and_flags")), 1)]),
-								default: B(() => [O("div", xe, [
-									O("p", Se, [O("span", Ce, L(R(m)("showroom.catalog.fields.slug")) + ":", 1), O("span", we, L(R(J).slug), 1)]),
-									A(n, {
+							k(_, { "data-testid": "showroom-owner-identity" }, {
+								header: B(() => [D("h2", be, L(R(m)("showroom.catalog.products.identifiers_and_flags")), 1)]),
+								default: B(() => [D("div", xe, [
+									D("p", Se, [D("span", Ce, L(R(m)("showroom.catalog.fields.slug")) + ":", 1), D("span", we, L(R(J).slug), 1)]),
+									k(n, {
 										modelValue: R(Q),
-										"onUpdate:modelValue": i[3] ||= (e) => se(Q) ? Q.value = e : null,
+										"onUpdate:modelValue": i[3] ||= (e) => j(Q) ? Q.value = e : null,
 										"synced-at": R(J).external_ids_synced_at ?? {},
-										error: R(j).error
+										error: R(A).error
 									}, null, 8, [
 										"modelValue",
 										"synced-at",
 										"error"
 									]),
-									R(J).flags === void 0 ? E("", !0) : (M(), D("div", Te, [
-										O("p", Ee, L(R(m)("showroom.catalog.flags.own")), 1),
-										O("div", De, [(M(!0), D(C, null, F(R(X), (e) => (M(), T(p, {
+									R(J).flags === void 0 ? T("", !0) : (M(), E("div", Te, [
+										D("p", Ee, L(R(m)("showroom.catalog.flags.own")), 1),
+										D("div", De, [(M(!0), E(S, null, F(R(X), (e) => (M(), w(p, {
 											key: e.code,
 											"model-value": R(Z).flags.includes(e.code),
 											"data-testid": `showroom-flag-${e.code}`,
 											"onUpdate:modelValue": (t) => Ye(e.code, t === !0)
 										}, {
-											label: B(() => [O("span", Oe, L(e.code), 1), R(l)(e.labels, R(h), e.code) === e.code ? E("", !0) : (M(), D("span", ke, L(R(l)(e.labels, R(h), e.code)), 1))]),
+											label: B(() => [D("span", Oe, L(e.code), 1), R(l)(e.labels, R(h), e.code) === e.code ? T("", !0) : (M(), E("span", ke, L(R(l)(e.labels, R(h), e.code)), 1))]),
 											_: 2
 										}, 1032, [
 											"model-value",
 											"data-testid",
 											"onUpdate:modelValue"
-										]))), 128)), R(X).length === 0 ? (M(), D("span", Ae, L(R(m)("showroom.owners.no_flags")), 1)) : E("", !0)]),
-										R(j).error("flags") ? (M(), D("small", je, L(R(j).error("flags")), 1)) : E("", !0)
+										]))), 128)), R(X).length === 0 ? (M(), E("span", Ae, L(R(m)("showroom.owners.no_flags")), 1)) : T("", !0)]),
+										R(A).error("flags") ? (M(), E("small", je, L(R(A).error("flags")), 1)) : T("", !0)
 									])),
-									O("div", Me, [O("p", Ne, L(R(m)("showroom.catalog.flags.effective")), 1), O("ul", Pe, [(M(!0), D(C, null, F(R(J).effective_flags ?? [], (e) => (M(), D("li", {
+									D("div", Me, [D("p", Ne, L(R(m)("showroom.catalog.flags.effective")), 1), D("ul", Pe, [(M(!0), E(S, null, F(R(J).effective_flags ?? [], (e) => (M(), E("li", {
 										key: e,
 										class: "flex items-center gap-1.5 text-sm",
 										"data-effective-flag": e
-									}, [A(s, {
+									}, [k(s, {
 										color: (R(J).flags ?? []).includes(e) ? "primary" : "neutral",
 										variant: "subtle"
 									}, {
-										default: B(() => [k(L(e), 1)]),
+										default: B(() => [O(L(e), 1)]),
 										_: 2
-									}, 1032, ["color"]), (R(J).flags ?? []).includes(e) ? E("", !0) : (M(), D("span", Ie, L(R(m)("showroom.catalog.inherited")), 1))], 8, Fe))), 128)), (R(J).effective_flags ?? []).length === 0 ? (M(), D("li", Le, L(R(m)("showroom.catalog.none")), 1)) : E("", !0)])])
+									}, 1032, ["color"]), (R(J).flags ?? []).includes(e) ? T("", !0) : (M(), E("span", Ie, L(R(m)("showroom.catalog.inherited")), 1))], 8, Fe))), 128)), (R(J).effective_flags ?? []).length === 0 ? (M(), E("li", Le, L(R(m)("showroom.catalog.none")), 1)) : T("", !0)])])
 								])]),
 								_: 1
 							}),
-							O("div", null, [A(c, {
+							D("div", null, [k(c, {
 								type: "submit",
 								icon: "i-lucide-check",
-								loading: R(j).busy.value,
+								loading: R(A).busy.value,
 								"data-testid": "showroom-owner-save"
 							}, {
-								default: B(() => [k(L(R(m)("showroom.catalog.save")), 1)]),
+								default: B(() => [O(L(R(m)("showroom.catalog.save")), 1)]),
 								_: 1
 							}, 8, ["loading"])])
 						], 32),
-						O("div", Re, [A(v, { "data-testid": "showroom-owner-children" }, {
-							header: B(() => [O("h2", ze, L(R(m)("showroom.owners.children")), 1)]),
-							default: B(() => [O("div", Be, [
-								(R(J).children ?? []).length === 0 ? (M(), D("p", Ve, L(R(m)("showroom.owners.no_children")), 1)) : (M(), D("ul", He, [(M(!0), D(C, null, F(R(J).children, (e) => (M(), D("li", { key: e }, [A(a, {
+						D("div", Re, [k(_, { "data-testid": "showroom-owner-children" }, {
+							header: B(() => [D("h2", ze, L(R(m)("showroom.owners.children")), 1)]),
+							default: B(() => [D("div", Be, [
+								(R(J).children ?? []).length === 0 ? (M(), E("p", Ve, L(R(m)("showroom.owners.no_children")), 1)) : (M(), E("ul", He, [(M(!0), E(S, null, F(R(J).children, (e) => (M(), E("li", { key: e }, [k(a, {
 									to: R(g)(e),
 									class: "font-mono text-sm hover:underline",
 									"data-testid": `showroom-owner-child-${e}`
 								}, {
-									default: B(() => [k(L(e), 1)]),
+									default: B(() => [O(L(e), 1)]),
 									_: 2
 								}, 1032, ["to", "data-testid"])]))), 128))])),
-								O("form", {
+								D("form", {
 									class: "flex flex-wrap items-end gap-3",
 									"data-testid": "showroom-owner-child-form",
 									onSubmit: V(Qe, ["prevent"])
 								}, [
-									A(e, {
+									k(e, {
 										action: R(I),
 										class: "w-full"
 									}, null, 8, ["action"]),
-									A(f, {
+									k(f, {
 										label: R(m)("showroom.catalog.fields.code"),
 										error: R(I).error("code"),
 										required: ""
 									}, {
-										default: B(() => [A(d, {
+										default: B(() => [k(d, {
 											modelValue: R($).code,
 											"onUpdate:modelValue": i[4] ||= (e) => R($).code = e,
 											required: "",
@@ -422,12 +422,12 @@ var U = { class: "font-semibold" }, W = { class: "space-y-4" }, G = {
 										}, null, 8, ["modelValue"])]),
 										_: 1
 									}, 8, ["label", "error"]),
-									A(f, {
+									k(f, {
 										label: R(m)("showroom.catalog.fields.type"),
 										error: R(I).error("type"),
 										required: ""
 									}, {
-										default: B(() => [A(y, {
+										default: B(() => [k(v, {
 											modelValue: R($).type,
 											"onUpdate:modelValue": i[5] ||= (e) => R($).type = e,
 											items: R(qe),
@@ -442,20 +442,20 @@ var U = { class: "font-semibold" }, W = { class: "space-y-4" }, G = {
 										])]),
 										_: 1
 									}, 8, ["label", "error"]),
-									A(c, {
+									k(c, {
 										type: "submit",
 										icon: "i-lucide-plus",
 										loading: R(I).busy.value,
 										"data-testid": "showroom-owner-child-submit"
 									}, {
-										default: B(() => [k(L(R(m)("showroom.owners.add_child")), 1)]),
+										default: B(() => [O(L(R(m)("showroom.owners.add_child")), 1)]),
 										_: 1
 									}, 8, ["loading"])
 								], 32),
-								R(I).error("parent") ? (M(), D("small", Ue, L(R(I).error("parent")), 1)) : E("", !0)
+								R(I).error("parent") ? (M(), E("small", Ue, L(R(I).error("parent")), 1)) : T("", !0)
 							])]),
 							_: 1
-						}), A(ue, {
+						}), k(ue, {
 							assets: R(J).assets ?? [],
 							owner: R(J).code,
 							onChanged: R(q)
@@ -464,7 +464,7 @@ var U = { class: "font-semibold" }, W = { class: "space-y-4" }, G = {
 							"owner",
 							"onChanged"
 						])])
-					])) : E("", !0)]),
+					])) : T("", !0)]),
 					_: 1
 				}, 8, [
 					"ready",

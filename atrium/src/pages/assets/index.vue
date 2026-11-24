@@ -9,7 +9,7 @@
 //   sends no step results. A failed run still shows its error message.
 // - The owner type beside each code of an owner's chain and children:
 //   `owners.show` names them by code only.
-import type { TableColumn } from '@nuxt/ui/components/Table.vue'
+import type { TableColumn } from '@refactor-circus/atrium/ui'
 import CatalogActionError from '../../components/catalog/CatalogActionError.vue'
 import CatalogPager from '../../components/catalog/CatalogPager.vue'
 import CatalogState from '../../components/catalog/CatalogState.vue'
@@ -94,10 +94,7 @@ const draft = reactive({ code: '', label: '' })
 const file = shallowRef<File | null>(null)
 const fileInput = useTemplateRef<{ inputRef: HTMLInputElement | null }>('fileInput')
 
-const typeItems = computed(() => [
-  { label: t('showroom.assets.all_types'), value: null },
-  ...ASSET_TYPE_FILTERS.map(filter => ({ label: t(`showroom.assets.types.${filter.key}`), value: filter.value }))
-])
+const typeItems = computed(() => ASSET_TYPE_FILTERS.map(filter => ({ label: t(`showroom.assets.types.${filter.key}`), value: filter.value })))
 
 const columns = computed<TableColumn<ShowroomAsset>[]>(() => [
   { accessorKey: 'code', header: t('showroom.catalog.fields.code') },
@@ -204,7 +201,7 @@ function labelFor(asset: ShowroomAsset): string {
               <UInput v-model="filters.search" class="w-56" data-testid="showroom-assets-search" />
             </UFormField>
             <UFormField :label="t('showroom.catalog.fields.type')">
-              <USelect v-model="filters.type" :items="typeItems" :placeholder="t('showroom.assets.all_types')" class="w-40" data-testid="showroom-assets-type" />
+              <AtriumSelect v-model="filters.type" :items="typeItems" :blank="t('showroom.assets.all_types')" :blank-value="null" class="w-40" data-testid="showroom-assets-type" />
             </UFormField>
             <UFormField :label="t('showroom.assets.product')">
               <UInput v-model="filters.product" class="w-44" data-testid="showroom-assets-product" />

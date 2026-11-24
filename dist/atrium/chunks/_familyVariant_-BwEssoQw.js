@@ -1,8 +1,8 @@
 import { t as e } from "./CatalogActionError-BRUgojP9.js";
 import { t } from "./CatalogState-Bkly-MlG.js";
 import { C as n, O as r, f as i, k as a, l as o, v as s } from "./catalog-DCoO3A8a.js";
-import { AtriumIntegrationScreen as c, navigateTo as l } from "@refactor-circus/atrium";
-import { UButton as u, UCard as ee, ULink as d, UPageHeader as f, UTable as p } from "@refactor-circus/atrium/ui";
+import { AtriumIntegrationScreen as c, AtriumPageHeader as l, navigateTo as u } from "@refactor-circus/atrium";
+import { UButton as ee, UCard as d, ULink as f, UTable as p } from "@refactor-circus/atrium/ui";
 import { Fragment as m, computed as h, createBlock as g, createCommentVNode as _, createElementBlock as v, createElementVNode as y, createTextVNode as b, createVNode as x, defineComponent as S, openBlock as C, renderList as w, toDisplayString as T, unref as E, withCtx as D } from "vue";
 import { useI18n as O } from "vue-i18n";
 import { useRoute as k } from "vue-router";
@@ -58,10 +58,10 @@ var A = {
 		async function ne() {
 			if (!K || !window.confirm(V("showroom.catalog.family_variants.confirm_delete"))) return;
 			let e = Z.value?.family;
-			await W.run(async () => n(await K.DELETE("/family-variants/{familyVariant}", { params: { path: { familyVariant: G.value } } }))) && await l(e ? o(e) : "/showroom/families");
+			await W.run(async () => n(await K.DELETE("/family-variants/{familyVariant}", { params: { path: { familyVariant: G.value } } }))) && await u(e ? o(e) : "/showroom/families");
 		}
 		return (n, r) => {
-			let a = u, l = f, h = p, S = ee, O = d, k = c;
+			let a = ee, u = l, h = p, S = d, O = f, k = c;
 			return C(), v("div", A, [x(k, {
 				"screen-key": "showroom.family-variant",
 				record: E(G)
@@ -72,10 +72,10 @@ var A = {
 					status: E(X)
 				}, {
 					default: D(() => [E(Z) ? (C(), v("div", j, [
-						x(l, { headline: E(V)("showroom.catalog.fields.family_variant") }, {
+						x(u, { overline: E(V)("showroom.catalog.fields.family_variant") }, {
 							title: D(() => [y("span", M, T(E(i)(E(Z).labels, E(H), E(Z).code)), 1)]),
 							description: D(() => [y("span", N, [b(T(E(Z).code), 1), E(Z).family ? (C(), v(m, { key: 0 }, [b(" · " + T(E(Z).family), 1)], 64)) : _("", !0)])]),
-							links: D(() => [E(Z).family ? (C(), g(a, {
+							default: D(() => [E(Z).family ? (C(), g(a, {
 								key: 0,
 								to: E(o)(E(Z).family),
 								variant: "outline",
@@ -96,7 +96,7 @@ var A = {
 								_: 1
 							}, 8, ["loading"])]),
 							_: 1
-						}, 8, ["headline"]),
+						}, 8, ["overline"]),
 						x(e, { action: E(W) }, null, 8, ["action"]),
 						x(S, { "data-testid": "showroom-family-variant-levels" }, {
 							header: D(() => [y("h2", P, T(E(V)("showroom.catalog.family_variants.levels")), 1)]),

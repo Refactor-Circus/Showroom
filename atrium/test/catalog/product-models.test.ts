@@ -4,7 +4,7 @@ import { settle } from '@refactor-circus/atrium/testing'
 import { mockPackageApi, reply, resetPackageApis, type PackageRoutes } from '@refactor-circus/atrium/testing'
 import { cursorPage, invalid, lookups, mountShowroomPage, ok, oxford, resetShowroomPages, screensApi, showroomCalls } from './support'
 import { clearAtriumData, mockAtriumApi, useRouter } from '@refactor-circus/atrium/testing'
-import { pick, row } from '../ui'
+import { setField, tableRow } from '@refactor-circus/atrium/testing'
 
 /*
  * `showroom.product-models` (AC 54, 71): every product model
@@ -49,8 +49,8 @@ describe('showroom.product-models', () => {
 
     expect(showroomCalls('GET', '/product-models')[0]?.query).toEqual({})
     expect(api).toHaveBeenCalledWith('/screens/showroom.product-models', expect.anything())
-    expect(row(wrapper, 'showroom-product-model-row-oxford').find('a').attributes('href')).toBe('/showroom/product-models/oxford')
-    expect(row(wrapper, 'showroom-product-model-row-oxford').text()).toContain('shirts_by_size')
+    expect(tableRow(wrapper, 'showroom-product-model-row-oxford').find('a').attributes('href')).toBe('/showroom/product-models/oxford')
+    expect(tableRow(wrapper, 'showroom-product-model-row-oxford').text()).toContain('shirts_by_size')
   })
 
   it('sends the search and family variant filters as the endpoint\'s query', async () => {
@@ -58,7 +58,7 @@ describe('showroom.product-models', () => {
 
     const wrapper = await mountShowroomPage(Page, `${PATH}?cursor=abc`)
     await wrapper.find('[data-testid="showroom-product-models-search"]').setValue('ox')
-    await pick(wrapper, 'showroom-product-models-variant', 'shirts_by_size')
+    await setField(wrapper, 'showroom-product-models-variant', 'shirts_by_size')
     await wrapper.find('[data-testid="showroom-product-models-filters"]').trigger('submit')
     await settle()
     await settle()
@@ -83,7 +83,7 @@ describe('showroom.product-models', () => {
 
     const wrapper = await mountShowroomPage(Page, PATH)
     await wrapper.find('[data-testid="showroom-product-model-create-code"]').setValue(' oxford ')
-    await pick(wrapper, 'showroom-product-model-create-variant', 'shirts_by_size')
+    await setField(wrapper, 'showroom-product-model-create-variant', 'shirts_by_size')
     await wrapper.find('[data-testid="showroom-product-model-create-form"]').trigger('submit')
     await settle()
 
@@ -98,7 +98,7 @@ describe('showroom.product-models', () => {
 
     const wrapper = await mountShowroomPage(Page, PATH)
     await wrapper.find('[data-testid="showroom-product-model-create-code"]').setValue('oxford')
-    await pick(wrapper, 'showroom-product-model-create-variant', 'shirts_by_size')
+    await setField(wrapper, 'showroom-product-model-create-variant', 'shirts_by_size')
     await wrapper.find('[data-testid="showroom-product-model-create-form"]').trigger('submit')
     await settle()
 

@@ -5,7 +5,7 @@ import { mockPackageApi, reply, resetPackageApis, type PackageRoutes } from '@re
 import { confirmWith, invalid, mountShowroomPage, ok, resetShowroomPages, screensApi, showroomCalls } from '../catalog/support'
 import { looks, specs } from './support'
 import { clearAtriumData, mockAtriumApi, useRouter } from '@refactor-circus/atrium/testing'
-import { row as rowOf } from '../ui'
+import { tableRow } from '@refactor-circus/atrium/testing'
 
 /*
  * `showroom.attribute-group` (AC 54, 71): one attribute group
@@ -61,7 +61,7 @@ describe('showroom.attribute-group', () => {
     expect(api).toHaveBeenCalledWith('/screens/showroom.attribute-group', expect.objectContaining({ query: expect.objectContaining({ record: 'looks' }) }))
     expect(wrapper.find('[data-testid="showroom-group-title"] h1').text()).toBe('Looks')
 
-    const row = rowOf(wrapper, 'showroom-group-attribute-color')
+    const row = tableRow(wrapper, 'showroom-group-attribute-color')
     expect(row.find('a').attributes('href')).toBe('/showroom/attributes/color')
     expect(row.text()).toContain('Color')
     expect(row.text()).toContain('select')

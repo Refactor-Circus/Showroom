@@ -3,8 +3,8 @@ import { t } from "./CatalogState-Bkly-MlG.js";
 import { A as n, C as r, D as i, O as a, f as o, k as s } from "./catalog-DCoO3A8a.js";
 import { t as ee } from "./AttributeFlags-DO53IOaY.js";
 import { _ as c, f as te, g as l, u, v as d, y as f } from "./structure-DbqcM-iO.js";
-import { AtriumIntegrationScreen as p, AtriumPageHeader as m, AtriumState as ne, navigateTo as h } from "@refactor-circus/atrium";
-import { UBadge as re, UButton as ie, UCard as ae, UFormField as oe, UInput as se, USelect as ce, UTable as g, UTextarea as le } from "@refactor-circus/atrium/ui";
+import { AtriumIntegrationScreen as p, AtriumPageHeader as m, AtriumSelect as ne, AtriumState as re, navigateTo as h } from "@refactor-circus/atrium";
+import { UBadge as ie, UButton as ae, UCard as oe, UFormField as se, UInput as ce, UTable as g, UTextarea as le } from "@refactor-circus/atrium/ui";
 import { computed as _, createBlock as ue, createCommentVNode as v, createElementBlock as y, createElementVNode as b, createTextVNode as x, createVNode as S, defineComponent as C, isRef as de, openBlock as w, reactive as T, ref as E, toDisplayString as D, unref as O, watch as fe, withCtx as k, withModifiers as A } from "vue";
 import { useI18n as j } from "vue-i18n";
 import { useRoute as M } from "vue-router";
@@ -76,20 +76,13 @@ var N = {
 				option: e
 			} } }))) && await q();
 		}
-		let Se = _(() => [
-			{
-				label: B("showroom.structure.attributes.no_group"),
-				value: null
-			},
-			...X.group && !J.value.some((e) => e.code === X.group) ? [{
-				label: X.group,
-				value: X.group
-			}] : [],
-			...J.value.map((e) => ({
-				label: o(e.labels, V.value, e.code),
-				value: e.code
-			}))
-		]), Ce = _(() => [
+		let Se = _(() => [...X.group && !J.value.some((e) => e.code === X.group) ? [{
+			label: X.group,
+			value: X.group
+		}] : [], ...J.value.map((e) => ({
+			label: o(e.labels, V.value, e.code),
+			value: e.code
+		}))]), Ce = _(() => [
 			{
 				accessorKey: "code",
 				header: B("showroom.catalog.fields.code")
@@ -112,7 +105,7 @@ var N = {
 			}
 		]);
 		return (n, r) => {
-			let i = re, a = ie, s = m, c = ce, l = oe, u = se, d = le, f = ae, h = ne, _ = g, C = p;
+			let i = ie, a = ae, s = m, c = ne, l = se, u = ce, d = le, f = oe, h = re, _ = g, C = p;
 			return w(), y("div", N, [S(C, {
 				"screen-key": "showroom.attribute",
 				record: O(W)
@@ -164,13 +157,14 @@ var N = {
 										modelValue: O(X).group,
 										"onUpdate:modelValue": r[0] ||= (e) => O(X).group = e,
 										items: O(Se),
-										placeholder: O(B)("showroom.structure.attributes.no_group"),
+										blank: O(B)("showroom.structure.attributes.no_group"),
+										"blank-value": null,
 										class: "w-64",
 										"data-testid": "showroom-attribute-group"
 									}, null, 8, [
 										"modelValue",
 										"items",
-										"placeholder"
+										"blank"
 									])]),
 									_: 1
 								}, 8, ["label", "error"]),

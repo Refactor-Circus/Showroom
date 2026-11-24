@@ -15,7 +15,7 @@
 //   no-access state when `locales.index` answers 403.
 // - The flash messages after each action ("Attribute updated" and the like). The
 //   page reloads instead.
-import type { TableColumn } from '@nuxt/ui/components/Table.vue'
+import type { TableColumn } from '@refactor-circus/atrium/ui'
 import CatalogPager from '../../components/catalog/CatalogPager.vue'
 import CatalogState from '../../components/catalog/CatalogState.vue'
 import {
@@ -67,15 +67,9 @@ watch(() => route.query, () => {
   }
 }, { immediate: true })
 
-const typeItems = computed(() => [
-  { label: t('showroom.structure.attributes.all_types'), value: null },
-  ...ATTRIBUTE_TYPES.map(type => ({ label: type, value: type }))
-])
+const typeItems = computed(() => ATTRIBUTE_TYPES.map(type => ({ label: type, value: type })))
 
-const groupItems = computed(() => [
-  { label: t('showroom.structure.attributes.all_groups'), value: null },
-  ...groups.value.map(group => ({ label: labelOf(group.labels, locale.value, group.code), value: group.code }))
-])
+const groupItems = computed(() => groups.value.map(group => ({ label: labelOf(group.labels, locale.value, group.code), value: group.code })))
 
 const columns = computed<TableColumn<ShowroomAttribute>[]>(() => [
   { accessorKey: 'code', header: t('showroom.catalog.fields.code') },
@@ -118,10 +112,10 @@ function clear(): void {
               <UInput v-model="filters.search" class="w-56" data-testid="showroom-attributes-search" />
             </UFormField>
             <UFormField :label="t('showroom.catalog.fields.type')">
-              <USelect v-model="filters.type" :items="typeItems" :placeholder="t('showroom.structure.attributes.all_types')" class="w-44" data-testid="showroom-attributes-type" />
+              <AtriumSelect v-model="filters.type" :items="typeItems" :blank="t('showroom.structure.attributes.all_types')" :blank-value="null" class="w-44" data-testid="showroom-attributes-type" />
             </UFormField>
             <UFormField :label="t('showroom.catalog.fields.group')">
-              <USelect v-model="filters.group" :items="groupItems" :placeholder="t('showroom.structure.attributes.all_groups')" class="w-48" data-testid="showroom-attributes-group" />
+              <AtriumSelect v-model="filters.group" :items="groupItems" :blank="t('showroom.structure.attributes.all_groups')" :blank-value="null" class="w-48" data-testid="showroom-attributes-group" />
             </UFormField>
             <UButton type="submit" icon="i-lucide-filter" data-testid="showroom-attributes-filter">{{ t('showroom.catalog.filters.filter') }}</UButton>
             <UButton variant="ghost" icon="i-lucide-x" data-testid="showroom-attributes-clear" @click="clear">{{ t('showroom.catalog.filters.clear') }}</UButton>

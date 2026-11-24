@@ -80,25 +80,23 @@ async function destroy(): Promise<void> {
     <AtriumIntegrationScreen screen-key="showroom.owner-type" :record="code">
       <CatalogState :ready="!pending && type !== null" :failed="failed" :status="status">
         <div v-if="type" class="space-y-5">
-          <UPageHeader :headline="t('showroom.owner_types.title')" :ui="{ title: 'truncate' }">
+          <AtriumPageHeader :overline="t('showroom.owner_types.title')">
             <template #title>
-              <span data-testid="showroom-owner-type-title">{{ labelOf(type.labels, locale, type.code) }}</span>
+              <span class="truncate" data-testid="showroom-owner-type-title">{{ labelOf(type.labels, locale, type.code) }}</span>
             </template>
             <template #description>
               <span class="font-mono text-sm">{{ type.code }}</span>
             </template>
-            <template #links>
-              <UButton
-                :to="`/showroom/owners?type=${encodeURIComponent(type.code)}`"
-                variant="outline"
-                icon="i-lucide-building-2"
-                data-testid="showroom-owner-type-owners"
-              >
-                {{ t('showroom.owner_types.owners_of_type', { count: type.owners_count ?? 0 }) }}
-              </UButton>
-              <UButton color="error" variant="outline" icon="i-lucide-trash-2" :loading="action.busy.value" data-testid="showroom-owner-type-delete" @click="destroy">{{ t('showroom.catalog.delete') }}</UButton>
-            </template>
-          </UPageHeader>
+            <UButton
+              :to="`/showroom/owners?type=${encodeURIComponent(type.code)}`"
+              variant="outline"
+              icon="i-lucide-building-2"
+              data-testid="showroom-owner-type-owners"
+            >
+              {{ t('showroom.owner_types.owners_of_type', { count: type.owners_count ?? 0 }) }}
+            </UButton>
+            <UButton color="error" variant="outline" icon="i-lucide-trash-2" :loading="action.busy.value" data-testid="showroom-owner-type-delete" @click="destroy">{{ t('showroom.catalog.delete') }}</UButton>
+          </AtriumPageHeader>
 
           <CatalogActionError :action="action" />
 

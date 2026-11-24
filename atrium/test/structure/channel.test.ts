@@ -5,7 +5,7 @@ import { mockPackageApi, reply, resetPackageApis, type PackageRoutes } from '@re
 import { confirmWith, cursorPage, invalid, mountShowroomPage, ok, resetShowroomPages, screensApi, showroomCalls } from '../catalog/support'
 import { english, french, german, master, web, webshop } from './support'
 import { clearAtriumData, mockAtriumApi, useRouter } from '@refactor-circus/atrium/testing'
-import { pick, picked } from '../ui'
+import { chooseOption, fieldValue, setField } from '@refactor-circus/atrium/testing'
 
 /*
  * `showroom.channel` (AC 54, 71): one channel (`channels.show`) with its
@@ -41,7 +41,7 @@ async function save(wrapper: Wrapper): Promise<void> {
 }
 
 function checked(wrapper: Wrapper, testid: string): boolean {
-  return picked(wrapper, testid) === true
+  return fieldValue(wrapper, testid) === true
 }
 
 describe('showroom.channel', () => {
@@ -70,7 +70,7 @@ describe('showroom.channel', () => {
     expect(checked(wrapper, 'showroom-channel-locale-fr')).toBe(true)
     expect(checked(wrapper, 'showroom-channel-locale-de')).toBe(false)
     expect((wrapper.find('[data-testid="showroom-channel-currencies"]').element as HTMLInputElement).value).toBe('USD, EUR')
-    expect(picked(wrapper, 'showroom-channel-tree')).toBe('master')
+    expect(fieldValue(wrapper, 'showroom-channel-tree')).toBe('master')
   })
 
   it('saves the labels, locales, currencies and tree, then reloads', async () => {
@@ -78,10 +78,10 @@ describe('showroom.channel', () => {
 
     const wrapper = await mountShowroomPage(Page, PATH)
     await wrapper.find('[data-testid="showroom-channel-label"]').setValue('Web store')
-    await pick(wrapper, 'showroom-channel-locale-fr', false)
-    await pick(wrapper, 'showroom-channel-locale-de', true)
+    await setField(wrapper, 'showroom-channel-locale-fr', false)
+    await setField(wrapper, 'showroom-channel-locale-de', true)
     await wrapper.find('[data-testid="showroom-channel-currencies"]').setValue('GBP')
-    await pick(wrapper, 'showroom-channel-tree', 'web_tree')
+    await setField(wrapper, 'showroom-channel-tree', 'web_tree')
     await save(wrapper)
 
     const [call] = showroomCalls('PATCH', '/channels/{channel}')
@@ -94,7 +94,7 @@ describe('showroom.channel', () => {
     showroomWith()
 
     const wrapper = await mountShowroomPage(Page, PATH)
-    await pick(wrapper, 'showroom-channel-tree', null)
+    await chooseOption(wrapper, 'showroom-channel-tree', null)
     await save(wrapper)
 
     expect(showroomCalls('PATCH', '/channels/{channel}')[0]?.body).toMatchObject({ category_tree: null })

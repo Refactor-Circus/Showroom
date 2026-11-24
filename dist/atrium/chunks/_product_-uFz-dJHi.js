@@ -1,40 +1,40 @@
 import { t as e } from "./CatalogActionError-BRUgojP9.js";
-import { a as t, i as n, n as r, r as i, t as a } from "./ValueEditor-DyapgrYm.js";
+import { a as t, i as n, n as r, r as i, t as a } from "./ValueEditor-DaEpiyWK.js";
 import { t as o } from "./CatalogState-Bkly-MlG.js";
 import { t as s } from "./ExternalIds-ATlFXCLK.js";
 import { A as c, C as l, D as u, E as d, O as f, T as p, _ as m, a as h, c as g, d as _, f as v, g as ee, h as y, i as b, j as te, k as ne, m as re, n as x, o as ie, s as ae, v as oe } from "./catalog-DCoO3A8a.js";
 import { c as se, i as ce, l as le, s as ue, u as de } from "./values-B4RtDnRM.js";
-import { AtriumIntegrationScreen as fe, navigateTo as pe } from "@refactor-circus/atrium";
-import { UBadge as me, UButton as he, UCard as ge, UCheckbox as _e, UFormField as ve, UInput as ye, ULink as be, UPageHeader as xe, USelect as Se, UTable as S } from "@refactor-circus/atrium/ui";
-import { Fragment as C, computed as w, createBlock as T, createCommentVNode as E, createElementBlock as D, createElementVNode as O, createTextVNode as k, createVNode as A, defineComponent as j, isRef as M, openBlock as N, reactive as Ce, ref as P, renderList as F, toDisplayString as I, unref as L, watch as we, withCtx as R, withModifiers as Te } from "vue";
-import { useI18n as Ee } from "vue-i18n";
-import { useRoute as De } from "vue-router";
+import { AtriumIntegrationScreen as fe, AtriumPageHeader as pe, AtriumSelect as me, navigateTo as he } from "@refactor-circus/atrium";
+import { UBadge as ge, UButton as _e, UCard as ve, UCheckbox as ye, UFormField as be, UInput as xe, ULink as Se, USelect as Ce, UTable as S } from "@refactor-circus/atrium/ui";
+import { Fragment as C, computed as w, createBlock as T, createCommentVNode as E, createElementBlock as D, createElementVNode as O, createTextVNode as k, createVNode as A, defineComponent as j, isRef as M, openBlock as N, reactive as we, ref as P, renderList as F, toDisplayString as I, unref as L, watch as Te, withCtx as R, withModifiers as Ee } from "vue";
+import { useI18n as De } from "vue-i18n";
+import { useRoute as Oe } from "vue-router";
 // src/components/catalog/ProductWorkflow.vue?vue&type=script&setup=true&lang.ts
-var z = { class: "space-y-5" }, Oe = { class: "font-semibold" }, ke = { class: "space-y-4" }, Ae = { class: "flex flex-wrap items-center gap-3 text-sm" }, B = { "data-testid": "showroom-published-version" }, V = { class: "font-mono" }, H = { class: "text-muted" }, U = {
+var z = { class: "space-y-5" }, ke = { class: "font-semibold" }, Ae = { class: "space-y-4" }, je = { class: "flex flex-wrap items-center gap-3 text-sm" }, B = { "data-testid": "showroom-published-version" }, V = { class: "font-mono" }, H = { class: "text-muted" }, U = {
 	key: 1,
 	class: "text-muted"
-}, je = {
+}, Me = {
 	key: 1,
 	class: "text-xs text-error"
-}, Me = { class: "font-semibold" }, Ne = {
+}, Ne = { class: "font-semibold" }, Pe = {
 	key: 0,
 	class: "text-sm text-muted"
-}, Pe = ["data-testid", "data-completeness"], Fe = { class: "font-mono text-xs" }, W = { class: "font-mono text-xs" }, G = { class: "font-semibold" }, K = {
+}, Fe = ["data-testid", "data-completeness"], Ie = { class: "font-mono text-xs" }, W = { class: "font-mono text-xs" }, G = { class: "font-semibold" }, K = {
 	key: 0,
 	class: "text-sm text-muted"
 }, q = {
 	key: 1,
 	class: "flex flex-col gap-3"
-}, Ie = ["data-testid"], J = { class: "flex flex-wrap items-center gap-2" }, Le = { class: "font-mono" }, Y = { class: "text-muted" }, X = {
+}, Le = ["data-testid"], J = { class: "flex flex-wrap items-center gap-2" }, Re = { class: "font-mono" }, Y = { class: "text-muted" }, X = {
 	key: 0,
 	class: "text-muted"
 }, Z = {
 	key: 0,
 	class: "mt-1 italic"
-}, Re = {
+}, ze = {
 	key: 1,
 	class: "mt-1 font-mono text-xs text-muted"
-}, ze = /* @__PURE__ */ j({
+}, Be = /* @__PURE__ */ j({
 	__name: "ProductWorkflow",
 	props: {
 		product: {},
@@ -42,7 +42,7 @@ var z = { class: "space-y-5" }, Oe = { class: "font-semibold" }, ke = { class: "
 	},
 	emits: ["changed"],
 	setup(t, { emit: n }) {
-		let r = t, i = n, { t: a } = Ee(), o = te(), s = f(), c = P(""), u = w(() => b(r.product.status, r.product.published_version)), p = w(() => r.product.completeness ?? []), m = w(() => [
+		let r = t, i = n, { t: a } = De(), o = te(), s = f(), c = P(""), u = w(() => b(r.product.status, r.product.published_version)), p = w(() => r.product.completeness ?? []), m = w(() => [
 			{
 				accessorKey: "scope",
 				header: a("showroom.catalog.fields.channel")
@@ -87,12 +87,12 @@ var z = { class: "space-y-5" }, Oe = { class: "font-semibold" }, ke = { class: "
 			}))) && i("changed");
 		}
 		return (t, n) => {
-			let i = me, o = ye, l = ve, f = he, y = ge, b = S;
+			let i = ge, o = xe, l = be, f = _e, y = ve, b = S;
 			return N(), D("div", z, [
 				A(y, { "data-testid": "showroom-workflow" }, {
-					header: R(() => [O("h2", Oe, I(L(a)("showroom.catalog.workflow.title")), 1)]),
-					default: R(() => [O("div", ke, [
-						O("div", Ae, [A(i, {
+					header: R(() => [O("h2", ke, I(L(a)("showroom.catalog.workflow.title")), 1)]),
+					default: R(() => [O("div", Ae, [
+						O("div", je, [A(i, {
 							color: L(d)(r.product.status),
 							variant: "subtle",
 							"data-testid": "showroom-product-status"
@@ -105,7 +105,7 @@ var z = { class: "space-y-5" }, Oe = { class: "font-semibold" }, ke = { class: "
 							key: 0,
 							class: "flex flex-wrap items-end gap-3",
 							"data-testid": "showroom-transition-form",
-							onSubmit: n[1] ||= Te(() => {}, ["prevent"])
+							onSubmit: n[1] ||= Ee(() => {}, ["prevent"])
 						}, [A(l, {
 							label: L(a)("showroom.catalog.workflow.comment"),
 							error: L(s).error("comment")
@@ -134,13 +134,13 @@ var z = { class: "space-y-5" }, Oe = { class: "font-semibold" }, ke = { class: "
 							"data-testid",
 							"onClick"
 						]))), 128))], 32)) : E("", !0),
-						L(s).error("transition") ? (N(), D("small", je, I(L(s).error("transition")), 1)) : E("", !0)
+						L(s).error("transition") ? (N(), D("small", Me, I(L(s).error("transition")), 1)) : E("", !0)
 					])]),
 					_: 1
 				}),
 				A(y, { "data-testid": "showroom-completeness" }, {
-					header: R(() => [O("h2", Me, I(L(a)("showroom.catalog.workflow.completeness")), 1)]),
-					default: R(() => [L(p).length === 0 ? (N(), D("p", Ne, I(L(a)("showroom.catalog.workflow.no_completeness")), 1)) : (N(), T(b, {
+					header: R(() => [O("h2", Ne, I(L(a)("showroom.catalog.workflow.completeness")), 1)]),
+					default: R(() => [L(p).length === 0 ? (N(), D("p", Pe, I(L(a)("showroom.catalog.workflow.no_completeness")), 1)) : (N(), T(b, {
 						key: 1,
 						data: L(p),
 						columns: L(m)
@@ -149,8 +149,8 @@ var z = { class: "space-y-5" }, Oe = { class: "font-semibold" }, ke = { class: "
 							class: "font-mono text-xs",
 							"data-testid": `showroom-completeness-${e.scope}-${e.locale}`,
 							"data-completeness": `${e.scope}/${e.locale}`
-						}, I(e.scope), 9, Pe)]),
-						"locale-cell": R(({ row: { original: e } }) => [O("span", Fe, I(e.locale), 1)]),
+						}, I(e.scope), 9, Fe)]),
+						"locale-cell": R(({ row: { original: e } }) => [O("span", Ie, I(e.locale), 1)]),
 						"ratio-cell": R(({ row: { original: e } }) => [A(i, {
 							color: g(e.ratio),
 							variant: "subtle"
@@ -171,7 +171,7 @@ var z = { class: "space-y-5" }, Oe = { class: "font-semibold" }, ke = { class: "
 						"data-testid": `showroom-version-${e.version}`
 					}, [O("div", null, [
 						O("p", J, [
-							O("span", Le, "v" + I(e.version), 1),
+							O("span", Re, "v" + I(e.version), 1),
 							A(i, {
 								color: "neutral",
 								variant: "subtle"
@@ -183,7 +183,7 @@ var z = { class: "space-y-5" }, Oe = { class: "font-semibold" }, ke = { class: "
 							e.author ? (N(), D("span", X, I(L(a)("showroom.catalog.workflow.by", { author: e.author.id })), 1)) : E("", !0)
 						]),
 						e.comment ? (N(), D("p", Z, I(e.comment), 1)) : E("", !0),
-						Object.keys(e.changes).length > 0 ? (N(), D("p", Re, I(Object.keys(e.changes).join(", ")), 1)) : E("", !0)
+						Object.keys(e.changes).length > 0 ? (N(), D("p", ze, I(Object.keys(e.changes).join(", ")), 1)) : E("", !0)
 					]), t > 0 ? (N(), T(f, {
 						key: 0,
 						size: "sm",
@@ -199,54 +199,54 @@ var z = { class: "space-y-5" }, Oe = { class: "font-semibold" }, ke = { class: "
 						"loading",
 						"data-testid",
 						"onClick"
-					])) : E("", !0)], 8, Ie))), 128))]))]),
+					])) : E("", !0)], 8, Le))), 128))]))]),
 					_: 1
 				})
 			]);
 		};
 	}
-}), Be = {
+}), Ve = {
 	class: "space-y-4",
 	"data-testid": "showroom-product"
-}, Ve = {
+}, He = {
 	key: 0,
 	class: "space-y-5"
-}, He = {
+}, Ue = {
 	class: "font-mono",
 	"data-testid": "showroom-product-title"
-}, Ue = { class: "font-semibold" }, We = { class: "flex flex-wrap items-end gap-4" }, Ge = {
+}, We = { class: "font-semibold" }, Ge = { class: "flex flex-wrap items-end gap-4" }, Ke = {
 	key: 1,
 	class: "text-sm",
 	"data-testid": "showroom-product-inherited-owner"
-}, Ke = { class: "font-medium" }, qe = { class: "font-mono text-xs" }, Je = { class: "font-semibold" }, Ye = { class: "flex flex-col gap-4" }, Xe = { class: "text-sm" }, Ze = { class: "text-muted" }, Qe = {
+}, qe = { class: "font-medium" }, Je = { class: "font-mono text-xs" }, Ye = { class: "font-semibold" }, Xe = { class: "flex flex-col gap-4" }, Ze = { class: "text-sm" }, Qe = { class: "text-muted" }, $e = {
 	class: "font-mono",
 	"data-testid": "showroom-product-slug"
-}, $e = {
+}, et = {
 	key: 0,
 	"data-testid": "showroom-own-flags"
-}, et = { class: "mb-1 text-xs font-medium uppercase text-muted" }, tt = { class: "flex flex-wrap gap-3" }, nt = { class: "font-mono text-xs" }, rt = {
+}, tt = { class: "mb-1 text-xs font-medium uppercase text-muted" }, nt = { class: "flex flex-wrap gap-3" }, rt = { class: "font-mono text-xs" }, it = {
 	key: 0,
 	class: "ml-1.5 text-muted"
-}, it = {
-	key: 0,
-	class: "text-sm text-muted"
 }, at = {
 	key: 0,
+	class: "text-sm text-muted"
+}, ot = {
+	key: 0,
 	class: "text-xs text-error"
-}, ot = { "data-testid": "showroom-effective-flags" }, st = { class: "mb-1 text-xs font-medium uppercase text-muted" }, ct = { class: "flex flex-wrap gap-3" }, lt = ["data-effective-flag", "data-inherited"], ut = {
+}, st = { "data-testid": "showroom-effective-flags" }, ct = { class: "mb-1 text-xs font-medium uppercase text-muted" }, lt = { class: "flex flex-wrap gap-3" }, ut = ["data-effective-flag", "data-inherited"], dt = {
 	key: 0,
 	class: "text-xs text-muted"
-}, dt = {
+}, ft = {
 	key: 0,
 	class: "text-sm text-muted"
-}, ft = { class: "font-semibold" }, pt = { class: "flex flex-col gap-2" }, mt = {
+}, pt = { class: "font-semibold" }, mt = { class: "flex flex-col gap-2" }, ht = {
 	key: 0,
 	class: "text-xs",
 	"data-testid": "showroom-inherited-categories"
-}, ht = { key: 0 }, gt = { class: "font-semibold" }, _t = /* @__PURE__ */ j({
+}, gt = { key: 0 }, _t = { class: "font-semibold" }, vt = /* @__PURE__ */ j({
 	__name: "[product]",
 	setup(d) {
-		let { t: _, locale: b } = Ee(), te = De(), x = f(), S = w(() => String(te.params.product)), { client: j, data: z, pending: Oe, failed: ke, status: Ae, reload: B } = ne(async (e) => {
+		let { t: _, locale: b } = De(), te = Oe(), x = f(), S = w(() => String(te.params.product)), { client: j, data: z, pending: ke, failed: Ae, status: je, reload: B } = ne(async (e) => {
 			let t = l(await e.GET("/products/{product}", { params: { path: { product: S.value } } })).data, n = l(await e.GET("/products/{product}/versions", { params: {
 				path: { product: S.value },
 				query: { per_page: 10 }
@@ -258,56 +258,53 @@ var z = { class: "space-y-5" }, Oe = { class: "font-semibold" }, ke = { class: "
 				variant: i,
 				family: a
 			};
-		}, S), V = w(() => z.value?.product ?? null), H = w(() => z.value?.parent ?? null), U = w(() => !!V.value?.parent), je = c(async (e) => l(await e.GET("/families", { params: { query: { per_page: 100 } } }))), Me = c(async (e) => l(await e.GET("/flags", { params: { query: { per_page: 100 } } }))), Ne = c(async (e) => l(await e.GET("/association-types", { params: { query: { per_page: 100 } } }))), Pe = w(() => Me.value.filter((e) => e.applies_to.includes("product"))), Fe = w(() => H.value?.values ?? {}), W = w(() => m(V.value?.values, Fe.value)), G = w(() => H.value?.categories ?? []), K = P([]), q = w(() => {
+		}, S), V = w(() => z.value?.product ?? null), H = w(() => z.value?.parent ?? null), U = w(() => !!V.value?.parent), Me = c(async (e) => l(await e.GET("/families", { params: { query: { per_page: 100 } } }))), Ne = c(async (e) => l(await e.GET("/flags", { params: { query: { per_page: 100 } } }))), Pe = c(async (e) => l(await e.GET("/association-types", { params: { query: { per_page: 100 } } }))), Fe = w(() => Ne.value.filter((e) => e.applies_to.includes("product"))), Ie = w(() => H.value?.values ?? {}), W = w(() => m(V.value?.values, Ie.value)), G = w(() => H.value?.categories ?? []), K = P([]), q = w(() => {
 			let e = z.value;
 			if (!e) return [];
 			if (e.parent) return ce(e.variant, e.parent.level + 1);
 			let t = (e.family?.attributes ?? []).map((e) => e.attribute);
 			return [...t, ...[...Object.keys(W.value), ...K.value].filter((e) => !t.includes(e)).sort()].filter((e, t, n) => n.indexOf(e) === t);
-		}), Ie = ue(() => q.value), J = w(() => Ie.pick(q.value)), Le = w(() => U.value ? [] : [...Ie.attributes.value.keys()].filter((e) => !q.value.includes(e)).sort()), Y = P(""), X = se(), Z = Ce({
+		}), Le = ue(() => q.value), J = w(() => Le.pick(q.value)), Re = w(() => U.value ? [] : [...Le.attributes.value.keys()].filter((e) => !q.value.includes(e)).sort()), Y = P(""), X = se(), Z = we({
 			family: "",
 			owner: "",
 			enabled: !0,
 			categories: "",
 			flags: []
-		}), Re = w(() => [{
-			label: _("showroom.catalog.products.no_family"),
-			value: null
-		}, ...je.value.map((e) => ({
+		}), ze = w(() => Me.value.map((e) => ({
 			label: v(e.labels, b.value, e.code),
 			value: e.code
-		}))]), _t = w(() => Le.value.map((e) => ({
+		}))), vt = w(() => Re.value.map((e) => ({
 			label: e,
 			value: e
 		}))), Q = P({}), $ = P(g(null));
-		function vt() {
+		function yt() {
 			let e = V.value;
 			e && (Z.family = e.family ?? "", Z.owner = e.owner ?? "", Z.enabled = e.enabled, Z.categories = y(e.categories, G.value).join(", "), Z.flags = [...e.flags ?? []], $.value = g(e.external_ids), Q.value = le(J.value, W.value, X.slot.value), K.value = []);
 		}
-		we([z, () => X.slot.value], vt, { immediate: !0 }), we(J, (e) => {
+		Te([z, () => X.slot.value], yt, { immediate: !0 }), Te(J, (e) => {
 			let t = e.filter((e) => !(e.code in Q.value));
 			t.length > 0 && (Q.value = {
 				...le(t, W.value, X.slot.value),
 				...Q.value
 			});
 		});
-		function yt() {
+		function bt() {
 			Y.value && !K.value.includes(Y.value) && (K.value = [...K.value, Y.value]), Y.value = "";
 		}
-		function bt(e, t) {
+		function xt(e, t) {
 			Z.flags = t ? [...Z.flags.filter((t) => t !== e), e] : Z.flags.filter((t) => t !== e);
 		}
-		function xt(e) {
-			let t = je.value.find((t) => t.code === e);
+		function St(e) {
+			let t = Me.value.find((t) => t.code === e);
 			return t ? v(t.labels, b.value, t.code) : e ?? null;
 		}
-		async function St(e) {
+		async function Ct(e) {
 			return j ? l(await j.PATCH("/products/{product}", {
 				params: { path: { product: S.value } },
 				body: u(e)
 			})) : null;
 		}
-		async function Ct() {
+		async function wt() {
 			let e = V.value;
 			if (!e) return;
 			let t = {
@@ -321,26 +318,26 @@ var z = { class: "space-y-5" }, Oe = { class: "font-semibold" }, ke = { class: "
 				external_ids: ae($.value),
 				...e.flags === void 0 ? {} : { flags: Z.flags }
 			};
-			await x.run(() => St(t)) && await B();
+			await x.run(() => Ct(t)) && await B();
 		}
-		async function wt() {
-			j && window.confirm(_("showroom.catalog.products.confirm_delete")) && await x.run(async () => l(await j.DELETE("/products/{product}", { params: { path: { product: S.value } } }))) && await pe("/showroom/products");
+		async function Tt() {
+			j && window.confirm(_("showroom.catalog.products.confirm_delete")) && await x.run(async () => l(await j.DELETE("/products/{product}", { params: { path: { product: S.value } } }))) && await he("/showroom/products");
 		}
 		return (c, l) => {
-			let u = me, d = he, f = xe, p = Se, m = ve, h = ye, g = _e, y = ge, te = be, ne = fe;
-			return N(), D("div", Be, [A(ne, {
+			let u = ge, d = _e, f = pe, p = me, m = be, h = xe, g = ye, y = ve, te = Se, ne = Ce, ae = fe;
+			return N(), D("div", Ve, [A(ae, {
 				"screen-key": "showroom.product",
 				record: L(S)
 			}, {
 				default: R(() => [A(o, {
-					ready: !L(Oe) && L(V) !== null,
-					failed: L(ke),
-					status: L(Ae)
+					ready: !L(ke) && L(V) !== null,
+					failed: L(Ae),
+					status: L(je)
 				}, {
-					default: R(() => [L(V) ? (N(), D("div", Ve, [
-						A(f, { description: L(V).family ? xt(L(V).family) ?? void 0 : void 0 }, {
-							title: R(() => [O("span", He, I(L(V).identifier), 1)]),
-							links: R(() => [
+					default: R(() => [L(V) ? (N(), D("div", He, [
+						A(f, { description: L(V).family ? St(L(V).family) ?? void 0 : void 0 }, {
+							title: R(() => [O("span", Ue, I(L(V).identifier), 1)]),
+							default: R(() => [
 								A(u, {
 									color: L(V).enabled ? "success" : "neutral",
 									variant: "subtle",
@@ -365,7 +362,7 @@ var z = { class: "space-y-5" }, Oe = { class: "font-semibold" }, ke = { class: "
 									icon: "i-lucide-trash-2",
 									loading: L(x).busy.value,
 									"data-testid": "showroom-product-delete",
-									onClick: wt
+									onClick: Tt
 								}, {
 									default: R(() => [k(I(L(_)("showroom.catalog.delete")), 1)]),
 									_: 1
@@ -373,7 +370,7 @@ var z = { class: "space-y-5" }, Oe = { class: "font-semibold" }, ke = { class: "
 							]),
 							_: 1
 						}, 8, ["description"]),
-						A(ze, {
+						A(Be, {
 							product: L(V),
 							versions: L(z)?.versions ?? [],
 							onChanged: L(B)
@@ -396,12 +393,12 @@ var z = { class: "space-y-5" }, Oe = { class: "font-semibold" }, ke = { class: "
 						O("form", {
 							class: "space-y-5",
 							"data-testid": "showroom-product-form",
-							onSubmit: Te(Ct, ["prevent"])
+							onSubmit: Ee(wt, ["prevent"])
 						}, [
 							A(e, { action: L(x) }, null, 8, ["action"]),
 							A(y, null, {
-								header: R(() => [O("h2", Ue, I(L(_)("showroom.catalog.products.details")), 1)]),
-								default: R(() => [O("div", We, [
+								header: R(() => [O("h2", We, I(L(_)("showroom.catalog.products.details")), 1)]),
+								default: R(() => [O("div", Ge, [
 									L(U) ? E("", !0) : (N(), T(m, {
 										key: 0,
 										label: L(_)("showroom.catalog.fields.family"),
@@ -410,18 +407,19 @@ var z = { class: "space-y-5" }, Oe = { class: "font-semibold" }, ke = { class: "
 										default: R(() => [A(p, {
 											modelValue: L(Z).family,
 											"onUpdate:modelValue": l[0] ||= (e) => L(Z).family = e,
-											items: L(Re),
-											placeholder: L(_)("showroom.catalog.products.no_family"),
+											items: L(ze),
+											blank: L(_)("showroom.catalog.products.no_family"),
+											"blank-value": null,
 											class: "w-56",
 											"data-testid": "showroom-product-family"
 										}, null, 8, [
 											"modelValue",
 											"items",
-											"placeholder"
+											"blank"
 										])]),
 										_: 1
 									}, 8, ["label", "error"])),
-									L(U) ? (N(), D("div", Ge, [O("p", Ke, I(L(_)("showroom.catalog.products.inherited_owner")), 1), O("p", qe, I(L(V).owner ?? L(_)("showroom.catalog.none")), 1)])) : (N(), T(m, {
+									L(U) ? (N(), D("div", Ke, [O("p", qe, I(L(_)("showroom.catalog.products.inherited_owner")), 1), O("p", Je, I(L(V).owner ?? L(_)("showroom.catalog.none")), 1)])) : (N(), T(m, {
 										key: 2,
 										label: L(_)("showroom.catalog.fields.owner"),
 										hint: L(_)("showroom.catalog.products.owner_hint"),
@@ -450,9 +448,9 @@ var z = { class: "space-y-5" }, Oe = { class: "font-semibold" }, ke = { class: "
 								_: 1
 							}),
 							A(y, { "data-testid": "showroom-product-identity" }, {
-								header: R(() => [O("h2", Je, I(L(_)("showroom.catalog.products.identifiers_and_flags")), 1)]),
-								default: R(() => [O("div", Ye, [
-									O("p", Xe, [O("span", Ze, I(L(_)("showroom.catalog.fields.slug")) + ":", 1), O("span", Qe, I(L(V).slug), 1)]),
+								header: R(() => [O("h2", Ye, I(L(_)("showroom.catalog.products.identifiers_and_flags")), 1)]),
+								default: R(() => [O("div", Xe, [
+									O("p", Ze, [O("span", Qe, I(L(_)("showroom.catalog.fields.slug")) + ":", 1), O("span", $e, I(L(V).slug), 1)]),
 									A(s, {
 										modelValue: L($),
 										"onUpdate:modelValue": l[3] ||= (e) => M($) ? $.value = e : null,
@@ -463,24 +461,24 @@ var z = { class: "space-y-5" }, Oe = { class: "font-semibold" }, ke = { class: "
 										"synced-at",
 										"error"
 									]),
-									L(V).flags === void 0 ? E("", !0) : (N(), D("div", $e, [
-										O("p", et, I(L(_)("showroom.catalog.flags.own")), 1),
-										O("div", tt, [(N(!0), D(C, null, F(L(Pe), (e) => (N(), T(g, {
+									L(V).flags === void 0 ? E("", !0) : (N(), D("div", et, [
+										O("p", tt, I(L(_)("showroom.catalog.flags.own")), 1),
+										O("div", nt, [(N(!0), D(C, null, F(L(Fe), (e) => (N(), T(g, {
 											key: e.code,
 											"model-value": L(Z).flags.includes(e.code),
 											"data-testid": `showroom-flag-${e.code}`,
-											"onUpdate:modelValue": (t) => bt(e.code, t === !0)
+											"onUpdate:modelValue": (t) => xt(e.code, t === !0)
 										}, {
-											label: R(() => [O("span", nt, I(e.code), 1), L(v)(e.labels, L(b), e.code) === e.code ? E("", !0) : (N(), D("span", rt, I(L(v)(e.labels, L(b), e.code)), 1))]),
+											label: R(() => [O("span", rt, I(e.code), 1), L(v)(e.labels, L(b), e.code) === e.code ? E("", !0) : (N(), D("span", it, I(L(v)(e.labels, L(b), e.code)), 1))]),
 											_: 2
 										}, 1032, [
 											"model-value",
 											"data-testid",
 											"onUpdate:modelValue"
-										]))), 128)), L(Pe).length === 0 ? (N(), D("span", it, I(L(_)("showroom.catalog.flags.none")), 1)) : E("", !0)]),
-										L(x).error("flags") ? (N(), D("small", at, I(L(x).error("flags")), 1)) : E("", !0)
+										]))), 128)), L(Fe).length === 0 ? (N(), D("span", at, I(L(_)("showroom.catalog.flags.none")), 1)) : E("", !0)]),
+										L(x).error("flags") ? (N(), D("small", ot, I(L(x).error("flags")), 1)) : E("", !0)
 									])),
-									O("div", ot, [O("p", st, I(L(_)("showroom.catalog.flags.effective")), 1), O("ul", ct, [(N(!0), D(C, null, F(L(V).effective_flags ?? [], (e) => (N(), D("li", {
+									O("div", st, [O("p", ct, I(L(_)("showroom.catalog.flags.effective")), 1), O("ul", lt, [(N(!0), D(C, null, F(L(V).effective_flags ?? [], (e) => (N(), D("li", {
 										key: e,
 										class: "flex items-center gap-1.5 text-sm",
 										"data-effective-flag": e,
@@ -491,13 +489,13 @@ var z = { class: "space-y-5" }, Oe = { class: "font-semibold" }, ke = { class: "
 									}, {
 										default: R(() => [k(I(e), 1)]),
 										_: 2
-									}, 1032, ["color"]), (L(V).flags ?? []).includes(e) ? E("", !0) : (N(), D("span", ut, I(L(_)("showroom.catalog.inherited")), 1))], 8, lt))), 128)), (L(V).effective_flags ?? []).length === 0 ? (N(), D("li", dt, I(L(_)("showroom.catalog.none")), 1)) : E("", !0)])])
+									}, 1032, ["color"]), (L(V).flags ?? []).includes(e) ? E("", !0) : (N(), D("span", dt, I(L(_)("showroom.catalog.inherited")), 1))], 8, ut))), 128)), (L(V).effective_flags ?? []).length === 0 ? (N(), D("li", ft, I(L(_)("showroom.catalog.none")), 1)) : E("", !0)])])
 								])]),
 								_: 1
 							}),
 							A(y, null, {
-								header: R(() => [O("h2", ft, I(L(_)("showroom.catalog.categories.title")), 1)]),
-								default: R(() => [O("div", pt, [A(m, {
+								header: R(() => [O("h2", pt, I(L(_)("showroom.catalog.categories.title")), 1)]),
+								default: R(() => [O("div", mt, [A(m, {
 									label: L(_)("showroom.catalog.categories.title"),
 									hint: L(_)("showroom.catalog.categories.hint"),
 									error: L(x).error("categories")
@@ -513,17 +511,17 @@ var z = { class: "space-y-5" }, Oe = { class: "font-semibold" }, ke = { class: "
 									"label",
 									"hint",
 									"error"
-								]), L(G).length > 0 ? (N(), D("p", mt, [k(I(L(_)("showroom.catalog.categories.inherited")) + ": ", 1), (N(!0), D(C, null, F(L(G), (e, t) => (N(), D(C, { key: e }, [A(te, {
+								]), L(G).length > 0 ? (N(), D("p", ht, [k(I(L(_)("showroom.catalog.categories.inherited")) + ": ", 1), (N(!0), D(C, null, F(L(G), (e, t) => (N(), D(C, { key: e }, [A(te, {
 									to: L(ie)(e),
 									class: "font-mono hover:underline"
 								}, {
 									default: R(() => [k(I(e), 1)]),
 									_: 2
-								}, 1032, ["to"]), t < L(G).length - 1 ? (N(), D("span", ht, ", ")) : E("", !0)], 64))), 128))])) : E("", !0)])]),
+								}, 1032, ["to"]), t < L(G).length - 1 ? (N(), D("span", gt, ", ")) : E("", !0)], 64))), 128))])) : E("", !0)])]),
 								_: 1
 							}),
 							A(y, null, {
-								header: R(() => [O("h2", gt, I(L(_)("showroom.catalog.values.title")), 1)]),
+								header: R(() => [O("h2", _t, I(L(_)("showroom.catalog.values.title")), 1)]),
 								default: R(() => [A(a, {
 									modelValue: L(Q),
 									"onUpdate:modelValue": l[5] ||= (e) => M(Q) ? Q.value = e : null,
@@ -548,16 +546,16 @@ var z = { class: "space-y-5" }, Oe = { class: "font-semibold" }, ke = { class: "
 								_: 1
 							}, 8, ["loading"])])
 						], 32),
-						L(Le).length > 0 ? (N(), T(y, { key: 0 }, {
+						L(Re).length > 0 ? (N(), T(y, { key: 0 }, {
 							default: R(() => [O("form", {
 								class: "flex flex-wrap items-end gap-3",
 								"data-testid": "showroom-add-attribute",
-								onSubmit: Te(yt, ["prevent"])
+								onSubmit: Ee(bt, ["prevent"])
 							}, [A(m, { label: L(_)("showroom.catalog.values.add_attribute") }, {
-								default: R(() => [A(p, {
+								default: R(() => [A(ne, {
 									modelValue: L(Y),
 									"onUpdate:modelValue": l[6] ||= (e) => M(Y) ? Y.value = e : null,
-									items: L(_t),
+									items: L(vt),
 									placeholder: L(_)("showroom.catalog.values.choose_attribute"),
 									class: "w-72",
 									"data-testid": "showroom-add-attribute-select"
@@ -593,8 +591,8 @@ var z = { class: "space-y-5" }, Oe = { class: "font-semibold" }, ke = { class: "
 							quantified: L(V).quantified_associations ?? {},
 							"own-associations": L(re)(L(V).associations, L(H)?.associations),
 							"own-quantified": L(ee)(L(V).quantified_associations, L(H)?.quantified_associations),
-							types: L(Ne),
-							save: St,
+							types: L(Pe),
+							save: Ct,
 							onChanged: L(B)
 						}, null, 8, [
 							"associations",
@@ -604,7 +602,7 @@ var z = { class: "space-y-5" }, Oe = { class: "font-semibold" }, ke = { class: "
 							"types",
 							"onChanged"
 						]),
-						A(i, { values: L(Fe) }, null, 8, ["values"])
+						A(i, { values: L(Ie) }, null, 8, ["values"])
 					])) : E("", !0)]),
 					_: 1
 				}, 8, [
@@ -617,4 +615,4 @@ var z = { class: "space-y-5" }, Oe = { class: "font-semibold" }, ke = { class: "
 		};
 	}
 });
-export { _t as default };
+export { vt as default };

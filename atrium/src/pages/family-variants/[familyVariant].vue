@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { TableColumn } from '@nuxt/ui/components/Table.vue'
+import type { TableColumn } from '@refactor-circus/atrium/ui'
 import CatalogActionError from '../../components/catalog/CatalogActionError.vue'
 import CatalogState from '../../components/catalog/CatalogState.vue'
 import {
@@ -84,18 +84,16 @@ async function destroy(): Promise<void> {
     <AtriumIntegrationScreen screen-key="showroom.family-variant" :record="code">
       <CatalogState :ready="!pending && variant !== null" :failed="failed" :status="status">
         <div v-if="variant" class="space-y-5">
-          <UPageHeader :headline="t('showroom.catalog.fields.family_variant')">
+          <AtriumPageHeader :overline="t('showroom.catalog.fields.family_variant')">
             <template #title>
               <span data-testid="showroom-family-variant-title">{{ labelOf(variant.labels, locale, variant.code) }}</span>
             </template>
             <template #description>
               <span class="font-mono">{{ variant.code }}<template v-if="variant.family"> · {{ variant.family }}</template></span>
             </template>
-            <template #links>
-              <UButton v-if="variant.family" :to="familyPath(variant.family)" variant="outline" icon="i-lucide-arrow-left" data-testid="showroom-family-variant-family">{{ variant.family }}</UButton>
-              <UButton color="error" variant="outline" icon="i-lucide-trash-2" :loading="action.busy.value" data-testid="showroom-family-variant-delete" @click="destroy">{{ t('showroom.catalog.delete') }}</UButton>
-            </template>
-          </UPageHeader>
+            <UButton v-if="variant.family" :to="familyPath(variant.family)" variant="outline" icon="i-lucide-arrow-left" data-testid="showroom-family-variant-family">{{ variant.family }}</UButton>
+            <UButton color="error" variant="outline" icon="i-lucide-trash-2" :loading="action.busy.value" data-testid="showroom-family-variant-delete" @click="destroy">{{ t('showroom.catalog.delete') }}</UButton>
+          </AtriumPageHeader>
 
           <CatalogActionError :action="action" />
 

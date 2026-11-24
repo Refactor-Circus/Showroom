@@ -2,8 +2,8 @@ import { t as e } from "./CatalogPager-BwJ4cMnn.js";
 import { t } from "./CatalogState-Bkly-MlG.js";
 import { A as n, C as r, D as i, S as a, f as o, k as s, r as c } from "./catalog-DCoO3A8a.js";
 import { n as l, t as u } from "./structure-DbqcM-iO.js";
-import { AtriumIntegrationScreen as d, AtriumPageHeader as f, AtriumState as ee } from "@refactor-circus/atrium";
-import { UBadge as p, UButton as m, UCard as h, UFormField as g, UInput as _, ULink as v, USelect as y, UTable as b } from "@refactor-circus/atrium/ui";
+import { AtriumIntegrationScreen as d, AtriumPageHeader as f, AtriumSelect as ee, AtriumState as p } from "@refactor-circus/atrium";
+import { UBadge as m, UButton as h, UCard as g, UFormField as _, UInput as v, ULink as y, UTable as b } from "@refactor-circus/atrium/ui";
 import { Fragment as x, computed as S, createBlock as C, createCommentVNode as w, createElementBlock as T, createElementVNode as E, createTextVNode as D, createVNode as O, defineComponent as k, openBlock as A, reactive as j, renderList as te, toDisplayString as M, unref as N, watch as P, withCtx as F, withModifiers as I } from "vue";
 import { useI18n as L } from "vue-i18n";
 import { useRoute as R, useRouter as z } from "vue-router";
@@ -29,19 +29,13 @@ var B = {
 		P(() => J.query, () => {
 			for (let e of G) $[e] = a(J.query[e]) ?? "";
 		}, { immediate: !0 });
-		let oe = S(() => [{
-			label: K("showroom.structure.attributes.all_types"),
-			value: null
-		}, ...l.map((e) => ({
+		let oe = S(() => l.map((e) => ({
 			label: e,
 			value: e
-		}))]), se = S(() => [{
-			label: K("showroom.structure.attributes.all_groups"),
-			value: null
-		}, ...Q.value.map((e) => ({
+		}))), se = S(() => Q.value.map((e) => ({
 			label: o(e.labels, q.value, e.code),
 			value: e.code
-		}))]), ce = S(() => [
+		}))), ce = S(() => [
 			{
 				accessorKey: "code",
 				header: K("showroom.catalog.fields.code")
@@ -75,7 +69,7 @@ var B = {
 			Y.replace({ query: {} });
 		}
 		return (n, r) => {
-			let i = m, a = f, s = _, l = g, S = y, k = h, j = ee, P = v, L = p, R = b, z = d;
+			let i = h, a = f, s = v, l = _, S = ee, k = g, j = p, P = y, L = m, R = b, z = d;
 			return A(), T("div", B, [O(a, { title: N(K)("showroom.structure.attributes.title") }, {
 				default: F(() => [O(i, {
 					to: "/showroom/attributes/create",
@@ -107,13 +101,14 @@ var B = {
 								modelValue: N($).type,
 								"onUpdate:modelValue": r[1] ||= (e) => N($).type = e,
 								items: N(oe),
-								placeholder: N(K)("showroom.structure.attributes.all_types"),
+								blank: N(K)("showroom.structure.attributes.all_types"),
+								"blank-value": null,
 								class: "w-44",
 								"data-testid": "showroom-attributes-type"
 							}, null, 8, [
 								"modelValue",
 								"items",
-								"placeholder"
+								"blank"
 							])]),
 							_: 1
 						}, 8, ["label"]),
@@ -122,13 +117,14 @@ var B = {
 								modelValue: N($).group,
 								"onUpdate:modelValue": r[2] ||= (e) => N($).group = e,
 								items: N(se),
-								placeholder: N(K)("showroom.structure.attributes.all_groups"),
+								blank: N(K)("showroom.structure.attributes.all_groups"),
+								"blank-value": null,
 								class: "w-48",
 								"data-testid": "showroom-attributes-group"
 							}, null, 8, [
 								"modelValue",
 								"items",
-								"placeholder"
+								"blank"
 							])]),
 							_: 1
 						}, 8, ["label"]),

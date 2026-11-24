@@ -1,7 +1,7 @@
 import { t as e } from "./CatalogActionError-BRUgojP9.js";
 import { t } from "./CatalogState-Bkly-MlG.js";
 import { A as n, C as r, D as i, O as a, f as o, k as s } from "./catalog-DCoO3A8a.js";
-import { t as c } from "./ChannelFields-nZUWiNUS.js";
+import { t as c } from "./ChannelFields-D7ZaKf1p.js";
 import { c as l, h as u, s as d, u as f } from "./structure-DbqcM-iO.js";
 import { AtriumIntegrationScreen as p, AtriumPageHeader as m, navigateTo as h } from "@refactor-circus/atrium";
 import { UButton as ee, UCard as te, UFormField as ne, UInput as g } from "@refactor-circus/atrium/ui";

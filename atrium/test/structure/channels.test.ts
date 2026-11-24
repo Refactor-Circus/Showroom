@@ -5,7 +5,7 @@ import { mockPackageApi, reply, resetPackageApis, type PackageRoutes } from '@re
 import { confirmWith, cursorPage, invalid, mountShowroomPage, ok, resetShowroomPages, screensApi, showroomCalls } from '../catalog/support'
 import { english, french, german, master, print, web, webshop } from './support'
 import { clearAtriumData, mockAtriumApi, useRouter } from '@refactor-circus/atrium/testing'
-import { choices, pick, row as rowOf } from '../ui'
+import { selectValues, setField, tableRow } from '@refactor-circus/atrium/testing'
 
 /*
  * `showroom.channels` (AC 54, 71): v1's channels screen, with its locales
@@ -67,13 +67,13 @@ describe('showroom.channels', () => {
     expect(showroomCalls('GET', '/categories')[0]?.query).toEqual({ roots: '1', per_page: '100' })
     expect(api).toHaveBeenCalledWith('/screens/showroom.channels', expect.anything())
 
-    const row = rowOf(wrapper, 'showroom-channel-row-webshop')
+    const row = tableRow(wrapper, 'showroom-channel-row-webshop')
     expect(row.find('a').attributes('href')).toBe('/showroom/channels/webshop')
     expect(row.text()).toContain('en, fr')
     expect(row.text()).toContain('USD, EUR')
     expect(row.text()).toContain('master')
     expect(wrapper.find('[data-testid="showroom-locale-fr"]').text()).toContain('French')
-    expect(choices(wrapper, 'showroom-channel-create-tree')).toEqual([null, 'master', 'web_tree'])
+    expect(selectValues(wrapper, 'showroom-channel-create-tree')).toEqual([null, 'master', 'web_tree'])
   })
 
   it('pages the channels with the endpoint\'s cursor', async () => {
@@ -93,10 +93,10 @@ describe('showroom.channels', () => {
     const wrapper = await mountShowroomPage(Page, PATH)
     await wrapper.find('[data-testid="showroom-channel-create-code"]').setValue('mobile')
     await wrapper.find('[data-testid="showroom-channel-create-label"]').setValue('Mobile')
-    await pick(wrapper, 'showroom-channel-create-locale-en', true)
-    await pick(wrapper, 'showroom-channel-create-locale-de', true)
+    await setField(wrapper, 'showroom-channel-create-locale-en', true)
+    await setField(wrapper, 'showroom-channel-create-locale-de', true)
     await wrapper.find('[data-testid="showroom-channel-create-currencies"]').setValue('USD, EUR, USD')
-    await pick(wrapper, 'showroom-channel-create-tree', 'master')
+    await setField(wrapper, 'showroom-channel-create-tree', 'master')
     await submit(wrapper, 'showroom-channel-create-form')
 
     const [call] = showroomCalls('POST', '/channels')
@@ -110,7 +110,7 @@ describe('showroom.channels', () => {
 
     const wrapper = await mountShowroomPage(Page, PATH)
     await wrapper.find('[data-testid="showroom-channel-create-code"]').setValue('mobile')
-    await pick(wrapper, 'showroom-channel-create-locale-fr', true)
+    await setField(wrapper, 'showroom-channel-create-locale-fr', true)
     await submit(wrapper, 'showroom-channel-create-form')
 
     expect(showroomCalls('POST', '/channels')[0]?.body).toEqual({ code: 'mobile', locales: ['fr'], currencies: [], category_tree: null })

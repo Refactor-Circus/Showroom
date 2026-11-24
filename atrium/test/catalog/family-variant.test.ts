@@ -4,7 +4,7 @@ import { settle } from '@refactor-circus/atrium/testing'
 import { mockPackageApi, reply, resetPackageApis, type PackageRoutes } from '@refactor-circus/atrium/testing'
 import { bySize, confirmWith, cursorPage, mountShowroomPage, ok, oxford, resetShowroomPages, screensApi, showroomCalls } from './support'
 import { clearAtriumData, mockAtriumApi, useRouter } from '@refactor-circus/atrium/testing'
-import { row } from '../ui'
+import { tableRow } from '@refactor-circus/atrium/testing'
 
 /*
  * `showroom.family-variant` (AC 54, 71): one family variant
@@ -51,9 +51,9 @@ describe('showroom.family-variant', () => {
     expect(showroomCalls('GET', '/product-models')[0]?.query).toEqual({ family_variant: 'shirts_by_size', per_page: '100' })
     expect(api).toHaveBeenCalledWith('/screens/showroom.family-variant', expect.objectContaining({ query: expect.objectContaining({ record: 'shirts_by_size' }) }))
     expect(wrapper.find('[data-testid="showroom-family-variant-title"]').text()).toBe('Shirts by size')
-    expect(row(wrapper, 'showroom-level-common').text()).toContain('name')
-    expect(row(wrapper, 'showroom-level-1').text()).toContain('size')
-    expect(row(wrapper, 'showroom-level-1').text()).toContain('color')
+    expect(tableRow(wrapper, 'showroom-level-common').text()).toContain('name')
+    expect(tableRow(wrapper, 'showroom-level-1').text()).toContain('size')
+    expect(tableRow(wrapper, 'showroom-level-1').text()).toContain('color')
     expect(wrapper.find('[data-testid="showroom-family-variant-family"]').attributes('href')).toBe('/showroom/families/shirts')
     expect(wrapper.find('[data-testid="showroom-family-variant-model-oxford"]').attributes('href')).toBe('/showroom/product-models/oxford')
   })

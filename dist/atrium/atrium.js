@@ -788,12 +788,12 @@ var G = {
 	{
 		path: "/showroom/assets/:asset",
 		name: "showroom-assets-asset",
-		component: () => import("./chunks/_asset_-DQj5qWlg.js")
+		component: () => import("./chunks/_asset_-B2k35oXX.js")
 	},
 	{
 		path: "/showroom/assets",
 		name: "showroom-assets",
-		component: () => import("./chunks/assets-D-KxVHIq.js")
+		component: () => import("./chunks/assets-7q559ZGs.js")
 	},
 	{
 		path: "/showroom/association-types",
@@ -813,17 +813,17 @@ var G = {
 	{
 		path: "/showroom/attributes/:attribute",
 		name: "showroom-attributes-attribute",
-		component: () => import("./chunks/_attribute_-CTHogZaI.js")
+		component: () => import("./chunks/_attribute_-BlVoXV7L.js")
 	},
 	{
 		path: "/showroom/attributes/create",
 		name: "showroom-attributes-create",
-		component: () => import("./chunks/create-DWaPf-ta.js")
+		component: () => import("./chunks/create-Dx6jfGCh.js")
 	},
 	{
 		path: "/showroom/attributes",
 		name: "showroom-attributes",
-		component: () => import("./chunks/attributes-BWp1mhNs.js")
+		component: () => import("./chunks/attributes-CQHiBYcy.js")
 	},
 	{
 		path: "/showroom/categories/:category",
@@ -838,17 +838,17 @@ var G = {
 	{
 		path: "/showroom/channels/:channel",
 		name: "showroom-channels-channel",
-		component: () => import("./chunks/_channel_-DkRLpYKz.js")
+		component: () => import("./chunks/_channel_-CPu8g7Ix.js")
 	},
 	{
 		path: "/showroom/channels",
 		name: "showroom-channels",
-		component: () => import("./chunks/channels-_7TW7MpK.js")
+		component: () => import("./chunks/channels-DDmS1e9c.js")
 	},
 	{
 		path: "/showroom/families/:family",
 		name: "showroom-families-family",
-		component: () => import("./chunks/_family_-BrZ0sTN-.js")
+		component: () => import("./chunks/_family_-BbOJxnzw.js")
 	},
 	{
 		path: "/showroom/families",
@@ -858,7 +858,7 @@ var G = {
 	{
 		path: "/showroom/family-variants/:familyVariant",
 		name: "showroom-family-variants-familyVariant",
-		component: () => import("./chunks/_familyVariant_-K40r0HzU.js")
+		component: () => import("./chunks/_familyVariant_-BwEssoQw.js")
 	},
 	{
 		path: "/showroom/flags/:flag",
@@ -873,7 +873,7 @@ var G = {
 	{
 		path: "/showroom/owner-types/:ownerType",
 		name: "showroom-owner-types-ownerType",
-		component: () => import("./chunks/_ownerType_-kZEjEvdt.js")
+		component: () => import("./chunks/_ownerType_-CZxt_RLp.js")
 	},
 	{
 		path: "/showroom/owner-types",
@@ -883,42 +883,42 @@ var G = {
 	{
 		path: "/showroom/owners/:owner",
 		name: "showroom-owners-owner",
-		component: () => import("./chunks/_owner_-BL8y_Kyz.js")
+		component: () => import("./chunks/_owner_-BXtbPLuC.js")
 	},
 	{
 		path: "/showroom/owners",
 		name: "showroom-owners",
-		component: () => import("./chunks/owners-BPL6y4aU.js")
+		component: () => import("./chunks/owners-D3x5iWy9.js")
 	},
 	{
 		path: "/showroom/product-models/:productModel",
 		name: "showroom-product-models-productModel",
-		component: () => import("./chunks/_productModel_-KC3FUIrh.js")
+		component: () => import("./chunks/_productModel_-CtYrGFZJ.js")
 	},
 	{
 		path: "/showroom/product-models",
 		name: "showroom-product-models",
-		component: () => import("./chunks/product-models-InHM-z7L.js")
+		component: () => import("./chunks/product-models-BRuXE0t9.js")
 	},
 	{
 		path: "/showroom/products/:product",
 		name: "showroom-products-product",
-		component: () => import("./chunks/_product_-DjgjMUWm.js")
+		component: () => import("./chunks/_product_-uFz-dJHi.js")
 	},
 	{
 		path: "/showroom/products/create",
 		name: "showroom-products-create",
-		component: () => import("./chunks/create-BNvoJ6qj.js")
+		component: () => import("./chunks/create-CgGkAsOI.js")
 	},
 	{
 		path: "/showroom/products",
 		name: "showroom-products",
-		component: () => import("./chunks/products-BqYi7gfC.js")
+		component: () => import("./chunks/products-oRMxIQVP.js")
 	},
 	{
 		path: "/showroom/transfers",
 		name: "showroom-transfers",
-		component: () => import("./chunks/transfers-yVk8pEB3.js")
+		component: () => import("./chunks/transfers-9jGU2loy.js")
 	}
 ], $ = {
 	"showroom.products": "showroom-products",

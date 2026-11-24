@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { TableColumn } from '@nuxt/ui/components/Table.vue'
+import type { TableColumn } from '@refactor-circus/atrium/ui'
 import CatalogActionError from '../../components/catalog/CatalogActionError.vue'
 import CatalogState from '../../components/catalog/CatalogState.vue'
 import {
@@ -145,31 +145,28 @@ async function destroy(): Promise<void> {
     <AtriumIntegrationScreen screen-key="showroom.asset" :record="code">
       <CatalogState :ready="!pending && asset !== null" :failed="failed" :status="status">
         <div v-if="asset" class="space-y-5">
-          <UPageHeader :headline="t('showroom.assets.title')" :description="asset.filename" :ui="{ title: 'truncate' }">
+          <AtriumPageHeader :overline="t('showroom.assets.title')" :description="asset.filename">
             <template #title>
-              <span data-testid="showroom-asset-title">{{ labelOf(asset.labels, locale, asset.code) }}</span>
+              <span class="truncate" data-testid="showroom-asset-title">{{ labelOf(asset.labels, locale, asset.code) }}</span>
             </template>
-            <template #links>
-              <UButton :to="asset.url" target="_blank" external variant="outline" icon="i-lucide-external-link" data-testid="showroom-asset-open">{{ t('showroom.assets.open_file') }}</UButton>
-              <UButton color="error" variant="outline" icon="i-lucide-trash-2" :loading="action.busy.value" data-testid="showroom-asset-delete" @click="destroy">{{ t('showroom.catalog.delete') }}</UButton>
-            </template>
-          </UPageHeader>
+            <UButton :to="asset.url" target="_blank" external variant="outline" icon="i-lucide-external-link" data-testid="showroom-asset-open">{{ t('showroom.assets.open_file') }}</UButton>
+            <UButton color="error" variant="outline" icon="i-lucide-trash-2" :loading="action.busy.value" data-testid="showroom-asset-delete" @click="destroy">{{ t('showroom.catalog.delete') }}</UButton>
+          </AtriumPageHeader>
 
           <CatalogActionError :action="action" />
 
           <div class="grid gap-5 lg:grid-cols-3">
             <UCard data-testid="showroom-asset-file-card">
               <img v-if="isImage(asset)" :src="asset.url" :alt="labelOf(asset.labels, locale, asset.code)" class="mb-3 w-full rounded-md object-contain" data-testid="showroom-asset-image">
-              <dl class="grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-1 text-sm">
-                <dt class="text-muted">{{ t('showroom.catalog.fields.code') }}</dt>
-                <dd class="font-mono">{{ asset.code }}</dd>
-                <dt class="text-muted">{{ t('showroom.catalog.fields.type') }}</dt>
-                <dd>{{ asset.mime_type ?? t('showroom.catalog.none') }}</dd>
-                <dt class="text-muted">{{ t('showroom.assets.size') }}</dt>
-                <dd class="tabular-nums" data-testid="showroom-asset-size">{{ formatSize(asset.size) }}</dd>
-                <dt class="text-muted">{{ t('showroom.assets.checksum') }}</dt>
-                <dd class="break-all font-mono text-xs" data-testid="showroom-asset-checksum">{{ asset.checksum ?? t('showroom.catalog.none') }}</dd>
-              </dl>
+              <AtriumDetails
+                :items="[
+                  { key: 'code', label: t('showroom.catalog.fields.code'), value: asset.code, mono: true },
+                  { key: 'type', label: t('showroom.catalog.fields.type'), value: asset.mime_type },
+                  { key: 'size', label: t('showroom.assets.size'), value: formatSize(asset.size), testid: 'showroom-asset-size' },
+                  { key: 'checksum', label: t('showroom.assets.checksum'), value: asset.checksum, mono: true, testid: 'showroom-asset-checksum' }
+                ]"
+                :empty="t('showroom.catalog.none')"
+              />
             </UCard>
 
             <div class="space-y-5 lg:col-span-2">

@@ -2,7 +2,7 @@ import { t as e } from "./CatalogActionError-BRUgojP9.js";
 import { t } from "./CatalogPager-BwJ4cMnn.js";
 import { t as n } from "./CatalogState-Bkly-MlG.js";
 import { A as r, C as i, D as a, O as o, S as s, f as c, k as l } from "./catalog-DCoO3A8a.js";
-import { t as ee } from "./ChannelFields-nZUWiNUS.js";
+import { t as ee } from "./ChannelFields-D7ZaKf1p.js";
 import { c as u, g as d, h as f, l as p, s as m } from "./structure-DbqcM-iO.js";
 import { AtriumIntegrationScreen as h, AtriumPageHeader as te, AtriumState as ne } from "@refactor-circus/atrium";
 import { UButton as re, UCard as ie, UFormField as ae, UInput as oe, ULink as se, UTable as ce } from "@refactor-circus/atrium/ui";

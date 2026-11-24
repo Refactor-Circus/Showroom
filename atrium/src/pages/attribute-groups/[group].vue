@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { TableColumn } from '@nuxt/ui/components/Table.vue'
+import type { TableColumn } from '@refactor-circus/atrium/ui'
 import CatalogActionError from '../../components/catalog/CatalogActionError.vue'
 import CatalogState from '../../components/catalog/CatalogState.vue'
 import {

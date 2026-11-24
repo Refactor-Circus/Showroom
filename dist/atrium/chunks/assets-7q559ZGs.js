@@ -4,8 +4,8 @@ import { t as n } from "./CatalogState-Bkly-MlG.js";
 import { C as r, D as i, O as a, S as o, d as ee, f as s, k as c } from "./catalog-DCoO3A8a.js";
 import { t as te } from "./AssetThumbnail-DCu2iAUU.js";
 import { i as l, n as u, o as ne } from "./assets-DNUkY-zI.js";
-import { AtriumIntegrationScreen as re, AtriumPageHeader as ie, AtriumState as ae } from "@refactor-circus/atrium";
-import { UButton as oe, UCard as se, UFormField as ce, UInput as le, ULink as ue, USelect as de, UTable as fe } from "@refactor-circus/atrium/ui";
+import { AtriumIntegrationScreen as re, AtriumPageHeader as ie, AtriumSelect as ae, AtriumState as oe } from "@refactor-circus/atrium";
+import { UButton as se, UCard as ce, UFormField as le, UInput as ue, ULink as de, UTable as fe } from "@refactor-circus/atrium/ui";
 import { Fragment as pe, computed as d, createBlock as f, createCommentVNode as me, createElementBlock as p, createElementVNode as m, createTextVNode as h, createVNode as g, defineComponent as _, openBlock as v, reactive as y, renderList as he, shallowRef as b, toDisplayString as x, unref as S, useTemplateRef as C, watch as ge, withCtx as w, withModifiers as T } from "vue";
 import { useI18n as E } from "vue-i18n";
 import { useRoute as D, useRouter as O } from "vue-router";
@@ -60,13 +60,10 @@ var k = {
 		let Z = y({
 			code: "",
 			label: ""
-		}), Q = b(null), $ = C("fileInput"), Te = d(() => [{
-			label: R("showroom.assets.all_types"),
-			value: null
-		}, ...u.map((e) => ({
+		}), Q = b(null), $ = C("fileInput"), Te = d(() => u.map((e) => ({
 			label: R(`showroom.assets.types.${e.key}`),
 			value: e.value
-		}))]), Ee = d(() => [
+		}))), Ee = d(() => [
 			{
 				accessorKey: "code",
 				header: R("showroom.catalog.fields.code")
@@ -108,7 +105,7 @@ var k = {
 			return s(e.labels, z.value, e.code);
 		}
 		return (r, i) => {
-			let a = oe, o = ie, s = le, c = ce, u = se, d = de, _ = ae, y = ue, b = fe, C = re;
+			let a = se, o = ie, s = ue, c = le, u = ce, d = ae, _ = oe, y = de, b = fe, C = re;
 			return v(), p("div", k, [g(o, { title: S(R)("showroom.assets.title") }, {
 				default: w(() => [m("div", A, [g(a, {
 					variant: S(W) === "grid" ? "solid" : "ghost",
@@ -216,13 +213,14 @@ var k = {
 									modelValue: S(J).type,
 									"onUpdate:modelValue": i[5] ||= (e) => S(J).type = e,
 									items: S(Te),
-									placeholder: S(R)("showroom.assets.all_types"),
+									blank: S(R)("showroom.assets.all_types"),
+									"blank-value": null,
 									class: "w-40",
 									"data-testid": "showroom-assets-type"
 								}, null, 8, [
 									"modelValue",
 									"items",
-									"placeholder"
+									"blank"
 								])]),
 								_: 1
 							}, 8, ["label"]),

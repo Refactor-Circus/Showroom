@@ -1,4 +1,5 @@
-import { UCheckbox as e, UFormField as t, UInput as n, USelect as r } from "@refactor-circus/atrium/ui";
+import { AtriumSelect as e } from "@refactor-circus/atrium";
+import { UCheckbox as t, UFormField as n, UInput as r } from "@refactor-circus/atrium/ui";
 import { Fragment as i, computed as a, createBlock as o, createCommentVNode as s, createElementBlock as c, createElementVNode as l, createVNode as u, defineComponent as d, mergeModels as f, openBlock as p, renderList as m, toDisplayString as h, unref as g, useModel as _, withCtx as v } from "vue";
 import { useI18n as y } from "vue-i18n";
 // src/components/structure/ChannelFields.vue?vue&type=script&setup=true&lang.ts
@@ -21,19 +22,16 @@ var b = { class: "flex flex-col gap-3" }, x = { class: "mb-1 text-xs font-medium
 	}),
 	emits: ["update:modelValue"],
 	setup(d) {
-		let f = _(d, "modelValue"), E = d, { t: D } = y(), O = a(() => [{
-			label: D("showroom.catalog.none"),
-			value: null
-		}, ...E.trees.map((e) => ({
+		let f = _(d, "modelValue"), E = d, { t: D } = y(), O = a(() => E.trees.map((e) => ({
 			label: e.code,
 			value: e.code
-		}))]);
+		})));
 		function k(e, t) {
 			let n = t === !0;
 			f.value.locales = n ? [...f.value.locales.filter((t) => t !== e), e] : f.value.locales.filter((t) => t !== e);
 		}
 		return (a, _) => {
-			let y = e, E = n, A = t, j = r;
+			let y = t, E = r, A = n, j = e;
 			return p(), c("div", b, [l("div", null, [
 				l("p", x, h(g(D)("showroom.structure.channels.locales")), 1),
 				l("div", S, [(p(!0), c(i, null, m(d.locales, (e) => (p(), o(y, {
@@ -74,13 +72,14 @@ var b = { class: "flex flex-col gap-3" }, x = { class: "mb-1 text-xs font-medium
 					modelValue: f.value.category_tree,
 					"onUpdate:modelValue": _[1] ||= (e) => f.value.category_tree = e,
 					items: g(O),
-					placeholder: g(D)("showroom.catalog.none"),
+					blank: g(D)("showroom.catalog.none"),
+					"blank-value": null,
 					class: "w-56",
 					"data-testid": `${d.testid}-tree`
 				}, null, 8, [
 					"modelValue",
 					"items",
-					"placeholder",
+					"blank",
 					"data-testid"
 				])]),
 				_: 1

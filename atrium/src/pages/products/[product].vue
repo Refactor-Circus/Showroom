@@ -133,16 +133,13 @@ const formCodes = computed<string[]>(() => {
 const catalog = useAttributeCatalog(() => formCodes.value)
 const editorAttributes = computed(() => catalog.pick(formCodes.value))
 const addable = computed(() => isVariant.value ? [] : [...catalog.attributes.value.keys()].filter(code => !formCodes.value.includes(code)).sort())
-const toAdd = ref<string | null>('')
+const toAdd = ref('')
 
 const slots = useEditingSlot()
 
 const form = reactive({ family: '' as string | null, owner: '', enabled: true, categories: '', flags: [] as string[] })
 
-const familyItems = computed(() => [
-  { label: t('showroom.catalog.products.no_family'), value: null },
-  ...families.value.map(family => ({ label: labelOf(family.labels, locale.value, family.code), value: family.code }))
-])
+const familyItems = computed(() => families.value.map(family => ({ label: labelOf(family.labels, locale.value, family.code), value: family.code })))
 
 const addableItems = computed(() => addable.value.map(code => ({ label: code, value: code })))
 const inputs = ref<Record<string, ValueInput>>({})
@@ -240,18 +237,16 @@ async function destroy(): Promise<void> {
     <AtriumIntegrationScreen screen-key="showroom.product" :record="productId">
       <CatalogState :ready="!pending && product !== null" :failed="failed" :status="status">
         <div v-if="product" class="space-y-5">
-          <UPageHeader :description="product.family ? familyLabel(product.family) ?? undefined : undefined">
+          <AtriumPageHeader :description="product.family ? familyLabel(product.family) ?? undefined : undefined">
             <template #title>
               <span class="font-mono" data-testid="showroom-product-title">{{ product.identifier }}</span>
             </template>
-            <template #links>
-              <UBadge :color="product.enabled ? 'success' : 'neutral'" variant="subtle" data-testid="showroom-product-enabled">
-                {{ product.enabled ? t('showroom.catalog.enabled') : t('showroom.catalog.disabled') }}
-              </UBadge>
-              <UButton v-if="product.parent" :to="productModelPath(product.parent)" variant="outline" icon="i-lucide-arrow-left" data-testid="showroom-product-parent">{{ product.parent }}</UButton>
-              <UButton color="error" variant="outline" icon="i-lucide-trash-2" :loading="action.busy.value" data-testid="showroom-product-delete" @click="destroy">{{ t('showroom.catalog.delete') }}</UButton>
-            </template>
-          </UPageHeader>
+            <UBadge :color="product.enabled ? 'success' : 'neutral'" variant="subtle" data-testid="showroom-product-enabled">
+              {{ product.enabled ? t('showroom.catalog.enabled') : t('showroom.catalog.disabled') }}
+            </UBadge>
+            <UButton v-if="product.parent" :to="productModelPath(product.parent)" variant="outline" icon="i-lucide-arrow-left" data-testid="showroom-product-parent">{{ product.parent }}</UButton>
+            <UButton color="error" variant="outline" icon="i-lucide-trash-2" :loading="action.busy.value" data-testid="showroom-product-delete" @click="destroy">{{ t('showroom.catalog.delete') }}</UButton>
+          </AtriumPageHeader>
 
           <ProductWorkflow :product="product" :versions="data?.versions ?? []" @changed="reload" />
 
@@ -266,7 +261,7 @@ async function destroy(): Promise<void> {
               </template>
               <div class="flex flex-wrap items-end gap-4">
                 <UFormField v-if="!isVariant" :label="t('showroom.catalog.fields.family')" :error="action.error('family')">
-                  <USelect v-model="form.family" :items="familyItems" :placeholder="t('showroom.catalog.products.no_family')" class="w-56" data-testid="showroom-product-family" />
+                  <AtriumSelect v-model="form.family" :items="familyItems" :blank="t('showroom.catalog.products.no_family')" :blank-value="null" class="w-56" data-testid="showroom-product-family" />
                 </UFormField>
                 <div v-if="isVariant" class="text-sm" data-testid="showroom-product-inherited-owner">
                   <p class="font-medium">{{ t('showroom.catalog.products.inherited_owner') }}</p>

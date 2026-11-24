@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { TableColumn } from '@nuxt/ui/components/Table.vue'
+import type { TableColumn } from '@refactor-circus/atrium/ui'
 import CatalogActionError from '../../components/catalog/CatalogActionError.vue'
 import CatalogPager from '../../components/catalog/CatalogPager.vue'
 import CatalogState from '../../components/catalog/CatalogState.vue'
@@ -112,7 +112,7 @@ async function create(): Promise<void> {
               <UInput v-model="filters.search" class="w-56" data-testid="showroom-product-models-search" />
             </UFormField>
             <UFormField :label="t('showroom.catalog.fields.family_variant')">
-              <USelect v-model="filters.family_variant" :items="[{ label: t('showroom.catalog.filters.all_family_variants'), value: null }, ...variantItems]" :placeholder="t('showroom.catalog.filters.all_family_variants')" class="w-64" data-testid="showroom-product-models-variant" />
+              <AtriumSelect v-model="filters.family_variant" :items="variantItems" :blank="t('showroom.catalog.filters.all_family_variants')" :blank-value="null" class="w-64" data-testid="showroom-product-models-variant" />
             </UFormField>
             <UButton type="submit" icon="i-lucide-filter" data-testid="showroom-product-models-filter">{{ t('showroom.catalog.filters.filter') }}</UButton>
             <UButton variant="ghost" icon="i-lucide-x" data-testid="showroom-product-models-clear" @click="clear">{{ t('showroom.catalog.filters.clear') }}</UButton>

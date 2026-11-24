@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { TableColumn } from '@nuxt/ui/components/Table.vue'
+import type { TableColumn } from '@refactor-circus/atrium/ui'
 import CatalogActionError from '../../components/catalog/CatalogActionError.vue'
 import CatalogState from '../../components/catalog/CatalogState.vue'
 import {
@@ -75,15 +75,9 @@ const labelCandidates = computed(() => members.value.filter(member => member.typ
 
 const form = reactive({ label: '', label_attribute: '' as string | null, sort_order: '0' as string | number, add_attribute: '' as string | null, add_required: false })
 
-const labelAttributeItems = computed(() => [
-  { label: t('showroom.catalog.families.no_label_attribute'), value: null },
-  ...labelCandidates.value.map(member => ({ label: member.attribute, value: member.attribute }))
-])
+const labelAttributeItems = computed(() => labelCandidates.value.map(member => ({ label: member.attribute, value: member.attribute })))
 
-const availableItems = computed(() => [
-  { label: t('showroom.catalog.values.choose_attribute'), value: null },
-  ...available.value.map(attribute => ({ label: `${attribute.code} (${attribute.type})`, value: attribute.code }))
-])
+const availableItems = computed(() => available.value.map(attribute => ({ label: `${attribute.code} (${attribute.type})`, value: attribute.code })))
 
 const memberColumns = computed<TableColumn<Row>[]>(() => [
   { accessorKey: 'attribute', header: t('showroom.catalog.fields.code') },
@@ -187,17 +181,15 @@ async function createVariant(): Promise<void> {
     <AtriumIntegrationScreen screen-key="showroom.family" :record="code">
       <CatalogState :ready="!pending && family !== null" :failed="failed" :status="status">
         <div v-if="family" class="space-y-5">
-          <UPageHeader :headline="t('showroom.catalog.fields.family')">
+          <AtriumPageHeader :overline="t('showroom.catalog.fields.family')">
             <template #title>
               <span data-testid="showroom-family-title">{{ labelOf(family.labels, locale, family.code) }}</span>
             </template>
             <template #description>
               <span class="font-mono">{{ family.code }}</span>
             </template>
-            <template #links>
-              <UButton color="error" variant="outline" icon="i-lucide-trash-2" :loading="action.busy.value" data-testid="showroom-family-delete" @click="destroy">{{ t('showroom.catalog.delete') }}</UButton>
-            </template>
-          </UPageHeader>
+            <UButton color="error" variant="outline" icon="i-lucide-trash-2" :loading="action.busy.value" data-testid="showroom-family-delete" @click="destroy">{{ t('showroom.catalog.delete') }}</UButton>
+          </AtriumPageHeader>
 
           <form class="space-y-5" data-testid="showroom-family-form" @submit.prevent="save">
             <CatalogActionError :action="action" />
@@ -211,7 +203,7 @@ async function createVariant(): Promise<void> {
                   <UInput v-model="form.label" class="w-64" data-testid="showroom-family-label" />
                 </UFormField>
                 <UFormField :label="t('showroom.catalog.families.label_attribute')" :hint="t('showroom.catalog.families.label_attribute_hint')" :error="action.error('label_attribute')">
-                  <USelect v-model="form.label_attribute" :items="labelAttributeItems" :placeholder="t('showroom.catalog.families.no_label_attribute')" class="w-64" data-testid="showroom-family-label-attribute" />
+                  <AtriumSelect v-model="form.label_attribute" :items="labelAttributeItems" :blank="t('showroom.catalog.families.no_label_attribute')" :blank-value="null" class="w-64" data-testid="showroom-family-label-attribute" />
                 </UFormField>
                 <UFormField :label="t('showroom.catalog.fields.sort_order')" :error="action.error('sort_order')">
                   <UInput v-model="form.sort_order" type="number" min="0" class="w-28" data-testid="showroom-family-sort" />
@@ -256,7 +248,7 @@ async function createVariant(): Promise<void> {
 
                 <div class="flex flex-wrap items-end gap-3">
                   <UFormField :label="t('showroom.catalog.values.add_attribute')">
-                    <USelect v-model="form.add_attribute" :items="availableItems" :placeholder="t('showroom.catalog.values.choose_attribute')" class="w-72" data-testid="showroom-family-add-attribute" />
+                    <AtriumSelect v-model="form.add_attribute" :items="availableItems" :blank="t('showroom.catalog.values.choose_attribute')" :blank-value="null" class="w-72" data-testid="showroom-family-add-attribute" />
                   </UFormField>
                   <UCheckbox v-model="form.add_required" :label="t('showroom.catalog.families.required')" class="h-9 items-center" data-testid="showroom-family-add-required" />
                 </div>

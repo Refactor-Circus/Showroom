@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { TableColumn } from '@nuxt/ui/components/Table.vue'
+import type { TableColumn } from '@refactor-circus/atrium/ui'
 import CatalogActionError from '../../components/catalog/CatalogActionError.vue'
 import CatalogPager from '../../components/catalog/CatalogPager.vue'
 import CatalogState from '../../components/catalog/CatalogState.vue'
@@ -73,8 +73,6 @@ function clearFilters(): void {
 }
 
 const typeItems = computed(() => types.value.map(type => ({ label: labelOf(type.labels, locale.value, type.code), value: type.code })))
-
-const typeFilterItems = computed(() => [{ label: t('showroom.owners.all_types'), value: null }, ...typeItems.value])
 
 const columns = computed<TableColumn<ShowroomOwner>[]>(() => [
   { accessorKey: 'code', header: t('showroom.catalog.fields.code') },
@@ -155,7 +153,7 @@ function typeLabel(code: string | undefined): string {
               <UInput v-model="filters.search" class="w-56" data-testid="showroom-owners-search" />
             </UFormField>
             <UFormField :label="t('showroom.catalog.fields.type')">
-              <USelect v-model="filters.type" :items="typeFilterItems" :placeholder="t('showroom.owners.all_types')" class="w-44" data-testid="showroom-owners-type" />
+              <AtriumSelect v-model="filters.type" :items="typeItems" :blank="t('showroom.owners.all_types')" :blank-value="null" class="w-44" data-testid="showroom-owners-type" />
             </UFormField>
             <UButton type="submit" icon="i-lucide-filter">{{ t('showroom.catalog.filters.filter') }}</UButton>
             <UButton variant="ghost" color="neutral" icon="i-lucide-x" @click="clearFilters">{{ t('showroom.catalog.filters.clear') }}</UButton>

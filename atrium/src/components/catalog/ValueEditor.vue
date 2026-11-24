@@ -66,13 +66,11 @@ function asText(value: unknown): string {
   return value === null || value === undefined ? '' : String(value)
 }
 
-/** A select's choices: none first, then the attribute's options or yes and no. */
-function choicesOf(attribute: ShowroomAttribute): { label: string, value: string | null }[] {
-  const choices = attribute.type === 'boolean'
+/** A select's choices: the attribute's options, or yes and no (the select adds none). */
+function choicesOf(attribute: ShowroomAttribute): { label: string, value: string }[] {
+  return attribute.type === 'boolean'
     ? [{ label: t('showroom.catalog.yes'), value: '1' }, { label: t('showroom.catalog.no'), value: '0' }]
     : (attribute.options ?? []).map(option => ({ label: labelOf(option.labels, locale.value, option.code), value: option.code }))
-
-  return [{ label: t('showroom.catalog.none'), value: null }, ...choices]
 }
 
 function slotNote(attribute: ShowroomAttribute): string {
@@ -127,12 +125,12 @@ function slotNote(attribute: ShowroomAttribute): string {
           :data-testid="`showroom-value-${attribute.code}`"
           @update:model-value="setText(attribute.code, asText($event))"
         />
-        <USelect
+        <AtriumSelect
           v-else-if="attribute.type === 'boolean' || attribute.type === 'select'"
           :id="`showroom-value-${attribute.code}`"
           class="w-full"
           :items="choicesOf(attribute)"
-          :placeholder="t('showroom.catalog.none')"
+          :blank="t('showroom.catalog.none')"
           :disabled="props.disabled"
           :model-value="text(attribute.code)"
           :data-testid="`showroom-value-${attribute.code}`"

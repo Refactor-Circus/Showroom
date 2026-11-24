@@ -4,7 +4,7 @@ import { settle } from '@refactor-circus/atrium/testing'
 import { mockPackageApi, reply, resetPackageApis, type PackageRoutes } from '@refactor-circus/atrium/testing'
 import { bySize, confirmWith, cursorPage, invalid, lookups, mountShowroomPage, ok, resetShowroomPages, screensApi, shirts, showroomCalls } from './support'
 import { clearAtriumData, mockAtriumApi, useRouter } from '@refactor-circus/atrium/testing'
-import { pick, row } from '../ui'
+import { setField, tableRow } from '@refactor-circus/atrium/testing'
 
 /*
  * `showroom.family` (AC 54, 71): one family (`families.show`) and its variants
@@ -66,7 +66,7 @@ describe('showroom.family', () => {
     expect(showroomCalls('GET', '/family-variants').find(call => call.query.family === 'shirts')?.query).toEqual({ family: 'shirts', per_page: '100' })
     expect(api).toHaveBeenCalledWith('/screens/showroom.family', expect.objectContaining({ query: expect.objectContaining({ record: 'shirts' }) }))
     expect(wrapper.find('[data-testid="showroom-family-title"]').text()).toBe('Shirts')
-    expect(row(wrapper, 'showroom-family-attribute-color').text()).toContain('looks')
+    expect(tableRow(wrapper, 'showroom-family-attribute-color').text()).toContain('looks')
     expect(wrapper.find('[data-testid="showroom-family-variant-shirts_by_size"]').attributes('href')).toBe('/showroom/family-variants/shirts_by_size')
   })
 
@@ -76,7 +76,7 @@ describe('showroom.family', () => {
     const wrapper = await mountShowroomPage(Page, PATH)
     await wrapper.find('[data-testid="showroom-family-label"]').setValue('Shirts and tops')
     await wrapper.find('[data-testid="showroom-family-sort"]').setValue('5')
-    await pick(wrapper, 'showroom-family-required-color', true)
+    await setField(wrapper, 'showroom-family-required-color', true)
     await wrapper.find('[data-testid="showroom-family-channels-name"]').setValue('web, print')
     await submit(wrapper)
 
@@ -98,9 +98,9 @@ describe('showroom.family', () => {
     showroomWith()
 
     const wrapper = await mountShowroomPage(Page, PATH)
-    await pick(wrapper, 'showroom-family-remove-color', true)
-    await pick(wrapper, 'showroom-family-add-attribute', 'weight')
-    await pick(wrapper, 'showroom-family-add-required', true)
+    await setField(wrapper, 'showroom-family-remove-color', true)
+    await setField(wrapper, 'showroom-family-add-attribute', 'weight')
+    await setField(wrapper, 'showroom-family-add-required', true)
     await submit(wrapper)
 
     expect(showroomCalls('PATCH', '/families/{family}')[0]?.body).toMatchObject({
@@ -123,8 +123,8 @@ describe('showroom.family', () => {
 
     const wrapper = await mountShowroomPage(Page, PATH)
     await wrapper.find('[data-testid="showroom-family-variant-code"]').setValue('shirts_by_color')
-    await pick(wrapper, 'showroom-level-0-axes-color', true)
-    await pick(wrapper, 'showroom-level-0-attributes-name', true)
+    await setField(wrapper, 'showroom-level-0-axes-color', true)
+    await setField(wrapper, 'showroom-level-0-attributes-name', true)
     await wrapper.find('[data-testid="showroom-family-variant-create-form"]').trigger('submit')
     await settle()
 
@@ -139,7 +139,7 @@ describe('showroom.family', () => {
 
     const wrapper = await mountShowroomPage(Page, PATH)
     await wrapper.find('[data-testid="showroom-family-variant-code"]').setValue('shirts_by_name')
-    await pick(wrapper, 'showroom-level-0-axes-name', true)
+    await setField(wrapper, 'showroom-level-0-axes-name', true)
     await wrapper.find('[data-testid="showroom-family-variant-create-form"]').trigger('submit')
     await settle()
 

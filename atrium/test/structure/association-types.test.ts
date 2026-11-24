@@ -5,7 +5,7 @@ import { mockPackageApi, reply, resetPackageApis, type PackageRoutes } from '@re
 import { confirmWith, cursorPage, invalid, mountShowroomPage, ok, resetShowroomPages, screensApi, showroomCalls } from '../catalog/support'
 import { bundle, related } from './support'
 import { clearAtriumData, mockAtriumApi, useRouter } from '@refactor-circus/atrium/testing'
-import { pick, row as rowOf } from '../ui'
+import { setField, tableRow } from '@refactor-circus/atrium/testing'
 
 /*
  * `showroom.association-types` (AC 54, 71): every association type
@@ -61,11 +61,11 @@ describe('showroom.association-types', () => {
     expect(showroomCalls('GET', '/association-types')[0]?.query).toEqual({})
     expect(api).toHaveBeenCalledWith('/screens/showroom.association-types', expect.anything())
 
-    const row = rowOf(wrapper, 'showroom-association-type-row-related')
+    const row = tableRow(wrapper, 'showroom-association-type-row-related')
     expect(row.text()).toContain('Related')
     expect(row.text()).toContain('Two-way')
     expect(row.text()).toContain('4')
-    expect(rowOf(wrapper, 'showroom-association-type-row-bundle').text()).toContain('Quantified')
+    expect(tableRow(wrapper, 'showroom-association-type-row-bundle').text()).toContain('Quantified')
   })
 
   it('pages with the endpoint\'s cursor', async () => {
@@ -85,7 +85,7 @@ describe('showroom.association-types', () => {
     const wrapper = await mountShowroomPage(Page, PATH)
     await wrapper.find('[data-testid="showroom-association-type-create-code"]').setValue('kit')
     await wrapper.find('[data-testid="showroom-association-type-create-label"]').setValue('Kit')
-    await pick(wrapper, 'showroom-association-type-create-quantified', true)
+    await setField(wrapper, 'showroom-association-type-create-quantified', true)
     await submit(wrapper)
 
     const [call] = showroomCalls('POST', '/association-types')
@@ -99,7 +99,7 @@ describe('showroom.association-types', () => {
 
     const wrapper = await mountShowroomPage(Page, PATH)
     await wrapper.find('[data-testid="showroom-association-type-create-code"]').setValue('compatible')
-    await pick(wrapper, 'showroom-association-type-create-two-way', true)
+    await setField(wrapper, 'showroom-association-type-create-two-way', true)
     await submit(wrapper)
 
     expect(showroomCalls('POST', '/association-types')[0]?.body).toEqual({ code: 'compatible', is_two_way: true, is_quantified: false })

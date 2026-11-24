@@ -5,7 +5,7 @@ import { mockPackageApi, reply, resetPackageApis, type PackageRoutes } from '@re
 import { confirmWith, cursorPage, invalid, mountShowroomPage, ok, resetShowroomPages, screensApi, showroomCalls } from '../catalog/support'
 import { acmeShown, brand, downtownShown, eco, pickFile, premium, sale, store } from './support'
 import { clearAtriumData, mockAtriumApi, useRouter } from '@refactor-circus/atrium/testing'
-import { hasField, pick, picked } from '../ui'
+import { fieldValue, hasField, setField } from '@refactor-circus/atrium/testing'
 
 /*
  * `showroom.owner` (AC 54, 71): one owner (`owners.show`) with its chain,
@@ -76,7 +76,7 @@ describe('showroom.owner', () => {
     expect(wrapper.find('[data-testid="showroom-owner-counts"]').text()).toContain('3')
     expect(hasField(wrapper, 'showroom-flag-premium')).toBe(true)
     expect(hasField(wrapper, 'showroom-flag-sale')).toBe(false)
-    expect(picked(wrapper, 'showroom-flag-eco')).toBe(true)
+    expect(fieldValue(wrapper, 'showroom-flag-eco')).toBe(true)
   })
 
   it('shows the chain from the root, each ancestor linking to the owner list searched for it', async () => {
@@ -96,9 +96,9 @@ describe('showroom.owner', () => {
     const wrapper = await mountShowroomPage(Page, PATH)
     await wrapper.find('[data-testid="showroom-owner-label"]').setValue('Acme Corp')
     await wrapper.find('[data-testid="showroom-owner-parent"]').setValue('holding')
-    await pick(wrapper, 'showroom-owner-enabled-input', false)
+    await setField(wrapper, 'showroom-owner-enabled-input', false)
     await wrapper.find('[data-testid="showroom-external-id-erp"]').setValue('A-2')
-    await pick(wrapper, 'showroom-flag-premium', true)
+    await setField(wrapper, 'showroom-flag-premium', true)
     await submit(wrapper, 'showroom-owner-form')
 
     const [call] = showroomCalls('PATCH', '/owners/{owner}')
@@ -138,7 +138,7 @@ describe('showroom.owner', () => {
 
     const wrapper = await mountShowroomPage(Page, PATH)
     await wrapper.find('[data-testid="showroom-owner-child-code"]').setValue('uptown')
-    await pick(wrapper, 'showroom-owner-child-type', 'store')
+    await setField(wrapper, 'showroom-owner-child-type', 'store')
     await submit(wrapper, 'showroom-owner-child-form')
 
     expect(showroomCalls('POST', '/owners')[0]?.body).toEqual({ code: 'uptown', type: 'store', parent: 'acme' })
@@ -150,7 +150,7 @@ describe('showroom.owner', () => {
 
     const wrapper = await mountShowroomPage(Page, PATH)
     await wrapper.find('[data-testid="showroom-owner-child-code"]').setValue('downtown')
-    await pick(wrapper, 'showroom-owner-child-type', 'store')
+    await setField(wrapper, 'showroom-owner-child-type', 'store')
     await submit(wrapper, 'showroom-owner-child-form')
 
     expect(wrapper.text()).toContain('The code has already been taken.')

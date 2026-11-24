@@ -5,7 +5,7 @@ import { mockPackageApi, reply, resetPackageApis, type PackageRoutes } from '@re
 import { confirmWith, cursorPage, invalid, mountShowroomPage, ok, resetShowroomPages, screensApi, showroomCalls } from '../catalog/support'
 import { color, looks, name, specs } from './support'
 import { clearAtriumData, mockAtriumApi, useRouter } from '@refactor-circus/atrium/testing'
-import { pick, picked, row } from '../ui'
+import { chooseOption, fieldValue, setField, tableRow } from '@refactor-circus/atrium/testing'
 
 /*
  * `showroom.attribute` (AC 54, 71): one attribute (`attributes.show`, with its
@@ -64,10 +64,10 @@ describe('showroom.attribute', () => {
     expect(showroomCalls('GET', '/attributes/{attribute}')[0]?.path).toBe('/attributes/color')
     expect(api).toHaveBeenCalledWith('/screens/showroom.attribute', expect.objectContaining({ query: expect.objectContaining({ record: 'color' }) }))
     expect(wrapper.find('[data-testid="showroom-attribute-title"] h1').text()).toBe('Color')
-    expect(picked(wrapper, 'showroom-attribute-group')).toBe('looks')
-    expect(picked(wrapper, 'showroom-attribute-flag-is_scopable')).toBe(true)
-    expect(row(wrapper, 'showroom-option-row-red').text()).toContain('Red')
-    expect(row(wrapper, 'showroom-option-row-blue').text()).toContain('Blue')
+    expect(fieldValue(wrapper, 'showroom-attribute-group')).toBe('looks')
+    expect(fieldValue(wrapper, 'showroom-attribute-flag-is_scopable')).toBe(true)
+    expect(tableRow(wrapper, 'showroom-option-row-red').text()).toContain('Red')
+    expect(tableRow(wrapper, 'showroom-option-row-blue').text()).toContain('Blue')
   })
 
   it('has no options card for an attribute without options, and shows its settings as JSON', async () => {
@@ -83,10 +83,10 @@ describe('showroom.attribute', () => {
     showroomWith()
 
     const wrapper = await mountShowroomPage(Page, PATH)
-    await pick(wrapper, 'showroom-attribute-group', 'specs')
+    await setField(wrapper, 'showroom-attribute-group', 'specs')
     await wrapper.find('[data-testid="showroom-attribute-label"]').setValue('Colour')
-    await pick(wrapper, 'showroom-attribute-flag-is_unique', true)
-    await pick(wrapper, 'showroom-attribute-flag-is_scopable', false)
+    await setField(wrapper, 'showroom-attribute-flag-is_unique', true)
+    await setField(wrapper, 'showroom-attribute-flag-is_scopable', false)
     await wrapper.find('[data-testid="showroom-attribute-settings"]').setValue('{"swatches": true}')
     await wrapper.find('[data-testid="showroom-attribute-sort"]').setValue('4')
     await submit(wrapper, 'showroom-attribute-form')
@@ -109,7 +109,7 @@ describe('showroom.attribute', () => {
     showroomWith()
 
     const wrapper = await mountShowroomPage(Page, PATH)
-    await pick(wrapper, 'showroom-attribute-group', null)
+    await chooseOption(wrapper, 'showroom-attribute-group', null)
     await wrapper.find('[data-testid="showroom-attribute-label"]').setValue('')
     await submit(wrapper, 'showroom-attribute-form')
 

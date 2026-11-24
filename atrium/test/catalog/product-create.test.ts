@@ -4,7 +4,7 @@ import { settle } from '@refactor-circus/atrium/testing'
 import { mockPackageApi, reply, resetPackageApis, type PackageRoutes } from '@refactor-circus/atrium/testing'
 import { invalid, lookups, mountShowroomPage, ok, resetShowroomPages, screensApi, shirt, showroomCalls } from './support'
 import { clearAtriumData, mockAtriumApi, useRouter } from '@refactor-circus/atrium/testing'
-import { choices, pick } from '../ui'
+import { selectValues, setField } from '@refactor-circus/atrium/testing'
 
 /*
  * `showroom.product-create` (AC 54, 71): a new product (`products.store`) with
@@ -43,7 +43,7 @@ describe('showroom.product-create', () => {
 
     expect(api).toHaveBeenCalledWith('/screens/showroom.product-create', expect.anything())
     expect(showroomCalls('GET', '/families')[0]?.query).toEqual({ per_page: '100' })
-    expect(choices(wrapper, 'showroom-product-create-family')).toEqual([null, 'shirts', 'shoes'])
+    expect(selectValues(wrapper, 'showroom-product-create-family')).toEqual([null, 'shirts', 'shoes'])
   })
 
   it('creates the product with its identifier and family, then opens it', async () => {
@@ -51,7 +51,7 @@ describe('showroom.product-create', () => {
 
     const wrapper = await mountShowroomPage(Page, PATH)
     await wrapper.find('[data-testid="showroom-product-create-identifier"]').setValue(' shirt-1 ')
-    await pick(wrapper, 'showroom-product-create-family', 'shirts')
+    await setField(wrapper, 'showroom-product-create-family', 'shirts')
     await wrapper.find('[data-testid="showroom-product-create-form"]').trigger('submit')
     await settle()
 

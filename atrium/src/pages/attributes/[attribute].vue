@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { TableColumn } from '@nuxt/ui/components/Table.vue'
+import type { TableColumn } from '@refactor-circus/atrium/ui'
 import CatalogActionError from '../../components/catalog/CatalogActionError.vue'
 import CatalogState from '../../components/catalog/CatalogState.vue'
 import {
@@ -130,7 +130,6 @@ async function deleteOption(option: string): Promise<void> {
 }
 
 const groupItems = computed(() => [
-  { label: t('showroom.structure.attributes.no_group'), value: null },
   ...(form.group && !groups.value.some(group => group.code === form.group) ? [{ label: form.group, value: form.group }] : []),
   ...groups.value.map(group => ({ label: labelOf(group.labels, locale.value, group.code), value: group.code }))
 ])
@@ -161,7 +160,7 @@ const optionColumns = computed<TableColumn<ShowroomAttributeOption>[]>(() => [
             </template>
             <form class="flex max-w-xl flex-col gap-4" data-testid="showroom-attribute-form" @submit.prevent="save">
               <UFormField :label="t('showroom.catalog.fields.group')" :error="action.error('group')">
-                <USelect v-model="form.group" :items="groupItems" :placeholder="t('showroom.structure.attributes.no_group')" class="w-64" data-testid="showroom-attribute-group" />
+                <AtriumSelect v-model="form.group" :items="groupItems" :blank="t('showroom.structure.attributes.no_group')" :blank-value="null" class="w-64" data-testid="showroom-attribute-group" />
               </UFormField>
 
               <UFormField :label="t('showroom.catalog.fields.label_in', { locale })" :error="action.error('labels')">

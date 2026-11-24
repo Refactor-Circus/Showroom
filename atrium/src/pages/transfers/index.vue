@@ -101,18 +101,9 @@ const fileInput = useTemplateRef<{ inputRef: HTMLInputElement | null }>('fileInp
 
 const modeItems = computed(() => IMPORT_MODES.map(entry => ({ label: t(`showroom.transfers.import.modes.${entry}`), value: entry })))
 const formatItems = computed(() => EXPORT_FORMATS.map(entry => ({ label: t(`showroom.transfers.export.formats.${entry}`), value: entry })))
-const familyItems = computed(() => [
-  { label: t('showroom.transfers.export.all_families'), value: null },
-  ...families.value.map(family => ({ label: labelOf(family.labels, locale.value, family.code), value: family.code }))
-])
-const treeItems = computed(() => [
-  { label: t('showroom.transfers.export.all_categories'), value: null },
-  ...trees.value.map(tree => ({ label: labelOf(tree.labels, locale.value, tree.code), value: tree.code }))
-])
-const channelItems = computed(() => [
-  { label: t('showroom.transfers.export.no_channel'), value: null },
-  ...channels.value.map(channel => ({ label: labelOf(channel.labels, locale.value, channel.code), value: channel.code }))
-])
+const familyItems = computed(() => families.value.map(family => ({ label: labelOf(family.labels, locale.value, family.code), value: family.code })))
+const treeItems = computed(() => trees.value.map(tree => ({ label: labelOf(tree.labels, locale.value, tree.code), value: tree.code })))
+const channelItems = computed(() => channels.value.map(channel => ({ label: labelOf(channel.labels, locale.value, channel.code), value: channel.code })))
 const exportForm = reactive<ExportForm>({ format: 'jsonl', family: '', category: '', scope: '', published: false })
 const started = shallowRef<TransferRun | null>(null)
 
@@ -210,13 +201,13 @@ async function startExport(): Promise<void> {
                 <USelect v-model="exportForm.format" :items="formatItems" class="w-full" data-testid="showroom-transfer-export-format" />
               </UFormField>
               <UFormField :label="t('showroom.catalog.fields.family')" :error="exporting.error('family')">
-                <USelect v-model="exportForm.family" :items="familyItems" :placeholder="t('showroom.transfers.export.all_families')" class="w-full" data-testid="showroom-transfer-export-family" />
+                <AtriumSelect v-model="exportForm.family" :items="familyItems" :blank="t('showroom.transfers.export.all_families')" :blank-value="null" class="w-full" data-testid="showroom-transfer-export-family" />
               </UFormField>
               <UFormField :label="t('showroom.transfers.export.category_tree')" :error="exporting.error('category')">
-                <USelect v-model="exportForm.category" :items="treeItems" :placeholder="t('showroom.transfers.export.all_categories')" class="w-full" data-testid="showroom-transfer-export-category" />
+                <AtriumSelect v-model="exportForm.category" :items="treeItems" :blank="t('showroom.transfers.export.all_categories')" :blank-value="null" class="w-full" data-testid="showroom-transfer-export-category" />
               </UFormField>
               <UFormField :label="t('showroom.catalog.fields.channel')" :error="exporting.error('scope')">
-                <USelect v-model="exportForm.scope" :items="channelItems" :placeholder="t('showroom.transfers.export.no_channel')" class="w-full" data-testid="showroom-transfer-export-scope" />
+                <AtriumSelect v-model="exportForm.scope" :items="channelItems" :blank="t('showroom.transfers.export.no_channel')" :blank-value="null" class="w-full" data-testid="showroom-transfer-export-scope" />
               </UFormField>
               <UCheckbox v-model="exportForm.published" :label="t('showroom.transfers.export.published')" data-testid="showroom-transfer-export-published" />
               <div>

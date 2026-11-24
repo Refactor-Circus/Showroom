@@ -1,10 +1,10 @@
 import { A as e, C as t, D as n, O as r, T as i, _ as a, a as o, b as s, f as c, g as l, h as u, k as d, m as f, o as ee, u as te, v as ne } from "./catalog-DCoO3A8a.js";
 import { t as re } from "./CatalogActionError-BRUgojP9.js";
-import { a as ie, i as ae, n as oe, r as se, t as ce } from "./ValueEditor-DyapgrYm.js";
+import { a as ie, i as ae, n as oe, r as se, t as ce } from "./ValueEditor-DaEpiyWK.js";
 import { t as le } from "./CatalogState-Bkly-MlG.js";
 import { a as ue, c as de, i as fe, l as p, n as pe, s as me, t as he, u as ge } from "./values-B4RtDnRM.js";
-import { AtriumIntegrationScreen as _e, navigateTo as ve } from "@refactor-circus/atrium";
-import { UButton as ye, UCard as be, UFormField as xe, UInput as m, ULink as Se, UPageHeader as Ce, USelect as h } from "@refactor-circus/atrium/ui";
+import { AtriumIntegrationScreen as _e, AtriumPageHeader as ve, navigateTo as ye } from "@refactor-circus/atrium";
+import { UButton as be, UCard as xe, UFormField as Se, UInput as m, ULink as Ce, USelect as h } from "@refactor-circus/atrium/ui";
 import { Fragment as g, computed as _, createBlock as v, createCommentVNode as y, createElementBlock as b, createElementVNode as x, createTextVNode as S, createVNode as C, defineComponent as w, isRef as T, mergeModels as E, openBlock as D, reactive as we, ref as Te, renderList as O, toDisplayString as k, unref as A, useModel as j, watch as M, withCtx as N, withModifiers as Ee } from "vue";
 import { useI18n as P } from "vue-i18n";
 import { useRoute as De } from "vue-router";
@@ -194,7 +194,7 @@ var F = ["data-axis"], I = { class: "text-sm font-medium" }, L = {
 			await E.run(() => $(t)) && await B();
 		}
 		async function Ze() {
-			I && window.confirm(h("showroom.catalog.product_models.confirm_delete")) && await E.run(async () => t(await I.DELETE("/product-models/{productModel}", { params: { path: { productModel: F.value } } }))) && await ve("/showroom/product-models");
+			I && window.confirm(h("showroom.catalog.product_models.confirm_delete")) && await E.run(async () => t(await I.DELETE("/product-models/{productModel}", { params: { path: { productModel: F.value } } }))) && await ye("/showroom/product-models");
 		}
 		async function Qe() {
 			if (!I) return;
@@ -210,7 +210,7 @@ var F = ["data-axis"], I = { class: "text-sm font-medium" }, L = {
 			}) }))) && (Z.key = "", Q.value = pe(K.value), await B());
 		}
 		return (e, t) => {
-			let n = Se, r = ye, i = Ce, a = m, o = xe, c = be, u = _e;
+			let n = Ce, r = be, i = ve, a = m, o = Se, c = xe, u = _e;
 			return D(), b("div", ke, [C(u, {
 				"screen-key": "showroom.product-model",
 				record: A(F)
@@ -231,7 +231,7 @@ var F = ["data-axis"], I = { class: "text-sm font-medium" }, L = {
 								default: N(() => [S(k(A(V).family_variant), 1)]),
 								_: 1
 							}, 8, ["to"])) : y("", !0), S(" · " + k(A(h)("showroom.catalog.product_models.level", { level: A(V).level })), 1)]),
-							links: N(() => [A(V).parent ? (D(), v(r, {
+							default: N(() => [A(V).parent ? (D(), v(r, {
 								key: 0,
 								to: A(ne)(A(V).parent),
 								variant: "outline",

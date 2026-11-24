@@ -5,7 +5,7 @@ import { mockPackageApi, reply, resetPackageApis, type PackageRoutes } from '@re
 import { cursorPage, invalid, mountShowroomPage, ok, resetShowroomPages, screensApi, showroomCalls } from '../catalog/support'
 import { looks, specs } from './support'
 import { clearAtriumData, mockAtriumApi, useRouter } from '@refactor-circus/atrium/testing'
-import { row as rowOf } from '../ui'
+import { tableRow } from '@refactor-circus/atrium/testing'
 
 /*
  * `showroom.attribute-groups` (AC 54, 71): every attribute group
@@ -68,7 +68,7 @@ describe('showroom.attribute-groups', () => {
     expect(showroomCalls('GET', '/attribute-groups')[0]?.query).toEqual({})
     expect(api).toHaveBeenCalledWith('/screens/showroom.attribute-groups', expect.anything())
 
-    const row = rowOf(wrapper, 'showroom-group-row-looks')
+    const row = tableRow(wrapper, 'showroom-group-row-looks')
     expect(row.find('a').attributes('href')).toBe('/showroom/attribute-groups/looks')
     expect(row.text()).toContain('Looks')
     expect(row.text()).toContain('1')

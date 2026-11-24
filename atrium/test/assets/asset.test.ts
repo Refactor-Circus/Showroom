@@ -5,7 +5,7 @@ import { mockPackageApi, reply, resetPackageApis, type PackageRoutes } from '@re
 import { confirmWith, invalid, mountShowroomPage, ok, resetShowroomPages, screensApi, showroomCalls } from '../catalog/support'
 import { hero, pickFile } from './support'
 import { clearAtriumData, mockAtriumApi, useRouter } from '@refactor-circus/atrium/testing'
-import { pick, row } from '../ui'
+import { setField, tableRow } from '@refactor-circus/atrium/testing'
 
 /*
  * `showroom.asset` (AC 54, 71): one asset (`assets.show`) with its file and
@@ -69,10 +69,10 @@ describe('showroom.asset', () => {
     expect(wrapper.find('[data-testid="showroom-asset-size"]').text()).toBe('20.0 KB')
     expect(wrapper.find('[data-testid="showroom-asset-checksum"]').text()).toBe('abc123')
 
-    const product = row(wrapper, 'showroom-asset-link-product-TEE-1')
+    const product = tableRow(wrapper, 'showroom-asset-link-product-TEE-1')
     expect(product.text()).toContain('image')
     expect(product.find('a').attributes('href')).toBe('/showroom/products?search=TEE-1')
-    expect(row(wrapper, 'showroom-asset-link-owner-acme').find('a').attributes('href')).toBe('/showroom/owners?search=acme')
+    expect(tableRow(wrapper, 'showroom-asset-link-owner-acme').find('a').attributes('href')).toBe('/showroom/owners?search=acme')
   })
 
   it('shows the empty state when the asset has no links', async () => {
@@ -124,7 +124,7 @@ describe('showroom.asset', () => {
     showroomWith()
 
     const wrapper = await mountShowroomPage(Page, PATH)
-    await pick(wrapper, 'showroom-asset-link-type', 'product_model')
+    await setField(wrapper, 'showroom-asset-link-type', 'product_model')
     await wrapper.find('[data-testid="showroom-asset-link-target"]').setValue('tee')
     await submit(wrapper, 'showroom-asset-link-form')
 

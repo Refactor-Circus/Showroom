@@ -5,7 +5,7 @@ import { mockPackageApi, reply, resetPackageApis, type PackageRoutes } from '@re
 import { cursorPage, invalid, mountShowroomPage, ok, resetShowroomPages, screensApi, showroomCalls } from '../catalog/support'
 import { master, web } from './support'
 import { clearAtriumData, mockAtriumApi, useRouter } from '@refactor-circus/atrium/testing'
-import { row as rowOf } from '../ui'
+import { tableRow } from '@refactor-circus/atrium/testing'
 
 /*
  * `showroom.categories` (AC 54, 71): the category trees, each root category a
@@ -59,7 +59,7 @@ describe('showroom.categories', () => {
     expect(showroomCalls('GET', '/categories')[0]?.query).toEqual({ roots: '1' })
     expect(api).toHaveBeenCalledWith('/screens/showroom.categories', expect.anything())
 
-    const row = rowOf(wrapper, 'showroom-category-row-master')
+    const row = tableRow(wrapper, 'showroom-category-row-master')
     expect(row.find('a').attributes('href')).toBe('/showroom/categories/master')
     expect(row.text()).toContain('Master')
     expect(row.text()).toContain('2')

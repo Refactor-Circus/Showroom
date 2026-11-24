@@ -2,8 +2,8 @@ import { t as e } from "./CatalogActionError-BRUgojP9.js";
 import { t } from "./CatalogState-Bkly-MlG.js";
 import { C as n, D as r, O as i, T as a, a as o, f as s, k as c, r as ee, u as te } from "./catalog-DCoO3A8a.js";
 import { s as l } from "./values-B4RtDnRM.js";
-import { AtriumIntegrationScreen as ne, navigateTo as u } from "@refactor-circus/atrium";
-import { UBadge as re, UButton as ie, UCard as ae, UCheckbox as oe, UFormField as se, UInput as ce, ULink as le, UPageHeader as ue, USelect as de, UTable as fe } from "@refactor-circus/atrium/ui";
+import { AtriumIntegrationScreen as ne, AtriumPageHeader as re, AtriumSelect as ie, navigateTo as u } from "@refactor-circus/atrium";
+import { UBadge as ae, UButton as oe, UCard as se, UCheckbox as ce, UFormField as le, UInput as ue, ULink as de, UTable as fe } from "@refactor-circus/atrium/ui";
 import { Fragment as d, computed as f, createBlock as p, createCommentVNode as m, createElementBlock as h, createElementVNode as g, createTextVNode as _, createVNode as v, defineComponent as y, openBlock as b, reactive as x, ref as S, renderList as C, toDisplayString as w, unref as T, watch as E, withCtx as D, withModifiers as O } from "vue";
 import { useI18n as pe } from "vue-i18n";
 import { useRoute as me } from "vue-router";
@@ -41,19 +41,13 @@ var k = {
 			sort_order: "0",
 			add_attribute: "",
 			add_required: !1
-		}), Me = f(() => [{
-			label: B("showroom.catalog.families.no_label_attribute"),
-			value: null
-		}, ...je.value.map((e) => ({
+		}), Me = f(() => je.value.map((e) => ({
 			label: e.attribute,
 			value: e.attribute
-		}))]), Z = f(() => [{
-			label: B("showroom.catalog.values.choose_attribute"),
-			value: null
-		}, ...Ae.value.map((e) => ({
+		}))), Z = f(() => Ae.value.map((e) => ({
 			label: `${e.code} (${e.type})`,
 			value: e.code
-		}))]), Ne = f(() => [
+		}))), Ne = f(() => [
 			{
 				accessorKey: "attribute",
 				header: B("showroom.catalog.fields.code")
@@ -158,7 +152,7 @@ var k = {
 			}], await q());
 		}
 		return (n, r) => {
-			let i = ie, a = ue, o = ce, c = se, l = de, u = ae, f = le, y = re, x = oe, S = fe, E = ne;
+			let i = oe, a = re, o = ue, c = le, l = ie, u = se, f = de, y = ae, x = ce, S = fe, E = ne;
 			return b(), h("div", k, [v(E, {
 				"screen-key": "showroom.family",
 				record: T(W)
@@ -169,10 +163,10 @@ var k = {
 					status: T(Oe)
 				}, {
 					default: D(() => [T(J) ? (b(), h("div", A, [
-						v(a, { headline: T(B)("showroom.catalog.fields.family") }, {
+						v(a, { overline: T(B)("showroom.catalog.fields.family") }, {
 							title: D(() => [g("span", j, w(T(s)(T(J).labels, T(V), T(J).code)), 1)]),
 							description: D(() => [g("span", M, w(T(J).code), 1)]),
-							links: D(() => [v(i, {
+							default: D(() => [v(i, {
 								color: "error",
 								variant: "outline",
 								icon: "i-lucide-trash-2",
@@ -184,7 +178,7 @@ var k = {
 								_: 1
 							}, 8, ["loading"])]),
 							_: 1
-						}, 8, ["headline"]),
+						}, 8, ["overline"]),
 						g("form", {
 							class: "space-y-5",
 							"data-testid": "showroom-family-form",
@@ -215,13 +209,14 @@ var k = {
 											modelValue: T(X).label_attribute,
 											"onUpdate:modelValue": r[1] ||= (e) => T(X).label_attribute = e,
 											items: T(Me),
-											placeholder: T(B)("showroom.catalog.families.no_label_attribute"),
+											blank: T(B)("showroom.catalog.families.no_label_attribute"),
+											"blank-value": null,
 											class: "w-64",
 											"data-testid": "showroom-family-label-attribute"
 										}, null, 8, [
 											"modelValue",
 											"items",
-											"placeholder"
+											"blank"
 										])]),
 										_: 1
 									}, 8, [
@@ -325,13 +320,14 @@ var k = {
 											modelValue: T(X).add_attribute,
 											"onUpdate:modelValue": r[3] ||= (e) => T(X).add_attribute = e,
 											items: T(Z),
-											placeholder: T(B)("showroom.catalog.values.choose_attribute"),
+											blank: T(B)("showroom.catalog.values.choose_attribute"),
+											"blank-value": null,
 											class: "w-72",
 											"data-testid": "showroom-family-add-attribute"
 										}, null, 8, [
 											"modelValue",
 											"items",
-											"placeholder"
+											"blank"
 										])]),
 										_: 1
 									}, 8, ["label"]), v(x, {

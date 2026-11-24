@@ -26,7 +26,7 @@
 //   (`showroom.lookup.products`), so they link to the product list searched for it.
 // - The flash messages after each action ("Product updated" and the like). The
 //   page reloads instead.
-import type { TableColumn } from '@nuxt/ui/components/Table.vue'
+import type { TableColumn } from '@refactor-circus/atrium/ui'
 import CatalogPager from '../../components/catalog/CatalogPager.vue'
 import CatalogState from '../../components/catalog/CatalogState.vue'
 import {
@@ -107,18 +107,11 @@ function familyLabel(code: string | null | undefined): string {
   return family ? labelOf(family.labels, locale.value, family.code) : code || t('showroom.catalog.none')
 }
 
-const familyItems = computed(() => [
-  { label: t('showroom.catalog.filters.all_families'), value: null },
-  ...families.value.map(family => ({ label: labelOf(family.labels, locale.value, family.code), value: family.code }))
-])
+const familyItems = computed(() => families.value.map(family => ({ label: labelOf(family.labels, locale.value, family.code), value: family.code })))
 
-const statusItems = computed(() => [
-  { label: t('showroom.catalog.filters.all_statuses'), value: null },
-  ...PRODUCT_STATUSES.map(choice => ({ label: t(`showroom.statuses.${choice}`), value: choice }))
-])
+const statusItems = computed(() => PRODUCT_STATUSES.map(choice => ({ label: t(`showroom.statuses.${choice}`), value: choice })))
 
 const enabledItems = computed(() => [
-  { label: t('showroom.catalog.filters.all_statuses'), value: null },
   { label: t('showroom.catalog.enabled'), value: '1' },
   { label: t('showroom.catalog.disabled'), value: '0' }
 ])
@@ -163,7 +156,7 @@ function clear(): void {
               <UInput v-model="filters.search" name="search" class="w-64" data-testid="showroom-products-search" />
             </UFormField>
             <UFormField :label="t('showroom.catalog.fields.family')">
-              <USelect v-model="filters.family" :items="familyItems" :placeholder="t('showroom.catalog.filters.all_families')" class="w-48" data-testid="showroom-products-family" />
+              <AtriumSelect v-model="filters.family" :items="familyItems" :blank="t('showroom.catalog.filters.all_families')" :blank-value="null" class="w-48" data-testid="showroom-products-family" />
             </UFormField>
             <UFormField :label="t('showroom.catalog.fields.category')">
               <UInput v-model="filters.category" name="category" class="w-44" data-testid="showroom-products-category" />
@@ -172,10 +165,10 @@ function clear(): void {
               <UInput v-model="filters.owner" name="owner" class="w-44" data-testid="showroom-products-owner" />
             </UFormField>
             <UFormField :label="t('showroom.catalog.fields.workflow')">
-              <USelect v-model="filters.status" :items="statusItems" :placeholder="t('showroom.catalog.filters.all_statuses')" class="w-40" data-testid="showroom-products-status" />
+              <AtriumSelect v-model="filters.status" :items="statusItems" :blank="t('showroom.catalog.filters.all_statuses')" :blank-value="null" class="w-40" data-testid="showroom-products-status" />
             </UFormField>
             <UFormField :label="t('showroom.catalog.fields.enabled')">
-              <USelect v-model="filters.enabled" :items="enabledItems" :placeholder="t('showroom.catalog.filters.all_statuses')" class="w-40" data-testid="showroom-products-enabled" />
+              <AtriumSelect v-model="filters.enabled" :items="enabledItems" :blank="t('showroom.catalog.filters.all_statuses')" :blank-value="null" class="w-40" data-testid="showroom-products-enabled" />
             </UFormField>
             <UButton type="submit" icon="i-lucide-filter" data-testid="showroom-products-filter">{{ t('showroom.catalog.filters.filter') }}</UButton>
             <UButton variant="ghost" icon="i-lucide-x" data-testid="showroom-products-clear" @click="clear">{{ t('showroom.catalog.filters.clear') }}</UButton>

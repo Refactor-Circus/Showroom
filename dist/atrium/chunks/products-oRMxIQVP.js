@@ -1,8 +1,8 @@
 import { t as e } from "./CatalogPager-BwJ4cMnn.js";
 import { t } from "./CatalogState-Bkly-MlG.js";
 import { A as n, C as r, D as i, E as ee, S as a, d as te, f as o, k as s, p as c, t as l, v as u, x as d, y as ne } from "./catalog-DCoO3A8a.js";
-import { AtriumIntegrationScreen as re, AtriumPageHeader as ie, AtriumState as ae } from "@refactor-circus/atrium";
-import { UBadge as oe, UButton as se, UCard as f, UFormField as p, UInput as m, ULink as h, USelect as g, UTable as _ } from "@refactor-circus/atrium/ui";
+import { AtriumIntegrationScreen as re, AtriumPageHeader as ie, AtriumSelect as ae, AtriumState as oe } from "@refactor-circus/atrium";
+import { UBadge as se, UButton as f, UCard as p, UFormField as m, UInput as h, ULink as g, UTable as _ } from "@refactor-circus/atrium/ui";
 import { computed as v, createBlock as y, createCommentVNode as b, createElementBlock as x, createElementVNode as S, createTextVNode as C, createVNode as w, defineComponent as T, openBlock as E, reactive as D, toDisplayString as O, unref as k, watch as A, withCtx as j, withModifiers as M } from "vue";
 import { useI18n as N } from "vue-i18n";
 import { useRoute as P, useRouter as F } from "vue-router";
@@ -55,32 +55,19 @@ var I = {
 			let t = Q(e);
 			return t ? o(t.labels, U.value, t.code) : e || H("showroom.catalog.none");
 		}
-		let me = v(() => [{
-			label: H("showroom.catalog.filters.all_families"),
-			value: null
-		}, ...J.value.map((e) => ({
+		let me = v(() => J.value.map((e) => ({
 			label: o(e.labels, U.value, e.code),
 			value: e.code
-		}))]), he = v(() => [{
-			label: H("showroom.catalog.filters.all_statuses"),
-			value: null
-		}, ...l.map((e) => ({
+		}))), he = v(() => l.map((e) => ({
 			label: H(`showroom.statuses.${e}`),
 			value: e
-		}))]), ge = v(() => [
-			{
-				label: H("showroom.catalog.filters.all_statuses"),
-				value: null
-			},
-			{
-				label: H("showroom.catalog.enabled"),
-				value: "1"
-			},
-			{
-				label: H("showroom.catalog.disabled"),
-				value: "0"
-			}
-		]), $ = v(() => [
+		}))), ge = v(() => [{
+			label: H("showroom.catalog.enabled"),
+			value: "1"
+		}, {
+			label: H("showroom.catalog.disabled"),
+			value: "0"
+		}]), $ = v(() => [
 			{
 				accessorKey: "identifier",
 				header: H("showroom.catalog.fields.identifier")
@@ -123,7 +110,7 @@ var I = {
 			G.replace({ query: {} });
 		}
 		return (n, r) => {
-			let i = se, a = ie, o = m, s = p, c = g, l = f, d = ae, v = h, T = oe, D = _, A = re;
+			let i = f, a = ie, o = h, s = m, c = ae, l = p, d = oe, v = g, T = se, D = _, A = re;
 			return E(), x("div", I, [w(a, { title: k(H)("showroom.catalog.products.title") }, {
 				default: j(() => [w(i, {
 					to: "/showroom/flags",
@@ -164,13 +151,14 @@ var I = {
 								modelValue: k(Z).family,
 								"onUpdate:modelValue": r[1] ||= (e) => k(Z).family = e,
 								items: k(me),
-								placeholder: k(H)("showroom.catalog.filters.all_families"),
+								blank: k(H)("showroom.catalog.filters.all_families"),
+								"blank-value": null,
 								class: "w-48",
 								"data-testid": "showroom-products-family"
 							}, null, 8, [
 								"modelValue",
 								"items",
-								"placeholder"
+								"blank"
 							])]),
 							_: 1
 						}, 8, ["label"]),
@@ -199,13 +187,14 @@ var I = {
 								modelValue: k(Z).status,
 								"onUpdate:modelValue": r[4] ||= (e) => k(Z).status = e,
 								items: k(he),
-								placeholder: k(H)("showroom.catalog.filters.all_statuses"),
+								blank: k(H)("showroom.catalog.filters.all_statuses"),
+								"blank-value": null,
 								class: "w-40",
 								"data-testid": "showroom-products-status"
 							}, null, 8, [
 								"modelValue",
 								"items",
-								"placeholder"
+								"blank"
 							])]),
 							_: 1
 						}, 8, ["label"]),
@@ -214,13 +203,14 @@ var I = {
 								modelValue: k(Z).enabled,
 								"onUpdate:modelValue": r[5] ||= (e) => k(Z).enabled = e,
 								items: k(ge),
-								placeholder: k(H)("showroom.catalog.filters.all_statuses"),
+								blank: k(H)("showroom.catalog.filters.all_statuses"),
+								"blank-value": null,
 								class: "w-40",
 								"data-testid": "showroom-products-enabled"
 							}, null, 8, [
 								"modelValue",
 								"items",
-								"placeholder"
+								"blank"
 							])]),
 							_: 1
 						}, 8, ["label"]),

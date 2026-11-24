@@ -8,7 +8,7 @@ import { cursorPage, invalid, ok, resetShowroomPages, showroomCalls } from '../c
 import { flow, master, mountAreaPage, pickFile, resetAreaPages, ROW_SECTION, run, shirts, transfersApi, transfersScreen, webshop } from './support'
 import { useAtrium } from '@refactor-circus/atrium'
 import { clearAtriumData, mockAtriumApi, useRouter } from '@refactor-circus/atrium/testing'
-import { pick, row } from '../ui'
+import { setField, tableRow } from '@refactor-circus/atrium/testing'
 
 /*
  * `showroom.transfers` (AC 54, 71; D-035, D-042): the recent transfer runs
@@ -121,7 +121,7 @@ describe('showroom.transfers', () => {
       expect(rows[19]!.attributes('data-testid')).toBe('showroom-transfer-run-imp-6')
       expect(wrapper.find('[data-testid="showroom-transfer-run-imp-5"]').exists()).toBe(false)
       expect(rows[0]!.text()).toContain('showroom:export')
-      expect(row(wrapper, 'showroom-transfer-run-exp-25').text()).toContain('completed')
+      expect(tableRow(wrapper, 'showroom-transfer-run-exp-25').text()).toContain('completed')
       expect(wrapper.find('[data-testid="showroom-transfers-requires-impex"]').exists()).toBe(false)
     })
 
@@ -142,7 +142,7 @@ describe('showroom.transfers', () => {
 
       const wrapper = await mountAreaPage(Page, PATH)
 
-      const failed = row(wrapper, 'showroom-transfer-run-imp-bad')
+      const failed = tableRow(wrapper, 'showroom-transfer-run-imp-bad')
       expect(failed.text()).toContain('failed')
       expect(failed.text()).toContain('Row 4 has no identifier.')
     })
@@ -169,8 +169,8 @@ describe('showroom.transfers', () => {
 
       const wrapper = await mountAreaPage(Page, PATH)
 
-      expect(row(wrapper, 'showroom-transfer-run-exp-25').find('[data-testid="row-section"]').text()).toBe('exp-25')
-      expect(row(wrapper, 'showroom-transfer-run-imp-6').find('[data-testid="row-section"]').text()).toBe('imp-6')
+      expect(tableRow(wrapper, 'showroom-transfer-run-exp-25').find('[data-testid="row-section"]').text()).toBe('exp-25')
+      expect(tableRow(wrapper, 'showroom-transfer-run-imp-6').find('[data-testid="row-section"]').text()).toBe('imp-6')
     })
 
     it('shows the no-access state in the runs card when Impex answers 403, and keeps import and export', async () => {
@@ -190,7 +190,7 @@ describe('showroom.transfers', () => {
 
       const wrapper = await mountAreaPage(Page, PATH)
       await pickFile(wrapper.find('[data-testid="showroom-transfer-import-file"]'), new File(['identifier\nTEE-1'], 'products.csv', { type: 'text/csv' }))
-      await pick(wrapper, 'showroom-transfer-import-mode', 'create')
+      await setField(wrapper, 'showroom-transfer-import-mode', 'create')
       await submit(wrapper, 'showroom-transfer-import-form')
 
       const [call] = showroomCalls('POST', '/imports')
@@ -218,11 +218,11 @@ describe('showroom.transfers', () => {
       showroomWith()
 
       const wrapper = await mountAreaPage(Page, PATH)
-      await pick(wrapper, 'showroom-transfer-export-format', 'csv')
-      await pick(wrapper, 'showroom-transfer-export-family', 'shirts')
-      await pick(wrapper, 'showroom-transfer-export-category', 'master')
-      await pick(wrapper, 'showroom-transfer-export-scope', 'webshop')
-      await pick(wrapper, 'showroom-transfer-export-published', true)
+      await setField(wrapper, 'showroom-transfer-export-format', 'csv')
+      await setField(wrapper, 'showroom-transfer-export-family', 'shirts')
+      await setField(wrapper, 'showroom-transfer-export-category', 'master')
+      await setField(wrapper, 'showroom-transfer-export-scope', 'webshop')
+      await setField(wrapper, 'showroom-transfer-export-published', true)
       await submit(wrapper, 'showroom-transfer-export-form')
 
       const [call] = showroomCalls('POST', '/exports')

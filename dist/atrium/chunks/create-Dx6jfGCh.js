@@ -2,8 +2,8 @@ import { t as e } from "./CatalogActionError-BRUgojP9.js";
 import { A as t, C as n, D as r, O as i, f as a, j as o, r as s } from "./catalog-DCoO3A8a.js";
 import { t as c } from "./AttributeFlags-DO53IOaY.js";
 import { _ as l, g as u, n as d, y as f } from "./structure-DbqcM-iO.js";
-import { AtriumIntegrationScreen as p, AtriumPageHeader as m, navigateTo as h } from "@refactor-circus/atrium";
-import { UButton as g, UCard as _, UFormField as v, UInput as y, USelect as b, UTextarea as x } from "@refactor-circus/atrium/ui";
+import { AtriumIntegrationScreen as p, AtriumPageHeader as m, AtriumSelect as h, navigateTo as g } from "@refactor-circus/atrium";
+import { UButton as _, UCard as v, UFormField as y, UInput as b, UTextarea as x } from "@refactor-circus/atrium/ui";
 import { computed as S, createElementBlock as C, createElementVNode as w, createTextVNode as T, createVNode as E, defineComponent as D, isRef as O, openBlock as k, reactive as A, ref as j, toDisplayString as M, unref as N, withCtx as P, withModifiers as F } from "vue";
 import { useI18n as I } from "vue-i18n";
 // src/pages/attributes/create.vue?vue&type=script&setup=true&lang.ts
@@ -20,19 +20,13 @@ var L = {
 			label: "",
 			settings: "",
 			sort_order: "0"
-		}), W = S(() => [{
-			label: R("showroom.structure.attributes.choose_type"),
-			value: null
-		}, ...d.map((e) => ({
+		}), W = S(() => d.map((e) => ({
 			label: e,
 			value: e
-		}))]), G = S(() => [{
-			label: R("showroom.structure.attributes.no_group"),
-			value: null
-		}, ...H.value.map((e) => ({
+		}))), G = S(() => H.value.map((e) => ({
 			label: a(e.labels, z.value, e.code),
 			value: e.code
-		}))]), K = j({
+		}))), K = j({
 			is_unique: !1,
 			is_localizable: !1,
 			is_scopable: !1
@@ -51,10 +45,10 @@ var L = {
 			}, i = {};
 			await V.run(async () => {
 				i.attribute = n(await B.POST("/attributes", { body: r(t) })).data;
-			}) && i.attribute && await h(s(i.attribute.code));
+			}) && i.attribute && await g(s(i.attribute.code));
 		}
 		return (t, n) => {
-			let r = m, i = y, a = v, o = b, s = x, l = g, u = _, d = p;
+			let r = m, i = b, a = y, o = h, s = x, l = _, u = v, d = p;
 			return k(), C("div", L, [E(r, { title: N(R)("showroom.structure.attributes.new") }, null, 8, ["title"]), E(d, { "screen-key": "showroom.attribute-create" }, {
 				default: P(() => [E(u, null, {
 					default: P(() => [w("form", {
@@ -92,14 +86,15 @@ var L = {
 								modelValue: N(U).type,
 								"onUpdate:modelValue": n[1] ||= (e) => N(U).type = e,
 								items: N(W),
-								placeholder: N(R)("showroom.structure.attributes.choose_type"),
+								blank: N(R)("showroom.structure.attributes.choose_type"),
+								"blank-value": null,
 								required: "",
 								class: "w-64",
 								"data-testid": "showroom-attribute-create-type"
 							}, null, 8, [
 								"modelValue",
 								"items",
-								"placeholder"
+								"blank"
 							])]),
 							_: 1
 						}, 8, [
@@ -115,13 +110,14 @@ var L = {
 								modelValue: N(U).group,
 								"onUpdate:modelValue": n[2] ||= (e) => N(U).group = e,
 								items: N(G),
-								placeholder: N(R)("showroom.structure.attributes.no_group"),
+								blank: N(R)("showroom.structure.attributes.no_group"),
+								"blank-value": null,
 								class: "w-64",
 								"data-testid": "showroom-attribute-create-group"
 							}, null, 8, [
 								"modelValue",
 								"items",
-								"placeholder"
+								"blank"
 							])]),
 							_: 1
 						}, 8, ["label", "error"]),

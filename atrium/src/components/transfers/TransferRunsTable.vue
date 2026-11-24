@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { AtriumExtensionData } from '@refactor-circus/atrium'
-import type { TableColumn } from '@nuxt/ui/components/Table.vue'
+import type { TableColumn } from '@refactor-circus/atrium/ui'
 import { formatDate } from '../catalog/catalog'
 import { runError, runStatusColor, type TransferRun } from './transfers'
 

@@ -18,10 +18,7 @@ const props = defineProps<{
 
 const { t } = useI18n()
 
-const treeItems = computed(() => [
-  { label: t('showroom.catalog.none'), value: null },
-  ...props.trees.map(tree => ({ label: tree.code, value: tree.code }))
-])
+const treeItems = computed(() => props.trees.map(tree => ({ label: tree.code, value: tree.code })))
 
 function toggle(code: string, checked: boolean | 'indeterminate'): void {
   const on = checked === true
@@ -54,7 +51,7 @@ function toggle(code: string, checked: boolean | 'indeterminate'): void {
         <UInput v-model="form.currencies" class="w-56" :data-testid="`${testid}-currencies`" />
       </UFormField>
       <UFormField :label="t('showroom.structure.channels.category_tree')" :error="action.error('category_tree')">
-        <USelect v-model="form.category_tree" :items="treeItems" :placeholder="t('showroom.catalog.none')" class="w-56" :data-testid="`${testid}-tree`" />
+        <AtriumSelect v-model="form.category_tree" :items="treeItems" :blank="t('showroom.catalog.none')" :blank-value="null" class="w-56" :data-testid="`${testid}-tree`" />
       </UFormField>
     </div>
   </div>
