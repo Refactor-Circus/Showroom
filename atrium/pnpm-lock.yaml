@@ -12,8 +12,8 @@ importers:
         specifier: 4.1.0
         version: 4.1.0(@babel/parser@7.29.15)(@vue/test-utils@2.6.0(@vue/compiler-dom@3.5.46)(@vue/server-renderer@3.5.46)(vue@3.5.46(typescript@5.9.3)))(confbox@0.3.2)(dotenv@17.4.2)(embla-carousel@8.6.0)(giget@3.3.1)(jiti@2.7.0)(rolldown@1.2.19)(sortablejs@1.15.7)(typescript@5.9.3)(vite@8.3.8(@types/node@24.19.2)(jiti@2.7.0))(vue-router@5.5.1(@vue/compiler-sfc@3.5.46)(pinia@3.0.4(typescript@5.9.3)(vue@3.5.46(typescript@5.9.3)))(rolldown@1.2.19)(vite@8.3.8(@types/node@24.19.2)(jiti@2.7.0))(vue@3.5.46(typescript@5.9.3)))(vue@3.5.46(typescript@5.9.3))(zod@4.6.7)
       '@refactor-circus/atrium':
-        specifier: github:refactor-circus/atrium#67286984c1c47dad74012f4aa7bc13286ce34c57&path:ui/sdk
-        version: https://codeload.github.com/refactor-circus/atrium/tar.gz/67286984c1c47dad74012f4aa7bc13286ce34c57#path:ui/sdk(ee6bde36382ceee7dcdc50d561433832)
+        specifier: github:refactor-circus/atrium#f6c2db24d2ae32b940c90a81e26f9bbfad88caff&path:ui/sdk
+        version: https://codeload.github.com/refactor-circus/atrium/tar.gz/f6c2db24d2ae32b940c90a81e26f9bbfad88caff#path:ui/sdk(ee6bde36382ceee7dcdc50d561433832)
       '@types/node':
         specifier: 24.19.2
         version: 24.19.2
@@ -483,8 +483,8 @@ packages:
   '@polka/url@1.0.0-next.29':
     resolution: {integrity: sha512-wwQAWhWSuHaag8c4q/KN/vCoeOJYshAIvMQwD4GpSb3OiZklFfvAgmj0VCBBImRpuF/aFgIRzllXlVX93Jevww==}
 
-  '@refactor-circus/atrium@https://codeload.github.com/refactor-circus/atrium/tar.gz/67286984c1c47dad74012f4aa7bc13286ce34c57#path:ui/sdk':
-    resolution: {path: ui/sdk, tarball: https://codeload.github.com/refactor-circus/atrium/tar.gz/67286984c1c47dad74012f4aa7bc13286ce34c57}
+  '@refactor-circus/atrium@https://codeload.github.com/refactor-circus/atrium/tar.gz/f6c2db24d2ae32b940c90a81e26f9bbfad88caff#path:ui/sdk':
+    resolution: {path: ui/sdk, tarball: https://codeload.github.com/refactor-circus/atrium/tar.gz/f6c2db24d2ae32b940c90a81e26f9bbfad88caff}
     version: 2.0.0
     peerDependencies:
       '@nuxt/ui': 4.1.0
@@ -2692,7 +2692,7 @@ snapshots:
 
   '@polka/url@1.0.0-next.29': {}
 
-  '@refactor-circus/atrium@https://codeload.github.com/refactor-circus/atrium/tar.gz/67286984c1c47dad74012f4aa7bc13286ce34c57#path:ui/sdk(ee6bde36382ceee7dcdc50d561433832)':
+  '@refactor-circus/atrium@https://codeload.github.com/refactor-circus/atrium/tar.gz/f6c2db24d2ae32b940c90a81e26f9bbfad88caff#path:ui/sdk(ee6bde36382ceee7dcdc50d561433832)':
     dependencies:
       '@iconify-json/lucide': 1.2.158
       '@iconify/vue': 5.0.5(vue@3.5.46(typescript@5.9.3))

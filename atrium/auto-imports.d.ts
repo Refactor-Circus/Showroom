@@ -7,7 +7,9 @@
 export {}
 declare global {
   const ATRIUM_GRID_COLUMNS: typeof import('@refactor-circus/atrium').ATRIUM_GRID_COLUMNS
+  const ATRIUM_NAV_CORE: typeof import('@refactor-circus/atrium').ATRIUM_NAV_CORE
   const ATRIUM_NAV_HOME: typeof import('@refactor-circus/atrium').ATRIUM_NAV_HOME
+  const ATRIUM_NAV_SETTINGS: typeof import('@refactor-circus/atrium').ATRIUM_NAV_SETTINGS
   const ATRIUM_SDK_VERSION: typeof import('@refactor-circus/atrium').ATRIUM_SDK_VERSION
   const AtriumIntegrationError: typeof import('@refactor-circus/atrium').AtriumIntegrationError
   const AtriumRegistry: typeof import('@refactor-circus/atrium').AtriumRegistry
@@ -176,7 +178,9 @@ declare module 'vue' {
   interface GlobalComponents {}
   interface ComponentCustomProperties {
     readonly ATRIUM_GRID_COLUMNS: UnwrapRef<typeof import('@refactor-circus/atrium')['ATRIUM_GRID_COLUMNS']>
+    readonly ATRIUM_NAV_CORE: UnwrapRef<typeof import('@refactor-circus/atrium')['ATRIUM_NAV_CORE']>
     readonly ATRIUM_NAV_HOME: UnwrapRef<typeof import('@refactor-circus/atrium')['ATRIUM_NAV_HOME']>
+    readonly ATRIUM_NAV_SETTINGS: UnwrapRef<typeof import('@refactor-circus/atrium')['ATRIUM_NAV_SETTINGS']>
     readonly ATRIUM_SDK_VERSION: UnwrapRef<typeof import('@refactor-circus/atrium')['ATRIUM_SDK_VERSION']>
     readonly AtriumIntegrationError: UnwrapRef<typeof import('@refactor-circus/atrium')['AtriumIntegrationError']>
     readonly AtriumRegistry: UnwrapRef<typeof import('@refactor-circus/atrium')['AtriumRegistry']>

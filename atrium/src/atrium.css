@@ -1,17 +1,3 @@
 /* Showroom's utilities, compiled against Atrium's theme (D-084). */
 @import "@refactor-circus/atrium/module.css";
 @source "./";
-
-/*
- * A control with no label of its own (a submit button, a lone checkbox) in a
- * row of form fields: the row aligns to the top, so labels share a line and a
- * field's hint or error below its control moves nothing, and the control drops
- * by the field's label row (`mt-field-label`: the label's line plus the gap
- * above the control, as Atrium's formField theme lays it out) to line up with
- * the fields' controls; a checkbox also takes a control's height
- * (`h-field items-center`) so it is centred on them.
- */
-@theme inline {
-  --spacing-field-label: calc(var(--text-xs--line-height) + var(--spacing));
-  --spacing-field: calc(var(--text-sm--line-height) + var(--spacing) * 2);
-}

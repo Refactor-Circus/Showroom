@@ -11,7 +11,7 @@
   },
   "devDependencies": {
     "@nuxt/ui": "4.1.0",
-    "@refactor-circus/atrium": "github:refactor-circus/atrium#67286984c1c47dad74012f4aa7bc13286ce34c57&path:ui/sdk",
+    "@refactor-circus/atrium": "github:refactor-circus/atrium#f6c2db24d2ae32b940c90a81e26f9bbfad88caff&path:ui/sdk",
     "@types/node": "24.19.2",
     "@unhead/vue": "2.1.18",
     "@vue/test-utils": "2.6.0",
