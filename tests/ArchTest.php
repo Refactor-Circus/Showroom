@@ -23,24 +23,23 @@ arch('the package source declares strict types')
     ->expect('RefactorCircus\Showroom')
     ->toUseStrictTypes();
 
-// Atrium is optional: only the screens in src/Atrium may name its classes.
-arch('code outside src/Atrium uses no Atrium class')
+// Showroom's PHP knows nothing of Atrium: its Atrium module is JS only
+// (atrium/, dist/atrium, extra.atrium), so no class names Atrium.
+arch('no Showroom class uses an Atrium class')
     ->expect('RefactorCircus\Showroom')
-    ->not->toUse('RefactorCircus\Atrium')
-    ->ignoring('RefactorCircus\Showroom\Atrium');
+    ->not->toUse('RefactorCircus\Atrium');
 
 // Impex is optional: core names none of its classes, so a core switch such
 // as ProductChangeCapture is read by src/Impex, never the other way round.
-// The Transfer domain and its Atrium screen start Impex runs and return them,
-// behind ImpexIntegration::active(), so they are the only two declared
-// exceptions (D-012); nothing else outside src/Impex may join them.
+// The Transfer domain starts Impex runs and returns them, behind
+// ImpexIntegration::active(), so it is the only declared exception (D-012);
+// nothing else outside src/Impex may join it.
 arch('code outside src/Impex uses no Impex class')
     ->expect('RefactorCircus\Showroom')
     ->not->toUse('RefactorCircus\Impex')
     ->ignoring([
         'RefactorCircus\Showroom\Impex',
         'RefactorCircus\Showroom\Domains\Transfer',
-        'RefactorCircus\Showroom\Atrium\Http\Controllers\TransferUiController',
     ]);
 
 arch('models are final')
@@ -79,7 +78,7 @@ arch('action input validates itself')
 
 // Parity is the default, with declared exceptions: an Action missing from a
 // surface fails unless PARITY_EXCEPTIONS lists it with a reason.
-arch('every use case is reachable from the HTTP API, MCP and the dashboard')
+arch('every use case is reachable from the HTTP API and MCP')
     ->expect(fn (): array => parityGaps())
     ->toBeEmpty();
 

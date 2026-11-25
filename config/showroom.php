@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-use RefactorCircus\Showroom\Atrium\Features\ShowroomSupportFeature;
 use RefactorCircus\Showroom\Domains\Asset\Models\AssetModel;
 use RefactorCircus\Showroom\Domains\Asset\Policies\AssetPolicy;
 use RefactorCircus\Showroom\Domains\Association\Models\AssociationModel;
@@ -52,11 +51,10 @@ return [
     | Authorization
     |--------------------------------------------------------------------------
     |
-    | With authorization on, the JSON API, the MCP tools and the Atrium
-    | screens require an authenticated user and check every call against the
-    | policies below; the screens show only the navigation and controls the
-    | user may use. Turn it off only for a trusted operator surface, where
-    | the route middleware (and Atrium's own gate) is the only check.
+    | With authorization on, the JSON API and the MCP tools require an
+    | authenticated user and check every call against the policies below.
+    | Turn it off only for a trusted operator surface, where the route
+    | middleware is the only check.
     |
     */
 
@@ -214,56 +212,15 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Dashboard UI
+    | Stats
     |--------------------------------------------------------------------------
     |
-    | Showroom renders its dashboard through Atrium, which owns the path,
-    | middleware and authorization gate.
+    | `cache_seconds`: how long GET {prefix}/stats keeps its completeness
+    | figures, which read every stored score. 0 reads them fresh.
     |
     */
 
-    'ui' => [
-
-        /*
-        | Whether Showroom registers itself with the Atrium dashboard. The JSON
-        | API is unaffected by this switch.
-        */
-
-        'enabled' => true,
-    ],
-
-    /*
-    |--------------------------------------------------------------------------
-    | Atrium
-    |--------------------------------------------------------------------------
-    |
-    | features: Features that must all be on for Showroom to appear in
-    |           Atrium at all - its navigation, widgets, settings, search and
-    |           pages (which answer 404 otherwise). Atrium asks its feature
-    |           resolver, so Pennant (through refactor-circus/pennantplus) or any other
-    |           flag system decides.
-    |
-    |           ShowroomSupportFeature is on until its global value is set,
-    |           and only its global value counts. Swap in a subclass to change
-    |           that, or your own feature names. Feature classes that do not
-    |           exist (without refactor-circus/pennantplus) are skipped, so nothing is
-    |           checked until Pennant is installed. Empty always shows
-    |           Showroom.
-    |
-    | Individual pages and controls are still shown per Showroom policy.
-    |
-    | - `widget_cache_seconds`: how long the completeness widget keeps its
-    |   figures, which read every stored score. 0 reads them fresh on every
-    |   render.
-    |
-    */
-
-    'atrium' => [
-        'features' => [
-            ShowroomSupportFeature::class,
-        ],
-        'widget_cache_seconds' => 60,
-    ],
+    'stats' => ['cache_seconds' => 60],
 
     /*
     |--------------------------------------------------------------------------
@@ -335,9 +292,9 @@ return [
     |--------------------------------------------------------------------------
     |
     | Showroom keeps no audit log of its own. With refactor-circus/keen
-    | installed, Keen records every change Showroom makes, and Showroom shows
-    | the history on its Atrium pages, its `GET /showroom/history` route and
-    | its history MCP tool. Without Keen none of that exists.
+    | installed, Keen records every change Showroom makes, and Showroom serves
+    | the history through its `GET /showroom/history` route and its history
+    | MCP tool. Without Keen none of that exists.
     |
     | enabled: Set to false to keep Showroom out of the audit log even while
     |          Keen is installed: Keen records nothing of Showroom's, and

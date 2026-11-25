@@ -2,8 +2,9 @@
 name: showroom-development
 description: >
   Install and use the Showroom PIM package (refactor-circus/showroom) in Laravel applications: define attribute groups, typed
-  attributes, options, families, family variants, product models, products, owners, categories, assets, locales, channels and associations through Actions; run the review and publishing workflow and read version history, import, export and syndicate products through Impex flows, the JSON API under /showroom, or MCP tools; configure authorization,
-  policies, MCP transports, Cortex and the Atrium dashboard (pages, widgets, search).
+  attributes, options, families, family variants, product models, products, owners, categories, assets, locales, channels and associations through Actions; run the review and publishing workflow and read version history, import, export and syndicate products through Impex flows, the JSON API under /showroom, or MCP tools; read catalog stats,
+  cross-record search and the settings summary; call the API from TypeScript with the generated client; configure authorization,
+  policies, MCP transports and Cortex.
 license: MIT
 metadata:
   author: Jay Fletcher
@@ -11,7 +12,9 @@ metadata:
 
 # Showroom
 
-Use this skill when a Laravel application needs product information management (PIM) with Showroom: managing the attributes products are described with, over PHP, HTTP, MCP or the Atrium dashboard.
+Use this skill when a Laravel application needs product information management (PIM) with Showroom: managing the attributes products are described with, over PHP, HTTP or MCP.
+
+Showroom is a JSON API and MCP package: its PHP ships no screens, views or Blade components. A front end calls the JSON API, typed by the committed `openapi.json` and the `@refactor-circus/showroom-client` TypeScript client. Showroom's own Atrium module (JS only, sources in `atrium/`, built into the committed `dist/atrium/` and declared in `composer.json` under `extra.atrium`) is the suite admin panel's front end for it; rebuild it with `pnpm build` in `atrium/` after changing it.
 
 ## Primary Goal
 
@@ -34,13 +37,6 @@ php artisan vendor:publish --tag="showroom-config"   # when changing config
 - `showroom.authorization` is `true` by default: API and MCP calls need an authenticated user and pass the policies in `showroom.policies`. The bundled policies allow any authenticated user; map a model to an app policy to restrict it. Every model has one; associations, versions and completeness scores follow the product (or product model) they belong to.
 - Table names come from `showroom.tables` (`RefactorCircus\Showroom\Support\Tables::name('products')`); rename them before migrating, and never write `showroom_*` table names in app queries.
 - MCP transports ship disabled (`showroom.mcp.web.enabled`, `showroom.mcp.local.enabled`); add auth middleware before enabling the web transport.
-- The Atrium screens ask the same policies the same way (`RefactorCircus\Showroom\Atrium\ScreenAccess`): navigation items, pages and every button, form and card appear only when the action is allowed, and are refused otherwise (401 for a guest, 403 for a signed-in user). In published or custom views use `@showroomCan('update', $product) ... @endshowroomCan`. With authorization on, a guest sees no Showroom screens.
-- With refactor-circus/pennantplus, `Feature::for(null)->deactivate(RefactorCircus\Showroom\Atrium\Features\ShowroomSupportFeature::class)` hides Showroom in Atrium (pages 404); only its global value counts. `showroom.atrium.features` names the features checked; classes that are not installed are skipped.
-- Showroom ships no stylesheet: screens use `x-atrium::*` components and Atrium's safelisted utilities only (checked with `RefactorCircus\Atrium\Testing\AtriumStyles`). In published views, keep to the same: bare form controls in table cells, `<x-atrium::flash />` for status and errors, `x-atrium::description-list` for details.
-- Atrium is optional (`composer require refactor-circus/atrium` for the dashboard); without it the Actions, JSON API and MCP server work and no `atrium.` route exists.
-- Every Showroom page declares itself on Atrium's screen extensions registry, keyed `showroom.*` (25 keys, listed in the README: lists such as `showroom.products`, `showroom.transfers`; details such as `showroom.product`, `showroom.product-create`). Add tabs and sections to them from your own provider's `boot()` with `Atrium::screens()->tab(...)` / `->section($key, $slot, ...)`. List screens declare `header.actions`, `before`, `after`, `row.actions`; detail screens `header.actions`, `before`, `after`, `aside`. `permission()` extensions follow `showroom.authorization` (with it off every one shows); use `authorize()` for your own check. `row.actions` closures run once per row (the row is `$record`; on `showroom.transfers` an Impex run), so they must not query.
-- History comes from refactor-circus/keen and the transfer run link from Impex, each registering its own section; Showroom renders neither. Product versions and revert stay.
-- Screens follow Atrium's conventions: actions are `<x-atrium::icon-button icon="…" :label="…">`, statuses `<x-atrium::status-dot>` coloured by `RefactorCircus\Showroom\Atrium\Badges` (`info` only for in review / pending runs).
 
 ### 3. Manage the catalog through Actions
 
@@ -59,20 +55,28 @@ Call Actions from each domain's `Actions` namespace (`RefactorCircus\Showroom\Do
 - Associations: `List/Show/Create/Update/DeleteAssociationTypeAction`; associations go through the product and product model Actions
 - Workflow: `TransitionProductAction`, `ListProductVersionsAction`, `ShowProductVersionAction`, `RevertProductAction`
 - Import/export (needs `refactor-circus/impex`): `StartImportAction`, `StartExportAction` — both return the Impex `Run`
+- Catalog (read-only views across the other domains, `RefactorCircus\Showroom\Domains\Catalog\Actions`): `ShowCatalogStatsAction` (returns `CatalogStats`), `SearchCatalogAction` (`SearchCatalogData` `q`, `type`, `limit`, plus the user whose `viewAny` decides the types searched), `ShowSettingsSummaryAction`
 
 ### 4. Or use the HTTP API / MCP tools
 
 - HTTP: `/showroom/attribute-groups`, `/showroom/attributes`, `/showroom/attributes/{code}/options`, `/showroom/families`, `/showroom/family-variants`, `/showroom/product-models`, `/showroom/products`, `/showroom/owner-types`, `/showroom/owners`, `/showroom/categories`, `/showroom/assets`, `/showroom/locales`, `/showroom/channels`, `/showroom/association-types`, `POST /showroom/imports`, `POST /showroom/exports` — records addressed by code, cursor pagination (`cursor`, `per_page`).
+- Catalog: `GET /showroom/stats` (status counts and published, completeness per channel and locale cached for `showroom.stats.cache_seconds`, the review queue, the 8 newest versions), `GET /showroom/search?q=&type=&limit=` (`{type, id, code, label, subtitle}` hits across products, assets, categories, owners, families, attributes and attribute groups, only types the caller may `viewAny`; `403` when none), `GET /showroom/settings-summary` (authorization, routes, MCP transports, pagination). Stats and the summary need `viewAny` on products. MCP: `show-catalog-stats-tool`, `search-catalog-tool`.
+- Import and export runs belong to Impex: list them through Impex's runs API filtered by `flow`, start them with `POST /showroom/imports` and `POST /showroom/exports`. Showroom has no transfers-list endpoint.
 - MCP: tools such as `create-attribute-tool` behind `search_tools` / `execute_tools`; catalog in `RefactorCircus\Showroom\Mcp\ShowroomServer::TOOLS`.
 - History (needs `refactor-circus/keen`, and `showroom.audit.enabled` on): `GET /showroom/history` (route `showroom.history.index`) and `list-showroom-history-tool`. Without it the route answers 404 and the tool is not offered.
 - MCP tools answer with the API resources under `data` and declare output schemas; lists carry their page under `meta` (`meta.next_cursor`, or `meta.total`/`meta.last_page` for `list-products-tool`).
 
-### 5. Choose a search engine
+### 5. Call the API from TypeScript
+
+- `openapi.json` (package root) describes every default route; `client/` is `@refactor-circus/showroom-client`, installed as a git dependency at a release tag (`pnpm add "github:Refactor-Circus/Showroom#v2.0.0&path:client"`; npm cannot install a subfolder). `createShowroomClient({ baseUrl, headers?, fetch?, credentials? })` returns openapi-fetch's typed `Client<paths>`: `showroom.GET('/search', { params: { query: { q: 'tee' } } })`.
+- Working on Showroom itself: after changing a route, request rules, a Data's `rules()` or a resource, run `composer client:generate` (Scramble export from the workbench, then `npm --prefix client ci` and `npm --prefix client run generate`) and commit `openapi.json` and `client/`. `tests/OpenApi/OpenApiTest.php` fails while either is stale.
+
+### 6. Choose a search engine
 
 - `showroom.search.engine`: `null` (default: `scout` when `laravel/scout` is installed, `database` otherwise), `database`, `scout`, or a class implementing `RefactorCircus\Showroom\Domains\Search\Contracts\SearchEngine`.
 - Run a queue worker: index syncs (`SyncProductIndex`, and `QueueProductSyncs` for changes that reach many products) and value purges are queued. Rebuild with `php artisan showroom:search:reindex`. Wrap bulk product writes in `app(ProductIndex::class)->deferring(fn () => ...)` to send their syncs together. The database engine suits up to tens of thousands of products; free-text `search` scans JSON values, so use Scout beyond that.
 
-### 6. React to changes
+### 7. React to changes
 
 Listen to action events (`RefactorCircus\Showroom\Domains\Attribute\Events\AttributeCreatedActionEvent`, or the `RefactorCircus\Keystone\Contracts\ActionFinishedEvent` family) or model events (`RefactorCircus\Keystone\Contracts\ModelLifecycleEvent`). Every Action writes inside a database transaction, and its finished event fires only once that commits. The Impex flow steps fire the same pairs (`RefactorCircus\Showroom\Domains\Transfer\Events\ProductRowImportedActionEvent`, `ProductPagesExportedActionEvent`, `ProductExportJoinedActionEvent`, `FeedDeliveredActionEvent` and their starting events).
 
@@ -99,7 +103,7 @@ To follow every product whose presentation may have changed (own edits, transiti
 - Product webhooks (`showroom.impex.webhooks.enabled`, off by default, needs `refactor-circus/impex`): published products are the Impex stream `showroom.products`; vendors subscribe on Impex's subscriber API (`POST /impex/subscriber/subscriptions` with `stream`, `topics` from `content`/`pricing`/`assets`/`resources`/`catalog`, `filter` of `categories`/`owners`/`families`/`models` codes or `subjects` SKUs, `format` `thin`/`slice`/`full`, `options.channel`/`options.locales`, and `endpoint.url` or none for the feed). Never send product data to vendors any other way. Topics are append-only.
 - Polling helpers: `updated_since` on the product list and `list-products-tool` (filters on `changed_at`, which every change a product shows moves, inherited ones included); ETag/`If-None-Match` → `304` on product show. Vendor subscriptions are managed with Impex's MCP tools (`list-streams-tool`, `create-subscription-tool`, …).
 - Labels are a locale map: `['en' => 'Color']`; `$model->label()` resolves the current locale.
-- Config keys: `authorization`, `policies`, `tables.*`, `routes.*`, `mcp.*`, `cortex.*`, `ui.enabled`, `atrium.features`, `atrium.widget_cache_seconds`, `workflow.*`, `impex.*`, `media.*`, `search.*`, `pagination.*`.
+- Config keys: `authorization`, `policies`, `tables.*`, `routes.*`, `mcp.*`, `cortex.*`, `stats.cache_seconds`, `workflow.*`, `impex.*`, `media.*`, `search.*`, `pagination.*`.
 
 ## Examples
 

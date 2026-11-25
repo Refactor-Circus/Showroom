@@ -4,7 +4,7 @@ Publish with `php artisan vendor:publish --tag="showroom-config"`.
 
 | Key | Default | Meaning |
 |---|---|---|
-| `authorization` | `true` | Require an authenticated user on the API, MCP and Atrium screens, and check every call against `policies`; the screens show only what the user may use |
+| `authorization` | `true` | Require an authenticated user on the API and MCP, and check every call against `policies` |
 | `policies` | bundled policies | Model ⇒ policy class used by the Gate; every model has one, and associations, versions, completeness scores and searchable products follow their product's, external ids their product's or owner's. `FlagPolicy`'s `assign` ability decides who may change a product's or owner's flags; see [Flags](14-flags.md) |
 | `tables.*` | `showroom_*` | The table each record lives in, by key (`products`, `product_models`, `categories`, `external_ids`, `flags`, `flag_assignments`, ...). Set before migrating; keys left out keep their default |
 | `routes.enabled` | `true` | Register the HTTP API |
@@ -18,13 +18,11 @@ Publish with `php artisan vendor:publish --tag="showroom-config"`.
 | `cortex.enabled` | `true` | Register with Cortex when it is installed |
 | `cortex.server` | `showroom` | Server name in Cortex |
 | `cortex.tools` | `null` | Tool names to offer Cortex, or `null` for all |
-| `ui.enabled` | `true` | Register the Atrium plugin |
-| `atrium.features` | `[ShowroomSupportFeature::class]` | Features that must all be on for Showroom to appear in Atrium; classes that cannot be loaded (without refactor-circus/pennantplus) are skipped |
-| `atrium.widget_cache_seconds` | `60` | How long the dashboard's completeness widget keeps its figures; `0` reads them fresh on every render |
+| `stats.cache_seconds` | `60` | How long `GET /showroom/stats` keeps its completeness figures, which read every stored score; `0` reads them fresh on every call. Negative values count as `0` |
 | `workflow.require_approval` | `true` | Publish only approved products |
 | `workflow.require_complete` | `false` | Submit only products 100% complete on every channel and locale |
 | `products.identifier_pattern` | `/^[^\s\p{C}](?:[^\p{C}]{0,189}[^\s\p{C}])?$/uD` | The regular expression a new product's `identifier` must match, on top of unique and at most 191 characters. The default takes any SKU, spaces and `/` included, and refuses an empty one, leading or trailing whitespace and control characters. A stricter pattern fails non-matching products at `identifier`; one that doesn't compile throws |
-| `lookup.products` | `id` | The key products are found by in API and Atrium URLs, MCP `product` arguments and the show, update, delete, transition, versions and revert actions: `id` (the ULID) or `slug`. `?by=` or a `by` tool argument overrides it for one call. Any other value throws at boot |
+| `lookup.products` | `id` | The key products are found by in API URLs, MCP `product` arguments and the show, update, delete, transition, versions and revert actions: `id` (the ULID) or `slug`. `?by=` or a `by` tool argument overrides it for one call. Any other value throws at boot |
 | `lookup.owners` | `id` | The same for owners: `id` or `slug` |
 | `audit.enabled` | `true` | With refactor-circus/keen installed, record Showroom's changes and offer its history; `false` keeps Showroom out of the audit log |
 | `impex.enabled` | `true` | Register the Impex flows when refactor-circus/impex is installed |

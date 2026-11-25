@@ -77,12 +77,13 @@ jobs:
         if: runner.os == 'Windows'
         run: vendor/bin/pest
 
-  # Atrium is optional: install Showroom without it and run the
-  # WithoutAtrium suite. Cortex, Impex and Keen each require Atrium, so they go too.
-  without-atrium:
+  # Regenerates openapi.json and client/ and fails when anything differs from
+  # what is committed. This is the authoritative check of the generated
+  # TypeScript; tests/OpenApi/OpenApiTest.php only compares the stamp.
+  client:
     runs-on: ubuntu-latest
 
-    name: P8.5 - L13.* - without Atrium
+    name: OpenAPI and TypeScript client
 
     steps:
       - name: Checkout code
@@ -97,18 +98,64 @@ jobs:
           tools: composer:v2
           coverage: none
 
-      # testbench.yaml loads Atrium's provider for the workbench; Testbench's
-      # package:discover (run by Composer's scripts) dies on it once Atrium is gone.
-      - name: Drop Atrium from the Testbench providers
-        run: sed -i '/RefactorCircus\\Atrium\\AtriumServiceProvider/d' testbench.yaml
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: lts/*
 
-      - name: Install dependencies without Atrium
+      - name: Install dependencies
+        run: composer update --prefer-dist --no-interaction --no-progress
+
+      - name: Generate the OpenAPI document and the client
+        run: composer client:generate
+
+      - name: Fail on a stale openapi.json or client
         run: |
-          composer remove --dev refactor-circus/atrium refactor-circus/cortex refactor-circus/impex refactor-circus/keen --no-update
-          composer update --prefer-dist --no-interaction --no-progress
+          git diff --exit-code
+          test -z "$(git status --porcelain -- openapi.json client)"
 
-      - name: Atrium is not installed
-        run: test ! -d vendor/refactor-circus/atrium
+  # Showroom's Atrium front-end module (atrium/, built to dist/atrium): a
+  # frozen install, typecheck, Vitest and the build, which must reproduce the
+  # committed dist/atrium byte for byte. The PHP suite stays Node-free and
+  # checks the build's source hash instead (tests/Feature/AtriumModuleTest.php).
+  ui:
+    runs-on: ubuntu-latest
 
-      - name: WithoutAtrium suite
-        run: composer test:without-atrium
+    name: Atrium module
+
+    defaults:
+      run:
+        working-directory: atrium
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+        with:
+          package_json_file: atrium/package.json
+
+      - name: Setup Node
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: lts/*
+          cache: pnpm
+          cache-dependency-path: atrium/pnpm-lock.yaml
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Test
+        run: pnpm test
+
+      - name: Build
+        run: pnpm build
+
+      - name: Committed build matches a fresh build
+        run: |
+          git diff --exit-code -- ../dist/atrium
+          test -z "$(git status --porcelain -- ../dist/atrium)"

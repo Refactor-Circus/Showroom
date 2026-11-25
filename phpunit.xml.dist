@@ -28,14 +28,14 @@
         <testsuite name="Cortex">
             <directory>tests/Cortex</directory>
         </testsuite>
-        <testsuite name="PennantPlus">
-            <directory>tests/PennantPlus</directory>
-        </testsuite>
         <testsuite name="Keen">
             <directory>tests/Keen</directory>
         </testsuite>
         <testsuite name="RenamedTables">
             <directory>tests/Modes/RenamedTables</directory>
+        </testsuite>
+        <testsuite name="OpenApi">
+            <directory>tests/OpenApi</directory>
         </testsuite>
     </testsuites>
     <source>

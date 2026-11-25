@@ -1,0 +1,13 @@
+{
+  "key": "showroom",
+  "shared_api": "1.0",
+  "root": "../../atrium",
+  "inputs": [
+    "src",
+    "../client/src",
+    "package.json",
+    "vite.config.ts",
+    "pnpm-lock.yaml"
+  ],
+  "hash": "ed47f7787cac6b2c04d760535f3a54ab625bfbcf39247e494a3f14bcecbe0b59"
+}

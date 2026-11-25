@@ -1,0 +1,33 @@
+id: 2026-11-23-0943-showroom-v2-api-and-mcp-only
+title: 'Showroom v2: API and MCP only'
+status: in-review
+created: '2026-11-23 09:43'
+release: v2.0.0
+waits_for: [Keystone/2026-11-23-0943-drop-the-atrium-plugin-hook]
+blocks: [Atrium/2026-11-22-1823-atrium-v2-headless]
+standards:
+  refactor-circus/standards:
+    version: dev-main
+    reference: a5b675396232
+runs:
+  - workflow: ring-master-factory
+    run_id: wf_01c4585a-b6a
+    result: needs-decision
+    round: 0
+    date: 2026-11-23
+  - workflow: ring-master-factory
+    run_id: wf_d1272a68-da5
+    result: needs-decision
+    round: 0
+    date: 2026-11-23
+  - workflow: ring-master-factory
+    run_id: wf_0c6109ea-541
+    result: needs-decision
+    round: 0
+    date: 2026-11-23
+  - workflow: ring-master-factory
+    run_id: wf_4855108d-a7b
+    result: approved
+    round: 1
+    date: 2026-11-23
+pr: https://github.com/Refactor-Circus/Showroom/pull/19

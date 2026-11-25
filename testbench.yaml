@@ -4,7 +4,6 @@ env:
   - QUEUE_CONNECTION=sync
 
 providers:
-  - RefactorCircus\Atrium\AtriumServiceProvider
   # The package itself is not auto-discovered by Testbench, so load it here.
   - RefactorCircus\Showroom\ShowroomServiceProvider
   - Workbench\App\Providers\WorkbenchServiceProvider
@@ -13,19 +12,16 @@ migrations:
   - database/migrations
   - workbench/database/migrations
   - vendor/refactor-circus/impex/database/migrations
-  # refactor-circus/pennantplus (dev dependency, auto-discovered) decides
-  # ShowroomSupportFeature through Pennant, whose features table lives here.
-  - vendor/laravel/pennant/database/migrations
-  # refactor-circus/cortex (dev dependency, auto-discovered) adds its own dashboard
-  # screens, whose tables live here.
+  # refactor-circus/cortex (dev dependency, auto-discovered) registers its own
+  # models, whose tables live here.
   - vendor/refactor-circus/cortex/database/migrations
 
 seeders:
   - Workbench\Database\Seeders\DatabaseSeeder
 
 workbench:
-  start: '/atrium/showroom/products'
-  # Signed in, so the screens can ask Showroom's policies (showroom.authorization).
+  start: '/showroom/products'
+  # Signed in, so the API can ask Showroom's policies (showroom.authorization).
   user: test@example.com
   install: true
   health: false
@@ -44,7 +40,6 @@ workbench:
     - storage-link
   assets:
     - laravel-assets
-    - atrium-assets
   sync:
     - from: storage
       to: workbench/storage

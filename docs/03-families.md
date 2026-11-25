@@ -27,7 +27,6 @@ Families are addressed by `code`, in API paths, MCP arguments and a product's `f
 - Entries are shown in the order given, unless an entry sets its own `sort_order`.
 - An attribute may appear in any number of families, and at most once in each.
 - `is_required` makes an attribute required on every channel; add `required_channels` to narrow it to some. Requirements drive [completeness](11-workflow.md).
-- The order of `attributes` also orders a product's value form in Atrium: the family's attributes come first, then the product's other values.
 
 ## Label attribute
 

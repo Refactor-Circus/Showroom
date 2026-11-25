@@ -1,0 +1,36 @@
+{
+  "name": "@refactor-circus/showroom-client",
+  "version": "2.0.0",
+  "description": "Typed fetch client for Showroom's JSON API, generated from openapi.json.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Refactor-Circus/Showroom.git",
+    "directory": "client"
+  },
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "generate": "openapi-typescript ../openapi.json -o src/schema.d.ts && node scripts/stamp.mjs && tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "openapi-fetch": "^0.17.0"
+  },
+  "devDependencies": {
+    "openapi-typescript": "7.13.0",
+    "typescript": "5.9.3"
+  }
+}

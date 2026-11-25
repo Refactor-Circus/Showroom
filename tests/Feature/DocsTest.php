@@ -30,6 +30,173 @@ function showroomChangelog(): string
 }
 
 /**
+ * The CHANGELOG's next release: everything under its v2.0.0 heading.
+ */
+function showroomNextRelease(): string
+{
+    return str(showroomChangelog())->after('## [v2.0.0]')->before('## [v0.1.0]')->toString();
+}
+
+/**
+ * One `##` section of the README, from its heading to the next `##` heading.
+ */
+function showroomReadmeSection(string $heading): string
+{
+    expect(showroomReadme())->toContain("\n## {$heading}\n");
+
+    return str(showroomReadme())->after("\n## {$heading}\n")->before("\n## ")->toString();
+}
+
+/**
+ * The guides under docs/, by file name (the agent folder excluded).
+ *
+ * @return array<string, string>
+ */
+function showroomDocPages(): array
+{
+    $pages = [];
+
+    foreach (glob(showroomRoot().'/docs/*.md') ?: [] as $path) {
+        $pages[basename($path)] = (string) file_get_contents($path);
+    }
+
+    return $pages;
+}
+
+it('describes Showroom as a JSON API and MCP package with no dashboard or screen extensions', function (): void {
+    expect(showroomReadme())
+        ->toContain('JSON API')
+        ->toContain('MCP server')
+        ->not->toMatch('/^#+ Dashboard$/m')
+        ->not->toMatch('/^#+ Screen extensions$/m')
+        ->not->toContain('Atrium is optional')
+        ->not->toContain('showroom-views')
+        ->not->toContain('showroomCan')
+        ->not->toContain('ShowroomSupportFeature')
+        ->not->toContain('x-atrium')
+        ->not->toContain('11-dashboard.md');
+});
+
+it('points front ends at Atrium v2, which lists runs through Impex and starts them through Showroom', function (): void {
+    expect(showroomReadmeSection('Front end: Atrium v2'))
+        ->toContain('optional')
+        ->toContain('refactor-circus/atrium')
+        ->toContain('runs API')
+        ->toContain('`flow`')
+        ->toContain('`POST /showroom/imports`')
+        ->toContain('`POST /showroom/exports`')
+        ->toContain('no transfer record');
+});
+
+it('explains the OpenAPI document and the TypeScript client, their regeneration and a git dependency', function (): void {
+    expect(showroomReadmeSection('OpenAPI and TypeScript client'))
+        ->toContain('`openapi.json`')
+        ->toContain('`client/`')
+        ->toContain('@refactor-circus/showroom-client')
+        ->toContain('composer client:generate')
+        ->toContain('tests/OpenApi/OpenApiTest.php')
+        ->toContain('#v2.0.0&path:client')
+        ->toContain('createShowroomClient');
+});
+
+it('lists the stats, search and settings summary endpoints under HTTP API', function (): void {
+    expect(showroomReadmeSection('HTTP API'))
+        ->toContain('`/showroom/stats`')
+        ->toContain('`/showroom/search`')
+        ->toContain('`/showroom/settings-summary`');
+});
+
+it('has no dashboard page, and documents the new endpoints and tools on the API and MCP pages', function (): void {
+    expect(showroomRoot().'/docs/11-dashboard.md')->not->toBeFile()
+        ->and(showroomDoc('README.md'))->not->toContain('11-dashboard.md');
+
+    expect(showroomDoc('09-api.md'))
+        ->toContain('`/showroom/stats`')
+        ->toContain('`/showroom/search`')
+        ->toContain('`/showroom/settings-summary`')
+        ->toContain('ShowCatalogStatsAction')
+        ->toContain('SearchCatalogAction')
+        ->toContain('ShowSettingsSummaryAction')
+        ->toContain('`showroom.stats.cache_seconds`')
+        ->toContain('`review_queue`')
+        ->toContain('`recent_versions`')
+        ->toContain('`q`')
+        ->toContain('`limit`');
+
+    expect(showroomDoc('10-mcp.md'))
+        ->toContain('show-catalog-stats-tool')
+        ->toContain('search-catalog-tool');
+});
+
+it('leaves no Atrium screen reference in the guides', function (): void {
+    $offending = [];
+
+    foreach (showroomDocPages() as $page => $text) {
+        foreach (['atrium', 'the dashboard', 'showroom-views', 'showroomcan', 'showroomsupportfeature', 'viewatrium', 'showroom.ui.', 'pennant'] as $needle) {
+            if (str_contains(strtolower($text), $needle)) {
+                $offending[] = "{$page}: {$needle}";
+            }
+        }
+    }
+
+    expect($offending)->toBe([]);
+});
+
+it('heads the next release v2.0.0 with an upgrade note naming every removal and the stats key', function (): void {
+    expect(showroomChangelog())
+        ->not->toContain('## [Unreleased]')
+        ->toMatch('/^## \[v2\.0\.0\]/m');
+
+    $upgrade = str(showroomNextRelease())->after('### Upgrading to v2.0.0')->before("\n### ")->toString();
+
+    expect($upgrade)
+        ->toContain('Atrium UI')
+        ->toContain('`showroom.ui.*`')
+        ->toContain('`showroom.atrium.*`')
+        ->toContain('`ShowroomSupportFeature`')
+        ->toContain('`showroom-views`')
+        ->toContain('`ProductStatus::badge()`')
+        ->toContain('`showroom.atrium.widget_cache_seconds`')
+        ->toContain('`showroom.stats.cache_seconds`')
+        ->toContain('Atrium v2')
+        ->toContain('refactor-circus/pennantplus');
+});
+
+it('lists the new endpoints, MCP tools, openapi.json and the client as added in v2.0.0', function (): void {
+    $added = str(showroomNextRelease())->after('### Added')->before("\n### ")->toString();
+
+    expect($added)
+        ->toContain('`GET /showroom/stats`')
+        ->toContain('`GET /showroom/search`')
+        ->toContain('`GET /showroom/settings-summary`')
+        ->toContain('`show-catalog-stats-tool`')
+        ->toContain('`search-catalog-tool`')
+        ->toContain('`openapi.json`')
+        ->toContain('`client/`');
+});
+
+it('describes the package as API and MCP in the Boost skill and CLAUDE.md, without Atrium screen conventions', function (string $file): void {
+    $text = (string) file_get_contents(showroomRoot().'/'.$file);
+
+    expect($text)
+        ->toContain('JSON API and MCP')
+        ->toContain('Domains\Catalog')
+        ->toContain('composer client:generate')
+        ->toContain('OpenApiTest');
+
+    foreach (['AuthorizesScreens', 'ScreenAccess', 'x-atrium', 'AtriumStyles', 'registerAtriumPlugin', 'WithoutAtrium', 'without-atrium', 'showroomCan', 'ShowroomSupportFeature', 'src/Atrium', 'screen extensions', 'loadViewsFrom'] as $needle) {
+        expect(stripos($text, $needle))->toBeFalse("{$file} still names {$needle}");
+    }
+})->with(['CLAUDE.md', 'resources/boost/skills/showroom-development/SKILL.md']);
+
+it('allows CLAUDE.md config keys to be removed only in a major release with an upgrade note', function (): void {
+    expect((string) file_get_contents(showroomRoot().'/CLAUDE.md'))
+        ->not->toContain('Existing keys are never renamed or removed;')
+        ->toContain('only in a major release')
+        ->toContain('upgrade note');
+});
+
+/**
  * The keys the configuration page's table documents, with a trailing `.*`
  * dropped: `tables.*` documents every key under `tables`.
  *
@@ -55,81 +222,6 @@ function showroomShippedConfigKeys(): array
 
     return array_map('strval', array_keys(Arr::dot($config)));
 }
-
-dataset('declared screens', [
-    'showroom.products' => ['showroom.products', 'list'],
-    'showroom.product-create' => ['showroom.product-create', 'detail'],
-    'showroom.product' => ['showroom.product', 'detail'],
-    'showroom.product-models' => ['showroom.product-models', 'list'],
-    'showroom.product-model' => ['showroom.product-model', 'detail'],
-    'showroom.channels' => ['showroom.channels', 'list'],
-    'showroom.channel' => ['showroom.channel', 'detail'],
-    'showroom.assets' => ['showroom.assets', 'list'],
-    'showroom.asset' => ['showroom.asset', 'detail'],
-    'showroom.categories' => ['showroom.categories', 'list'],
-    'showroom.category' => ['showroom.category', 'detail'],
-    'showroom.owner-types' => ['showroom.owner-types', 'list'],
-    'showroom.owner-type' => ['showroom.owner-type', 'detail'],
-    'showroom.owners' => ['showroom.owners', 'list'],
-    'showroom.owner' => ['showroom.owner', 'detail'],
-    'showroom.flags' => ['showroom.flags', 'list'],
-    'showroom.flag' => ['showroom.flag', 'detail'],
-    'showroom.families' => ['showroom.families', 'list'],
-    'showroom.family' => ['showroom.family', 'detail'],
-    'showroom.family-variant' => ['showroom.family-variant', 'detail'],
-    'showroom.attributes' => ['showroom.attributes', 'list'],
-    'showroom.attribute-create' => ['showroom.attribute-create', 'detail'],
-    'showroom.attribute' => ['showroom.attribute', 'detail'],
-    'showroom.attribute-groups' => ['showroom.attribute-groups', 'list'],
-    'showroom.attribute-group' => ['showroom.attribute-group', 'detail'],
-    'showroom.association-types' => ['showroom.association-types', 'list'],
-    'showroom.transfers' => ['showroom.transfers', 'list'],
-]);
-
-it('lists every declared screen with its kind in the README', function (string $key, string $kind): void {
-    expect(showroomReadme())->toMatch('/^\| `'.preg_quote($key, '/').'` \| '.$kind.' \|/m');
-})->with('declared screens');
-
-it('lists exactly the 27 declared screens in the README', function (): void {
-    preg_match_all('/^\| `(showroom\.[a-z-]+)` \| (?:list|detail) \|/m', showroomReadme(), $rows);
-
-    expect($rows[1])->toHaveCount(27)
-        ->and(array_unique($rows[1]))->toHaveCount(27);
-});
-
-it('names the slots each kind of screen declares', function (): void {
-    expect(showroomReadme())
-        ->toContain('List screens declare `header.actions`, `before`, `after` and `row.actions`')
-        ->toContain('detail screens declare `header.actions`, `before`, `after` and `aside`');
-});
-
-it('says permission() extensions follow showroom.authorization, and authorize() is for their own check', function (): void {
-    expect(showroomReadme())
-        ->toContain('`permission()` extensions follow `showroom.authorization`')
-        ->toContain('with it off, every one shows')
-        ->toContain('registrants that need their own check use `authorize()`');
-});
-
-it('says row closures run once per row and must not query', function (): void {
-    expect(showroomReadme())
-        ->toContain('run once per row')
-        ->toContain('must not query');
-});
-
-it('says Atrium is optional', function (): void {
-    expect(showroomReadme())
-        ->toContain('Atrium is optional')
-        ->toContain('composer require refactor-circus/atrium');
-});
-
-it('tells upgraders to install Atrium, re-publish views and install Keen for History', function (): void {
-    $changelog = (string) file_get_contents(showroomRoot().'/CHANGELOG.md');
-
-    expect($changelog)
-        ->toContain('composer require refactor-circus/atrium')
-        ->toContain('--tag="showroom-views"')
-        ->toContain('refactor-circus/keen');
-});
 
 it('documents every key the shipped config sets on the configuration page', function (): void {
     $documented = showroomDocumentedConfigKeys();
@@ -237,7 +329,7 @@ it('documents external ids by source, with their sync stamp and one id per recor
 
     expect(showroomDoc('10-mcp.md'))->toContain('`external_ids_synced_at`');
 
-    $unreleased = str(showroomChangelog())->after('## [Unreleased]')->before('## [v0.1.0]')->toString();
+    $unreleased = showroomNextRelease();
 
     expect($unreleased)
         ->toContain('`{source: id}`')
@@ -264,7 +356,7 @@ it('documents the batch upsert and the webhook opt-out', function (): void {
 });
 
 it('gives upgraders notes for lookup keys, read-only keys, the import step, the slug index and Scout', function (): void {
-    $unreleased = str(showroomChangelog())->after('## [Unreleased]')->before('## [v0.1.0]')->toString();
+    $unreleased = showroomNextRelease();
 
     expect($unreleased)
         ->toContain('`showroom.lookup.products`')
@@ -284,7 +376,6 @@ it('mentions no removed audit trail, History nav item or Impex run link', functi
     $files = iterator_to_array(Finder::create()->files()->in([
         $root.'/src',
         $root.'/resources',
-        $root.'/docs/agent/standards',
     ]), false);
 
     $paths = [

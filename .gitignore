@@ -11,6 +11,9 @@ composer.lock
 .vscode
 composer.local.json
 composer.local.lock
+/client/node_modules
+/atrium/node_modules
+/atrium/*.tsbuildinfo
 
 # ringside generated files
 /docs/agent/standards.index.yml

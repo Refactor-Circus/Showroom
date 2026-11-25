@@ -47,7 +47,7 @@ Every owner gets a `slug` when it's created, from the first of these that slugif
 
 ### Looking up an owner
 
-API paths, Atrium links, MCP `owner` arguments and the show, update and delete actions find an owner by its ULID `id`. Set `showroom.lookup.owners` to `slug` to use slugs instead, or pick the key for one call with `?by=id` or `?by=slug` over HTTP and a `by` argument on the MCP tools. An owner's `code` is never a lookup key. It stays the reference for `parent`, a product's `owner`, and the `owner`, `parent` and `under` filters. Every owner resource returns `id`, `slug` and `code`.
+API paths, MCP `owner` arguments and the show, update and delete actions find an owner by its ULID `id`. Set `showroom.lookup.owners` to `slug` to use slugs instead, or pick the key for one call with `?by=id` or `?by=slug` over HTTP and a `by` argument on the MCP tools. An owner's `code` is never a lookup key. It stays the reference for `parent`, a product's `owner`, and the `owner`, `parent` and `under` filters. Every owner resource returns `id`, `slug` and `code`.
 
 ### Enabled
 
@@ -56,7 +56,6 @@ Owners are `enabled` (default `true`) or not, and switching one off switches off
 - Send `enabled` on create or update (API, MCP `create-owner-tool` and `update-owner-tool`, `CreateOwnerData`, `UpdateOwnerData`); left out on update, it's kept. Owner resources return it.
 - Changing it re-indexes every product beneath the owner, as a flag change does.
 - Products return `effective_enabled` from list, show, create and update (API and MCP), computed for a whole page with one query of the owners in its chains. The search document carries it, and listings filter on it: `GET /showroom/products?effective_enabled=1`. See [Search](05-search.md).
-- The Atrium owner screen shows whether the owner is enabled, and its edit form switches it.
 
 ### External ids and flags
 

@@ -2,11 +2,16 @@
 
 namespace Workbench\App\Providers;
 
+use Dedoc\Scramble\Scramble;
+use Dedoc\Scramble\Support\Generator\OpenApi;
+use Dedoc\Scramble\Support\Generator\Operation;
+use Dedoc\Scramble\Support\Generator\Server;
+use Dedoc\Scramble\Support\RouteInfo;
 use Illuminate\Contracts\Http\Kernel as HttpKernel;
 use Illuminate\Foundation\Http\Kernel;
-use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 use Workbench\App\Http\Middleware\SignInWorkbenchUser;
+use Workbench\App\OpenApi\ResourceResponses;
 
 class WorkbenchServiceProvider extends ServiceProvider
 {
@@ -20,14 +25,25 @@ class WorkbenchServiceProvider extends ServiceProvider
         config()->set('showroom.media.disk', 'public');
         config()->set('filesystems.disks.public.url', '/storage');
 
-        // refactor-circus/pennantplus's layered store: users who follow a feature's
-        // global value store nothing, as in a real application.
-        config()->set('pennant.default', 'pennantplus');
-        config()->set('pennant.stores.pennantplus', [
-            'driver' => 'pennantplus',
-            'connection' => null,
-            'table' => 'features',
-        ]);
+        // Scramble, which writes openapi.json, reads only the workbench's
+        // config file: every key is set there, whichever provider merges
+        // first.
+        config()->set('scramble', array_replace(
+            (array) config('scramble', []),
+            require dirname(__DIR__, 2).'/config/scramble.php',
+        ));
+
+        // Scramble reads model columns when their tables exist, so a migrated
+        // workbench database would change the export. `scramble:export`
+        // always reads an empty one, as tests/OpenApi does.
+        if ($this->app->runningConsoleCommand('scramble:export')) {
+            config()->set('database.connections.openapi', [
+                'driver' => 'sqlite',
+                'database' => ':memory:',
+                'prefix' => '',
+            ]);
+            config()->set('database.default', 'openapi');
+        }
     }
 
     /**
@@ -42,12 +58,24 @@ class WorkbenchServiceProvider extends ServiceProvider
             }
         });
 
-        // Impex's dashboard only opens runs the viewer owns; the demo's
-        // transfers belong to other users, so make the demo user an operator.
-        config()->set('impex.atrium.show_all', true);
+        $this->configureOpenApi();
+    }
 
-        // The workbench dashboard is open so `composer serve` is usable
-        // without logging in. A real application defines a real gate.
-        Gate::define('viewAtrium', fn ($user = null): bool => true);
+    /**
+     * Name each operation after its route (`showroom.stats.show`), write the
+     * success responses Scramble cannot infer through `persist()`, and serve
+     * the document from the relative `/showroom`, so no host or port is
+     * baked into openapi.json.
+     */
+    private function configureOpenApi(): void
+    {
+        Scramble::configure()
+            ->withOperationTransformers(function (Operation $operation, RouteInfo $routeInfo): void {
+                $operation->setOperationId((string) $routeInfo->route->getName());
+            })
+            ->withOperationTransformers(ResourceResponses::class)
+            ->withDocumentTransformers(function (OpenApi $openApi): void {
+                $openApi->servers = [Server::make('/'.config('scramble.api_path'))];
+            });
     }
 }

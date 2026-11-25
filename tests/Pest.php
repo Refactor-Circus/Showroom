@@ -4,25 +4,20 @@ declare(strict_types=1);
 
 use Laravel\Mcp\Server\Testing\TestResponse;
 use Laravel\Mcp\Server\Tool;
-use RefactorCircus\Atrium\Testing\ResetsScreenExtensions;
 use RefactorCircus\Keystone\Testing\McpTools;
 use RefactorCircus\Keystone\Testing\Parity;
 use RefactorCircus\Showroom\Mcp\ShowroomServer;
 use RefactorCircus\Showroom\Tests\CortexTestCase;
 use RefactorCircus\Showroom\Tests\KeenTestCase;
-use RefactorCircus\Showroom\Tests\PennantPlusTestCase;
+use RefactorCircus\Showroom\Tests\OpenApiTestCase;
 use RefactorCircus\Showroom\Tests\RenamedTablesTestCase;
 use RefactorCircus\Showroom\Tests\TestCase;
 
-// These test cases use Atrium. Without it (the CI without-atrium lane) only
-// tests/WithoutAtrium runs, and loading them would fail on the missing classes.
-if (trait_exists(ResetsScreenExtensions::class)) {
-    uses(TestCase::class)->in('Feature', 'Unit');
-    uses(CortexTestCase::class)->in('Cortex');
-    uses(PennantPlusTestCase::class)->in('PennantPlus');
-    uses(KeenTestCase::class)->in('Keen');
-    uses(RenamedTablesTestCase::class)->in('Modes/RenamedTables');
-}
+uses(TestCase::class)->in('Feature', 'Unit');
+uses(CortexTestCase::class)->in('Cortex');
+uses(KeenTestCase::class)->in('Keen');
+uses(RenamedTablesTestCase::class)->in('Modes/RenamedTables');
+uses(OpenApiTestCase::class)->in('OpenApi');
 
 /**
  * Call a catalog tool as an MCP client does, through tool search, with its
@@ -39,30 +34,23 @@ function mcpTool(string $tool, array $arguments = []): TestResponse
 /**
  * Actions deliberately missing from a surface, and why.
  *
- * Every use case must be reachable from the HTTP API, MCP and the Atrium
- * dashboard. An Action counts as reachable when its class name appears in
- * that surface's request or controller classes.
+ * Every use case must be reachable from the HTTP API and MCP. An Action
+ * counts as reachable when its class name appears in that surface's request
+ * classes.
  *
  * @var array<string, array<int, string>>
  */
 const PARITY_EXCEPTIONS = [
     // Batch upserts run through the Impex import flows; their own HTTP and
     // MCP endpoints are out of scope (bulk import readiness spec).
-    'UpsertProductsAction' => ['http', 'mcp', 'ui'],
+    'UpsertProductsAction' => ['http', 'mcp'],
     // The same for owners (batch owner upsert spec).
-    'UpsertOwnersAction' => ['http', 'mcp', 'ui'],
+    'UpsertOwnersAction' => ['http', 'mcp'],
     // The same for attribute options (batch attribute option upsert).
-    'UpsertAttributeOptionsAction' => ['http', 'mcp', 'ui'],
-    // Not on the dashboard yet; reachable over the API and MCP.
-    'ShowAssociationTypeAction' => ['ui'],
-    'UpdateAssociationTypeAction' => ['ui'],
-    'ListAttributeOptionsAction' => ['ui'],
-    'UpdateAttributeOptionAction' => ['ui'],
-    'ShowLocaleAction' => ['ui'],
-    'UpdateLocaleAction' => ['ui'],
-    'ListFamilyVariantsAction' => ['ui'],
-    'UpdateFamilyVariantAction' => ['ui'],
-    'ShowProductVersionAction' => ['ui'],
+    'UpsertAttributeOptionsAction' => ['http', 'mcp'],
+    // The settings summary describes host configuration for an admin panel
+    // and adds nothing for an MCP client (D-006).
+    'ShowSettingsSummaryAction' => ['mcp'],
 ];
 
 /**
@@ -77,6 +65,5 @@ function parityGaps(): array
     return Parity::gaps($root.'/Domains/*/Actions/*.php', [
         'http' => $root.'/Domains/*/Http/Requests/*.php',
         'mcp' => $root.'/Domains/*/Mcp/Requests/*.php',
-        'ui' => $root.'/Atrium/Http/Controllers/*.php',
     ], PARITY_EXCEPTIONS);
 }

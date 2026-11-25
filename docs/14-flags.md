@@ -33,7 +33,7 @@ An unknown code, or a flag whose `applies_to` doesn't include the record's kind,
 
 ### The `assign` ability
 
-Changing a record's flags needs the `assign` ability of `FlagPolicy` (`showroom.policies`), on top of `update` on the record. It is asked only when the set changes: a request that sends the flags the record already has needs only `update`. Without `assign`, a flag change answers `403` over HTTP and an error over MCP, and nothing is written. In a batch upsert, the record fails at `flags` and the others are still written. The Atrium product and owner screens hide the own-flags field from users without `assign`.
+Changing a record's flags needs the `assign` ability of `FlagPolicy` (`showroom.policies`), on top of `update` on the record. It is asked only when the set changes: a request that sends the flags the record already has needs only `update`. Without `assign`, a flag change answers `403` over HTTP and an error over MCP, and nothing is written. In a batch upsert, the record fails at `flags` and the others are still written.
 
 The bundled policy allows any authenticated user. Flags such as `restricted` carry down whole owner trees, so point `FlagModel` at a policy of your own that limits `assign` to the people who set commercial terms:
 
@@ -86,7 +86,5 @@ Changing an owner's flags, or moving an owner, queues one `QueueProductSyncs` jo
 | `DELETE` | `/showroom/flags/{flag}` | `DeleteFlagAction` → `204` | `delete-flag-tool` |
 
 Flags are addressed by `code` in paths and in the tools' `flag` argument. The `showroom.lookup` keys apply to products and owners only.
-
-In Atrium, the flag-definitions screen (`showroom.flags`, linked from the product and owner lists) lists, creates, edits and deletes flags. `code` is read-only on edit, and a refused delete or `applies_to` change shows the refusal message.
 
 Assignments are stored in `showroom_flag_assignments` (`showroom.tables.flag_assignments`) and the definitions in `showroom_flags` (`showroom.tables.flags`).

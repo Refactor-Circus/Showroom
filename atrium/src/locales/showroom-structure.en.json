@@ -1,0 +1,93 @@
+{
+  "showroom": {
+    "structure": {
+      "code_hint": "Lowercase letters, digits and underscores. Cannot be changed later.",
+      "details": "Details",
+      "attributes": {
+        "title": "Attributes",
+        "new": "New attribute",
+        "create": "Create attribute",
+        "all_types": "All types",
+        "all_groups": "All groups",
+        "empty": "No attributes match these filters.",
+        "switches": "Switches",
+        "is_unique": "Unique",
+        "is_localizable": "Localizable",
+        "is_scopable": "Scopable",
+        "type_hint": "Cannot be changed later.",
+        "choose_type": "Choose a type",
+        "no_group": "No group",
+        "settings": "Settings (JSON)",
+        "settings_hint": "Type-specific validation, such as max_length. Metric attributes need metric_family and default_unit.",
+        "invalid_settings": "Settings must be a JSON object.",
+        "options": "Options",
+        "no_options": "This attribute has no options yet.",
+        "add_option": "Add option",
+        "confirm_delete": "Delete this attribute?",
+        "confirm_delete_option": "Delete the option {option}?"
+      },
+      "groups": {
+        "title": "Attribute groups",
+        "new": "New attribute group",
+        "create": "Create group",
+        "empty": "No attribute groups yet.",
+        "attributes_count": "Attributes",
+        "members": "Attributes in this group",
+        "no_members": "No attributes in this group yet. An attribute joins a group from its own page.",
+        "confirm_delete": "Delete this attribute group?"
+      },
+      "association_types": {
+        "title": "Association types",
+        "description": "How products relate: cross-sell, accessories, compatible parts (two-way), bundles and kits (quantified).",
+        "new": "New association type",
+        "empty": "No association types yet.",
+        "two_way": "Two-way",
+        "quantified": "Quantified",
+        "associations": "Associations",
+        "confirm_delete": "Delete the association type {code}?"
+      },
+      "categories": {
+        "title": "Categories",
+        "description": "Independent category trees: each root category is a tree.",
+        "new_tree": "New category tree",
+        "empty": "No category trees yet.",
+        "children": "Children",
+        "chain": "Category path",
+        "branch": "Branch",
+        "no_branch": "No categories beneath this one yet.",
+        "add_child": "Add child",
+        "products": "Products",
+        "move_hint": "Change to move this category, with everything beneath it. Empty to make it a tree.",
+        "filed_counts": "{products} product(s) and {models} product model(s) are filed here.",
+        "confirm_delete": "Delete this category and everything beneath it?"
+      },
+      "channels": {
+        "title": "Channels",
+        "description": "Where products are published, in which locales and currencies, and the locales content is written in.",
+        "new": "New channel",
+        "empty": "No channels yet.",
+        "locales": "Locales",
+        "no_locales": "No locales yet.",
+        "locale_code_hint": "A language, optionally with a region: en, en_US.",
+        "add_locale": "Add locale",
+        "currencies": "Currencies",
+        "currencies_hint": "ISO codes, separated by commas: USD, EUR.",
+        "category_tree": "Category tree",
+        "delete_note": "Deleting a channel also removes every value scoped to it.",
+        "confirm_delete": "Delete this channel, and every value scoped to it?",
+        "confirm_delete_locale": "Delete the locale {code}?"
+      },
+      "flags": {
+        "title": "Flags",
+        "description": "Commercial markers (restricted, pricing only, clearance) that products and owners carry. An owner's flags reach everything beneath it.",
+        "new": "New flag",
+        "empty": "No flags yet.",
+        "applies_to": "Applies to",
+        "subject_product": "Products",
+        "subject_owner": "Owners",
+        "delete_note": "A flag still assigned to a product or owner cannot be deleted; remove it from them first.",
+        "confirm_delete": "Delete this flag?"
+      }
+    }
+  }
+}

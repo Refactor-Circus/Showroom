@@ -1,6 +1,6 @@
 # Search
 
-Products are listed and searched through a search engine you choose with `showroom.search.engine`. Every surface — `ListProductsAction`, `GET /showroom/products`, `list-products-tool`, the dashboard — goes through it.
+Products are listed and searched through a search engine you choose with `showroom.search.engine`. Every surface — `ListProductsAction`, `GET /showroom/products`, `list-products-tool` — goes through it.
 
 | Engine | Needs | Filters | Scale |
 |---|---|---|---|

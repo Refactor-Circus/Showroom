@@ -25,7 +25,7 @@ Showroom never assumes a local disk that outlives the request, so it runs on Vap
 
 | Source | For |
 |---|---|
-| `file` — multipart upload | the HTTP API and the dashboard |
+| `file` — multipart upload | the HTTP API |
 | `path` — a file already on the asset disk | uploads sent straight to S3 with a presigned URL, so no file passes through the app server |
 | `url` — an http(s) URL | fetched server-side and streamed to the disk; how MCP agents add media |
 
